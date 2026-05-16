@@ -1,5 +1,5 @@
 // src/api.js
-const BASE = 'http://10.0.224.193:4000'; // ← replace with your server's IP
+const BASE = 'https://travelbae-backend.onrender.com'; // ← replace with your server's IP
 // e.g. 'http://192.168.1.10:4000' for local network
 // e.g. 'http://65.21.44.120:4000' for a VPS
 
