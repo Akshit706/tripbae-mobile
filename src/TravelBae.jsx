@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-
+import { aiChat, aiItinerary } from './api';
+ 
 /* ─── CONSTANTS ─────────────────────────────────────── */
 const MDEF = ['Arjun','Priya','Rahul','Sneha'];
 const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
@@ -292,7 +293,7 @@ function tripStatusInfo(arrival,departure){
 //   return data.content.map(b=>b.text||'').join('');
 // }/
 
-import { aiChat, aiItinerary } from './api';
+
 
 // Simple prompt → text response
 async function callClaude(prompt) {
@@ -1585,6 +1586,11 @@ function TripChatbot({ trip }){
    APP SHELL
 ═══════════════════════════════════════════════════════ */
 export default function App(){
+  const [authToken, setAuthToken] = useState(localStorage.getItem('travelbae_token'));
+  const [authScreen, setAuthScreen] = useState('login'); // 'login' | 'signup'
+  const [authForm, setAuthForm] = useState({ name:'', email:'', password:'' });
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
   const [trips, setTrips] = useState(INITIAL_TRIPS);
   const [activeTrip, setActiveTrip] = useState(null);
   const [newTripModal, setNewTripModal] = useState(null);
@@ -1592,6 +1598,35 @@ export default function App(){
 
   const currentTrip = trips.find(t => t.id === activeTrip);
   const isSolo = currentTrip?.isSolo || false;
+  const handleAuth = async () => {
+    setAuthError('');
+    setAuthLoading(true);
+    try {
+      const endpoint = authScreen === 'signup' ? '/auth/signup' : '/auth/login';
+      const body = authScreen === 'signup'
+        ? { name: authForm.name, email: authForm.email, password: authForm.password }
+        : { email: authForm.email, password: authForm.password };
+
+      const res = await fetch(`https://travelbae-backend.onrender.com${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Something went wrong');
+
+      localStorage.setItem('travelbae_token', data.token);
+      setAuthToken(data.token);
+    } catch (err) {
+      setAuthError(err.message);
+    }
+    setAuthLoading(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('travelbae_token');
+    setAuthToken(null);
+  };
 
   const handleCreateTrip = (trip) => {
     setTrips(ts => [...ts, trip]);
@@ -1625,6 +1660,52 @@ export default function App(){
   ];
   const tabs = isSolo ? soloTabs : groupTabs;
 
+  if (!authToken) return (
+    <div style={{ ...S.root, display:'flex', alignItems:'center', justifyContent:'center', minHeight:'100vh', padding:'1.5rem' }}>
+      <div style={{ width:'100%', maxWidth:380 }}>
+        <div style={{ textAlign:'center', marginBottom:'2rem' }}>
+          <div style={{ width:64, height:64, background:'#1D9E75', borderRadius:20, display:'flex', alignItems:'center', justifyContent:'center', fontSize:32, margin:'0 auto 12px' }}>✈️</div>
+          <div style={{ fontFamily:"'Sora',sans-serif", fontSize:26, fontWeight:700 }}>Travel<span style={{ color:'#1D9E75' }}>Bae</span></div>
+          <div style={{ fontSize:13, color:'#6b6b68', marginTop:4 }}>Plan, split, explore — together.</div>
+        </div>
+        <div style={{ background:'#fff', borderRadius:20, padding:'1.75rem', boxShadow:'0 4px 24px rgba(0,0,0,0.08)', border:'0.5px solid rgba(0,0,0,0.09)' }}>
+          <div style={{ display:'flex', gap:0, background:'#F1EFE8', borderRadius:12, padding:3, marginBottom:'1.5rem' }}>
+            {['login','signup'].map(s => (
+              <button key={s} onClick={() => { setAuthScreen(s); setAuthError(''); }}
+                style={{ flex:1, padding:'9px', fontSize:13, fontWeight:500, borderRadius:9, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:authScreen===s?'#1D9E75':'transparent', color:authScreen===s?'#fff':'#6b6b68', transition:'all .2s' }}>
+                {s === 'login' ? '🔑 Log In' : '✨ Sign Up'}
+              </button>
+            ))}
+          </div>
+          {authScreen === 'signup' && (
+            <>
+              <label style={S.label}>Your Name</label>
+              <input style={{ ...S.input, marginBottom:10 }} value={authForm.name}
+                onChange={e => setAuthForm(f => ({ ...f, name:e.target.value }))} placeholder="e.g. Arjun" />
+            </>
+          )}
+          <label style={S.label}>Email</label>
+          <input style={{ ...S.input, marginBottom:10 }} type="email" value={authForm.email}
+            onChange={e => setAuthForm(f => ({ ...f, email:e.target.value }))} placeholder="you@email.com" />
+          <label style={S.label}>Password</label>
+          <input style={{ ...S.input, marginBottom:10 }} type="password" value={authForm.password}
+            onChange={e => setAuthForm(f => ({ ...f, password:e.target.value }))}
+            onKeyDown={e => e.key === 'Enter' && handleAuth()}
+            placeholder="Min 6 characters" />
+          {authError && (
+            <div style={{ fontSize:13, color:'#993C1D', background:'#FAECE7', border:'0.5px solid #F5C4B3', borderRadius:10, padding:'9px 12px', marginBottom:10 }}>
+              ⚠️ {authError}
+            </div>
+          )}
+          <button style={{ ...S.btn, ...S.btnP, width:'100%', justifyContent:'center', padding:'12px', fontSize:15, borderRadius:12, marginTop:4, opacity:authLoading?0.6:1 }}
+            onClick={handleAuth} disabled={authLoading}>
+            {authLoading ? 'Please wait…' : authScreen === 'login' ? '🔑 Log In' : '🚀 Create Account'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return(
     <div style={S.root}>
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet"/>
@@ -1645,8 +1726,11 @@ export default function App(){
             {isSolo && <span style={{ marginLeft:4, fontSize:10, fontWeight:700, background:'rgba(127,119,221,0.2)', borderRadius:8, padding:'1px 6px' }}>Solo</span>}
           </div>
         ) : (
-          <div style={S.tripPill}>🏠 My Trips</div>
-        )}
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginLeft:'auto' }}>
+            <div style={S.tripPill}>🏠 My Trips</div>
+            <button style={{ ...S.btn, fontSize:12, padding:'5px 10px', color:'#993C1D', borderColor:'#F5C4B3' }} onClick={handleLogout}>Log out</button>
+          </div>
+                  )}
       </div>
 
       {activeTrip && (
