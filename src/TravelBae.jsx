@@ -3142,16 +3142,25 @@ function SplitPage({ trip, myNickname }) {
             </div>
           ))}
         </div>
+        {budget && (
+          <div>
+            <div style={{ height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${budgetPct}%`, background: budgetPct > 85 ? '#FCA5A5' : '#86EFAC', borderRadius: 4, transition: 'width .6s' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+              <span>{budgetPct}% of ₹{budget.toLocaleString('en-IN')} used</span>
+              <span>₹{Math.round(Math.max(0, budgetLeft)).toLocaleString('en-IN')} left</span>
+            </div>
+            <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
+              style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', border: '0.5px solid rgba(255,255,255,0.15)', fontSize: 11, marginTop: 8 }}>
+              ✏️ Edit budget
+            </button>
+          </div>
+        )}
         {!budget && (
           <button onClick={() => setShowBudgetEdit(true)}
             style={{ ...S.btn, background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', fontSize: 12, marginTop: 8 }}>
             + Set a budget
-          </button>
-        )}
-        {budget && (
-          <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
-            style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', border: '0.5px solid rgba(255,255,255,0.15)', fontSize: 11, marginTop: 8 }}>
-            ✏️ Edit budget
           </button>
         )}
       </div>
