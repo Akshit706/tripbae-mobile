@@ -336,38 +336,38 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
   const activeTrips = trips.filter(t => !tripStatusInfo(t.arrival, t.departure).isPast);
   const pastTrips   = trips.filter(t =>  tripStatusInfo(t.arrival, t.departure).isPast);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!form.groupName || !form.destination || !form.arrival || !form.departure || !form.createdBy) return;
-    const shareCode = generateShareCode(form.destination, isSoloMode);
-    const newTrip = {
-      id: 'trip_' + Date.now(),
-      ...form,
-      isSolo: isSoloMode,
-      soloName: isSoloMode ? form.createdBy : undefined,
-      people: isSoloMode ? 1 : parseInt(form.people),
-      members: [form.createdBy],
-      shareCode,
-      coverUrl: '',
-      expenses: [],
-      contacts: [],
-      photos: [],
-      budget: isSoloMode && form.budget ? parseFloat(form.budget) : null,
-    };
-    onCreateTrip(newTrip);
-    setShowCreate(false);
-    setForm({ groupName:'',destination:'',emoji:'✈️',arrival:'',departure:'',people:2,createdBy:'',budget:'' });
+    try {
+      await onCreateTrip({
+        groupName: form.groupName,
+        destination: form.destination,
+        emoji: form.emoji,
+        arrival: form.arrival,
+        departure: form.departure,
+        isSolo: isSoloMode,
+        people: isSoloMode ? 1 : parseInt(form.people),
+        budget: isSoloMode && form.budget ? parseFloat(form.budget) : null,
+        nickname: form.createdBy,
+      });
+      setShowCreate(false);
+      setForm({ groupName:'', destination:'', emoji:'✈️', arrival:'', departure:'', people:2, createdBy:'', budget:'' });
+    } catch (err) {
+      alert('Could not create trip: ' + err.message);
+    }
   };
 
-  const handleJoin = () => {
+  const handleJoin = async () => {
     setJoinError('');
-    const code = joinCode.trim().toUpperCase();
-    const match = trips.find(t => t.shareCode === code);
-    if (!match) { setJoinError('Invalid code. Please check and try again.'); return; }
+    if (!joinCode.trim()) { setJoinError('Please enter a share code.'); return; }
     if (!joinName.trim()) { setJoinError('Please enter your name.'); return; }
-    if (match.members.includes(joinName.trim())) { setJoinError('You are already in this trip!'); return; }
-    onJoinTrip(match.id, joinName.trim());
-    setJoinSuccess(match);
-    setJoinCode(''); setJoinName('');
+    try {
+      const result = await onJoinTrip(joinCode.trim().toUpperCase(), joinName.trim());
+      setJoinSuccess(result);
+      setJoinCode(''); setJoinName('');
+    } catch (err) {
+      setJoinError(err.message || 'Invalid code. Please check and try again.');
+    }
   };
 
   const copyCode = (code, id) => {
@@ -1640,6 +1640,7 @@ export default function App(){
   const handleJoinTrip = async (shareCode, nickname) => {
     const { trip } = await joinTrip(shareCode, nickname);
     setTrips(ts => [...ts, trip]);
+    return trip;
   };
   const handleOpenTrip = (tripId) => {
     setActiveTrip(tripId);
