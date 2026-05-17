@@ -2018,7 +2018,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         departure: form.departure,
         isSolo: isSoloMode,
         people: isSoloMode ? 1 : parseInt(form.people),
-        budget: isSoloMode && form.budget ? parseFloat(form.budget) : null,
+        budget: form.budget ? parseFloat(form.budget) : null,
         nickname: form.createdBy,
       });
       setShowCreate(false);
@@ -2244,17 +2244,16 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               <label style={S.label}>Date of Departure *</label>
               <input style={S.input} type="date" value={form.departure} onChange={e => setForm(f => ({ ...f, departure: e.target.value }))} />
             </div>
-            {isSoloMode ? (
-              <div style={{ gridColumn: '1/-1' }}>
-                <label style={S.label}>Budget ₹ (optional)</label>
-                <input style={S.input} type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 15000" />
-              </div>
-            ) : (
+            {!isSoloMode && (
               <div>
                 <label style={S.label}>Number of People</label>
                 <input style={S.input} type="number" min={1} max={50} value={form.people} onChange={e => setForm(f => ({ ...f, people: e.target.value }))} />
               </div>
             )}
+            <div style={{ gridColumn: isSoloMode ? '1/-1' : 'auto' }}>
+              <label style={S.label}>Budget ₹ (optional)</label>
+              <input style={S.input} type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
+            </div>
             <div style={{ gridColumn: isSoloMode ? '1/-1' : 'auto' }}>
               <label style={S.label}>Your Name *</label>
               <input style={S.input} value={form.createdBy} onChange={e => setForm(f => ({ ...f, createdBy: e.target.value }))} placeholder="e.g. Arjun" />
