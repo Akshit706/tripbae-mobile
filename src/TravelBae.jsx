@@ -2914,249 +2914,6 @@ function LocalTastePage({ destination, isSolo }) {
   );
 }
 
-// /* ═══════════════════════════════════════════════════════
-//    GROUP SPLIT PAGE
-// ═══════════════════════════════════════════════════════ */
-// function SplitPage({ trip, myNickname }) {
-//   const memberNames = normalizeMembers(trip.members);
-//   const [expenses, setExpenses] = useState(trip.expenses || []);
-//   const [showForm, setShowForm] = useState(false);
-//   const [section, setSection] = useState('expenses');
-//   const [saving, setSaving] = useState(false);
-//   const todayStr = new Date().toISOString().split('T')[0];
-//   const [form, setForm] = useState({
-//     desc: '', amount: '', paidBy: myNickname || memberNames[0] || '',
-//     cat: 'food', date: todayStr,
-//   });
-
-//   const total = expenses.reduce((s, e) => s + e.amount, 0);
-//   const days = Math.max(1, Math.round((new Date(trip.departure) - new Date(trip.arrival)) / 86400000));
-//   const tsr = total / days;
-//   const userShare = memberNames.length > 0 ? total / memberNames.length : 0;
-
-//   const balances = {};
-//   memberNames.forEach(m => balances[m] = 0);
-//   expenses.forEach(e => {
-//     const splitNames = Array.isArray(e.split) ? e.split : memberNames;
-//     const sh = e.amount / splitNames.length;
-//     splitNames.forEach(m => { if (balances[m] !== undefined) balances[m] -= sh; });
-//     if (balances[e.paidBy] !== undefined) balances[e.paidBy] += e.amount;
-//   });
-
-//   const settlements = [];
-//   const bal = { ...balances };
-//   const ds = memberNames.filter(m => bal[m] < -0.01).sort((a, b) => bal[a] - bal[b]);
-//   const cs = memberNames.filter(m => bal[m] > 0.01).sort((a, b) => bal[b] - bal[a]);
-//   let di = 0, ci = 0;
-//   while (di < ds.length && ci < cs.length) {
-//     const d = ds[di], c = cs[ci], amt = Math.min(-bal[d], bal[c]);
-//     settlements.push({ from: d, to: c, amt });
-//     bal[d] += amt; bal[c] -= amt;
-//     if (Math.abs(bal[d]) < 0.01) di++;
-//     if (Math.abs(bal[c]) < 0.01) ci++;
-//   }
-
-//   const payTotal = {};
-//   memberNames.forEach(m => payTotal[m] = 0);
-//   expenses.forEach(e => { payTotal[e.paidBy] = (payTotal[e.paidBy] || 0) + e.amount; });
-//   const maxPay = Math.max(...memberNames.map(m => payTotal[m] || 0), 1);
-//   const highestExp = expenses.length ? expenses.reduce((mx, e) => e.amount > mx.amount ? e : mx, expenses[0]) : null;
-//   const BAR = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E'];
-
-//   const handleAdd = async () => {
-//     if (!form.desc || !form.amount) return;
-//     setSaving(true);
-//     try {
-//       const data = await addExpense(trip.id, {
-//         desc: form.desc,
-//         amount: parseFloat(form.amount),
-//         paidBy: form.paidBy,
-//         cat: form.cat,
-//         split: memberNames,
-//         date: form.date,
-//       });
-//       setExpenses(es => [data.expense, ...es]);
-//       setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: todayStr });
-//       setShowForm(false);
-//     } catch (err) {
-//       alert('Could not save expense: ' + err.message);
-//     }
-//     setSaving(false);
-//   };
-
-//   const handleDelete = async (expId) => {
-//     try {
-//       await deleteExpense(trip.id, expId);
-//       setExpenses(es => es.filter(x => x.id !== expId));
-//     } catch (err) {
-//       alert('Could not delete: ' + err.message);
-//     }
-//   };
-
-//   return (
-//     <div>
-//       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: '1.25rem', alignItems: 'center' }}>
-//         {memberNames.map(m => (
-//           <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 7, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 20, padding: '5px 12px 5px 6px', fontSize: 13 }}>
-//             <Avatar name={m} size={22} />&nbsp;{m}
-//           </div>
-//         ))}
-//       </div>
-
-//       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: '1.25rem' }}>
-//         {[
-//           ['Total', `₹${Math.round(total).toLocaleString('en-IN')}`, `${expenses.length} exp`],
-//           ['Per person', `₹${Math.round(userShare).toLocaleString('en-IN')}`, 'equal share'],
-//           ['TSR/day', `₹${Math.round(tsr).toLocaleString('en-IN')}`, 'rate'],
-//         ].map(([l, v, s]) => (
-//           <div key={l} style={S.card}>
-//             <div style={{ fontSize: 10, color: '#6b6b68', fontWeight: 600, letterSpacing: .4, marginBottom: 4, textTransform: 'uppercase' }}>{l}</div>
-//             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 700 }}>{v}</div>
-//             <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>{s}</div>
-//           </div>
-//         ))}
-//       </div>
-
-//       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1.25rem', alignItems: 'center' }}>
-//         {[{ id: 'expenses', label: '💳 Expenses' }, { id: 'shares', label: '📊 Shares' }, { id: 'balances', label: '⚖️ Balances' }, { id: 'insights', label: '📈 Insights' }].map(sec => (
-//           <button key={sec.id} style={{ ...S.btn, ...(section === sec.id ? S.btnP : {}) }} onClick={() => setSection(sec.id)}>{sec.label}</button>
-//         ))}
-//         <button style={{ ...S.btn, marginLeft: 'auto' }} onClick={() => setShowForm(v => !v)}>+ Add</button>
-//       </div>
-
-//       {showForm && (
-//         <div style={S.card}>
-//           <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px', gap: 10, marginBottom: 10 }}>
-//             <div><label style={S.label}>Description</label><input style={S.input} placeholder="e.g. Hotel checkout" value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} /></div>
-//             <div><label style={S.label}>Amount (₹)</label><input style={S.input} type="number" placeholder="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div>
-//           </div>
-//           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
-//             <div><label style={S.label}>Paid by</label>
-//               <select style={S.input} value={form.paidBy} onChange={e => setForm(f => ({ ...f, paidBy: e.target.value }))}>
-//                 {memberNames.map(m => <option key={m}>{m}</option>)}
-//               </select>
-//             </div>
-//             <div><label style={S.label}>Category</label>
-//               <select style={S.input} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
-//                 {CATS.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
-//               </select>
-//             </div>
-//             <div><label style={S.label}>Date</label><input style={S.input} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
-//           </div>
-//           <div style={{ display: 'flex', gap: 8 }}>
-//             <button style={{ ...S.btn, ...S.btnP, flex: 1, justifyContent: 'center', opacity: saving ? 0.6 : 1 }} onClick={handleAdd} disabled={saving}>
-//               {saving ? 'Saving…' : '✓ Add expense'}
-//             </button>
-//             <button style={S.btn} onClick={() => setShowForm(false)}>✕</button>
-//           </div>
-//         </div>
-//       )}
-
-//       {section === 'expenses' && expenses.map(exp => {
-//         const cat = CATS.find(c => c.id === exp.cat) || CATS[5];
-//         return (
-//           <div key={exp.id} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 12 }}>
-//             <div style={{ width: 40, height: 40, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 19 }}>{cat.icon}</div>
-//             <div style={{ flex: 1, minWidth: 0 }}>
-//               <div style={{ fontSize: 14, fontWeight: 500 }}>{exp.desc}</div>
-//               <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>
-//                 <strong>{exp.paidBy}</strong> paid · {(Array.isArray(exp.split) ? exp.split.length : memberNames.length)} people · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-//               </div>
-//             </div>
-//             <div style={{ flexShrink: 0, textAlign: 'right' }}>
-//               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700 }}>₹{exp.amount.toLocaleString('en-IN')}</div>
-//               <div style={{ fontSize: 11, color: '#a8a8a5' }}>₹{Math.round(exp.amount / (Array.isArray(exp.split) ? exp.split.length : memberNames.length))} each</div>
-//               <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#a8a8a5', borderColor: 'transparent', background: 'transparent' }}>✕</button>
-//             </div>
-//           </div>
-//         );
-//       })}
-
-//       {section === 'shares' && (
-//         <div>
-//           <div style={{ ...S.card, background: 'linear-gradient(135deg,#E1F5EE,#E6F1FB)', border: '0.5px solid #9FE1CB', marginBottom: '1rem' }}>
-//             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: '#085041' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
-//             <div style={{ fontSize: 12, color: '#0F6E56', marginTop: 2 }}>{memberNames.length} members · {expenses.length} expenses · {days} days</div>
-//           </div>
-//           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-//             <tbody>
-//               {memberNames.map(m => {
-//                 const paid = expenses.filter(e => e.paidBy === m).reduce((s, e) => s + e.amount, 0);
-//                 const owes = expenses.reduce((s, e) => { const sp = Array.isArray(e.split) ? e.split : memberNames; return sp.includes(m) ? s + e.amount / sp.length : s; }, 0);
-//                 const net = paid - owes;
-//                 return (
-//                   <tr key={m} style={{ borderBottom: '0.5px solid rgba(0,0,0,0.09)' }}>
-//                     <td style={{ padding: '10px 6px', width: 32 }}><Avatar name={m} size={30} /></td>
-//                     <td style={{ padding: '10px 6px' }}><div style={{ fontSize: 14, fontWeight: 500 }}>{m}</div><div style={{ fontSize: 11, color: '#a8a8a5' }}>paid ₹{Math.round(paid).toLocaleString('en-IN')}</div></td>
-//                     <td style={{ padding: '10px 6px', textAlign: 'right' }}><div style={{ fontSize: 12, color: '#6b6b68' }}>share</div><div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600 }}>₹{Math.round(owes).toLocaleString('en-IN')}</div></td>
-//                     <td style={{ padding: '10px 6px', textAlign: 'right' }}><div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: net >= 0 ? '#0F6E56' : '#993C1D' }}>{net >= 0 ? '+' : ''}{Math.round(net).toLocaleString('en-IN')}</div></td>
-//                   </tr>
-//                 );
-//               })}
-//             </tbody>
-//           </table>
-//           <div style={{ marginTop: '1.25rem', marginBottom: 8, fontSize: 12, fontWeight: 600, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: .4 }}>Settlements</div>
-//           {settlements.length === 0
-//             ? <div style={{ background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 10, padding: '1rem', fontSize: 14, color: '#085041', fontWeight: 500 }}>✅ Everyone is squared up!</div>
-//             : settlements.map((s, i) => (
-//               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 10, padding: '11px 14px', marginBottom: 8, fontSize: 13 }}>
-//                 <Avatar name={s.from} size={28} /><span style={{ fontWeight: 500 }}>{s.from}</span>
-//                 <span style={{ color: '#D85A30' }}>→</span>
-//                 <Avatar name={s.to} size={28} /><span style={{ flex: 1 }}>{s.to}</span>
-//                 <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: '#0F6E56' }}>₹{Math.round(s.amt).toLocaleString('en-IN')}</span>
-//               </div>
-//             ))}
-//         </div>
-//       )}
-
-//       {section === 'balances' && (
-//         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-//           {memberNames.map(m => (
-//             <div key={m} style={S.card}>
-//               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><Avatar name={m} size={30} /><div style={{ fontSize: 14, fontWeight: 500 }}>{m}</div></div>
-//               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: balances[m] >= 0 ? '#0F6E56' : '#993C1D' }}>
-//                 {balances[m] >= 0 ? '+' : '−'}₹{Math.abs(Math.round(balances[m])).toLocaleString('en-IN')}
-//               </div>
-//               <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 3 }}>{balances[m] > 0.5 ? 'gets back' : balances[m] < -0.5 ? 'owes' : 'settled'}</div>
-//             </div>
-//           ))}
-//         </div>
-//       )}
-
-//       {section === 'insights' && (
-//         <div>
-//           <div style={S.card}>
-//             <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: .4, color: '#6b6b68', marginBottom: 8 }}>Spending by member</div>
-//             {memberNames.map((m, i) => (
-//               <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-//                 <Avatar name={m} size={24} />
-//                 <div style={{ fontSize: 13, fontWeight: 500, width: 48, flexShrink: 0 }}>{m.slice(0, 5)}</div>
-//                 <div style={{ flex: 1, height: 8, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
-//                   <div style={{ height: '100%', borderRadius: 4, width: ((payTotal[m] || 0) / maxPay * 100) + '%', background: BAR[i % BAR.length], transition: 'width .5s' }} />
-//                 </div>
-//                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 600, color: '#6b6b68', width: 80, textAlign: 'right', flexShrink: 0 }}>₹{Math.round(payTotal[m] || 0).toLocaleString('en-IN')}</div>
-//               </div>
-//             ))}
-//           </div>
-//           {highestExp && (
-//             <div style={{ ...S.card, background: 'linear-gradient(135deg,#E1F5EE,#E6F1FB)', border: '0.5px solid #9FE1CB', display: 'flex', alignItems: 'center', gap: 14 }}>
-//               <div style={{ width: 46, height: 46, borderRadius: 12, background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>🏆</div>
-//               <div style={{ flex: 1 }}>
-//                 <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: .4, color: '#0F6E56', marginBottom: 4 }}>Top single expense</div>
-//                 <div style={{ fontSize: 15, fontWeight: 600 }}>{highestExp.desc}</div>
-//                 <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 3 }}>Paid by {highestExp.paidBy} · split {(Array.isArray(highestExp.split) ? highestExp.split.length : memberNames.length)} ways</div>
-//               </div>
-//               <div style={{ textAlign: 'right', flexShrink: 0 }}>
-//                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700 }}>₹{highestExp.amount.toLocaleString('en-IN')}</div>
-//               </div>
-//             </div>
-//           )}
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
-
 /* ═══════════════════════════════════════════════════════
    GROUP SPLIT PAGE — REVAMPED v2
 ═══════════════════════════════════════════════════════ */
@@ -3167,6 +2924,9 @@ function SplitPage({ trip, myNickname }) {
   const [section, setSection] = useState('expenses');
   const [saving, setSaving] = useState(false);
   const [filterCat, setFilterCat] = useState('all');
+  const [showBudgetEdit, setShowBudgetEdit] = useState(false);
+  const [localBudget, setLocalBudget] = useState(trip.budget || null);
+  const [budgetInput, setBudgetInput] = useState('');
   const [chartReady, setChartReady] = useState(false);
   const todayStr = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState({
@@ -3211,7 +2971,7 @@ function SplitPage({ trip, myNickname }) {
   const daysLeft = Math.max(0, Math.round((new Date(trip.departure) - today) / 86400000));
   const tsr = total / daysElapsed;
   const projected = Math.round(tsr * days);
-  const budget = trip.budget || null;
+  const budget = localBudget;
   const budgetLeft = budget ? budget - total : null;
   const budgetPct = budget ? Math.min(100, Math.round(total / budget * 100)) : null;
   const perPerson = memberNames.length > 0 ? total / memberNames.length : 0;
@@ -3382,18 +3142,57 @@ function SplitPage({ trip, myNickname }) {
             </div>
           ))}
         </div>
+        {!budget && (
+          <button onClick={() => setShowBudgetEdit(true)}
+            style={{ ...S.btn, background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', fontSize: 12, marginTop: 8 }}>
+            + Set a budget
+          </button>
+        )}
         {budget && (
-          <div>
-            <div style={{ height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${budgetPct}%`, background: budgetPct > 85 ? '#FCA5A5' : '#86EFAC', borderRadius: 4, transition: 'width .6s' }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
-              <span>{budgetPct}% of ₹{budget.toLocaleString('en-IN')} used</span>
-              <span>₹{Math.round(Math.max(0, budgetLeft)).toLocaleString('en-IN')} left</span>
-            </div>
-          </div>
+          <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
+            style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', border: '0.5px solid rgba(255,255,255,0.15)', fontSize: 11, marginTop: 8 }}>
+            ✏️ Edit budget
+          </button>
         )}
       </div>
+      {showBudgetEdit && (
+        <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '0.75rem' }}>
+          <label style={S.label}>Total trip budget ₹</label>
+          <input style={S.input} type="number" value={budgetInput}
+            onChange={e => setBudgetInput(e.target.value)}
+            placeholder="e.g. 50000" autoFocus />
+          <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+            <button style={{ ...S.btn, ...S.btnP, flex: 1, justifyContent: 'center', padding: '9px' }}
+              onClick={async () => {
+                const v = parseFloat(budgetInput);
+                if (!isNaN(v) && v > 0) {
+                  setLocalBudget(v);
+                  try {
+                    const { updateTrip } = await import('./api');
+                    await updateTrip(trip.id, { budget: v });
+                  } catch (_) {}
+                }
+                setShowBudgetEdit(false);
+              }}>
+              ✓ Save
+            </button>
+            {budget && (
+              <button style={{ ...S.btn, color: '#993C1D', borderColor: '#F5C4B3' }}
+                onClick={async () => {
+                  setLocalBudget(null);
+                  try {
+                    const { updateTrip } = await import('./api');
+                    await updateTrip(trip.id, { budget: null });
+                  } catch (_) {}
+                  setShowBudgetEdit(false);
+                }}>
+                Remove
+              </button>
+            )}
+            <button style={S.btn} onClick={() => setShowBudgetEdit(false)}>✕</button>
+          </div>
+        </div>
+      )}
 
       {/* ── Member pills ── */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1rem' }}>
