@@ -392,7 +392,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
         )}
         {pastTrips.map(trip => {
           const days = tripDuration(trip.arrival, trip.departure);
-          const totalSpend = trip.expenses.reduce((s, e) => s + e.amount, 0);
+          const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
           return (
             <div key={trip.id} style={{ ...S.card, padding:0, overflow:'hidden', marginBottom:14, cursor:'pointer', opacity:0.85 }} onClick={() => { setShowPast(false); onOpenTrip(trip.id); }}>
               <div style={{ position:'relative', height:90, overflow:'hidden', borderRadius:'14px 14px 0 0' }}>
@@ -556,7 +556,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
       {activeTrips.map(trip => {
         const status = tripStatusInfo(trip.arrival, trip.departure);
         const days = tripDuration(trip.arrival, trip.departure);
-        const totalSpend = trip.expenses.reduce((s, e) => s + e.amount, 0);
+        const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
         const budgetPct = trip.isSolo && trip.budget ? Math.min(100, Math.round(totalSpend/trip.budget*100)) : null;
         return (
           <div key={trip.id} style={{ ...S.card, padding:0, overflow:'hidden', marginBottom:14, cursor:'pointer' }} onClick={() => onOpenTrip(trip.id)}>
