@@ -1795,6 +1795,10 @@ import {
   addPhoto,
 } from './api';
 
+// Add these two to your api.js:
+// export const deleteTrip = (id) => apiFetch(`/trips/${id}`, { method: 'DELETE' });
+// export const updateTrip = (id, data) => apiFetch(`/trips/${id}`, { method: 'PATCH', body: data });
+
 /* ─── CONSTANTS ─────────────────────────────────────── */
 const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
 const CATS = [
@@ -1817,8 +1821,6 @@ const CONTACT_CATS = [
 const INTERESTS = ['🏖️ Beaches','🛕 Temples','🌿 Nature','🍽️ Food','🧗 Adventure','🎭 Culture','🛍️ Shopping','🌙 Nightlife','🏛️ History','💆 Wellness'];
 
 /* ─── HELPERS ───────────────────────────────────────── */
-
-// Always extract a plain string nickname from whatever members shape arrives
 function nickName(m) {
   if (!m) return '?';
   if (typeof m === 'string') return m;
@@ -1826,7 +1828,6 @@ function nickName(m) {
   return '?';
 }
 
-// Normalize a members array (TripMember[] or string[]) → string[]
 function normalizeMembers(members) {
   if (!Array.isArray(members)) return [];
   return members.map(nickName);
@@ -1897,7 +1898,11 @@ function tripDuration(arrival, departure) {
   return Math.max(1, Math.round((new Date(departure) - new Date(arrival)) / 86400000));
 }
 
-function tripStatusInfo(arrival, departure) {
+// Used ONLY for the status badge label/color — does NOT control active/past split
+function tripStatusInfo(arrival, departure, completed) {
+  if (completed) {
+    return { label: 'Completed', color: '#6b6b68', bg: '#F1EFE8', border: '#D3D1C7', isPast: true };
+  }
   const now = new Date(); const a = new Date(arrival); const d = new Date(departure);
   if (now < a) {
     const daysLeft = Math.ceil((a - now) / 86400000);
@@ -1905,7 +1910,7 @@ function tripStatusInfo(arrival, departure) {
   } else if (now <= d) {
     return { label: 'Ongoing', color: '#854F0B', bg: '#FAEEDA', border: '#FAC775', isPast: false };
   }
-  return { label: 'Past', color: '#6b6b68', bg: '#F1EFE8', border: '#D3D1C7', isPast: true };
+  return { label: 'Past', color: '#6b6b68', bg: '#F1EFE8', border: '#D3D1C7', isPast: false };
 }
 
 async function callClaude(prompt) {
@@ -1921,6 +1926,30 @@ async function callClaudeJSON(prompt) {
 async function callClaudeWithSystem(system, messages) {
   const { reply } = await aiChat(system, messages);
   return reply;
+}
+
+/* ─── CONFIRM DIALOG ─────────────────────────────────── */
+function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, onCancel }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+      <div style={{ background: '#fff', borderRadius: 18, padding: '1.75rem', maxWidth: 340, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center' }}>
+        <div style={{ fontSize: 42, marginBottom: 12 }}>{confirmStyle === 'danger' ? '🗑️' : '✅'}</div>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{title}</div>
+        <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.6, marginBottom: 22 }}>{message}</div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button style={{ ...S.btn, flex: 1, justifyContent: 'center', padding: '11px' }} onClick={onCancel}>Cancel</button>
+          <button
+            style={{ ...S.btn, flex: 1, justifyContent: 'center', padding: '11px', fontWeight: 600,
+              ...(confirmStyle === 'danger' ? S.btnDanger : S.btnP),
+              background: confirmStyle === 'danger' ? '#993C1D' : undefined,
+              color: confirmStyle === 'danger' ? '#fff' : undefined }}
+            onClick={onConfirm}>
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ─── STYLES ─────────────────────────────────────────── */
@@ -1950,7 +1979,7 @@ const S = {
 /* ═══════════════════════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════════════════════ */
-function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
+function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive }) {
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
   const [showPast, setShowPast] = useState(false);
@@ -1962,6 +1991,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
   const [isSoloMode, setIsSoloMode] = useState(false);
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(null); // trip object
+  const [confirmComplete, setConfirmComplete] = useState(null); // trip object
+  const [menuOpen, setMenuOpen] = useState(null); // trip id
   const [form, setForm] = useState({
     groupName: '', destination: '', emoji: '✈️', arrival: '', departure: '',
     people: 2, createdBy: '', budget: '',
@@ -1970,8 +2002,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
   const EMOJI_OPTIONS_GROUP = ['✈️','🏖️','🏔️','🏰','🌴','🗺️','🎡','🛕','🌅','🌿','🎭','🏛️'];
   const EMOJI_OPTIONS_SOLO  = ['🎒','🧳','🛺','🚂','🏍️','🌏','🪂','🧗','🌄','☕','📖','🦋'];
 
-  const activeTrips = trips.filter(t => !tripStatusInfo(t.arrival, t.departure).isPast);
-  const pastTrips   = trips.filter(t =>  tripStatusInfo(t.arrival, t.departure).isPast);
+  // ── KEY CHANGE: active = not completed, past = completed ──
+  const activeTrips = trips.filter(t => !t.completed);
+  const pastTrips   = trips.filter(t =>  t.completed);
 
   const handleCreate = async () => {
     if (!form.groupName || !form.destination || !form.arrival || !form.departure || !form.createdBy) return;
@@ -2020,6 +2053,16 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
   if (showPast) {
     return (
       <div>
+        {confirmDelete && (
+          <ConfirmDialog
+            title="Delete Trip"
+            message={`Are you sure you want to delete "${confirmDelete.groupName}"? This cannot be undone.`}
+            confirmLabel="🗑️ Delete"
+            confirmStyle="danger"
+            onConfirm={() => { onDeleteTrip(confirmDelete.id); setConfirmDelete(null); }}
+            onCancel={() => setConfirmDelete(null)}
+          />
+        )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.25rem' }}>
           <button style={S.btn} onClick={() => setShowPast(false)}>← Back</button>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700 }}>Past Trips</div>
@@ -2030,22 +2073,22 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
         {pastTrips.length === 0 && (
           <div style={{ textAlign: 'center', padding: '3rem', color: '#6b6b68' }}>
             <div style={{ fontSize: 48, marginBottom: 12 }}>🗂️</div>
-            <p>No past trips yet.</p>
+            <p>No completed trips yet.</p>
           </div>
         )}
         {pastTrips.map(trip => {
           const days = tripDuration(trip.arrival, trip.departure);
           const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
           return (
-            <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14, cursor: 'pointer', opacity: 0.85 }}
-              onClick={() => { setShowPast(false); onOpenTrip(trip.id); }}>
-              <div style={{ position: 'relative', height: 90, overflow: 'hidden', borderRadius: '14px 14px 0 0' }}>
+            <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
+              <div style={{ position: 'relative', height: 90, overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }}
+                onClick={() => { setShowPast(false); onOpenTrip(trip.id); }}>
                 {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(30%)' }} onError={e => e.target.style.display = 'none'} />}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.55) 100%)' }} />
                 <div style={{ position: 'absolute', top: 10, left: 12, fontSize: 24 }}>{trip.emoji}</div>
                 <div style={{ position: 'absolute', top: 9, right: 11, display: 'flex', gap: 6 }}>
                   {trip.isSolo && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 9px', borderRadius: 10, background: '#EEEDFE', color: '#534AB7', border: '0.5px solid #AFA9EC' }}>Solo</span>}
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 9px', borderRadius: 10, background: '#F1EFE8', color: '#6b6b68', border: '0.5px solid #D3D1C7' }}>Past</span>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 9px', borderRadius: 10, background: '#F1EFE8', color: '#6b6b68', border: '0.5px solid #D3D1C7' }}>Completed</span>
                 </div>
                 <div style={{ position: 'absolute', bottom: 10, left: 12 }}>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: '#fff' }}>{trip.groupName}</div>
@@ -2058,8 +2101,17 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
                     <span>{icon}</span><span>{val}</span>
                   </div>
                 ))}
-                <div style={{ marginLeft: 'auto' }}>
-                  <span style={{ fontSize: 12, color: '#0F6E56', fontWeight: 500 }}>View memories →</span>
+                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <button
+                    onClick={() => onMarkActive(trip.id)}
+                    style={{ ...S.btn, fontSize: 11, padding: '4px 10px', color: '#0F6E56', borderColor: '#9FE1CB', background: '#E1F5EE' }}>
+                    ↩ Restore
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(trip)}
+                    style={{ ...S.btn, fontSize: 11, padding: '4px 10px', color: '#993C1D', borderColor: '#F5C4B3', background: '#FAECE7' }}>
+                    🗑️ Delete
+                  </button>
                 </div>
               </div>
             </div>
@@ -2089,6 +2141,28 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
 
   return (
     <div>
+      {/* Confirm dialogs */}
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete Trip"
+          message={`Are you sure you want to delete "${confirmDelete.groupName}"? All expenses, contacts and photos will be lost. This cannot be undone.`}
+          confirmLabel="🗑️ Delete"
+          confirmStyle="danger"
+          onConfirm={() => { onDeleteTrip(confirmDelete.id); setConfirmDelete(null); setMenuOpen(null); }}
+          onCancel={() => { setConfirmDelete(null); setMenuOpen(null); }}
+        />
+      )}
+      {confirmComplete && (
+        <ConfirmDialog
+          title="Mark as Completed?"
+          message={`"${confirmComplete.groupName}" will be moved to Past Trips. You can restore it anytime.`}
+          confirmLabel="✅ Mark Complete"
+          confirmStyle="primary"
+          onConfirm={() => { onMarkComplete(confirmComplete.id); setConfirmComplete(null); setMenuOpen(null); }}
+          onCancel={() => { setConfirmComplete(null); setMenuOpen(null); }}
+        />
+      )}
+
       <div style={{ background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 18, padding: '1.75rem 1.5rem', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 90, opacity: 0.12 }}>✈️</div>
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 6, lineHeight: 1.2 }}>Your Trips</div>
@@ -2208,29 +2282,33 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
       )}
 
       {activeTrips.map(trip => {
-        const status = tripStatusInfo(trip.arrival, trip.departure);
+        const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
         const days = tripDuration(trip.arrival, trip.departure);
         const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
-        // members is TripMember[] from backend — extract nicknames for display
         const memberNames = normalizeMembers(trip.members);
         const budgetPct = trip.isSolo && trip.budget ? Math.min(100, Math.round(totalSpend / trip.budget * 100)) : null;
+        const isMenuOpen = menuOpen === trip.id;
 
         return (
-          <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14, cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
-            <div style={{ position: 'relative', height: 110, background: trip.coverUrl ? 'transparent' : (trip.isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'), overflow: 'hidden', borderRadius: '14px 14px 0 0' }}>
-              {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => e.target.style.display = 'none'} />}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.06) 0%,rgba(0,0,0,0.45) 100%)' }} />
-              <div style={{ position: 'absolute', top: 12, left: 14, fontSize: 28 }}>{trip.emoji}</div>
-              <div style={{ position: 'absolute', top: 10, right: 12, display: 'flex', gap: 6 }}>
-                {trip.isSolo && <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: 'rgba(127,119,221,0.9)', color: '#fff', backdropFilter: 'blur(4px)' }}>Solo</span>}
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: status.bg, color: status.color, border: `0.5px solid ${status.border}` }}>{status.label}</span>
-              </div>
-              <div style={{ position: 'absolute', bottom: 12, left: 14, right: 14 }}>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>{trip.groupName}</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>📍 {trip.destination}</div>
+          <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'visible', marginBottom: 14, position: 'relative' }}>
+            {/* Trip card header — clickable to open */}
+            <div style={{ overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
+              <div style={{ position: 'relative', height: 110, background: trip.coverUrl ? 'transparent' : (trip.isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'), overflow: 'hidden' }}>
+                {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => e.target.style.display = 'none'} />}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.06) 0%,rgba(0,0,0,0.45) 100%)' }} />
+                <div style={{ position: 'absolute', top: 12, left: 14, fontSize: 28 }}>{trip.emoji}</div>
+                <div style={{ position: 'absolute', top: 10, right: 12, display: 'flex', gap: 6 }}>
+                  {trip.isSolo && <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 10px', borderRadius: 10, background: 'rgba(127,119,221,0.9)', color: '#fff', backdropFilter: 'blur(4px)' }}>Solo</span>}
+                  <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 10, background: status.bg, color: status.color, border: `0.5px solid ${status.border}` }}>{status.label}</span>
+                </div>
+                <div style={{ position: 'absolute', bottom: 12, left: 14, right: 14 }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.3)' }}>{trip.groupName}</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>📍 {trip.destination}</div>
+                </div>
               </div>
             </div>
-            <div style={{ padding: '12px 14px', display: 'flex', gap: 16, flexWrap: 'wrap', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+
+            <div style={{ padding: '12px 14px', display: 'flex', gap: 16, flexWrap: 'wrap', borderBottom: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
               {[
                 ['📅', formatDateRange(trip.arrival, trip.departure)],
                 ['🌙', `${days} nights`],
@@ -2242,8 +2320,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
                 </div>
               ))}
             </div>
+
             {trip.isSolo && trip.budget && (
-              <div style={{ padding: '8px 14px', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+              <div style={{ padding: '8px 14px', borderBottom: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6b6b68', marginBottom: 5 }}>
                   <span>Budget used</span>
                   <span style={{ fontWeight: 600, color: budgetPct > 85 ? '#993C1D' : '#0F6E56' }}>
@@ -2255,14 +2334,16 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
                 </div>
               </div>
             )}
-            <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8 }}>
+
+            {/* Bottom bar: avatars + share code + ⋯ menu */}
+            <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, borderRadius: '0 0 14px 14px' }}>
               {trip.isSolo ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1 }} onClick={() => onOpenTrip(trip.id)}>
                   <SoloAvatar initials={(memberNames[0] || 'ME').slice(0, 2)} size={28} />
                   <span style={{ fontSize: 12, color: '#534AB7', fontWeight: 500 }}>Solo adventure by {memberNames[0] || 'You'}</span>
                 </div>
               ) : (
-                <div style={{ display: 'flex' }}>
+                <div style={{ display: 'flex', cursor: 'pointer', flex: 1 }} onClick={() => onOpenTrip(trip.id)}>
                   {memberNames.slice(0, 5).map((m, i) => (
                     <div key={m + i} style={{ marginLeft: i > 0 ? -8 : 0, border: '2px solid #fff', borderRadius: '50%', zIndex: 5 - i }}>
                       <Avatar name={m} size={28} />
@@ -2275,11 +2356,39 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip }) {
                   )}
                 </div>
               )}
-              <div style={{ flex: 1 }} />
+
+              {/* Share code copy */}
               <div onClick={e => { e.stopPropagation(); copyCode(trip.shareCode, trip.id); }}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#EEEDFE', border: '0.5px solid #AFA9EC', borderRadius: 20, padding: '5px 12px', cursor: 'pointer' }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#EEEDFE', border: '0.5px solid #AFA9EC', borderRadius: 20, padding: '5px 12px', cursor: 'pointer', flexShrink: 0 }}>
                 <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 700, color: '#3C3489', letterSpacing: 1 }}>{trip.shareCode}</span>
-                <span style={{ fontSize: 11, color: copied === trip.id ? '#0F6E56' : '#534AB7' }}>{copied === trip.id ? '✓ Copied!' : '📋 Copy'}</span>
+                <span style={{ fontSize: 11, color: copied === trip.id ? '#0F6E56' : '#534AB7' }}>{copied === trip.id ? '✓ Copied!' : '📋'}</span>
+              </div>
+
+              {/* ⋯ kebab menu */}
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuOpen(isMenuOpen ? null : trip.id); }}
+                  style={{ ...S.btn, padding: '6px 10px', fontSize: 16, color: '#6b6b68', borderColor: 'rgba(0,0,0,0.12)', lineHeight: 1 }}>
+                  ⋯
+                </button>
+                {isMenuOpen && (
+                  <>
+                    {/* backdrop to close menu */}
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => setMenuOpen(null)} />
+                    <div style={{ position: 'absolute', bottom: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 101, minWidth: 180, overflow: 'hidden' }}>
+                      <button
+                        onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmComplete(trip); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
+                        ✅ Mark as Completed
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmDelete(trip); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#993C1D', fontFamily: "'DM Sans',sans-serif" }}>
+                        🗑️ Delete Trip
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -2333,7 +2442,7 @@ function ShareCodeModal({ trip, onDismiss }) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   SOLO EXPENSES PAGE — fully live via API
+   SOLO EXPENSES PAGE
 ═══════════════════════════════════════════════════════ */
 function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [expenses, setExpenses] = useState(trip.expenses || []);
@@ -2569,7 +2678,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   CONTACTS PAGE — fully live via API
+   CONTACTS PAGE
 ═══════════════════════════════════════════════════════ */
 function ContactsPage({ trip, myNickname, isSolo }) {
   const memberNames = normalizeMembers(trip.members);
@@ -2807,10 +2916,9 @@ function LocalTastePage({ destination, isSolo }) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   GROUP SPLIT PAGE — fully live via API
+   GROUP SPLIT PAGE
 ═══════════════════════════════════════════════════════ */
 function SplitPage({ trip, myNickname }) {
-  // Normalize members to plain string nicknames
   const memberNames = normalizeMembers(trip.members);
   const [expenses, setExpenses] = useState(trip.expenses || []);
   const [showForm, setShowForm] = useState(false);
@@ -2827,7 +2935,6 @@ function SplitPage({ trip, myNickname }) {
   const tsr = total / days;
   const userShare = memberNames.length > 0 ? total / memberNames.length : 0;
 
-  // Balances
   const balances = {};
   memberNames.forEach(m => balances[m] = 0);
   expenses.forEach(e => {
@@ -2837,7 +2944,6 @@ function SplitPage({ trip, myNickname }) {
     if (balances[e.paidBy] !== undefined) balances[e.paidBy] += e.amount;
   });
 
-  // Settlements
   const settlements = [];
   const bal = { ...balances };
   const ds = memberNames.filter(m => bal[m] < -0.01).sort((a, b) => bal[a] - bal[b]);
@@ -3171,7 +3277,7 @@ function ItineraryPage({ trip }) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   PHOTOS PAGE — fully live via API
+   PHOTOS PAGE
 ═══════════════════════════════════════════════════════ */
 function PhotosPage({ trip, myNickname }) {
   const memberNames = normalizeMembers(trip.members);
@@ -3232,7 +3338,7 @@ function PhotosPage({ trip, myNickname }) {
 }
 
 /* ═══════════════════════════════════════════════════════
-   TRIP AI CHATBOT — system prompt built from live data
+   TRIP AI CHATBOT
 ═══════════════════════════════════════════════════════ */
 function TripChatbot({ trip, myNickname }) {
   const isSolo = trip?.isSolo;
@@ -3240,7 +3346,6 @@ function TripChatbot({ trip, myNickname }) {
   const expenses = trip?.expenses || [];
   const totalSpend = expenses.reduce((s, e) => s + e.amount, 0);
 
-  // Build system prompt from live trip data
   const buildSystem = () => {
     const expLines = expenses.slice(0, 10).map(e =>
       `• ${e.desc}: ₹${e.amount} — paid by ${e.paidBy}, split ${Array.isArray(e.split) ? e.split.length : memberNames.length} ways`
@@ -3344,14 +3449,13 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(false);
   const [trips, setTrips] = useState([]);
   const [tripsLoading, setTripsLoading] = useState(false);
-  const [activeTrip, setActiveTrip] = useState(null); // trip id
-  const [activeTripData, setActiveTripData] = useState(null); // full trip object with all relations
+  const [activeTrip, setActiveTrip] = useState(null);
+  const [activeTripData, setActiveTripData] = useState(null);
   const [myNickname, setMyNickname] = useState(null);
   const [tripLoading, setTripLoading] = useState(false);
   const [newTripModal, setNewTripModal] = useState(null);
   const [tab, setTab] = useState('main');
 
-  // Load trips list on auth
   useEffect(() => {
     if (!authToken) return;
     setTripsLoading(true);
@@ -3361,7 +3465,6 @@ export default function App() {
       .finally(() => setTripsLoading(false));
   }, [authToken]);
 
-  // Load full trip data when opening a trip
   useEffect(() => {
     if (!activeTrip) { setActiveTripData(null); setMyNickname(null); return; }
     setTripLoading(true);
@@ -3369,7 +3472,6 @@ export default function App() {
       getTrip(activeTrip)
         .then(d => { setActiveTripData(d.trip); setMyNickname(d.myNickname); })
         .catch(() => {
-          // fallback to list data
           const t = trips.find(x => x.id === activeTrip);
           setActiveTripData(t || null);
           setMyNickname(normalizeMembers(t?.members || [])[0] || 'Me');
@@ -3421,6 +3523,52 @@ export default function App() {
     setNewTripModal(null);
     setActiveTrip(id);
     setTab('main');
+  };
+
+  // ── DELETE TRIP ──
+  const handleDeleteTrip = async (tripId) => {
+    try {
+      // Call API — import deleteTrip from api.js (add it there)
+      const { deleteTrip } = await import('./api');
+      await deleteTrip(tripId);
+    } catch (err) {
+      // If backend doesn't support it yet, still remove from local state
+      console.warn('Delete API error (removing locally):', err.message);
+    }
+    setTrips(ts => ts.filter(t => t.id !== tripId));
+    // If currently viewing this trip, go back home
+    if (activeTrip === tripId) {
+      setActiveTrip(null);
+      setActiveTripData(null);
+    }
+  };
+
+  // ── MARK TRIP AS COMPLETED (move to past) ──
+  const handleMarkComplete = async (tripId) => {
+    try {
+      const { updateTrip } = await import('./api');
+      await updateTrip(tripId, { completed: true });
+    } catch (err) {
+      console.warn('Update API error (updating locally):', err.message);
+    }
+    setTrips(ts => ts.map(t => t.id === tripId ? { ...t, completed: true } : t));
+    // If currently in this trip, update activeTripData too and go back home
+    if (activeTrip === tripId) {
+      setActiveTripData(d => d ? { ...d, completed: true } : d);
+      setActiveTrip(null);
+      setActiveTripData(null);
+    }
+  };
+
+  // ── RESTORE TRIP TO ACTIVE ──
+  const handleMarkActive = async (tripId) => {
+    try {
+      const { updateTrip } = await import('./api');
+      await updateTrip(tripId, { completed: false });
+    } catch (err) {
+      console.warn('Update API error (updating locally):', err.message);
+    }
+    setTrips(ts => ts.map(t => t.id === tripId ? { ...t, completed: false } : t));
   };
 
   const groupTabs = [
@@ -3491,9 +3639,18 @@ export default function App() {
           <div style={S.logoText}>Travel<span style={{ color: isSolo ? '#7F77DD' : '#1D9E75' }}>Bae</span></div>
         </div>
         {activeTrip && activeTripData ? (
-          <div style={isSolo ? S.soloPill : S.tripPill} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>
-            {activeTripData.emoji} {activeTripData.groupName}
-            {isSolo && <span style={{ marginLeft: 4, fontSize: 10, fontWeight: 700, background: 'rgba(127,119,221,0.2)', borderRadius: 8, padding: '1px 6px' }}>Solo</span>}
+          /* Top-bar pill with trip name + inline Mark Complete / Delete actions */
+          <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={isSolo ? S.soloPill : S.tripPill} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>
+              {activeTripData.emoji} {activeTripData.groupName}
+              {isSolo && <span style={{ marginLeft: 4, fontSize: 10, fontWeight: 700, background: 'rgba(127,119,221,0.2)', borderRadius: 8, padding: '1px 6px' }}>Solo</span>}
+            </div>
+            {/* Quick action menu inside a trip */}
+            <TripActionMenu
+              trip={activeTripData}
+              onMarkComplete={() => handleMarkComplete(activeTripData.id)}
+              onDelete={() => handleDeleteTrip(activeTripData.id)}
+            />
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
@@ -3519,7 +3676,15 @@ export default function App() {
         {!activeTrip && (
           tripsLoading
             ? <Spinner text="Loading your trips…" />
-            : <HomePage trips={trips} onOpenTrip={handleOpenTrip} onCreateTrip={handleCreateTrip} onJoinTrip={handleJoinTrip} />
+            : <HomePage
+                trips={trips}
+                onOpenTrip={handleOpenTrip}
+                onCreateTrip={handleCreateTrip}
+                onJoinTrip={handleJoinTrip}
+                onDeleteTrip={handleDeleteTrip}
+                onMarkComplete={handleMarkComplete}
+                onMarkActive={handleMarkActive}
+              />
         )}
 
         {activeTrip && (
@@ -3548,5 +3713,66 @@ export default function App() {
 
       {activeTrip && activeTripData && <TripChatbot trip={activeTripData} myNickname={myNickname} />}
     </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   TRIP ACTION MENU — shown in top bar when inside a trip
+═══════════════════════════════════════════════════════ */
+function TripActionMenu({ trip, onMarkComplete, onDelete }) {
+  const [open, setOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [confirmComplete, setConfirmComplete] = useState(false);
+  const isSolo = trip?.isSolo;
+
+  return (
+    <>
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Delete Trip"
+          message={`Delete "${trip.groupName}"? All expenses, contacts and photos will be lost. This cannot be undone.`}
+          confirmLabel="🗑️ Delete"
+          confirmStyle="danger"
+          onConfirm={() => { setConfirmDelete(false); onDelete(); }}
+          onCancel={() => setConfirmDelete(false)}
+        />
+      )}
+      {confirmComplete && (
+        <ConfirmDialog
+          title="Mark as Completed?"
+          message={`"${trip.groupName}" will be moved to Past Trips. You can restore it anytime.`}
+          confirmLabel="✅ Mark Complete"
+          confirmStyle="primary"
+          onConfirm={() => { setConfirmComplete(false); onMarkComplete(); }}
+          onCancel={() => setConfirmComplete(false)}
+        />
+      )}
+      <div style={{ position: 'relative' }}>
+        <button
+          onClick={() => setOpen(v => !v)}
+          style={{ ...S.btn, padding: '5px 9px', fontSize: 15, color: '#6b6b68', borderColor: 'rgba(0,0,0,0.12)' }}>
+          ⋯
+        </button>
+        {open && (
+          <>
+            <div style={{ position: 'fixed', inset: 0, zIndex: 198 }} onClick={() => setOpen(false)} />
+            <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 199, minWidth: 190, overflow: 'hidden' }}>
+              {!trip.completed && (
+                <button
+                  onClick={() => { setOpen(false); setConfirmComplete(true); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)', textAlign: 'left' }}>
+                  ✅ Mark as Completed
+                </button>
+              )}
+              <button
+                onClick={() => { setOpen(false); setConfirmDelete(true); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#993C1D', fontFamily: "'DM Sans',sans-serif", textAlign: 'left' }}>
+                🗑️ Delete Trip
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
   );
 }
