@@ -3144,18 +3144,18 @@ function SplitPage({ trip, myNickname }) {
         </div>
         {budget && (
           <div style={{ marginTop: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{budgetPct}% of ₹{budget.toLocaleString('en-IN')} used</span>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>₹{Math.round(Math.max(0, budgetLeft)).toLocaleString('en-IN')} left</span>
-                <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
-                  style={{ background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.2)', borderRadius: 6, padding: '2px 7px', fontSize: 11, color: 'rgba(255,255,255,0.65)', cursor: 'pointer', lineHeight: 1.6 }}>
-                  ✏️
-                </button>
-              </div>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>₹{Math.round(Math.max(0, budgetLeft)).toLocaleString('en-IN')} left</span>
             </div>
             <div style={{ height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
               <div style={{ height: '100%', width: `${budgetPct}%`, background: budgetPct > 85 ? '#FCA5A5' : '#86EFAC', borderRadius: 4, transition: 'width .6s' }} />
+            </div>
+            <div style={{ textAlign: 'center', marginTop: 10 }}>
+              <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
+                style={{ background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.25)', borderRadius: 8, padding: '4px 14px', fontSize: 12, color: 'rgba(255,255,255,0.75)', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
+                Edit budget
+              </button>
             </div>
           </div>
         )}
@@ -3286,54 +3286,58 @@ function SplitPage({ trip, myNickname }) {
 
               {/* Paid by X and split Y — Splitwise style */}
               <div style={{ background: '#f4f3f0', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 14, color: '#1a1a18' }}>
-                  <span style={{ color: '#6b6b68' }}>Paid by</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, color: '#1a1a18', flexWrap: 'nowrap', overflowX: 'auto' }}>
+                  <span style={{ color: '#6b6b68', whiteSpace: 'nowrap' }}>Paid by</span>
                   <select
                     value={form.paidBy}
                     onChange={e => setForm(f => ({ ...f, paidBy: e.target.value }))}
-                    style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, fontWeight: 600, color: '#0F6E56', background: '#fff', border: '1.5px solid #9FE1CB', borderRadius: 10, padding: '5px 10px', cursor: 'pointer', outline: 'none' }}>
+                    style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 600, color: '#0F6E56', background: '#fff', border: '1.5px solid #9FE1CB', borderRadius: 10, padding: '4px 8px', cursor: 'pointer', outline: 'none', flexShrink: 0 }}>
                     {memberNames.map(m => <option key={m}>{m}</option>)}
                   </select>
-                  <span style={{ color: '#6b6b68' }}>and split</span>
-                  {/* Split dropdown trigger */}
-                  <div style={{ position: 'relative' }}>
+                  <span style={{ color: '#6b6b68', whiteSpace: 'nowrap' }}>and split</span>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
                     <button
                       onClick={() => setForm(f => ({ ...f, _splitOpen: !f._splitOpen }))}
-                      style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, fontWeight: 600, color: '#0F6E56', background: '#fff', border: '1.5px solid #9FE1CB', borderRadius: 10, padding: '5px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-                      {form.splitMode === 'all' ? 'equally' : `${form.splitWith.length} people`} ▾
+                      style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 600, color: '#0F6E56', background: '#fff', border: '1.5px solid #9FE1CB', borderRadius: 10, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                      {form.splitMode === 'all' ? 'equally' : `${form.splitWith.length} people`}
+                      <span style={{ fontSize: 9, color: '#9FE1CB' }}>▾</span>
                     </button>
                     {form._splitOpen && (
                       <>
                         <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setForm(f => ({ ...f, _splitOpen: false }))} />
-                        <div style={{ position: 'absolute', top: '110%', left: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 51, minWidth: 200, padding: '8px' }}>
-                          {/* Select all toggle */}
+                        <div style={{ position: 'absolute', top: '110%', left: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 51, minWidth: 210, padding: '8px' }}>
                           <button
                             onClick={() => setForm(f => ({ ...f, splitMode: 'all', splitWith: [...memberNames] }))}
                             style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 10px', borderRadius: 9, border: 'none', background: form.splitMode === 'all' ? '#E1F5EE' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: form.splitMode === 'all' ? '#0F6E56' : '#1a1a18', marginBottom: 4 }}>
                             <div style={{ width: 20, height: 20, borderRadius: 6, border: `1.5px solid ${form.splitMode === 'all' ? '#1D9E75' : '#D3D1C7'}`, background: form.splitMode === 'all' ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff' }}>{form.splitMode === 'all' ? '✓' : ''}</div>
-                            Everyone equally
+                            <span>Everyone equally</span>
+                            <span style={{ marginLeft: 'auto', fontSize: 11, color: '#a8a8a5' }}>÷ {memberNames.length}</span>
                           </button>
                           <div style={{ height: '0.5px', background: 'rgba(0,0,0,0.07)', margin: '4px 0' }} />
                           {memberNames.map(m => {
-                            const sel = form.splitWith.includes(m);
+                            const sel = form.splitMode === 'select' && form.splitWith.includes(m);
+                            const share = form.amount && parseFloat(form.amount) > 0
+                              ? '₹' + (parseFloat(form.amount) / (form.splitMode === 'select' ? (form.splitWith.includes(m) ? form.splitWith.length : form.splitWith.length) : memberNames.length)).toFixed(0)
+                              : '';
                             return (
                               <button key={m}
                                 onClick={() => {
                                   setForm(f => {
                                     const already = f.splitWith.includes(m);
-                                    const newWith = already
-                                      ? f.splitWith.filter(n => n !== m)
-                                      : [...f.splitWith, m];
+                                    const newWith = already ? f.splitWith.filter(n => n !== m) : [...f.splitWith, m];
                                     if (newWith.length === 0) return f;
                                     return { ...f, splitMode: 'select', splitWith: newWith };
                                   });
                                 }}
-                                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 10px', borderRadius: 9, border: 'none', background: (form.splitMode === 'select' && sel) ? '#E1F5EE' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: '#1a1a18' }}>
-                                <div style={{ width: 20, height: 20, borderRadius: 6, border: `1.5px solid ${form.splitMode === 'select' && sel ? '#1D9E75' : '#D3D1C7'}`, background: form.splitMode === 'select' && sel ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff' }}>
-                                  {form.splitMode === 'select' && sel ? '✓' : ''}
-                                </div>
-                                <div style={{ width: 24, height: 24, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700 }}>{m.slice(0,2).toUpperCase()}</div>
-                                {m}
+                                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 10px', borderRadius: 9, border: 'none', background: sel ? '#E1F5EE' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: '#1a1a18' }}>
+                                <div style={{ width: 20, height: 20, borderRadius: 6, border: `1.5px solid ${sel ? '#1D9E75' : '#D3D1C7'}`, background: sel ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff', flexShrink: 0 }}>{sel ? '✓' : ''}</div>
+                                <div style={{ width: 26, height: 26, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, flexShrink: 0 }}>{m.slice(0,2).toUpperCase()}</div>
+                                <span style={{ flex: 1 }}>{m}</span>
+                                {form.amount && parseFloat(form.amount) > 0 && (
+                                  <span style={{ fontSize: 11, color: '#6b6b68', marginLeft: 'auto' }}>
+                                    {sel || form.splitMode === 'all' ? '₹' + (parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : form.splitWith.length)).toFixed(0) : '—'}
+                                  </span>
+                                )}
                               </button>
                             );
                           })}
@@ -3341,12 +3345,12 @@ function SplitPage({ trip, myNickname }) {
                       </>
                     )}
                   </div>
+                  <span style={{ color: '#6b6b68', whiteSpace: 'nowrap' }}>equally</span>
                 </div>
 
-                {/* Per person preview */}
                 {form.amount && parseFloat(form.amount) > 0 && (
-                  <div style={{ marginTop: 10, fontSize: 12, color: '#6b6b68' }}>
-                    ₹{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : (form.splitWith.length || 1))).toFixed(0)} per person · {form.splitMode === 'all' ? memberNames.length : form.splitWith.length} ways
+                  <div style={{ marginTop: 8, fontSize: 12, color: '#6b6b68', paddingTop: 8, borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
+                    ₹{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : (form.splitWith.length || 1))).toFixed(0)} per person · split {form.splitMode === 'all' ? memberNames.length : form.splitWith.length} ways
                   </div>
                 )}
               </div>
