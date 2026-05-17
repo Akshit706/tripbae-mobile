@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { aiChat, aiItinerary } from './api';
- 
+import { aiChat, aiItinerary, getTrips, getTrip, createTrip, joinTrip } from './api';
 /* ─── CONSTANTS ─────────────────────────────────────── */
 const MDEF = ['Arjun','Priya','Rahul','Sneha'];
 const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
@@ -906,9 +905,8 @@ function SoloExpensesPage({ trip }) {
 /* ═══════════════════════════════════════════════════════
    CONTACTS PAGE
 ═══════════════════════════════════════════════════════ */
-function ContactsPage({members,isSolo}){
-  const initContacts = isSolo ? SOLO_DEMO_CONTACTS : DEMO_CONTACTS;
-  const [contacts,setContacts]=useState(initContacts);
+function ContactsPage({members, isSolo, trip}){
+  const [contacts, setContacts] = useState(trip?.contacts || []);
   const [filterCat,setFilterCat]=useState('all');
   const [showForm,setShowForm]=useState(false);
   const [form,setForm]=useState({name:'',role:'',cat:'driver',phone:'',addedBy:isSolo?'Me':members[0]||'Me',note:''});
@@ -1034,7 +1032,7 @@ function RecommendationsPage(){
 ═══════════════════════════════════════════════════════ */
 function SplitPage({ trip }){
   const [members,setMembers]=useState(trip.members||MDEF);
-  const [expenses,setExpenses]=useState(trip.expenses||DEMO_EXP);
+  const [expenses,setExpenses]=useState(trip.expenses||[]);
   const [newM,setNewM]=useState('');
   const [showForm,setShowForm]=useState(false);
   const [section,setSection]=useState('expenses');
@@ -1103,7 +1101,7 @@ function ItineraryPage({ trip }){
    PHOTOS PAGE (Group only)
 ═══════════════════════════════════════════════════════ */
 function PhotosPage({ trip }){
-  const [photos,setPhotos]=useState(trip.photos||DEMO_PHOTOS);
+  const [photos, setPhotos] = useState(trip.photos || []);
   const [selected,setSelected]=useState(new Set());
   const [viewer,setViewer]=useState(trip.members?.[0]||'Arjun');
   const toggle=id=>setSelected(s=>{const n=new Set(s);n.has(id)?n.delete(id):n.add(id);return n;});
@@ -1591,13 +1589,19 @@ export default function App(){
   const [authForm, setAuthForm] = useState({ name:'', email:'', password:'' });
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
-  const [trips, setTrips] = useState(INITIAL_TRIPS);
+  const [trips, setTrips] = useState([]);
+  const [tripsLoading, setTripsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!authToken) return;
+    getTrips().then(d => { setTrips(d.trips); setTripsLoading(false); });
+  }, [authToken]);
   const [activeTrip, setActiveTrip] = useState(null);
   const [newTripModal, setNewTripModal] = useState(null);
   const [tab, setTab] = useState('main');
 
-  const currentTrip = trips.find(t => t.id === activeTrip);
-  const isSolo = currentTrip?.isSolo || false;
+  const currentTripData = trips.find(t => t.id === activeTrip);
+  const isSolo = currentTripData?.isSolo || false;
   const handleAuth = async () => {
     setAuthError('');
     setAuthLoading(true);
@@ -1622,18 +1626,20 @@ export default function App(){
     }
     setAuthLoading(false);
   };
-
+  // const [currentTripDataData, setcurrentTripDataData] = useState(null);
   const handleLogout = () => {
     localStorage.removeItem('travelbae_token');
     setAuthToken(null);
   };
 
-  const handleCreateTrip = (trip) => {
+  const handleCreateTrip = async (tripData) => {
+    const { trip } = await createTrip(tripData);
     setTrips(ts => [...ts, trip]);
     setNewTripModal(trip);
   };
-  const handleJoinTrip = (tripId, name) => {
-    setTrips(ts => ts.map(t => t.id === tripId ? { ...t, members: [...t.members, name] } : t));
+  const handleJoinTrip = async (shareCode, nickname) => {
+    const { trip } = await joinTrip(shareCode, nickname);
+    setTrips(ts => [...ts, trip]);
   };
   const handleOpenTrip = (tripId) => {
     setActiveTrip(tripId);
@@ -1720,9 +1726,9 @@ export default function App(){
           <div style={{ ...S.logoIcon, background: isSolo?'linear-gradient(135deg,#7F77DD,#534AB7)':'#1D9E75' }}>{isSolo?'🎒':'✈️'}</div>
           <div style={S.logoText}>Travel<span style={{ color: isSolo?'#7F77DD':'#1D9E75' }}>Bae</span></div>
         </div>
-        {activeTrip && currentTrip ? (
+        {activeTrip && currentTripData ? (
           <div style={isSolo ? S.soloPill : S.tripPill} onClick={() => setActiveTrip(null)}>
-            {currentTrip.emoji} {currentTrip.groupName}
+            {currentTripData.emoji} {currentTripData.groupName}
             {isSolo && <span style={{ marginLeft:4, fontSize:10, fontWeight:700, background:'rgba(127,119,221,0.2)', borderRadius:8, padding:'1px 6px' }}>Solo</span>}
           </div>
         ) : (
@@ -1748,21 +1754,21 @@ export default function App(){
         {!activeTrip && (
           <HomePage trips={trips} onOpenTrip={handleOpenTrip} onCreateTrip={handleCreateTrip} onJoinTrip={handleJoinTrip}/>
         )}
-        {activeTrip && currentTrip && (
+        {activeTrip && currentTripData && (
           <div style={{ animation:'slideIn .2s ease-out' }}>
             {isSolo ? (
               <>
-                {tab==='main'      && <SoloExpensesPage trip={currentTrip} />}
-                {tab==='contacts'  && <ContactsPage members={currentTrip.members} isSolo={true} />}
-                {tab==='itinerary' && <ItineraryPage trip={currentTrip} />}
+                {tab==='main'      && <SoloExpensesPage trip={currentTripData} />}
+                {tab==='contacts' && <ContactsPage members={currentTripData.members} isSolo={true} trip={currentTripData} />}
+                {tab==='itinerary' && <ItineraryPage trip={currentTripData} />}
                 {tab==='club'      && <ClubPage trips={trips} isSoloUser={true} />}
               </>
             ) : (
               <>
-                {tab==='main'      && <SplitPage trip={currentTrip} />}
-                {tab==='contacts'  && <ContactsPage members={currentTrip.members} isSolo={false} />}
-                {tab==='itinerary' && <ItineraryPage trip={currentTrip} />}
-                {tab==='photos'    && <PhotosPage trip={currentTrip} />}
+                {tab==='main'      && <SplitPage trip={currentTripData} />}
+                {tab==='contacts' && <ContactsPage members={currentTripData.members} isSolo={false} trip={currentTripData} />}
+                {tab==='itinerary' && <ItineraryPage trip={currentTripData} />}
+                {tab==='photos'    && <PhotosPage trip={currentTripData} />}
                 {tab==='club'      && <ClubPage trips={trips} isSoloUser={false} />}
               </>
             )}
@@ -1770,7 +1776,7 @@ export default function App(){
         )}
       </div>
 
-      {activeTrip && <TripChatbot trip={currentTrip}/>}
+      {activeTrip && <TripChatbot trip={currentTripData}/>}
     </div>
   );
 }
