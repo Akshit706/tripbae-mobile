@@ -3159,7 +3159,7 @@ function LocalTastePage({ destination, isSolo }) {
 // }
 
 /* ═══════════════════════════════════════════════════════
-   GROUP SPLIT PAGE — REVAMPED
+   GROUP SPLIT PAGE — REVAMPED v2
 ═══════════════════════════════════════════════════════ */
 function SplitPage({ trip, myNickname }) {
   const memberNames = normalizeMembers(trip.members);
@@ -3168,25 +3168,48 @@ function SplitPage({ trip, myNickname }) {
   const [section, setSection] = useState('expenses');
   const [saving, setSaving] = useState(false);
   const [filterCat, setFilterCat] = useState('all');
+  const [chartReady, setChartReady] = useState(false);
   const todayStr = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState({
     desc: '', amount: '', paidBy: myNickname || memberNames[0] || '',
     cat: 'food', date: todayStr,
+    splitMode: 'all',          // 'all' | 'select'
+    splitWith: [...memberNames],
   });
 
-  const MCOLORS_MAP = ['#1D9E75','#D85A30','#7F77DD','#BA7517','#378ADD','#D4537E','#0F6E56','#993C1D'];
-  const mcolor = (name) => {
-    const code = Math.abs(Array.from(name||'').reduce((a,c)=>a+c.charCodeAt(0),0));
-    return MCOLORS_MAP[code % MCOLORS_MAP.length];
-  };
+  const donutRef = useRef(null);
+  const barRef = useRef(null);
+  const chartInstances = useRef({});
 
+  const MCOLORS_LIST = ['#1D9E75','#D85A30','#7F77DD','#BA7517','#378ADD','#D4537E','#0F6E56','#993C1D'];
+  const mcolor = (name) => {
+    const code = Math.abs(Array.from(name || '').reduce((a, c) => a + c.charCodeAt(0), 0));
+    return MCOLORS_LIST[code % MCOLORS_LIST.length];
+  };
+  const CAT_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
+
+  // ── Load Chart.js once ──
+  useEffect(() => {
+    if (window.Chart) { setChartReady(true); return; }
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+    script.onload = () => setChartReady(true);
+    document.head.appendChild(script);
+  }, []);
+
+  // ── Render charts whenever insights tab is active + Chart.js ready ──
+  useEffect(() => {
+    if (section !== 'insights' || !chartReady) return;
+    const t = setTimeout(renderCharts, 80);
+    return () => clearTimeout(t);
+  }, [section, chartReady, expenses]);
+
+  // ── Derived numbers ──
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const days = Math.max(1, Math.round((new Date(trip.departure) - new Date(trip.arrival)) / 86400000));
   const today = new Date();
-  const arrival = new Date(trip.arrival);
-  const departure = new Date(trip.departure);
-  const daysElapsed = Math.max(1, Math.min(days, Math.round((today - arrival) / 86400000)));
-  const daysLeft = Math.max(0, Math.round((departure - today) / 86400000));
+  const daysElapsed = Math.max(1, Math.min(days, Math.round((today - new Date(trip.arrival)) / 86400000)));
+  const daysLeft = Math.max(0, Math.round((new Date(trip.departure) - today) / 86400000));
   const tsr = total / daysElapsed;
   const projected = Math.round(tsr * days);
   const budget = trip.budget || null;
@@ -3194,10 +3217,19 @@ function SplitPage({ trip, myNickname }) {
   const budgetPct = budget ? Math.min(100, Math.round(total / budget * 100)) : null;
   const perPerson = memberNames.length > 0 ? total / memberNames.length : 0;
 
+  const catTotals = {};
+  CATS.forEach(c => { catTotals[c.id] = 0; });
+  expenses.forEach(e => { catTotals[e.cat] = (catTotals[e.cat] || 0) + e.amount; });
+
+  const payTotal = {};
+  memberNames.forEach(m => { payTotal[m] = 0; });
+  expenses.forEach(e => { payTotal[e.paidBy] = (payTotal[e.paidBy] || 0) + e.amount; });
+  const maxPay = Math.max(...memberNames.map(m => payTotal[m] || 0), 1);
+
   const balances = {};
-  memberNames.forEach(m => balances[m] = 0);
+  memberNames.forEach(m => { balances[m] = 0; });
   expenses.forEach(e => {
-    const splitNames = Array.isArray(e.split) ? e.split : memberNames;
+    const splitNames = Array.isArray(e.split) && e.split.length > 0 ? e.split : memberNames;
     const sh = e.amount / splitNames.length;
     splitNames.forEach(m => { if (balances[m] !== undefined) balances[m] -= sh; });
     if (balances[e.paidBy] !== undefined) balances[e.paidBy] += e.amount;
@@ -3205,63 +3237,34 @@ function SplitPage({ trip, myNickname }) {
 
   const settlements = [];
   const bal = { ...balances };
-  const ds = memberNames.filter(m => bal[m] < -0.01).sort((a,b) => bal[a]-bal[b]);
-  const cs = memberNames.filter(m => bal[m] > 0.01).sort((a,b) => bal[b]-bal[a]);
-  let di=0, ci=0;
-  while (di<ds.length && ci<cs.length) {
-    const d=ds[di], c=cs[ci], amt=Math.min(-bal[d], bal[c]);
-    settlements.push({ from:d, to:c, amt });
-    bal[d]+=amt; bal[c]-=amt;
-    if (Math.abs(bal[d])<0.01) di++;
-    if (Math.abs(bal[c])<0.01) ci++;
+  const ds = memberNames.filter(m => bal[m] < -0.01).sort((a, b) => bal[a] - bal[b]);
+  const cs = memberNames.filter(m => bal[m] > 0.01).sort((a, b) => bal[b] - bal[a]);
+  let di = 0, ci = 0;
+  while (di < ds.length && ci < cs.length) {
+    const d = ds[di], c = cs[ci], amt = Math.min(-bal[d], bal[c]);
+    settlements.push({ from: d, to: c, amt });
+    bal[d] += amt; bal[c] -= amt;
+    if (Math.abs(bal[d]) < 0.01) di++;
+    if (Math.abs(bal[c]) < 0.01) ci++;
   }
 
-  const payTotal = {};
-  memberNames.forEach(m => payTotal[m] = 0);
-  expenses.forEach(e => { payTotal[e.paidBy] = (payTotal[e.paidBy]||0) + e.amount; });
-  const maxPay = Math.max(...memberNames.map(m => payTotal[m]||0), 1);
-
-  const catTotals = {};
-  CATS.forEach(c => { catTotals[c.id] = 0; });
-  expenses.forEach(e => { catTotals[e.cat] = (catTotals[e.cat]||0) + e.amount; });
-
-  const top3 = [...expenses].sort((a,b) => b.amount - a.amount).slice(0,3);
-
-  const chartRef = useRef(null);
-  const donutRef = useRef(null);
-  const barRef = useRef(null);
-  const chartInstances = useRef({});
-
-  useEffect(() => {
-    if (section !== 'insights') return;
-    const timeout = setTimeout(() => {
-      if (window.Chart) renderCharts();
-    }, 120);
-    return () => clearTimeout(timeout);
-  }, [section, expenses]);
+  const top3 = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 3);
 
   function renderCharts() {
+    Object.values(chartInstances.current).forEach(c => { try { c.destroy(); } catch (_) {} });
+    chartInstances.current = {};
     const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
     const textColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)';
     const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
 
-    // destroy old
-    Object.values(chartInstances.current).forEach(c => { try { c.destroy(); } catch(_) {} });
-    chartInstances.current = {};
-
     // Donut
     if (donutRef.current && budget) {
-      const spent = Math.min(total, budget);
-      const left = Math.max(0, budget - total);
       chartInstances.current.donut = new window.Chart(donutRef.current, {
         type: 'doughnut',
         data: {
           datasets: [{
-            data: [spent, left],
-            backgroundColor: [
-              budgetPct > 85 ? '#D85A30' : '#1D9E75',
-              isDark ? '#1a2e1a' : '#E1F5EE'
-            ],
+            data: [Math.min(total, budget), Math.max(0, budget - total)],
+            backgroundColor: [budgetPct > 85 ? '#D85A30' : '#1D9E75', isDark ? '#1a2e1a' : '#E1F5EE'],
             borderWidth: 0,
             hoverOffset: 0,
           }]
@@ -3270,20 +3273,20 @@ function SplitPage({ trip, myNickname }) {
           responsive: true, maintainAspectRatio: false, cutout: '74%',
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: c => c.dataIndex===0 ? ` Spent: ₹${Math.round(spent).toLocaleString('en-IN')}` : ` Left: ₹${Math.round(left).toLocaleString('en-IN')}` } }
+            tooltip: { callbacks: { label: ctx => ctx.dataIndex === 0 ? ` Spent: ₹${Math.round(Math.min(total, budget)).toLocaleString('en-IN')}` : ` Left: ₹${Math.round(Math.max(0, budget - total)).toLocaleString('en-IN')}` } }
           }
         },
         plugins: [{
           id: 'center',
           afterDraw(chart) {
             const { ctx, chartArea: { width, height, left, top } } = chart;
-            const cx = left + width/2, cy = top + height/2;
+            const cx = left + width / 2, cy = top + height / 2;
             ctx.save();
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.font = `500 17px system-ui`;
+            ctx.font = '600 17px system-ui';
             ctx.fillStyle = isDark ? '#fff' : '#1a1a18';
             ctx.fillText(`${budgetPct}%`, cx, cy - 9);
-            ctx.font = `11px system-ui`;
+            ctx.font = '12px system-ui';
             ctx.fillStyle = textColor;
             ctx.fillText('used', cx, cy + 9);
             ctx.restore();
@@ -3295,200 +3298,276 @@ function SplitPage({ trip, myNickname }) {
     // Category bar
     if (barRef.current) {
       const activeCats = CATS.filter(c => catTotals[c.id] > 0);
-      const CAT_COLORS_BAR = { food:'#BA7517', transport:'#1D9E75', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#888780' };
+      if (activeCats.length === 0) return;
+      const BAR_COLORS = { food:'#BA7517', transport:'#1D9E75', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#888780' };
       chartInstances.current.bar = new window.Chart(barRef.current, {
         type: 'bar',
         data: {
           labels: activeCats.map(c => c.label),
           datasets: [{
             data: activeCats.map(c => catTotals[c.id]),
-            backgroundColor: activeCats.map(c => CAT_COLORS_BAR[c.id]),
+            backgroundColor: activeCats.map(c => BAR_COLORS[c.id] || '#888780'),
             borderRadius: 6,
             borderSkipped: false,
           }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ` ₹${Math.round(c.raw).toLocaleString('en-IN')}` } } },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ₹${Math.round(ctx.raw).toLocaleString('en-IN')}` } } },
           scales: {
             x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false }, border: { display: false } },
-            y: { ticks: { color: textColor, font: { size: 11 }, callback: v => `₹${v>=1000?(v/1000)+'k':v}` }, grid: { color: gridColor }, border: { display: false } }
+            y: { ticks: { color: textColor, font: { size: 11 }, callback: v => `₹${v >= 1000 ? Math.round(v / 1000) + 'k' : v}` }, grid: { color: gridColor }, border: { display: false } }
           }
         }
       });
     }
   }
 
+  // ── Add expense ──
   const handleAdd = async () => {
     if (!form.desc || !form.amount) return;
+    const splitWith = form.splitMode === 'all' ? memberNames : form.splitWith;
+    if (splitWith.length === 0) { alert('Select at least one person to split with.'); return; }
     setSaving(true);
     try {
-      const data = await addExpense(trip.id, { desc:form.desc, amount:parseFloat(form.amount), paidBy:form.paidBy, cat:form.cat, split:memberNames, date:form.date });
+      const data = await addExpense(trip.id, {
+        desc: form.desc, amount: parseFloat(form.amount),
+        paidBy: form.paidBy, cat: form.cat,
+        split: splitWith, date: form.date,
+      });
       setExpenses(es => [data.expense, ...es]);
-      setForm({ desc:'', amount:'', paidBy:myNickname||memberNames[0]||'', cat:'food', date:todayStr });
+      setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: todayStr, splitMode: 'all', splitWith: [...memberNames] });
       setShowForm(false);
-    } catch(err) { alert('Could not save: '+err.message); }
+    } catch (err) { alert('Could not save: ' + err.message); }
     setSaving(false);
   };
 
   const handleDelete = async (expId) => {
     try { await deleteExpense(trip.id, expId); setExpenses(es => es.filter(x => x.id !== expId)); }
-    catch(err) { alert('Could not delete: '+err.message); }
+    catch (err) { alert('Could not delete: ' + err.message); }
+  };
+
+  const toggleSplitMember = (name) => {
+    setForm(f => {
+      const already = f.splitWith.includes(name);
+      if (already && f.splitWith.length === 1) return f; // keep at least 1
+      return { ...f, splitWith: already ? f.splitWith.filter(n => n !== name) : [...f.splitWith, name] };
+    });
   };
 
   const filteredExpenses = filterCat === 'all' ? expenses : expenses.filter(e => e.cat === filterCat);
-  const sortedExpenses = [...filteredExpenses].sort((a,b) => new Date(b.date)-new Date(a.date));
+  const sortedExpenses = [...filteredExpenses].sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const SECTION_TABS = [
-    { id:'expenses', icon:'ti-receipt', label:'Expenses' },
-    { id:'shares',   icon:'ti-chart-pie', label:'Shares' },
-    { id:'balances', icon:'ti-scale', label:'Balances' },
-    { id:'insights', icon:'ti-sparkles', label:'Insights' },
+    { id: 'expenses', label: 'Expenses' },
+    { id: 'shares',   label: 'Shares' },
+    { id: 'balances', label: 'Balances' },
+    { id: 'insights', label: 'Insights' },
   ];
-
-  const CAT_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
 
   return (
     <div>
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css" />
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" />
-
-      {/* ── Hero summary bar ── */}
-      <div style={{ background:'linear-gradient(135deg,#0F6E56,#1D9E75)', borderRadius:18, padding:'1.25rem 1.5rem', marginBottom:'1rem', position:'relative', overflow:'hidden' }}>
-        <div style={{ position:'absolute', top:-20, right:-20, fontSize:90, opacity:0.07 }}>₹</div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:0, marginBottom: budget ? 14 : 0 }}>
+      {/* ── Hero ── */}
+      <div style={{ background: 'linear-gradient(135deg,#0F6E56,#1D9E75)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 90, opacity: 0.07 }}>₹</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, marginBottom: budget ? 14 : 0 }}>
           {[
-            { label:'Total spent', value:`₹${Math.round(total).toLocaleString('en-IN')}`, sub:`${expenses.length} expenses` },
-            { label:'Per person', value:`₹${Math.round(perPerson).toLocaleString('en-IN')}`, sub:'equal share' },
-            { label:'Days left', value:daysLeft, sub:`of ${days} nights` },
-          ].map((s,i) => (
-            <div key={s.label} style={{ textAlign: i===1?'center':i===2?'right':'left' }}>
-              <div style={{ fontSize:11, color:'rgba(255,255,255,0.6)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:3 }}>{s.label}</div>
-              <div style={{ fontFamily:"'Sora',sans-serif", fontSize:22, fontWeight:700, color:'#fff' }}>{s.value}</div>
-              <div style={{ fontSize:11, color:'rgba(255,255,255,0.55)', marginTop:2 }}>{s.sub}</div>
+            { label: 'Total spent', value: `₹${Math.round(total).toLocaleString('en-IN')}`, sub: `${expenses.length} expenses` },
+            { label: 'Per person',  value: `₹${Math.round(perPerson).toLocaleString('en-IN')}`, sub: 'equal share' },
+            { label: 'Days left',   value: daysLeft, sub: `of ${days} nights` },
+          ].map((s, i) => (
+            <div key={s.label} style={{ textAlign: i === 1 ? 'center' : i === 2 ? 'right' : 'left' }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>{s.label}</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: '#fff' }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>{s.sub}</div>
             </div>
           ))}
         </div>
         {budget && (
           <div>
-            <div style={{ height:5, background:'rgba(255,255,255,0.15)', borderRadius:4, overflow:'hidden' }}>
-              <div style={{ height:'100%', width:`${budgetPct}%`, background: budgetPct>85?'#FCA5A5':'#86EFAC', borderRadius:4, transition:'width .6s' }} />
+            <div style={{ height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${budgetPct}%`, background: budgetPct > 85 ? '#FCA5A5' : '#86EFAC', borderRadius: 4, transition: 'width .6s' }} />
             </div>
-            <div style={{ display:'flex', justifyContent:'space-between', marginTop:5, fontSize:11, color:'rgba(255,255,255,0.5)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
               <span>{budgetPct}% of ₹{budget.toLocaleString('en-IN')} used</span>
-              <span>₹{Math.round(Math.max(0,budgetLeft)).toLocaleString('en-IN')} left</span>
+              <span>₹{Math.round(Math.max(0, budgetLeft)).toLocaleString('en-IN')} left</span>
             </div>
           </div>
         )}
       </div>
 
       {/* ── Member pills ── */}
-      <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:'1rem' }}>
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1rem' }}>
         {memberNames.map(m => (
-          <div key={m} style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', border:'0.5px solid rgba(0,0,0,0.09)', borderRadius:20, padding:'4px 12px 4px 5px', fontSize:13 }}>
-            <div style={{ width:22, height:22, borderRadius:'50%', background:mcolor(m), display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:10, fontWeight:700 }}>{m.slice(0,2).toUpperCase()}</div>
+          <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 20, padding: '4px 12px 4px 5px', fontSize: 13 }}>
+            <div style={{ width: 22, height: 22, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700 }}>{m.slice(0, 2).toUpperCase()}</div>
             {m}
           </div>
         ))}
       </div>
 
       {/* ── Section tabs ── */}
-      <div style={{ display:'flex', gap:0, background:'#fff', border:'0.5px solid rgba(0,0,0,0.09)', borderRadius:13, padding:3, marginBottom:'1rem' }}>
+      <div style={{ display: 'flex', gap: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 13, padding: 3, marginBottom: '1rem' }}>
         {SECTION_TABS.map(t => (
           <button key={t.id} onClick={() => setSection(t.id)}
-            style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, padding:'8px 4px', fontSize:12, fontWeight:section===t.id?600:400, borderRadius:10, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif",
-              background: section===t.id ? '#1D9E75' : 'transparent',
-              color: section===t.id ? '#fff' : '#6b6b68', transition:'all .15s' }}>
-            <i className={`ti ${t.icon}`} style={{ fontSize:14 }} aria-hidden="true" />
+            style={{ flex: 1, padding: '8px 4px', fontSize: 12, fontWeight: section === t.id ? 600 : 400, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
+              background: section === t.id ? '#1D9E75' : 'transparent',
+              color: section === t.id ? '#fff' : '#6b6b68', transition: 'all .15s' }}>
             {t.label}
           </button>
         ))}
       </div>
 
-      {/* ── Add expense button + form ── */}
-      {section === 'expenses' && (
-        <div style={{ marginBottom:'0.75rem' }}>
-          <button style={{ ...S.btn, ...S.btnP, width:'100%', justifyContent:'center', padding:'10px', borderRadius:12, fontSize:14 }}
-            onClick={() => setShowForm(v => !v)}>
-            <i className="ti ti-plus" style={{ fontSize:16 }} aria-hidden="true" />
-            {showForm ? 'Cancel' : 'Add expense'}
-          </button>
-        </div>
-      )}
-
-      {showForm && section === 'expenses' && (
-        <div style={{ ...S.card, border:'0.5px solid #9FE1CB', background:'#f9fffe', marginBottom:'0.75rem' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 130px', gap:10, marginBottom:10 }}>
-            <div><label style={S.label}>Description</label><input style={S.input} placeholder="e.g. Hotel checkout" value={form.desc} onChange={e => setForm(f=>({...f,desc:e.target.value}))} /></div>
-            <div><label style={S.label}>Amount ₹</label><input style={S.input} type="number" placeholder="0" value={form.amount} onChange={e => setForm(f=>({...f,amount:e.target.value}))} /></div>
-          </div>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10, marginBottom:12 }}>
-            <div><label style={S.label}>Paid by</label>
-              <select style={S.input} value={form.paidBy} onChange={e => setForm(f=>({...f,paidBy:e.target.value}))}>
-                {memberNames.map(m => <option key={m}>{m}</option>)}
-              </select>
-            </div>
-            <div><label style={S.label}>Category</label>
-              <select style={S.input} value={form.cat} onChange={e => setForm(f=>({...f,cat:e.target.value}))}>
-                {CATS.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
-              </select>
-            </div>
-            <div><label style={S.label}>Date</label><input style={S.input} type="date" value={form.date} onChange={e => setForm(f=>({...f,date:e.target.value}))} /></div>
-          </div>
-          <button style={{ ...S.btn, ...S.btnP, width:'100%', justifyContent:'center', padding:'10px', opacity:saving?0.6:1 }}
-            onClick={handleAdd} disabled={saving}>
-            {saving ? 'Saving…' : '✓ Add expense'}
-          </button>
-        </div>
-      )}
-
       {/* ══ EXPENSES TAB ══ */}
       {section === 'expenses' && (
         <div>
+          <button style={{ ...S.btn, ...S.btnP, width: '100%', justifyContent: 'center', padding: '10px', borderRadius: 12, fontSize: 14, marginBottom: '0.75rem' }}
+            onClick={() => setShowForm(v => !v)}>
+            + {showForm ? 'Cancel' : 'Add expense'}
+          </button>
+
+          {showForm && (
+            <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '0.75rem' }}>
+              {/* Row 1: desc + amount */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 10, marginBottom: 10 }}>
+                <div>
+                  <label style={S.label}>What was it?</label>
+                  <input style={S.input} placeholder="e.g. Hotel checkout" value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} />
+                </div>
+                <div>
+                  <label style={S.label}>Amount ₹</label>
+                  <input style={S.input} type="number" placeholder="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Row 2: paid by + category + date */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
+                <div>
+                  <label style={S.label}>Paid by</label>
+                  <select style={S.input} value={form.paidBy} onChange={e => setForm(f => ({ ...f, paidBy: e.target.value }))}>
+                    {memberNames.map(m => <option key={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={S.label}>Category</label>
+                  <select style={S.input} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
+                    {CATS.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label style={S.label}>Date</label>
+                  <input style={S.input} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Split selector */}
+              <label style={S.label}>Split between</label>
+              <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
+                {/* Toggle: All / Select */}
+                <button
+                  onClick={() => setForm(f => ({ ...f, splitMode: 'all', splitWith: [...memberNames] }))}
+                  style={{ ...S.btn, fontSize: 12, padding: '5px 12px', borderRadius: 20,
+                    background: form.splitMode === 'all' ? '#1D9E75' : '#fff',
+                    color: form.splitMode === 'all' ? '#fff' : '#6b6b68',
+                    border: `0.5px solid ${form.splitMode === 'all' ? '#1D9E75' : 'rgba(0,0,0,0.15)'}` }}>
+                  👥 Everyone
+                </button>
+                <button
+                  onClick={() => setForm(f => ({ ...f, splitMode: 'select' }))}
+                  style={{ ...S.btn, fontSize: 12, padding: '5px 12px', borderRadius: 20,
+                    background: form.splitMode === 'select' ? '#1D9E75' : '#fff',
+                    color: form.splitMode === 'select' ? '#fff' : '#6b6b68',
+                    border: `0.5px solid ${form.splitMode === 'select' ? '#1D9E75' : 'rgba(0,0,0,0.15)'}` }}>
+                  🎯 Select people
+                </button>
+              </div>
+
+              {/* Individual member toggles */}
+              {form.splitMode === 'select' && (
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+                  {memberNames.map(m => {
+                    const selected = form.splitWith.includes(m);
+                    return (
+                      <button key={m} onClick={() => toggleSplitMember(m)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px 5px 6px', borderRadius: 20, border: `0.5px solid ${selected ? '#1D9E75' : 'rgba(0,0,0,0.15)'}`,
+                          background: selected ? '#E1F5EE' : '#fff', cursor: 'pointer', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>
+                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: selected ? mcolor(m) : '#D3D1C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700, transition: 'background .15s' }}>
+                          {selected ? m.slice(0, 2).toUpperCase() : ''}
+                        </div>
+                        <span style={{ color: selected ? '#0F6E56' : '#6b6b68', fontWeight: selected ? 500 : 400 }}>{m}</span>
+                        {selected && <span style={{ fontSize: 12, color: '#1D9E75' }}>✓</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Per-person preview */}
+              {form.amount && parseFloat(form.amount) > 0 && (
+                <div style={{ background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 10, padding: '8px 12px', marginBottom: 12, fontSize: 13, color: '#085041' }}>
+                  ₹{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : (form.splitWith.length || 1))).toFixed(0)} per person
+                  &nbsp;·&nbsp; split {form.splitMode === 'all' ? memberNames.length : form.splitWith.length} ways
+                </div>
+              )}
+
+              <button style={{ ...S.btn, ...S.btnP, width: '100%', justifyContent: 'center', padding: '10px', opacity: saving ? 0.6 : 1 }}
+                onClick={handleAdd} disabled={saving || !form.desc || !form.amount}>
+                {saving ? 'Saving…' : '✓ Add expense'}
+              </button>
+            </div>
+          )}
+
           {/* Category filter chips */}
-          <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:'0.75rem' }}>
-            {[{id:'all',label:'All',icon:''},...CATS.filter(c=>catTotals[c.id]>0)].map(c => (
+          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: '0.75rem' }}>
+            {[{ id: 'all', label: 'All', icon: '' }, ...CATS.filter(c => catTotals[c.id] > 0)].map(c => (
               <button key={c.id} onClick={() => setFilterCat(c.id)}
-                style={{ ...S.btn, fontSize:11, padding:'4px 10px', borderRadius:16,
-                  background: filterCat===c.id ? (c.id==='all'?'#1D9E75':CATS.find(x=>x.id===c.id)?.bg||'#E1F5EE') : '#fff',
-                  color: filterCat===c.id ? (c.id==='all'?'#fff':CAT_COLORS[c.id]||'#1D9E75') : '#6b6b68',
-                  border: `0.5px solid ${filterCat===c.id?(c.id==='all'?'#1D9E75':CAT_COLORS[c.id]+'44'):'rgba(0,0,0,0.12)'}` }}>
+                style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16,
+                  background: filterCat === c.id ? (c.id === 'all' ? '#1D9E75' : CATS.find(x => x.id === c.id)?.bg || '#E1F5EE') : '#fff',
+                  color: filterCat === c.id ? (c.id === 'all' ? '#fff' : CAT_COLORS[c.id] || '#1D9E75') : '#6b6b68',
+                  border: `0.5px solid ${filterCat === c.id ? (c.id === 'all' ? '#1D9E75' : (CAT_COLORS[c.id] || '#1D9E75') + '44') : 'rgba(0,0,0,0.12)'}` }}>
                 {c.icon} {c.label}
               </button>
             ))}
           </div>
 
           {sortedExpenses.length === 0 && (
-            <div style={{ textAlign:'center', padding:'3rem 1rem', color:'#6b6b68' }}>
-              <div style={{ fontSize:42, marginBottom:12 }}>🧾</div>
-              <p style={{ fontSize:14 }}>No expenses yet. Add the first one!</p>
+            <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#6b6b68' }}>
+              <div style={{ fontSize: 42, marginBottom: 12 }}>🧾</div>
+              <p style={{ fontSize: 14 }}>No expenses yet. Add the first one!</p>
             </div>
           )}
 
-          {sortedExpenses.map((exp, idx) => {
+          {sortedExpenses.map(exp => {
             const cat = CATS.find(c => c.id === exp.cat) || CATS[5];
-            const splitCount = Array.isArray(exp.split) ? exp.split.length : memberNames.length;
+            const splitArr = Array.isArray(exp.split) && exp.split.length > 0 ? exp.split : memberNames;
             return (
-              <div key={exp.id} style={{ ...S.card, display:'flex', alignItems:'center', gap:12, marginBottom:8,
-                borderLeft:`3px solid ${CAT_COLORS[exp.cat]||'#ccc'}`, borderRadius:'0 14px 14px 0', padding:'12px 14px 12px 12px' }}>
-                <div style={{ width:42, height:42, borderRadius:12, display:'flex', alignItems:'center', justifyContent:'center', background:cat.bg, flexShrink:0, fontSize:20 }}>{cat.icon}</div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:14, fontWeight:500, color:'#1a1a18', marginBottom:2 }}>{exp.desc}</div>
-                  <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                      <div style={{ width:16, height:16, borderRadius:'50%', background:mcolor(exp.paidBy), display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:8, fontWeight:700 }}>{exp.paidBy.slice(0,2).toUpperCase()}</div>
-                      <span style={{ fontSize:12, color:'#6b6b68' }}>{exp.paidBy}</span>
+              <div key={exp.id} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8,
+                borderLeft: `3px solid ${CAT_COLORS[exp.cat] || '#ccc'}`, borderRadius: '0 14px 14px 0', padding: '12px 14px 12px 12px' }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 20 }}>{cat.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 2 }}>{exp.desc}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: mcolor(exp.paidBy), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{exp.paidBy.slice(0, 2).toUpperCase()}</div>
+                      <span style={{ fontSize: 12, color: '#6b6b68' }}>{exp.paidBy}</span>
                     </div>
-                    <span style={{ fontSize:11, color:'#a8a8a5' }}>·</span>
-                    <span style={{ fontSize:12, color:'#6b6b68' }}>{splitCount} people</span>
-                    <span style={{ fontSize:11, color:'#a8a8a5' }}>·</span>
-                    <span style={{ fontSize:12, color:'#6b6b68' }}>{new Date(exp.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</span>
+                    <span style={{ fontSize: 11, color: '#D3D1C7' }}>·</span>
+                    {/* Show who's splitting */}
+                    <div style={{ display: 'flex', gap: -4 }}>
+                      {splitArr.slice(0, 4).map((m, i) => (
+                        <div key={m} style={{ width: 16, height: 16, borderRadius: '50%', background: mcolor(m), border: '1.5px solid #fff', marginLeft: i > 0 ? -5 : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 7, fontWeight: 700 }}>{m.slice(0, 1).toUpperCase()}</div>
+                      ))}
+                      {splitArr.length > 4 && <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#D3D1C7', border: '1.5px solid #fff', marginLeft: -5, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#6b6b68', fontWeight: 700 }}>+{splitArr.length - 4}</div>}
+                    </div>
+                    <span style={{ fontSize: 11, color: '#a8a8a5' }}>{splitArr.length} people</span>
+                    <span style={{ fontSize: 11, color: '#D3D1C7' }}>·</span>
+                    <span style={{ fontSize: 11, color: '#a8a8a5' }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
                   </div>
                 </div>
-                <div style={{ textAlign:'right', flexShrink:0 }}>
-                  <div style={{ fontFamily:"'Sora',sans-serif", fontSize:16, fontWeight:700, color:'#1a1a18' }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
-                  <div style={{ fontSize:11, color:'#a8a8a5', marginTop:2 }}>₹{Math.round(exp.amount/splitCount).toLocaleString('en-IN')} each</div>
-                  <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding:'2px 6px', fontSize:11, color:'#ccc', border:'none', background:'transparent', marginTop:2 }}>✕</button>
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700 }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
+                  <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>₹{Math.round(exp.amount / splitArr.length).toLocaleString('en-IN')} each</div>
+                  <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 6px', fontSize: 11, color: '#ccc', border: 'none', background: 'transparent', marginTop: 2 }}>✕</button>
                 </div>
               </div>
             );
@@ -3499,47 +3578,50 @@ function SplitPage({ trip, myNickname }) {
       {/* ══ SHARES TAB ══ */}
       {section === 'shares' && (
         <div>
-          <div style={{ ...S.card, background:'linear-gradient(135deg,#E1F5EE,#E6F1FB)', border:'0.5px solid #9FE1CB', marginBottom:'1rem' }}>
-            <div style={{ fontFamily:"'Sora',sans-serif", fontSize:28, fontWeight:700, color:'#085041' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
-            <div style={{ fontSize:12, color:'#0F6E56', marginTop:3 }}>{memberNames.length} members · {expenses.length} expenses · {days} days</div>
+          <div style={{ ...S.card, background: 'linear-gradient(135deg,#E1F5EE,#E6F1FB)', border: '0.5px solid #9FE1CB', marginBottom: '1rem' }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: '#085041' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
+            <div style={{ fontSize: 12, color: '#0F6E56', marginTop: 3 }}>{memberNames.length} members · {expenses.length} expenses · {days} days</div>
           </div>
 
-          <div style={{ ...S.card, marginBottom:'0.75rem' }}>
-            {memberNames.map((m,i) => {
-              const paid = expenses.filter(e=>e.paidBy===m).reduce((s,e)=>s+e.amount,0);
-              const owes = expenses.reduce((s,e)=>{ const sp=Array.isArray(e.split)?e.split:memberNames; return sp.includes(m)?s+e.amount/sp.length:s; },0);
+          <div style={{ ...S.card, marginBottom: '0.75rem' }}>
+            {memberNames.map((m, i) => {
+              const paid = expenses.filter(e => e.paidBy === m).reduce((s, e) => s + e.amount, 0);
+              const owes = expenses.reduce((s, e) => {
+                const sp = Array.isArray(e.split) && e.split.length > 0 ? e.split : memberNames;
+                return sp.includes(m) ? s + e.amount / sp.length : s;
+              }, 0);
               const net = paid - owes;
               return (
-                <div key={m} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 0', borderBottom: i<memberNames.length-1?'0.5px solid rgba(0,0,0,0.06)':'none' }}>
-                  <div style={{ width:34, height:34, borderRadius:'50%', background:mcolor(m), display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:12, fontWeight:700, flexShrink:0 }}>{m.slice(0,2).toUpperCase()}</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontSize:14, fontWeight:500 }}>{m}</div>
-                    <div style={{ fontSize:11, color:'#a8a8a5', marginTop:1 }}>paid ₹{Math.round(paid).toLocaleString('en-IN')} · share ₹{Math.round(owes).toLocaleString('en-IN')}</div>
+                <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < memberNames.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none' }}>
+                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{m.slice(0, 2).toUpperCase()}</div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 500 }}>{m}</div>
+                    <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 1 }}>paid ₹{Math.round(paid).toLocaleString('en-IN')} · share ₹{Math.round(owes).toLocaleString('en-IN')}</div>
                   </div>
-                  <div style={{ textAlign:'right' }}>
-                    <div style={{ fontFamily:"'Sora',sans-serif", fontSize:16, fontWeight:700, color: net>=0?'#0F6E56':'#993C1D' }}>{net>=0?'+':'−'}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}</div>
-                    <div style={{ fontSize:11, color:'#a8a8a5', marginTop:1 }}>{net>0.5?'gets back':net<-0.5?'owes':'settled'}</div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: net >= 0 ? '#0F6E56' : '#993C1D' }}>{net >= 0 ? '+' : '−'}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}</div>
+                    <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 1 }}>{net > 0.5 ? 'gets back' : net < -0.5 ? 'owes' : 'settled'}</div>
                   </div>
                 </div>
               );
             })}
           </div>
 
-          <div style={{ fontSize:12, fontWeight:600, color:'#6b6b68', textTransform:'uppercase', letterSpacing:'.04em', marginBottom:8 }}>Who pays whom</div>
+          <div style={{ fontSize: 12, fontWeight: 600, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Who pays whom</div>
           {settlements.length === 0
-            ? <div style={{ background:'#E1F5EE', border:'0.5px solid #9FE1CB', borderRadius:12, padding:'1rem 1.25rem', fontSize:14, color:'#085041', fontWeight:500 }}>✅ Everyone is squared up!</div>
-            : settlements.map((s,i) => (
-              <div key={i} style={{ ...S.card, display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
-                <div style={{ width:30, height:30, borderRadius:'50%', background:mcolor(s.from), display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, fontWeight:700 }}>{s.from.slice(0,2).toUpperCase()}</div>
-                <span style={{ fontSize:13, fontWeight:500 }}>{s.from}</span>
-                <div style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:4 }}>
-                  <div style={{ height:1, flex:1, background:'rgba(0,0,0,0.09)' }} />
-                  <span style={{ fontSize:11, color:'#D85A30', padding:'2px 6px', background:'#FAECE7', borderRadius:8, fontWeight:600 }}>→</span>
-                  <div style={{ height:1, flex:1, background:'rgba(0,0,0,0.09)' }} />
+            ? <div style={{ background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 12, padding: '1rem 1.25rem', fontSize: 14, color: '#085041', fontWeight: 500 }}>✅ Everyone is squared up!</div>
+            : settlements.map((s, i) => (
+              <div key={i} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(s.from), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.from.slice(0, 2).toUpperCase()}</div>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>{s.from}</span>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <div style={{ height: 1, flex: 1, background: 'rgba(0,0,0,0.09)' }} />
+                  <span style={{ fontSize: 11, color: '#D85A30', padding: '2px 6px', background: '#FAECE7', borderRadius: 8, fontWeight: 600 }}>→</span>
+                  <div style={{ height: 1, flex: 1, background: 'rgba(0,0,0,0.09)' }} />
                 </div>
-                <span style={{ fontSize:13, fontWeight:500 }}>{s.to}</span>
-                <div style={{ width:30, height:30, borderRadius:'50%', background:mcolor(s.to), display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, fontWeight:700 }}>{s.to.slice(0,2).toUpperCase()}</div>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:16, fontWeight:700, color:'#0F6E56', marginLeft:6 }}>₹{Math.round(s.amt).toLocaleString('en-IN')}</div>
+                <span style={{ fontSize: 13, fontWeight: 500 }}>{s.to}</span>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(s.to), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.to.slice(0, 2).toUpperCase()}</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#0F6E56', marginLeft: 6 }}>₹{Math.round(s.amt).toLocaleString('en-IN')}</div>
               </div>
             ))
           }
@@ -3548,22 +3630,22 @@ function SplitPage({ trip, myNickname }) {
 
       {/* ══ BALANCES TAB ══ */}
       {section === 'balances' && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
           {memberNames.map(m => {
             const b = balances[m];
             const isPos = b >= 0.5, isNeg = b < -0.5;
             return (
-              <div key={m} style={{ ...S.card, borderTop:`3px solid ${isPos?'#1D9E75':isNeg?'#D85A30':'#D3D1C7'}`, borderRadius:'0 0 14px 14px', padding:'1rem' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
-                  <div style={{ width:32, height:32, borderRadius:'50%', background:mcolor(m), display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:12, fontWeight:700 }}>{m.slice(0,2).toUpperCase()}</div>
-                  <div style={{ fontSize:14, fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{m}</div>
+              <div key={m} style={{ ...S.card, borderTop: `3px solid ${isPos ? '#1D9E75' : isNeg ? '#D85A30' : '#D3D1C7'}`, borderRadius: '0 0 14px 14px', padding: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700 }}>{m.slice(0, 2).toUpperCase()}</div>
+                  <div style={{ fontSize: 14, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m}</div>
                 </div>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:22, fontWeight:700, color:isPos?'#0F6E56':isNeg?'#993C1D':'#6b6b68' }}>
-                  {isPos?'+':''}₹{Math.abs(Math.round(b)).toLocaleString('en-IN')}
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: isPos ? '#0F6E56' : isNeg ? '#993C1D' : '#6b6b68' }}>
+                  {isPos ? '+' : ''}₹{Math.abs(Math.round(b)).toLocaleString('en-IN')}
                 </div>
-                <div style={{ fontSize:11, color:'#a8a8a5', marginTop:4, display:'flex', alignItems:'center', gap:4 }}>
-                  <span style={{ width:6, height:6, borderRadius:'50%', background:isPos?'#1D9E75':isNeg?'#D85A30':'#D3D1C7', display:'inline-block' }} />
-                  {isPos?'gets back':isNeg?'owes':'all settled'}
+                <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 4 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: isPos ? '#1D9E75' : isNeg ? '#D85A30' : '#D3D1C7', display: 'inline-block', marginRight: 4 }} />
+                  {isPos ? 'gets back' : isNeg ? 'owes' : 'all settled'}
                 </div>
               </div>
             );
@@ -3575,73 +3657,70 @@ function SplitPage({ trip, myNickname }) {
       {section === 'insights' && (
         <div>
           {/* Stat row */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
             {[
-              { label:'Avg/day', value:`₹${Math.round(tsr).toLocaleString('en-IN')}`, sub:'TSR' },
-              { label:'Projected', value:`₹${projected.toLocaleString('en-IN')}`, sub:'at current rate', warn: budget && projected > budget },
-              { label:'Trip days', value:days, sub:`${daysElapsed}d elapsed` },
+              { label: 'Avg/day', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: 'burn rate' },
+              { label: 'Projected', value: `₹${projected.toLocaleString('en-IN')}`, sub: 'at current rate', warn: budget && projected > budget },
+              { label: 'Days left', value: daysLeft, sub: `${daysElapsed}d elapsed` },
             ].map(s => (
-              <div key={s.label} style={{ background: s.warn ? '#FAECE7' : 'var(--color-background-secondary,#f7f6f2)', borderRadius:12, padding:'10px 12px', border: s.warn ? '0.5px solid #F5C4B3' : 'none' }}>
-                <div style={{ fontSize:11, color: s.warn?'#993C1D':'#6b6b68', marginBottom:3 }}>{s.label}</div>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:18, fontWeight:700, color: s.warn?'#993C1D':'#1a1a18' }}>{s.value}</div>
-                <div style={{ fontSize:11, color: s.warn?'#D85A30':'#a8a8a5', marginTop:2 }}>{s.sub}</div>
+              <div key={s.label} style={{ background: s.warn ? '#FAECE7' : '#f7f6f2', borderRadius: 12, padding: '10px 12px', border: s.warn ? '0.5px solid #F5C4B3' : 'none' }}>
+                <div style={{ fontSize: 11, color: s.warn ? '#993C1D' : '#6b6b68', marginBottom: 3 }}>{s.label}</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: s.warn ? '#993C1D' : '#1a1a18' }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: s.warn ? '#D85A30' : '#a8a8a5', marginTop: 2 }}>{s.sub}</div>
               </div>
             ))}
           </div>
 
-          {/* Budget doughnut + TSR card */}
-          <div style={{ display:'grid', gridTemplateColumns: budget ? '1fr 1fr' : '1fr', gap:10, marginBottom:10 }}>
+          {/* Donut + TSR */}
+          <div style={{ display: 'grid', gridTemplateColumns: budget ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 10 }}>
             {budget && (
-              <div style={{ ...S.card, display:'flex', flexDirection:'column', alignItems:'center', padding:'1.25rem 1rem' }}>
-                <div style={{ fontSize:11, color:'#6b6b68', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:12 }}>Budget health</div>
-                <div style={{ position:'relative', width:130, height:130 }}>
-                  <canvas id="splitDonut" ref={donutRef} role="img" aria-label={`Doughnut chart: ${budgetPct}% of budget spent`}>{budgetPct}% of budget used.</canvas>
+              <div style={{ ...S.card, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.25rem 1rem' }}>
+                <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Budget health</div>
+                <div style={{ position: 'relative', width: 130, height: 130 }}>
+                  <canvas ref={donutRef} role="img" aria-label={`${budgetPct}% of budget spent`}>{budgetPct}% used.</canvas>
                 </div>
-                <div style={{ marginTop:12, display:'flex', gap:12, fontSize:11, color:'#6b6b68' }}>
-                  <span style={{ display:'flex', alignItems:'center', gap:4 }}><span style={{ width:8, height:8, borderRadius:2, background: budgetPct>85?'#D85A30':'#1D9E75', display:'inline-block' }} />Spent</span>
-                  <span style={{ display:'flex', alignItems:'center', gap:4 }}><span style={{ width:8, height:8, borderRadius:2, background:'#E1F5EE', border:'0.5px solid #9FE1CB', display:'inline-block' }} />Left</span>
+                <div style={{ marginTop: 12, display: 'flex', gap: 12, fontSize: 11, color: '#6b6b68' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: budgetPct > 85 ? '#D85A30' : '#1D9E75', display: 'inline-block' }} />Spent</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: '#E1F5EE', border: '0.5px solid #9FE1CB', display: 'inline-block' }} />Left</span>
                 </div>
               </div>
             )}
             <div style={{ ...S.card }}>
-              <div style={{ fontSize:11, color:'#6b6b68', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:10 }}>TSR projection</div>
-              <div style={{ fontSize:12, color:'#6b6b68', marginBottom:4 }}>Daily burn rate</div>
-              <div style={{ fontFamily:"'Sora',sans-serif", fontSize:20, fontWeight:700, marginBottom:10 }}>₹{Math.round(tsr).toLocaleString('en-IN')}</div>
-              <div style={{ fontSize:12, color:'#6b6b68', marginBottom:4 }}>Trip-end projection</div>
-              <div style={{ fontFamily:"'Sora',sans-serif", fontSize:20, fontWeight:700, color: budget&&projected>budget?'#993C1D':'#1a1a18', marginBottom:10 }}>₹{projected.toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>TSR projection</div>
+              <div style={{ fontSize: 12, color: '#6b6b68', marginBottom: 4 }}>Daily burn rate</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>₹{Math.round(tsr).toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: 12, color: '#6b6b68', marginBottom: 4 }}>Trip-end projection</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: budget && projected > budget ? '#993C1D' : '#1a1a18', marginBottom: 10 }}>₹{projected.toLocaleString('en-IN')}</div>
               {budget && (
-                <div style={{ padding:'8px 10px', background: projected>budget?'#FAECE7':'#E1F5EE', borderRadius:8, fontSize:11, color: projected>budget?'#993C1D':'#0F6E56', lineHeight:1.4 }}>
-                  {projected > budget
-                    ? `⚠️ Over budget by ₹${(projected-budget).toLocaleString('en-IN')}`
-                    : `✅ On track — ₹${(budget-projected).toLocaleString('en-IN')} under budget`}
+                <div style={{ padding: '8px 10px', background: projected > budget ? '#FAECE7' : '#E1F5EE', borderRadius: 8, fontSize: 11, color: projected > budget ? '#993C1D' : '#0F6E56', lineHeight: 1.4 }}>
+                  {projected > budget ? `⚠️ Over by ₹${(projected - budget).toLocaleString('en-IN')}` : `✅ ₹${(budget - projected).toLocaleString('en-IN')} under budget`}
                 </div>
               )}
-              {!budget && <div style={{ fontSize:12, color:'#a8a8a5', fontStyle:'italic' }}>Set a trip budget to see projections</div>}
+              {!budget && <div style={{ fontSize: 12, color: '#a8a8a5', fontStyle: 'italic' }}>No trip budget set</div>}
             </div>
           </div>
 
-          {/* Top 3 expenses */}
+          {/* Top 3 */}
           {top3.length > 0 && (
-            <div style={{ ...S.card, marginBottom:10 }}>
-              <div style={{ fontSize:11, color:'#6b6b68', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:12 }}>Top expenses</div>
+            <div style={{ ...S.card, marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Top expenses</div>
               {top3.map((exp, idx) => {
                 const cat = CATS.find(c => c.id === exp.cat) || CATS[5];
-                const pct = total > 0 ? Math.round(exp.amount/total*100) : 0;
-                const medals = ['🥇','🥈','🥉'];
+                const pct = total > 0 ? Math.round(exp.amount / total * 100) : 0;
                 return (
-                  <div key={exp.id} style={{ display:'flex', alignItems:'center', gap:10, padding: idx<top3.length-1?'0 0 10px':'0', borderBottom:idx<top3.length-1?'0.5px solid rgba(0,0,0,0.06)':'none', marginBottom:idx<top3.length-1?10:0 }}>
-                    <span style={{ fontSize:18, flexShrink:0 }}>{medals[idx]}</span>
-                    <div style={{ width:34, height:34, borderRadius:9, background:cat.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>{cat.icon}</div>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:13, fontWeight:500, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{exp.desc}</div>
-                      <div style={{ fontSize:11, color:'#6b6b68', marginTop:2 }}>{exp.paidBy} · {new Date(exp.date).toLocaleDateString('en-IN',{day:'numeric',month:'short'})}</div>
-                      <div style={{ height:4, background:'rgba(0,0,0,0.06)', borderRadius:4, overflow:'hidden', marginTop:5 }}>
-                        <div style={{ height:'100%', width:`${pct}%`, background: CAT_COLORS[exp.cat]||'#1D9E75', borderRadius:4, transition:'width .5s' }} />
+                  <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: idx < top3.length - 1 ? '0 0 10px' : '0', borderBottom: idx < top3.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', marginBottom: idx < top3.length - 1 ? 10 : 0 }}>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>{['🥇','🥈','🥉'][idx]}</span>
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{cat.icon}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
+                      <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2 }}>{exp.paidBy} · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
+                      <div style={{ height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 4, overflow: 'hidden', marginTop: 5 }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: CAT_COLORS[exp.cat] || '#1D9E75', borderRadius: 4, transition: 'width .5s' }} />
                       </div>
                     </div>
-                    <div style={{ textAlign:'right', flexShrink:0 }}>
-                      <div style={{ fontFamily:"'Sora',sans-serif", fontSize:14, fontWeight:700 }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
-                      <div style={{ fontSize:11, color:'#a8a8a5' }}>{pct}%</div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700 }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
+                      <div style={{ fontSize: 11, color: '#a8a8a5' }}>{pct}%</div>
                     </div>
                   </div>
                 );
@@ -3649,25 +3728,25 @@ function SplitPage({ trip, myNickname }) {
             </div>
           )}
 
-          {/* Who's carrying the trip */}
-          <div style={{ ...S.card, marginBottom:10 }}>
-            <div style={{ fontSize:11, color:'#6b6b68', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:12 }}>Who's carrying the trip</div>
-            {memberNames.sort((a,b)=>(payTotal[b]||0)-(payTotal[a]||0)).map((m,i) => (
-              <div key={m} style={{ display:'flex', alignItems:'center', gap:10, marginBottom: i<memberNames.length-1?10:0 }}>
-                <div style={{ width:30, height:30, borderRadius:'50%', background:mcolor(m), display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, fontWeight:700, flexShrink:0 }}>{m.slice(0,2).toUpperCase()}</div>
-                <div style={{ flex:1 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:4 }}>
-                    <span style={{ fontWeight:500 }}>{m}</span>
-                    <span style={{ color:'#6b6b68' }}>₹{Math.round(payTotal[m]||0).toLocaleString('en-IN')}</span>
+          {/* Who's carrying */}
+          <div style={{ ...S.card, marginBottom: 10 }}>
+            <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Who's carrying the trip</div>
+            {[...memberNames].sort((a, b) => (payTotal[b] || 0) - (payTotal[a] || 0)).map((m, i) => (
+              <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < memberNames.length - 1 ? 10 : 0 }}>
+                <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{m.slice(0, 2).toUpperCase()}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+                    <span style={{ fontWeight: 500 }}>{m}</span>
+                    <span style={{ color: '#6b6b68' }}>₹{Math.round(payTotal[m] || 0).toLocaleString('en-IN')}</span>
                   </div>
-                  <div style={{ height:5, background:'rgba(0,0,0,0.06)', borderRadius:4, overflow:'hidden' }}>
-                    <div style={{ height:'100%', width:`${Math.round((payTotal[m]||0)/maxPay*100)}%`, background:mcolor(m), borderRadius:4, transition:'width .5s' }} />
+                  <div style={{ height: 5, background: 'rgba(0,0,0,0.06)', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${Math.round((payTotal[m] || 0) / maxPay * 100)}%`, background: mcolor(m), borderRadius: 4, transition: 'width .5s' }} />
                   </div>
                 </div>
-                <span style={{ fontSize:11, fontWeight:600, padding:'3px 9px', borderRadius:20,
-                  background: balances[m]>=0.5?'#E1F5EE':balances[m]<=-0.5?'#FAECE7':'#F1EFE8',
-                  color: balances[m]>=0.5?'#0F6E56':balances[m]<=-0.5?'#993C1D':'#6b6b68', flexShrink:0 }}>
-                  {balances[m]>=0.5?'+':''}₹{Math.abs(Math.round(balances[m])).toLocaleString('en-IN')}
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, flexShrink: 0,
+                  background: balances[m] >= 0.5 ? '#E1F5EE' : balances[m] <= -0.5 ? '#FAECE7' : '#F1EFE8',
+                  color: balances[m] >= 0.5 ? '#0F6E56' : balances[m] <= -0.5 ? '#993C1D' : '#6b6b68' }}>
+                  {balances[m] >= 0.5 ? '+' : ''}₹{Math.abs(Math.round(balances[m])).toLocaleString('en-IN')}
                 </span>
               </div>
             ))}
@@ -3675,40 +3754,46 @@ function SplitPage({ trip, myNickname }) {
 
           {/* Category bar chart */}
           {Object.values(catTotals).some(v => v > 0) && (
-            <div style={{ ...S.card, marginBottom:10 }}>
-              <div style={{ fontSize:11, color:'#6b6b68', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:12 }}>Category breakdown</div>
-              <div style={{ position:'relative', height:160 }}>
-                <canvas id="splitCatBar" ref={barRef} role="img" aria-label="Bar chart of expenses by category">Spending by category.</canvas>
+            <div style={{ ...S.card, marginBottom: 10 }}>
+              <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Category breakdown</div>
+              <div style={{ position: 'relative', height: 160 }}>
+                <canvas ref={barRef} role="img" aria-label="Spending by category">Category breakdown chart.</canvas>
               </div>
             </div>
           )}
 
           {/* Fun facts */}
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-            <div style={{ ...S.card }}>
-              <div style={{ fontSize:11, color:'#6b6b68', marginBottom:6 }}>Most generous</div>
-              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <div style={{ width:30, height:30, borderRadius:'50%', background:mcolor(memberNames.reduce((a,b)=>(payTotal[a]||0)>(payTotal[b]||0)?a:b, memberNames[0]||'')), display:'flex', alignItems:'center', justifyContent:'center', color:'#fff', fontSize:11, fontWeight:700 }}>
-                  {(memberNames.reduce((a,b)=>(payTotal[a]||0)>(payTotal[b]||0)?a:b, memberNames[0]||'')).slice(0,2).toUpperCase()}
-                </div>
-                <div>
-                  <div style={{ fontSize:14, fontWeight:500 }}>{memberNames.reduce((a,b)=>(payTotal[a]||0)>(payTotal[b]||0)?a:b, memberNames[0]||'—')}</div>
-                  <div style={{ fontSize:11, color:'#a8a8a5' }}>paid the most</div>
-                </div>
-              </div>
-            </div>
-            <div style={{ ...S.card }}>
-              <div style={{ fontSize:11, color:'#6b6b68', marginBottom:6 }}>Top category</div>
-              {(() => { const top = CATS.filter(c=>catTotals[c.id]>0).sort((a,b)=>catTotals[b.id]-catTotals[a.id])[0]; return top ? (
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                  <div style={{ width:30, height:30, borderRadius:8, background:top.bg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>{top.icon}</div>
-                  <div>
-                    <div style={{ fontSize:14, fontWeight:500 }}>{top.label}</div>
-                    <div style={{ fontSize:11, color:'#a8a8a5' }}>₹{Math.round(catTotals[top.id]).toLocaleString('en-IN')}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            {memberNames.length > 0 && (() => {
+              const topPayer = memberNames.reduce((a, b) => (payTotal[a] || 0) > (payTotal[b] || 0) ? a : b);
+              const topCat = CATS.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id])[0];
+              return (
+                <>
+                  <div style={{ ...S.card }}>
+                    <div style={{ fontSize: 11, color: '#6b6b68', marginBottom: 8 }}>Most generous</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(topPayer), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{topPayer.slice(0, 2).toUpperCase()}</div>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 500 }}>{topPayer}</div>
+                        <div style={{ fontSize: 11, color: '#a8a8a5' }}>₹{Math.round(payTotal[topPayer] || 0).toLocaleString('en-IN')} paid</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ) : <div style={{ fontSize:14, color:'#a8a8a5' }}>—</div>; })()}
-            </div>
+                  <div style={{ ...S.card }}>
+                    <div style={{ fontSize: 11, color: '#6b6b68', marginBottom: 8 }}>Top category</div>
+                    {topCat ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: 8, background: topCat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{topCat.icon}</div>
+                        <div>
+                          <div style={{ fontSize: 14, fontWeight: 500 }}>{topCat.label}</div>
+                          <div style={{ fontSize: 11, color: '#a8a8a5' }}>₹{Math.round(catTotals[topCat.id]).toLocaleString('en-IN')}</div>
+                        </div>
+                      </div>
+                    ) : <div style={{ fontSize: 14, color: '#a8a8a5' }}>—</div>}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
