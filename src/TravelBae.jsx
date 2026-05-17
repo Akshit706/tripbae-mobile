@@ -3144,17 +3144,19 @@ function SplitPage({ trip, myNickname }) {
         </div>
         {budget && (
           <div>
-            <div style={{ height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${budgetPct}%`, background: budgetPct > 85 ? '#FCA5A5' : '#86EFAC', borderRadius: 4, transition: 'width .6s' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+              <div style={{ flex: 1, height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${budgetPct}%`, background: budgetPct > 85 ? '#FCA5A5' : '#86EFAC', borderRadius: 4, transition: 'width .6s' }} />
+              </div>
+              <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
+                style={{ background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.2)', borderRadius: 6, padding: '2px 6px', fontSize: 11, color: 'rgba(255,255,255,0.6)', cursor: 'pointer', flexShrink: 0, lineHeight: 1.4 }}>
+                ✏️
+              </button>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
               <span>{budgetPct}% of ₹{budget.toLocaleString('en-IN')} used</span>
               <span>₹{Math.round(Math.max(0, budgetLeft)).toLocaleString('en-IN')} left</span>
             </div>
-            <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
-              style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', border: '0.5px solid rgba(255,255,255,0.15)', fontSize: 11, marginTop: 8 }}>
-              ✏️ Edit budget
-            </button>
           </div>
         )}
         {!budget && (
@@ -3235,30 +3237,41 @@ function SplitPage({ trip, myNickname }) {
 
           {showForm && (
             <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '0.75rem' }}>
-              {/* Row 1: desc + amount */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 130px', gap: 10, marginBottom: 10 }}>
-                <div>
-                  <label style={S.label}>What was it?</label>
-                  <input style={S.input} placeholder="e.g. Hotel checkout" value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} />
-                </div>
-                <div>
-                  <label style={S.label}>Amount ₹</label>
-                  <input style={S.input} type="number" placeholder="0" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} />
-                </div>
+
+              {/* Amount — big and prominent */}
+              <div style={{ textAlign: 'center', padding: '0.5rem 0 1rem' }}>
+                <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: .4, textTransform: 'uppercase', marginBottom: 8 }}>Amount ₹</div>
+                <input
+                  style={{ fontFamily: "'Sora',sans-serif", fontSize: 36, fontWeight: 700, color: '#0F6E56', border: 'none', background: 'transparent', textAlign: 'center', width: '100%', outline: 'none' }}
+                  type="number" placeholder="0" value={form.amount}
+                  onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+                  autoFocus
+                />
+                <div style={{ height: 1.5, background: 'linear-gradient(90deg,transparent,#9FE1CB,transparent)', marginTop: 4 }} />
               </div>
 
-              {/* Row 2: paid by + category + date */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
+              {/* Description */}
+              <div style={{ marginBottom: 10 }}>
+                <input style={{ ...S.input, fontSize: 14 }} placeholder="What was it? e.g. Hotel checkout"
+                  value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} />
+              </div>
+
+              {/* Category pills */}
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+                {CATS.map(c => (
+                  <button key={c.id} onClick={() => setForm(f => ({ ...f, cat: c.id }))}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 18, fontSize: 12, border: `0.5px solid ${form.cat === c.id ? '#1D9E75' : 'rgba(0,0,0,0.12)'}`, background: form.cat === c.id ? '#E1F5EE' : '#fff', color: form.cat === c.id ? '#0F6E56' : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .12s' }}>
+                    {c.icon} {c.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Paid by + Date row */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
                 <div>
                   <label style={S.label}>Paid by</label>
                   <select style={S.input} value={form.paidBy} onChange={e => setForm(f => ({ ...f, paidBy: e.target.value }))}>
                     {memberNames.map(m => <option key={m}>{m}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={S.label}>Category</label>
-                  <select style={S.input} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
-                    {CATS.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
                   </select>
                 </div>
                 <div>
@@ -3267,57 +3280,48 @@ function SplitPage({ trip, myNickname }) {
                 </div>
               </div>
 
-              {/* Split selector */}
+              {/* Split between */}
               <label style={S.label}>Split between</label>
-              <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-                {/* Toggle: All / Select */}
-                <button
-                  onClick={() => setForm(f => ({ ...f, splitMode: 'all', splitWith: [...memberNames] }))}
-                  style={{ ...S.btn, fontSize: 12, padding: '5px 12px', borderRadius: 20,
-                    background: form.splitMode === 'all' ? '#1D9E75' : '#fff',
-                    color: form.splitMode === 'all' ? '#fff' : '#6b6b68',
-                    border: `0.5px solid ${form.splitMode === 'all' ? '#1D9E75' : 'rgba(0,0,0,0.15)'}` }}>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10, marginTop: 6 }}>
+                <button onClick={() => setForm(f => ({ ...f, splitMode: 'all', splitWith: [...memberNames] }))}
+                  style={{ padding: '5px 12px', borderRadius: 18, fontSize: 12, border: `0.5px solid ${form.splitMode === 'all' ? '#1D9E75' : 'rgba(0,0,0,0.12)'}`, background: form.splitMode === 'all' ? '#1D9E75' : '#fff', color: form.splitMode === 'all' ? '#fff' : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
                   👥 Everyone
                 </button>
-                <button
-                  onClick={() => setForm(f => ({ ...f, splitMode: 'select' }))}
-                  style={{ ...S.btn, fontSize: 12, padding: '5px 12px', borderRadius: 20,
-                    background: form.splitMode === 'select' ? '#1D9E75' : '#fff',
-                    color: form.splitMode === 'select' ? '#fff' : '#6b6b68',
-                    border: `0.5px solid ${form.splitMode === 'select' ? '#1D9E75' : 'rgba(0,0,0,0.15)'}` }}>
-                  🎯 Select people
-                </button>
+                {memberNames.map(m => {
+                  const selected = form.splitMode === 'select' && form.splitWith.includes(m);
+                  return (
+                    <button key={m} onClick={() => {
+                      setForm(f => {
+                        const inSelect = f.splitMode === 'select';
+                        if (!inSelect) return { ...f, splitMode: 'select', splitWith: [m] };
+                        const already = f.splitWith.includes(m);
+                        if (already && f.splitWith.length === 1) return f;
+                        return { ...f, splitWith: already ? f.splitWith.filter(n => n !== m) : [...f.splitWith, n => n, m].filter((v, i, a) => a.indexOf(v) === i) };
+                      });
+                      setForm(f => {
+                        if (f.splitMode !== 'select') return f;
+                        const already = f.splitWith.includes(m);
+                        if (already && f.splitWith.length === 1) return f;
+                        return { ...f, splitWith: already ? f.splitWith.filter(n => n !== m) : [...f.splitWith, m] };
+                      });
+                    }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px 5px 5px', borderRadius: 18, fontSize: 12, border: `0.5px solid ${selected ? '#1D9E75' : 'rgba(0,0,0,0.12)'}`, background: selected ? '#E1F5EE' : '#fff', color: selected ? '#0F6E56' : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
+                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: selected ? mcolor(m) : '#D3D1C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700 }}>{selected ? m.slice(0,2).toUpperCase() : ''}</div>
+                      {m}
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Individual member toggles */}
-              {form.splitMode === 'select' && (
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
-                  {memberNames.map(m => {
-                    const selected = form.splitWith.includes(m);
-                    return (
-                      <button key={m} onClick={() => toggleSplitMember(m)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 12px 5px 6px', borderRadius: 20, border: `0.5px solid ${selected ? '#1D9E75' : 'rgba(0,0,0,0.15)'}`,
-                          background: selected ? '#E1F5EE' : '#fff', cursor: 'pointer', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>
-                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: selected ? mcolor(m) : '#D3D1C7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700, transition: 'background .15s' }}>
-                          {selected ? m.slice(0, 2).toUpperCase() : ''}
-                        </div>
-                        <span style={{ color: selected ? '#0F6E56' : '#6b6b68', fontWeight: selected ? 500 : 400 }}>{m}</span>
-                        {selected && <span style={{ fontSize: 12, color: '#1D9E75' }}>✓</span>}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Per-person preview */}
+              {/* Per person preview */}
               {form.amount && parseFloat(form.amount) > 0 && (
-                <div style={{ background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 10, padding: '8px 12px', marginBottom: 12, fontSize: 13, color: '#085041' }}>
-                  ₹{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : (form.splitWith.length || 1))).toFixed(0)} per person
-                  &nbsp;·&nbsp; split {form.splitMode === 'all' ? memberNames.length : form.splitWith.length} ways
+                <div style={{ background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 10, padding: '8px 12px', marginBottom: 12, fontSize: 13, color: '#085041', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>₹{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : (form.splitWith.length || 1))).toFixed(0)} <span style={{ color: '#6b6b68', fontSize: 12 }}>per person</span></span>
+                  <span style={{ fontSize: 12, color: '#6b6b68' }}>{form.splitMode === 'all' ? memberNames.length : form.splitWith.length} ways</span>
                 </div>
               )}
 
-              <button style={{ ...S.btn, ...S.btnP, width: '100%', justifyContent: 'center', padding: '10px', opacity: saving ? 0.6 : 1 }}
+              <button style={{ ...S.btn, ...S.btnP, width: '100%', justifyContent: 'center', padding: '11px', fontSize: 14, borderRadius: 12, opacity: saving ? 0.6 : 1 }}
                 onClick={handleAdd} disabled={saving || !form.desc || !form.amount}>
                 {saving ? 'Saving…' : '✓ Add expense'}
               </button>
