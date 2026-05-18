@@ -2859,7 +2859,7 @@ function ContactsPage({ trip, myNickname, isSolo }) {
 
               {/* Row 1: icon + name + tag + actions */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 11, background: cm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>{cm.icon}</div>
+                <div style={{ width: 40, height: 40, borderRadius: 11, background: cm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>👤</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
                     <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700 }}>{c.name}</span>
