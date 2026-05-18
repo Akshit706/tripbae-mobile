@@ -3910,45 +3910,56 @@ function SplitPage({ trip, myNickname }) {
               {form._splitOpen && (
                 <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.07)', padding: '8px 6px' }}>
                   <div style={{ fontSize: 11, color: '#a8a8a5', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', padding: '4px 8px 8px' }}>Split between</div>
-                  {/* Everyone */}
+
+                  {/* Everyone row */}
                   <button
-                    onClick={() => setForm(f => ({ ...f, splitMode: 'all', splitWith: [...memberNames] }))}
+                    onClick={() => setForm(f => ({
+                      ...f,
+                      splitMode: 'all',
+                      splitWith: [...memberNames],
+                    }))}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: form.splitMode === 'all' ? '#E1F5EE' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: form.splitMode === 'all' ? '#0F6E56' : '#1a1a18', marginBottom: 2 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#1D9E75', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>👥</div>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: form.splitMode === 'all' ? '#1D9E75' : '#f0f0ee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>👥</div>
                     <span style={{ flex: 1, fontWeight: form.splitMode === 'all' ? 600 : 400 }}>Everyone equally</span>
-                    <span style={{ fontSize: 12, color: '#a8a8a5' }}>÷{memberNames.length}</span>
-                    {form.splitMode === 'all' && <span style={{ fontSize: 16, color: '#1D9E75' }}>✓</span>}
+                    <span style={{ fontSize: 12, color: '#a8a8a5', marginRight: 8 }}>÷{memberNames.length}</span>
+                    <div style={{ width: 22, height: 22, borderRadius: 7, border: `2px solid ${form.splitMode === 'all' ? '#1D9E75' : '#D3D1C7'}`, background: form.splitMode === 'all' ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', flexShrink: 0 }}>
+                      {form.splitMode === 'all' ? '✓' : ''}
+                    </div>
                   </button>
+
                   <div style={{ height: 1, background: 'rgba(0,0,0,0.05)', margin: '4px 0' }} />
-                  {/* Individual */}
+
+                  {/* Individual members */}
                   {memberNames.map(m => {
-                    const sel = form.splitMode === 'select' && form.splitWith.includes(m);
-                    const shareAmt = form.amount && parseFloat(form.amount) > 0
-                      ? '₹' + (parseFloat(form.amount) / (form.splitMode === 'select' ? (form.splitWith.includes(m) ? form.splitWith.length : form.splitWith.length) : memberNames.length)).toFixed(0)
-                      : '';
+                    const sel = form.splitWith.includes(m);
                     return (
                       <button key={m}
                         onClick={() => setForm(f => {
                           const already = f.splitWith.includes(m);
-                          const newWith = already ? f.splitWith.filter(n => n !== m) : [...f.splitWith, m];
+                          const newWith = already
+                            ? f.splitWith.filter(n => n !== m)
+                            : [...f.splitWith, m];
                           if (newWith.length === 0) return f;
-                          return { ...f, splitMode: 'select', splitWith: newWith };
+                          // if all members selected, switch back to 'all' mode
+                          const isAll = newWith.length === memberNames.length;
+                          return { ...f, splitMode: isAll ? 'all' : 'select', splitWith: newWith };
                         })}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: sel ? '#E1F5EE' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: sel ? '#0F6E56' : '#1a1a18', marginBottom: 2 }}>
                         <div style={{ width: 32, height: 32, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{m.slice(0,2).toUpperCase()}</div>
                         <span style={{ flex: 1, fontWeight: sel ? 600 : 400 }}>{m}</span>
-                        {form.amount && parseFloat(form.amount) > 0 && (
-                          <span style={{ fontSize: 12, color: '#6b6b68' }}>
-                            {sel ? '₹' + (parseFloat(form.amount) / form.splitWith.length).toFixed(0) : ''}
+                        {form.amount && parseFloat(form.amount) > 0 && sel && (
+                          <span style={{ fontSize: 12, color: '#6b6b68', marginRight: 8 }}>
+                            ₹{(parseFloat(form.amount) / form.splitWith.length).toFixed(0)}
                           </span>
                         )}
-                        <div style={{ width: 22, height: 22, borderRadius: 7, border: `2px solid ${sel ? '#1D9E75' : '#D3D1C7'}`, background: sel ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff', flexShrink: 0 }}>{sel ? '✓' : ''}</div>
+                        <div style={{ width: 22, height: 22, borderRadius: 7, border: `2px solid ${sel ? '#1D9E75' : '#D3D1C7'}`, background: sel ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', flexShrink: 0 }}>
+                          {sel ? '✓' : ''}
+                        </div>
                       </button>
                     );
                   })}
                 </div>
               )}
-
               {/* Per person preview — shown when amount entered */}
               {form.amount && parseFloat(form.amount) > 0 && !form._paidByOpen && !form._splitOpen && (
                 <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.07)', padding: '10px 12px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
