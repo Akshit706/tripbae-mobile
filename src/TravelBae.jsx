@@ -1807,7 +1807,7 @@ const CATS = [
   {id:'stay',icon:'🏠',label:'Stay',bg:'#E6F1FB'},
   {id:'activity',icon:'🎟️',label:'Activity',bg:'#EEEDFE'},
   {id:'shopping',icon:'🛍️',label:'Shopping',bg:'#FAECE7'},
-  {id:'other',icon:'•••',label:'Other',bg:'#F1EFE8'},
+  // {id:'other',icon:'•••',label:'Other',bg:'#F1EFE8'},
 ];
 const CONTACT_CATS = [
   {id:'guardian',icon:'🛡️',label:'Guardian',bg:'#EEEDFE',color:'#534AB7'},
@@ -2499,7 +2499,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     }
   };
 
-  const CAT_COLORS = { food: '#BA7517', transport: '#0F6E56', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E', other: '#6b6b68' };
+  const CAT_COLORS = { food: '#BA7517', transport: '#0F6E56', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E'};
 
   return (
     <div>
@@ -3670,7 +3670,7 @@ function SplitPage({ trip, myNickname }) {
     const code = Math.abs(Array.from(name || '').reduce((a, c) => a + c.charCodeAt(0), 0));
     return MCOLORS_LIST[code % MCOLORS_LIST.length];
   };
-  const CAT_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
+  const CAT_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E'};
 
   const budget = localBudget;
 
@@ -3752,7 +3752,7 @@ function SplitPage({ trip, myNickname }) {
     if (barRef.current) {
       const activeCats = CATS.filter(c => catTotals[c.id] > 0);
       if (activeCats.length === 0) return;
-      const BAR_COLORS = { food:'#BA7517', transport:'#1D9E75', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#888780' };
+      const BAR_COLORS = { food:'#BA7517', transport:'#1D9E75', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E'};
       chartInstances.current.bar = new window.Chart(barRef.current, {
         type: 'bar',
         data: { labels: activeCats.map(c => c.label), datasets: [{ data: activeCats.map(c => catTotals[c.id]), backgroundColor: activeCats.map(c => BAR_COLORS[c.id] || '#888780'), borderRadius: 6, borderSkipped: false }] },
