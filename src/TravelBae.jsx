@@ -2857,48 +2857,58 @@ function ContactsPage({ trip, myNickname, isSolo }) {
             <div style={{ height: 3, background: cm.color }} />
             <div style={{ padding: '14px 16px' }}>
 
-              {/* Row 1: icon + name + tag + delete */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+              {/* Row 1: icon + name + tag + actions */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 11, background: cm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>{cm.icon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
                     <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700 }}>{c.name}</span>
                     <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: cm.bg, color: cm.color }}>{cm.label}</span>
                   </div>
-                  {c.role && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 1 }}>{c.role}</div>}
                 </div>
-                {/* Edit button */}
                 <button
-                  onClick={() => {
-                    setForm({ name: c.name, role: c.role || '', cat: c.cat, phone: c.phone, note: c.note || '', _editId: c.id });
-                    setShowForm(true);
-                  }}
-                  style={{ width: 28, height: 28, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.1)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, color: '#6b6b68', flexShrink: 0 }}>✏️</button>
+                  onClick={() => { setForm({ name: c.name, role: c.role || '', cat: c.cat, phone: c.phone, note: c.note || '', _editId: c.id }); setShowForm(true); }}
+                  style={{ width: 28, height: 28, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.1)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, flexShrink: 0 }}>✏️</button>
                 <button onClick={() => handleDelete(c.id)}
                   style={{ width: 28, height: 28, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.1)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, color: '#a8a8a5', flexShrink: 0 }}>✕</button>
               </div>
 
-              {/* Row 2: phone */}
-              <a href={`tel:${c.phone}`}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '7px 13px', fontSize: 14, fontWeight: 600, color: isSolo ? '#534AB7' : '#0F6E56', textDecoration: 'none' }}>
-                📞 {c.phone}
-              </a>
+              {/* Detail rows */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 7, paddingLeft: 2 }}>
 
-              {/* Row 3: note */}
-              {c.note && (
-                <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55, marginTop: 8, paddingTop: 8, borderTop: '0.5px solid rgba(0,0,0,0.05)', fontStyle: 'italic' }}>
-                  {c.note}
+                {c.role && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#a8a8a5', textTransform: 'uppercase', letterSpacing: .4, width: 52, flexShrink: 0 }}>Role</span>
+                    <span style={{ fontSize: 13, color: '#1a1a18', fontWeight: 500 }}>{c.role}</span>
+                  </div>
+                )}
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: '#a8a8a5', textTransform: 'uppercase', letterSpacing: .4, width: 52, flexShrink: 0 }}>Contact</span>
+                  <a href={`tel:${c.phone}`}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: isSolo ? '#534AB7' : '#0F6E56', textDecoration: 'none' }}>
+                    📞 {c.phone}
+                  </a>
                 </div>
-              )}
 
-              {/* Row 4: added by */}
-              {!isSolo && c.addedBy && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, paddingTop: 8, borderTop: '0.5px solid rgba(0,0,0,0.05)' }}>
-                  <Avatar name={c.addedBy} size={14} />
-                  <span style={{ fontSize: 11, color: '#a8a8a5' }}>Added by {c.addedBy}</span>
-                </div>
-              )}
+                {c.note && (
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#a8a8a5', textTransform: 'uppercase', letterSpacing: .4, width: 52, flexShrink: 0, paddingTop: 1 }}>Note</span>
+                    <span style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.55 }}>{c.note}</span>
+                  </div>
+                )}
 
+                {!isSolo && c.addedBy && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 6, marginTop: 2, borderTop: '0.5px solid rgba(0,0,0,0.05)' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: '#a8a8a5', textTransform: 'uppercase', letterSpacing: .4, width: 52, flexShrink: 0 }}>By</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <Avatar name={c.addedBy} size={16} />
+                      <span style={{ fontSize: 12, color: '#a8a8a5' }}>{c.addedBy}</span>
+                    </div>
+                  </div>
+                )}
+
+              </div>
             </div>
           </div>
         );
