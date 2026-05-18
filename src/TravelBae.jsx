@@ -2692,8 +2692,16 @@ function ContactsPage({ trip, myNickname, isSolo }) {
     if (!form.name.trim() || !form.phone.trim()) return;
     setSaving(true);
     try {
-      const data = await addContact(trip.id, { ...form, addedBy: myNickname || 'Me' });
-      setContacts(cs => [...cs, data.contact]);
+      if (form._editId) {
+        // Edit existing
+        setContacts(cs => cs.map(c => c.id === form._editId
+          ? { ...c, name: form.name, role: form.role, cat: form.cat, phone: form.phone, note: form.note }
+          : c
+        ));
+      } else {
+        const data = await addContact(trip.id, { ...form, addedBy: myNickname || 'Me' });
+        setContacts(cs => [...cs, data.contact]);
+      }
       setForm({ name: '', role: '', cat: 'driver', phone: '', note: '' });
       setShowForm(false);
     } catch (err) {
@@ -2727,11 +2735,14 @@ function ContactsPage({ trip, myNickname, isSolo }) {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
-        <button onClick={() => setShowForm(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
-        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>Add Contact</div>
+        <button onClick={() => { setShowForm(false); setForm({ name: '', role: '', cat: 'driver', phone: '', note: '' }); }}
+          style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>
+          {form._editId ? 'Edit Contact' : 'Add Contact'}
+        </div>
         <button onClick={handleAdd} disabled={saving || !form.name.trim() || !form.phone.trim()}
           style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !form.name.trim() || !form.phone.trim()) ? 0.4 : 1 }}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? 'Saving…' : form._editId ? 'Update' : 'Save'}
         </button>
       </div>
 
@@ -2843,45 +2854,51 @@ function ContactsPage({ trip, myNickname, isSolo }) {
         const cm = getCat(c.cat);
         return (
           <div key={c.id} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, marginBottom: 10, overflow: 'hidden' }}>
-
-            {/* Top strip with category color */}
             <div style={{ height: 3, background: cm.color }} />
-
             <div style={{ padding: '14px 16px' }}>
-              {/* Row 1: Name + tag + delete */}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 6 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: cm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{cm.icon}</div>
+
+              {/* Row 1: icon + name + tag + delete */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 11, background: cm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>{cm.icon}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
                     <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700 }}>{c.name}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: cm.bg, color: cm.color, letterSpacing: .2 }}>{cm.label}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: cm.bg, color: cm.color }}>{cm.label}</span>
                   </div>
-                  {c.role && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>{c.role}</div>}
+                  {c.role && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 1 }}>{c.role}</div>}
                 </div>
+                {/* Edit button */}
+                <button
+                  onClick={() => {
+                    setForm({ name: c.name, role: c.role || '', cat: c.cat, phone: c.phone, note: c.note || '', _editId: c.id });
+                    setShowForm(true);
+                  }}
+                  style={{ width: 28, height: 28, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.1)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, color: '#6b6b68', flexShrink: 0 }}>✏️</button>
                 <button onClick={() => handleDelete(c.id)}
                   style={{ width: 28, height: 28, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.1)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, color: '#a8a8a5', flexShrink: 0 }}>✕</button>
               </div>
 
-              {/* Row 2: Phone */}
+              {/* Row 2: phone */}
               <a href={`tel:${c.phone}`}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '8px 14px', fontSize: 14, fontWeight: 600, color: isSolo ? '#534AB7' : '#0F6E56', textDecoration: 'none', marginBottom: c.note || (!isSolo && c.addedBy) ? 10 : 0 }}>
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '7px 13px', fontSize: 14, fontWeight: 600, color: isSolo ? '#534AB7' : '#0F6E56', textDecoration: 'none' }}>
                 📞 {c.phone}
               </a>
 
-              {/* Row 3: Note */}
+              {/* Row 3: note */}
               {c.note && (
-                <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55, fontStyle: 'italic', paddingTop: 8, borderTop: '0.5px solid rgba(0,0,0,0.05)', marginTop: 2 }}>
+                <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55, marginTop: 8, paddingTop: 8, borderTop: '0.5px solid rgba(0,0,0,0.05)', fontStyle: 'italic' }}>
                   {c.note}
                 </div>
               )}
 
-              {/* Row 4: Added by (group only) */}
+              {/* Row 4: added by */}
               {!isSolo && c.addedBy && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, paddingTop: 8, borderTop: '0.5px solid rgba(0,0,0,0.05)' }}>
                   <Avatar name={c.addedBy} size={14} />
                   <span style={{ fontSize: 11, color: '#a8a8a5' }}>Added by {c.addedBy}</span>
                 </div>
               )}
+
             </div>
           </div>
         );
