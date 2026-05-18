@@ -2720,95 +2720,196 @@ function ContactsPage({ trip, myNickname, isSolo }) {
     return mc && ms;
   });
 
-  return (
-    <div>
-      <div style={{ background: isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : 'linear-gradient(135deg,#E6F1FB,#EEEDFE)', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#c7d8f5'}`, borderRadius: 14, padding: '1.1rem 1.25rem', marginBottom: '1.25rem', display: 'flex', gap: 14, alignItems: 'center' }}>
-        <div style={{ fontSize: 36 }}>📒</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 3 }}>{isSolo ? 'My Contacts' : 'Mutual Contacts'}</div>
-          <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{isSolo ? 'Your personal contacts — people who can help on this trip.' : 'Shared by the group — drivers, hotel staff, guardians, guides & emergency contacts.'}</div>
+  /* ── Fullscreen add form ── */
+  if (showForm) return (
+    <div style={{ position: 'fixed', inset: 0, background: '#f7f6f2', zIndex: 400, display: 'flex', flexDirection: 'column', animation: 'slideUp .25s ease-out' }}>
+      <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
+        <button onClick={() => setShowForm(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>Add Contact</div>
+        <button onClick={handleAdd} disabled={saving || !form.name.trim() || !form.phone.trim()}
+          style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !form.name.trim() || !form.phone.trim()) ? 0.4 : 1 }}>
+          {saving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {/* Category header band */}
+        <div style={{ background: isSolo ? 'linear-gradient(135deg,#26215C,#534AB7)' : 'linear-gradient(135deg,#0F6E56,#1D9E75)', padding: '1.5rem 1.25rem 2rem' }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 12 }}>Category</div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {CONTACT_CATS.map(c => (
+              <button key={c.id} onClick={() => setForm(f => ({ ...f, cat: c.id }))}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 20, fontSize: 13, border: `1.5px solid ${form.cat === c.id ? '#fff' : 'rgba(255,255,255,0.25)'}`, background: form.cat === c.id ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)', color: '#fff', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: form.cat === c.id ? 700 : 400, transition: 'all .12s' }}>
+                {c.icon} {c.label}
+              </button>
+            ))}
+          </div>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: '#534AB7' }}>{contacts.length}</div>
-          <div style={{ fontSize: 11, color: '#6b6b68' }}>contacts</div>
+
+        {/* White card body */}
+        <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', marginTop: -16, padding: '1.5rem 1.25rem 3rem' }}>
+
+          {/* Name + Role */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '1.25rem' }}>
+            <div>
+              <label style={S.label}>Full Name *</label>
+              <input style={{ ...S.input, marginTop: 6 }} value={form.name}
+                onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g. Ramesh Kumar" autoFocus />
+            </div>
+            <div>
+              <label style={S.label}>Role</label>
+              <input style={{ ...S.input, marginTop: 6 }} value={form.role}
+                onChange={e => setForm(f => ({ ...f, role: e.target.value }))}
+                placeholder="e.g. Hotel Manager" />
+            </div>
+          </div>
+
+          {/* Phone */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={S.label}>Phone *</label>
+            <input style={{ ...S.input, fontSize: 16, padding: '12px 14px', marginTop: 6, letterSpacing: .5 }}
+              value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
+              placeholder="+91 98765 43210" type="tel" />
+          </div>
+
+          {/* Note */}
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={S.label}>Note <span style={{ color: '#a8a8a5', fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optional)</span></label>
+            <textarea style={{ ...S.input, resize: 'none', minHeight: 72, marginTop: 6, lineHeight: 1.5 }}
+              value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
+              placeholder="Any useful info — language spoken, hours, etc." />
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ paddingBottom: '5rem' }}>
+
+      {/* Header summary */}
+      <div style={{ background: isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : 'linear-gradient(135deg,#E1F5EE,#E6F1FB)', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 16, padding: '1rem 1.25rem', marginBottom: '1.1rem', display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ fontSize: 34 }}>📒</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, marginBottom: 2 }}>
+            {isSolo ? 'My Contacts' : 'Trip Contacts'}
+          </div>
+          <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>
+            {isSolo ? 'Personal contacts for this trip.' : 'Shared by the group — drivers, hotel, guides & emergency.'}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 24, fontWeight: 700, color: isSolo ? '#534AB7' : '#0F6E56' }}>{contacts.length}</div>
+          <div style={{ fontSize: 11, color: '#6b6b68' }}>saved</div>
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1rem' }}>
-        <button onClick={() => setFilterCat('all')} style={{ ...S.btn, fontSize: 12, padding: '5px 12px', borderRadius: 20, ...(filterCat === 'all' ? (isSolo ? S.btnSolo : S.btnP) : {}) }}>All ({contacts.length})</button>
+      {/* Search */}
+      <div style={{ marginBottom: '0.75rem' }}>
+        <input style={{ ...S.input, background: '#fff' }} placeholder="🔍  Search by name or role…"
+          value={search} onChange={e => setSearch(e.target.value)} />
+      </div>
+
+      {/* Category filter pills */}
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: '1rem' }}>
+        <button onClick={() => setFilterCat('all')}
+          style={{ ...S.btn, fontSize: 11, padding: '4px 12px', borderRadius: 20, ...(filterCat === 'all' ? (isSolo ? S.btnSolo : S.btnP) : {}) }}>
+          All · {contacts.length}
+        </button>
         {CONTACT_CATS.filter(c => catCounts[c.id] > 0).map(c => (
           <button key={c.id} onClick={() => setFilterCat(filterCat === c.id ? 'all' : c.id)}
-            style={{ ...S.btn, fontSize: 12, padding: '5px 12px', borderRadius: 20, background: filterCat === c.id ? c.color : '#fff', color: filterCat === c.id ? '#fff' : c.color, border: `0.5px solid ${c.color}55` }}>
-            {c.icon} {c.label} ({catCounts[c.id] || 0})
+            style={{ ...S.btn, fontSize: 11, padding: '4px 12px', borderRadius: 20, background: filterCat === c.id ? c.color : '#fff', color: filterCat === c.id ? '#fff' : c.color, border: `0.5px solid ${c.color}55` }}>
+            {c.icon} {c.label} · {catCounts[c.id]}
           </button>
         ))}
       </div>
 
-      <div style={{ display: 'flex', gap: 8, marginBottom: '1rem' }}>
-        <input style={{ ...S.input, flex: 1 }} placeholder="Search by name or role…" value={search} onChange={e => setSearch(e.target.value)} />
-        <button style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), flexShrink: 0 }} onClick={() => setShowForm(v => !v)}>+ Add</button>
-      </div>
-
-      {showForm && (
-        <div style={{ ...S.card, border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, background: isSolo ? '#fdfcff' : '#f9fffe', marginBottom: '1rem' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 12, color: isSolo ? '#534AB7' : '#0F6E56' }}>Add contact</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div><label style={S.label}>Full name *</label><input style={S.input} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Ramesh Kumar" /></div>
-            <div><label style={S.label}>Role</label><input style={S.input} value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} placeholder="e.g. Hotel Manager" /></div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div><label style={S.label}>Category</label>
-              <select style={S.input} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
-                {CONTACT_CATS.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
-              </select>
-            </div>
-            <div><label style={S.label}>Phone *</label><input style={S.input} value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+91 98765 43210" /></div>
-          </div>
-          <label style={S.label}>Note</label>
-          <textarea style={{ ...S.input, resize: 'vertical', minHeight: 56 }} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="Anything to remember…" />
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), flex: 1, justifyContent: 'center', padding: '10px', opacity: saving ? 0.6 : 1 }}
-              onClick={handleAdd} disabled={!form.name.trim() || !form.phone.trim() || saving}>
-              {saving ? 'Saving…' : '✓ Save contact'}
-            </button>
-            <button style={S.btn} onClick={() => setShowForm(false)}>✕</button>
-          </div>
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '4rem 1rem', color: '#6b6b68' }}>
+          <div style={{ fontSize: 48, marginBottom: 14 }}>📭</div>
+          <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>No contacts yet</p>
+          <p style={{ fontSize: 13 }}>Tap + to add your first one</p>
         </div>
       )}
 
-      {filtered.length === 0 && <div style={{ textAlign: 'center', padding: '2.5rem', color: '#6b6b68', fontSize: 14 }}><div style={{ fontSize: 40, marginBottom: 10 }}>📭</div><p>No contacts found.</p></div>}
+      {/* Contact cards */}
       {filtered.map(c => {
         const cm = getCat(c.cat);
         return (
-          <div key={c.id} style={{ ...S.card, display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 8 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: cm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{cm.icon}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                <div style={{ fontSize: 14, fontWeight: 600 }}>{c.name}</div>
-                <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, background: cm.bg, color: cm.color }}>{cm.label}</span>
+          <div key={c.id} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, marginBottom: 10, overflow: 'hidden' }}>
+
+            {/* Top strip with category color */}
+            <div style={{ height: 3, background: cm.color }} />
+
+            <div style={{ padding: '14px 16px' }}>
+              {/* Row 1: Name + tag + delete */}
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 6 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 12, background: cm.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>{cm.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                    <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700 }}>{c.name}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: cm.bg, color: cm.color, letterSpacing: .2 }}>{cm.label}</span>
+                  </div>
+                  {c.role && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>{c.role}</div>}
+                </div>
+                <button onClick={() => handleDelete(c.id)}
+                  style={{ width: 28, height: 28, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.1)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 12, color: '#a8a8a5', flexShrink: 0 }}>✕</button>
               </div>
-              {c.role && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 1 }}>{c.role}</div>}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
-                <a href={`tel:${c.phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: isSolo ? '#534AB7' : '#0F6E56', textDecoration: 'none', background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 8, padding: '4px 10px' }}>📞 {c.phone}</a>
-                {!isSolo && <span style={{ fontSize: 11, color: '#a8a8a5', display: 'flex', alignItems: 'center', gap: 4 }}><Avatar name={c.addedBy} size={14} /> by {c.addedBy}</span>}
-              </div>
-              {c.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 5, fontStyle: 'italic', lineHeight: 1.4 }}>💬 {c.note}</div>}
+
+              {/* Row 2: Phone */}
+              <a href={`tel:${c.phone}`}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '8px 14px', fontSize: 14, fontWeight: 600, color: isSolo ? '#534AB7' : '#0F6E56', textDecoration: 'none', marginBottom: c.note || (!isSolo && c.addedBy) ? 10 : 0 }}>
+                📞 {c.phone}
+              </a>
+
+              {/* Row 3: Note */}
+              {c.note && (
+                <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55, fontStyle: 'italic', paddingTop: 8, borderTop: '0.5px solid rgba(0,0,0,0.05)', marginTop: 2 }}>
+                  {c.note}
+                </div>
+              )}
+
+              {/* Row 4: Added by (group only) */}
+              {!isSolo && c.addedBy && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 8, paddingTop: 8, borderTop: '0.5px solid rgba(0,0,0,0.05)' }}>
+                  <Avatar name={c.addedBy} size={14} />
+                  <span style={{ fontSize: 11, color: '#a8a8a5' }}>Added by {c.addedBy}</span>
+                </div>
+              )}
             </div>
-            <button onClick={() => handleDelete(c.id)} style={{ ...S.btn, padding: '5px 8px', fontSize: 12, color: '#993C1D', borderColor: '#f5c4b3', flexShrink: 0 }}>✕</button>
           </div>
         );
       })}
 
+      {/* Emergency quick-dial */}
       {contacts.filter(c => c.cat === 'emergency' || c.cat === 'medical').length > 0 && (
         <div style={{ background: 'linear-gradient(135deg,#FFF3CD,#fff8e7)', border: '0.5px solid #ffc107', borderRadius: 14, padding: '1rem 1.25rem', marginTop: '0.5rem' }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: '#856404', marginBottom: 8, textTransform: 'uppercase', letterSpacing: .4 }}>🚨 Quick-dial emergency</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#856404', marginBottom: 10, textTransform: 'uppercase', letterSpacing: .4 }}>🚨 Quick-dial emergency</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {contacts.filter(c => c.cat === 'emergency' || c.cat === 'medical').map(c => (
-              <a key={c.id} href={`tel:${c.phone}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '0.5px solid #ffc107', borderRadius: 10, padding: '7px 12px', fontSize: 13, fontWeight: 600, color: '#1a1a18', textDecoration: 'none' }}>📞 {c.name}</a>
+              <a key={c.id} href={`tel:${c.phone}`}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '0.5px solid #ffc107', borderRadius: 10, padding: '8px 14px', fontSize: 13, fontWeight: 600, color: '#1a1a18', textDecoration: 'none' }}>
+                📞 {c.name}
+              </a>
             ))}
           </div>
         </div>
       )}
+
+      {/* Floating add button */}
+      <button
+        onClick={() => setShowForm(true)}
+        style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)', border: 'none', boxShadow: `0 4px 20px ${isSolo ? 'rgba(127,119,221,0.45)' : 'rgba(15,110,86,0.45)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s' }}
+        onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+        onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+        +
+      </button>
     </div>
   );
 }
