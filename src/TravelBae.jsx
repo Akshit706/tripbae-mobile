@@ -1782,7 +1782,7 @@
 //   );
 // }
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import {
   aiChat,
   getTrips,
@@ -5716,7 +5716,11 @@ export default function App() {
                     {tab === 'main' && <SplitPage trip={activeTripData} myNickname={myNickname} />}
                     {tab === 'contacts' && <ContactsPage trip={activeTripData} myNickname={myNickname} isSolo={false} />}
                     {tab === 'itinerary' && <ItineraryPage trip={activeTripData} />}
-                    {tab === 'photos' && <PhotosPage trip={activeTripData} myNickname={myNickname} />}
+                    {tab === 'photos' && (
+                      <div style={{ margin: '-1.25rem', marginBottom: '-6rem' }}>
+                        <PhotosPage trip={activeTripData} myNickname={myNickname} />
+                      </div>
+                    )}
                   </>
                 )}
               </div>
