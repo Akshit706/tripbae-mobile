@@ -4576,6 +4576,7 @@ function PhotosPage({ trip, myNickname }) {
       background: #0e0e10;
       min-height: 100vh;
       color: #e8e6e0;
+      display: block;
       padding-bottom: 6rem;
     }
 
@@ -4693,6 +4694,9 @@ function PhotosPage({ trip, myNickname }) {
       text-align: center;
       cursor: pointer;
       position: relative;
+      z-index: 1;
+      display: block;        /* ← add this */
+      width: auto
       overflow: hidden;
       transition: all .25s;
       background: linear-gradient(145deg, #1a1a1e, #141416);
@@ -4782,6 +4786,7 @@ function PhotosPage({ trip, myNickname }) {
     /* ─ photo grid ─ */
     .photo-grid {
       display: grid;
+      clear: both; 
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 6px;
       padding: 0 1.25rem;
@@ -4981,9 +4986,9 @@ function PhotosPage({ trip, myNickname }) {
         })}
       </div>
 
-      {/* ── Section header ── */}
+      
       <div className="section-header">
-        <h2 className="section-title">
+      {/* ── Section header ── */}  <h2 className="section-title">
           {isMyFolder ? <>Your <em>shots</em></> : <><em>{activeFolder}</em>'s shots</>}
         </h2>
         <span className="section-subtitle">{folderPhotos.length} photo{folderPhotos.length !== 1 ? 's' : ''}</span>
