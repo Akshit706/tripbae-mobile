@@ -4501,6 +4501,9 @@ function PhotosPage({ trip, myNickname }) {
   const [selected, setSelected] = useState(new Set());
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  // ── NEW: confirm dialog state ──
+  const [confirmDelete, setConfirmDelete] = useState(null); // null | 'single' | 'bulk'
+  const [pendingDeletePhoto, setPendingDeletePhoto] = useState(null); // single photo
 
   const byMember = useMemo(() => {
     const map = {};
@@ -4554,13 +4557,47 @@ function PhotosPage({ trip, myNickname }) {
     if (files.length) processFiles(files);
   };
 
-  /* ── delete ── */
-  const handleDelete = async (photo) => {
+  /* ── delete (single) ── */
+  const doDeleteSingle = async (photo) => {
     const fileName = `${trip.id}/${me}/${photo.url.split('/').pop()}`;
     await supabase.storage.from('trip-photos').remove([fileName]);
     try { await fetch(`/api/trips/${trip.id}/photos/${photo.id}`, { method: 'DELETE' }); } catch {}
     setAllPhotos(p => p.filter(x => x.id !== photo.id));
     setSelected(s => { const n = new Set(s); n.delete(photo.id); return n; });
+    setPendingDeletePhoto(null);
+    setConfirmDelete(null);
+  };
+
+  /* ── delete (bulk) ── */
+  const doDeleteBulk = async () => {
+    const toDelete = folderPhotos.filter(p => selected.has(p.id));
+    for (const photo of toDelete) {
+      const fileName = `${trip.id}/${me}/${photo.url.split('/').pop()}`;
+      await supabase.storage.from('trip-photos').remove([fileName]);
+      try { await fetch(`/api/trips/${trip.id}/photos/${photo.id}`, { method: 'DELETE' }); } catch {}
+    }
+    const deletedIds = new Set(toDelete.map(p => p.id));
+    setAllPhotos(p => p.filter(x => !deletedIds.has(x.id)));
+    setSelected(new Set());
+    setConfirmDelete(null);
+  };
+
+  /* ── confirm delete flow ── */
+  const askDeleteSingle = (photo, e) => {
+    e.stopPropagation();
+    setPendingDeletePhoto(photo);
+    setConfirmDelete('single');
+  };
+  const askDeleteBulk = () => setConfirmDelete('bulk');
+
+  const cancelDelete = () => {
+    setConfirmDelete(null);
+    setPendingDeletePhoto(null);
+  };
+
+  const confirmDeleteAction = () => {
+    if (confirmDelete === 'single' && pendingDeletePhoto) doDeleteSingle(pendingDeletePhoto);
+    else if (confirmDelete === 'bulk') doDeleteBulk();
   };
 
   /* ── selection ── */
@@ -4569,17 +4606,26 @@ function PhotosPage({ trip, myNickname }) {
   });
   const clearSel = () => setSelected(new Set());
 
-  /* ── download selected ── */
-  const downloadSelected = () => {
-    folderPhotos
-      .filter(p => selected.has(p.id))
-      .forEach(p => {
+  /* ── download selected (fixed: fetch → blob → anchor) ── */
+  const downloadSelected = async () => {
+    const photos = folderPhotos.filter(p => selected.has(p.id));
+    for (const p of photos) {
+      try {
+        const res = await fetch(p.url);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = p.url;
-        a.download = p.url.split('/').pop();
-        a.target = '_blank';
+        a.href = blobUrl;
+        a.download = p.url.split('/').pop() || `photo-${p.id}.jpg`;
+        document.body.appendChild(a);
         a.click();
-      });
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      } catch (err) {
+        // Fallback: open in new tab if CORS blocks the fetch
+        window.open(p.url, '_blank');
+      }
+    }
   };
 
   /* ── lightbox ── */
@@ -4589,6 +4635,11 @@ function PhotosPage({ trip, myNickname }) {
 
   useEffect(() => {
     const onKey = (e) => {
+      if (confirmDelete) {
+        if (e.key === 'Escape') cancelDelete();
+        if (e.key === 'Enter') confirmDeleteAction();
+        return;
+      }
       if (!lightbox) return;
       if (e.key === 'ArrowLeft') lbPrev();
       if (e.key === 'ArrowRight') lbNext();
@@ -4596,7 +4647,7 @@ function PhotosPage({ trip, myNickname }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [lightbox]);
+  }, [lightbox, confirmDelete, pendingDeletePhoto]);
 
   const initials = (name) => name.slice(0, 2).toUpperCase();
 
@@ -4738,7 +4789,7 @@ function PhotosPage({ trip, myNickname }) {
     }
     .pc.sel .pck { background:#1D9E75; border-color:#1D9E75; }
 
-    /* expand — hover only, pointer-events none until hovered */
+    /* expand — hover only */
     .pex {
       position:absolute; inset:0;
       display:flex; align-items:center; justify-content:center;
@@ -4755,7 +4806,7 @@ function PhotosPage({ trip, myNickname }) {
     }
     .pexi:hover { transform:scale(1.1); }
 
-    /* delete btn — hover only */
+    /* delete btn — my folder hover only */
     .pdel {
       position:absolute; top:7px; left:7px;
       width:26px; height:26px; border-radius:50%;
@@ -4808,10 +4859,71 @@ function PhotosPage({ trip, myNickname }) {
     }
     .bpr:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(29,158,117,0.45); }
 
+    /* NEW: red delete button in action bar */
+    .bdel {
+      background:rgba(220,60,40,0.12); border:1px solid rgba(220,60,40,0.3);
+      color:#e8604a; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:600;
+      padding:9px 18px; border-radius:10px; cursor:pointer;
+      transition:all .15s;
+      display:flex; align-items:center; gap:7px;
+    }
+    .bdel:hover { background:rgba(220,60,40,0.22); border-color:rgba(220,60,40,0.5); transform:translateY(-1px); }
+
     .dl-count {
       background:rgba(255,255,255,0.2); border-radius:99px;
       padding:1px 7px; font-size:12px; font-weight:700;
     }
+    .del-count {
+      background:rgba(220,60,40,0.25); border-radius:99px;
+      padding:1px 7px; font-size:12px; font-weight:700; color:#e8604a;
+    }
+
+    /* ── confirm dialog overlay ── */
+    .conf-overlay {
+      position:fixed; inset:0; background:rgba(0,0,0,0.7);
+      backdrop-filter:blur(8px); z-index:700;
+      display:flex; align-items:center; justify-content:center;
+      padding:1.25rem;
+      animation:fadeIn .15s ease;
+    }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+    .conf-box {
+      background:#18181c; border:1px solid rgba(255,255,255,0.1);
+      border-radius:20px; padding:1.75rem 1.5rem 1.5rem;
+      width:100%; max-width:340px;
+      box-shadow:0 32px 80px rgba(0,0,0,0.8);
+      animation:popIn .18s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    @keyframes popIn { from{transform:scale(0.9);opacity:0} to{transform:scale(1);opacity:1} }
+
+    .conf-icon { font-size:36px; display:block; text-align:center; margin-bottom:14px; }
+
+    .conf-title {
+      font-family:'DM Serif Display',serif; font-size:20px;
+      color:#e2e0da; text-align:center; margin:0 0 8px;
+    }
+    .conf-sub {
+      font-size:13px; color:#6e6c66; text-align:center;
+      margin:0 0 1.5rem; line-height:1.55;
+    }
+    .conf-sub strong { color:#c8c6c0; }
+
+    .conf-actions { display:flex; gap:10px; }
+    .conf-cancel {
+      flex:1; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+      color:#9e9c96; font-size:14px; font-family:'DM Sans',sans-serif; font-weight:500;
+      padding:11px; border-radius:12px; cursor:pointer; transition:all .15s;
+    }
+    .conf-cancel:hover { background:rgba(255,255,255,0.1); color:#e2e0da; }
+
+    .conf-confirm {
+      flex:1; background:linear-gradient(135deg,#c0392b,#922b21); border:none;
+      color:#fff; font-size:14px; font-family:'DM Sans',sans-serif; font-weight:600;
+      padding:11px; border-radius:12px; cursor:pointer;
+      transition:all .15s; box-shadow:0 4px 16px rgba(192,57,43,0.4);
+    }
+    .conf-confirm:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(192,57,43,0.55); }
 
     /* ── lightbox ── */
     .lbo {
@@ -4820,7 +4932,6 @@ function PhotosPage({ trip, myNickname }) {
       justify-content:center; flex-direction:column;
       animation:fadeIn .18s ease;
     }
-    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
     .lbi {
       max-width:92vw; max-height:78vh; object-fit:contain;
@@ -4935,19 +5046,19 @@ function PhotosPage({ trip, myNickname }) {
             >
               <img src={p.url} alt="" loading="lazy" onError={e => { e.target.style.display = 'none'; }} />
 
-              {/* Checkmark — always visible, top right */}
+              {/* Checkmark */}
               <div className="pck">{selected.has(p.id) ? '✓' : ''}</div>
 
-              {/* Expand to fullscreen — hover only, no pointer events otherwise */}
+              {/* Expand to fullscreen — hover only */}
               <div className="pex" onClick={(e) => { e.stopPropagation(); openLightbox(idx); }}>
                 <div className="pexi">⛶</div>
               </div>
 
-              {/* Delete — my folder only, appears on hover */}
+              {/* Single-photo delete — my folder only, hover only */}
               {isMyFolder && (
                 <button
                   className="pdel"
-                  onClick={(e) => { e.stopPropagation(); handleDelete(p); }}
+                  onClick={(e) => askDeleteSingle(p, e)}
                   title="Delete photo"
                 >
                   🗑
@@ -4958,17 +5069,50 @@ function PhotosPage({ trip, myNickname }) {
         </div>
       )}
 
-      {/* ── Selection action bar ── */}
+      {/* ── Selection action bar — always rendered when selection > 0 ── */}
       {selected.size > 0 && (
         <div className="ab">
           <div className="al">
-            <strong>{selected.size}</strong> photo{selected.size > 1 ? 's' : ''} selected
+            <strong>{selected.size}</strong> selected
           </div>
           <button className="bgh" onClick={clearSel}>Clear</button>
           <button className="bpr" onClick={downloadSelected}>
             ⬇ Download
             <span className="dl-count">{selected.size}</span>
           </button>
+          {/* Delete selected — only shown in own folder */}
+          {isMyFolder && (
+            <button className="bdel" onClick={askDeleteBulk}>
+              🗑 Delete
+              <span className="del-count">{selected.size}</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* ── Confirm Delete Dialog ── */}
+      {confirmDelete && (
+        <div className="conf-overlay" onClick={cancelDelete}>
+          <div className="conf-box" onClick={e => e.stopPropagation()}>
+            <span className="conf-icon">🗑️</span>
+            <h3 className="conf-title">
+              {confirmDelete === 'bulk'
+                ? `Delete ${selected.size} photo${selected.size > 1 ? 's' : ''}?`
+                : 'Delete this photo?'}
+            </h3>
+            <p className="conf-sub">
+              {confirmDelete === 'bulk'
+                ? <>This will permanently remove <strong>{selected.size} photo{selected.size > 1 ? 's' : ''}</strong> from your trip. This can't be undone.</>
+                : <>This photo will be permanently removed from your trip. This can't be undone.</>
+              }
+            </p>
+            <div className="conf-actions">
+              <button className="conf-cancel" onClick={cancelDelete}>Cancel</button>
+              <button className="conf-confirm" onClick={confirmDeleteAction}>
+                {confirmDelete === 'bulk' ? `Delete ${selected.size}` : 'Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
