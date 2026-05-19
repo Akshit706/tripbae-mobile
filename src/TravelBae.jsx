@@ -2001,6 +2001,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     people: 2, createdBy: '', budget: '',
   });
 
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const maxDateStr = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
   const EMOJI_OPTIONS_GROUP = ['✈️','🏖️','🏔️','🏰','🌴','🗺️','🎡','🛕','🌅','🌿','🎭','🏛️'];
   const EMOJI_OPTIONS_SOLO  = ['🎒','🧳','🛺','🚂','🏍️','🌏','🪂','🧗','🌄','☕','📖','🦋'];
 
@@ -2201,7 +2205,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       )}
 
-      {showCreate && (
+      {/* {showCreate && (
         <div style={{ ...S.card, border: `0.5px solid ${isSoloMode ? '#AFA9EC' : '#9FE1CB'}`, background: isSoloMode ? '#fdfcff' : '#f9fffe', marginBottom: '1.25rem' }}>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: isSoloMode ? '#534AB7' : '#0F6E56', marginBottom: 14 }}>
             {isSoloMode ? '🎒 New Solo Adventure' : '✈️ Create New Group Trip'}
@@ -2245,6 +2249,100 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             <div>
               <label style={S.label}>Date of Departure *</label>
               <input style={S.input} type="date" value={form.departure} onChange={e => setForm(f => ({ ...f, departure: e.target.value }))} />
+            </div>
+            {!isSoloMode && (
+              <div>
+                <label style={S.label}>Number of People</label>
+                <input style={S.input} type="number" min={1} max={50} value={form.people} onChange={e => setForm(f => ({ ...f, people: e.target.value }))} />
+              </div>
+            )}
+            <div style={{ gridColumn: isSoloMode ? '1/-1' : 'auto' }}>
+              <label style={S.label}>Budget ₹ (optional)</label>
+              <input style={S.input} type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
+            </div>
+            <div style={{ gridColumn: isSoloMode ? '1/-1' : 'auto' }}>
+              <label style={S.label}>Your Name *</label>
+              <input style={S.input} value={form.createdBy} onChange={e => setForm(f => ({ ...f, createdBy: e.target.value }))} placeholder="e.g. Arjun" />
+            </div>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+            <button
+              style={{ ...S.btn, ...(isSoloMode ? S.btnSolo : S.btnP), flex: 1, justifyContent: 'center', padding: '11px', fontSize: 14, borderRadius: 12, opacity: creating ? 0.6 : 1 }}
+              onClick={handleCreate}
+              disabled={!form.groupName || !form.destination || !form.arrival || !form.departure || !form.createdBy || creating}>
+              {creating ? 'Creating…' : isSoloMode ? '🎒 Start Solo Adventure' : '🚀 Create & Get Share Code'}
+            </button>
+            <button style={S.btn} onClick={() => setShowCreate(false)}>✕</button>
+          </div>
+        </div>
+      )} */}
+
+
+      
+
+      {showCreate && (
+        <div style={{ ...S.card, border: `0.5px solid ${isSoloMode ? '#AFA9EC' : '#9FE1CB'}`, background: isSoloMode ? '#fdfcff' : '#f9fffe', marginBottom: '1.25rem' }}>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: isSoloMode ? '#534AB7' : '#0F6E56', marginBottom: 14 }}>
+            {isSoloMode ? '🎒 New Solo Adventure' : '✈️ Create New Group Trip'}
+          </div>
+          <div style={{ display: 'flex', gap: 0, background: '#F1EFE8', borderRadius: 12, padding: 3, marginBottom: 16 }}>
+            {[{ val: false, label: '👥 Group', desc: 'Travel with friends' }, { val: true, label: '🎒 Solo', desc: 'Just me, myself & I' }].map(opt => (
+              <button key={String(opt.val)} onClick={() => { setIsSoloMode(opt.val); setForm(f => ({ ...f, emoji: opt.val ? '🎒' : '✈️', people: opt.val ? 1 : 2 })); }}
+                style={{ flex: 1, padding: '9px 10px', borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
+                  background: isSoloMode === opt.val ? (opt.val ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75') : 'transparent',
+                  color: isSoloMode === opt.val ? '#fff' : '#6b6b68', fontWeight: 500, fontSize: 13, transition: 'all .2s' }}>
+                {opt.label}
+                <div style={{ fontSize: 10, opacity: 0.75, marginTop: 1 }}>{opt.desc}</div>
+              </button>
+            ))}
+          </div>
+          <label style={S.label}>Trip Emoji</label>
+          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', margin: '6px 0 10px' }}>
+            {emojiOptions.map(e => (
+              <div key={e} onClick={() => setForm(f => ({ ...f, emoji: e }))}
+                style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer',
+                  border: form.emoji === e ? `2px solid ${isSoloMode ? '#7F77DD' : '#1D9E75'}` : '0.5px solid rgba(0,0,0,0.12)',
+                  background: form.emoji === e ? (isSoloMode ? '#EEEDFE' : '#E1F5EE') : '#fff', transition: 'all .12s' }}>
+                {e}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={S.label}>{isSoloMode ? 'Adventure Name *' : 'Group Name *'}</label>
+              <input style={S.input} value={form.groupName} onChange={e => setForm(f => ({ ...f, groupName: e.target.value }))}
+                placeholder={isSoloMode ? 'e.g. My Jaipur Chapter' : 'e.g. Pink City Explorers'} />
+            </div>
+            <div style={{ gridColumn: '1/-1' }}>
+              <label style={S.label}>Destination *</label>
+              <input style={S.input} value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))} placeholder="e.g. Jaipur, Rajasthan" />
+            </div>
+            <div>
+              <label style={S.label}>Date of Arrival *</label>
+              <input
+                style={S.input}
+                type="date"
+                value={form.arrival}
+                min={todayStr}
+                max={maxDateStr}
+                onChange={e => setForm(f => ({
+                  ...f,
+                  arrival: e.target.value,
+                  // if departure is now before the new arrival, push it forward
+                  departure: f.departure < e.target.value ? e.target.value : f.departure,
+                }))}
+              />
+            </div>
+            <div>
+              <label style={S.label}>Date of Departure *</label>
+              <input
+                style={S.input}
+                type="date"
+                value={form.departure}
+                min={form.arrival || todayStr}
+                max={maxDateStr}
+                onChange={e => setForm(f => ({ ...f, departure: e.target.value }))}
+              />
             </div>
             {!isSoloMode && (
               <div>
@@ -3048,730 +3146,6 @@ function LocalTastePage({ destination, isSolo }) {
 /* ═══════════════════════════════════════════════════════
    GROUP SPLIT PAGE — REVAMPED v2
 ═══════════════════════════════════════════════════════ */
-// function SplitPage({ trip, myNickname }) {
-//   const memberNames = normalizeMembers(trip.members);
-//   const [expenses, setExpenses] = useState(trip.expenses || []);
-//   const [showForm, setShowForm] = useState(false);
-//   const [section, setSection] = useState('expenses');
-//   const [saving, setSaving] = useState(false);
-//   const [filterCat, setFilterCat] = useState('all');
-//   const [showBudgetEdit, setShowBudgetEdit] = useState(false);
-//   const [localBudget, setLocalBudget] = useState(trip.budget || null);
-//   const [budgetInput, setBudgetInput] = useState('');
-//   const [chartReady, setChartReady] = useState(false);
-//   const todayStr = new Date().toISOString().split('T')[0];
-//   const [form, setForm] = useState({
-//     desc: '', amount: '', paidBy: myNickname || memberNames[0] || '',
-//     cat: 'food', date: todayStr,
-//     splitMode: 'all',          // 'all' | 'select'
-//     splitWith: [...memberNames],
-//   });
-
-//   const donutRef = useRef(null);
-//   const barRef = useRef(null);
-//   const chartInstances = useRef({});
-
-//   const MCOLORS_LIST = ['#1D9E75','#D85A30','#7F77DD','#BA7517','#378ADD','#D4537E','#0F6E56','#993C1D'];
-//   const mcolor = (name) => {
-//     const code = Math.abs(Array.from(name || '').reduce((a, c) => a + c.charCodeAt(0), 0));
-//     return MCOLORS_LIST[code % MCOLORS_LIST.length];
-//   };
-//   const CAT_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
-
-//   // ── Load Chart.js once ──
-//   useEffect(() => {
-//     if (window.Chart) { setChartReady(true); return; }
-//     const script = document.createElement('script');
-//     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
-//     script.onload = () => setChartReady(true);
-//     document.head.appendChild(script);
-//   }, []);
-
-//   // ── Render charts whenever insights tab is active + Chart.js ready ──
-//   useEffect(() => {
-//     if (section !== 'insights' || !chartReady) return;
-//     const t = setTimeout(renderCharts, 80);
-//     return () => clearTimeout(t);
-//   }, [section, chartReady, expenses]);
-
-//   // ── Derived numbers ──
-//   const total = expenses.reduce((s, e) => s + e.amount, 0);
-//   const days = Math.max(1, Math.round((new Date(trip.departure) - new Date(trip.arrival)) / 86400000));
-//   const today = new Date();
-//   const daysElapsed = Math.max(1, Math.min(days, Math.round((today - new Date(trip.arrival)) / 86400000)));
-//   const daysLeft = Math.max(0, Math.round((new Date(trip.departure) - today) / 86400000));
-//   const tsr = total / daysElapsed;
-//   const projected = Math.round(tsr * days);
-//   const budget = localBudget;
-//   const budgetLeft = budget ? budget - total : null;
-//   const budgetPct = budget ? Math.min(100, Math.round(total / budget * 100)) : null;
-//   const perPerson = memberNames.length > 0 ? total / memberNames.length : 0;
-
-//   const catTotals = {};
-//   CATS.forEach(c => { catTotals[c.id] = 0; });
-//   expenses.forEach(e => { catTotals[e.cat] = (catTotals[e.cat] || 0) + e.amount; });
-
-//   const payTotal = {};
-//   memberNames.forEach(m => { payTotal[m] = 0; });
-//   expenses.forEach(e => { payTotal[e.paidBy] = (payTotal[e.paidBy] || 0) + e.amount; });
-//   const maxPay = Math.max(...memberNames.map(m => payTotal[m] || 0), 1);
-
-//   const balances = {};
-//   memberNames.forEach(m => { balances[m] = 0; });
-//   expenses.forEach(e => {
-//     const splitNames = Array.isArray(e.split) && e.split.length > 0 ? e.split : memberNames;
-//     const sh = e.amount / splitNames.length;
-//     splitNames.forEach(m => { if (balances[m] !== undefined) balances[m] -= sh; });
-//     if (balances[e.paidBy] !== undefined) balances[e.paidBy] += e.amount;
-//   });
-
-//   const settlements = [];
-//   const bal = { ...balances };
-//   const ds = memberNames.filter(m => bal[m] < -0.01).sort((a, b) => bal[a] - bal[b]);
-//   const cs = memberNames.filter(m => bal[m] > 0.01).sort((a, b) => bal[b] - bal[a]);
-//   let di = 0, ci = 0;
-//   while (di < ds.length && ci < cs.length) {
-//     const d = ds[di], c = cs[ci], amt = Math.min(-bal[d], bal[c]);
-//     settlements.push({ from: d, to: c, amt });
-//     bal[d] += amt; bal[c] -= amt;
-//     if (Math.abs(bal[d]) < 0.01) di++;
-//     if (Math.abs(bal[c]) < 0.01) ci++;
-//   }
-
-//   const top3 = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 3);
-
-//   function renderCharts() {
-//     Object.values(chartInstances.current).forEach(c => { try { c.destroy(); } catch (_) {} });
-//     chartInstances.current = {};
-//     const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
-//     const textColor = isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.4)';
-//     const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
-
-//     // Donut
-//     if (donutRef.current && budget) {
-//       chartInstances.current.donut = new window.Chart(donutRef.current, {
-//         type: 'doughnut',
-//         data: {
-//           datasets: [{
-//             data: [Math.min(total, budget), Math.max(0, budget - total)],
-//             backgroundColor: [budgetPct > 85 ? '#D85A30' : '#1D9E75', isDark ? '#1a2e1a' : '#E1F5EE'],
-//             borderWidth: 0,
-//             hoverOffset: 0,
-//           }]
-//         },
-//         options: {
-//           responsive: true, maintainAspectRatio: false, cutout: '74%',
-//           plugins: {
-//             legend: { display: false },
-//             tooltip: { callbacks: { label: ctx => ctx.dataIndex === 0 ? ` Spent: ₹${Math.round(Math.min(total, budget)).toLocaleString('en-IN')}` : ` Left: ₹${Math.round(Math.max(0, budget - total)).toLocaleString('en-IN')}` } }
-//           }
-//         },
-//         plugins: [{
-//           id: 'center',
-//           afterDraw(chart) {
-//             const { ctx, chartArea: { width, height, left, top } } = chart;
-//             const cx = left + width / 2, cy = top + height / 2;
-//             ctx.save();
-//             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-//             ctx.font = '600 17px system-ui';
-//             ctx.fillStyle = isDark ? '#fff' : '#1a1a18';
-//             ctx.fillText(`${budgetPct}%`, cx, cy - 9);
-//             ctx.font = '12px system-ui';
-//             ctx.fillStyle = textColor;
-//             ctx.fillText('used', cx, cy + 9);
-//             ctx.restore();
-//           }
-//         }]
-//       });
-//     }
-
-//     // Category bar
-//     if (barRef.current) {
-//       const activeCats = CATS.filter(c => catTotals[c.id] > 0);
-//       if (activeCats.length === 0) return;
-//       const BAR_COLORS = { food:'#BA7517', transport:'#1D9E75', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#888780' };
-//       chartInstances.current.bar = new window.Chart(barRef.current, {
-//         type: 'bar',
-//         data: {
-//           labels: activeCats.map(c => c.label),
-//           datasets: [{
-//             data: activeCats.map(c => catTotals[c.id]),
-//             backgroundColor: activeCats.map(c => BAR_COLORS[c.id] || '#888780'),
-//             borderRadius: 6,
-//             borderSkipped: false,
-//           }]
-//         },
-//         options: {
-//           responsive: true, maintainAspectRatio: false,
-//           plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ₹${Math.round(ctx.raw).toLocaleString('en-IN')}` } } },
-//           scales: {
-//             x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false }, border: { display: false } },
-//             y: { ticks: { color: textColor, font: { size: 11 }, callback: v => `₹${v >= 1000 ? Math.round(v / 1000) + 'k' : v}` }, grid: { color: gridColor }, border: { display: false } }
-//           }
-//         }
-//       });
-//     }
-//   }
-
-//   // ── Add expense ──
-//   const handleAdd = async () => {
-//     if (!form.desc || !form.amount) return;
-//     const splitWith = form.splitMode === 'all' ? memberNames : form.splitWith;
-//     if (splitWith.length === 0) { alert('Select at least one person to split with.'); return; }
-//     setSaving(true);
-//     try {
-//       const data = await addExpense(trip.id, {
-//         desc: form.desc, amount: parseFloat(form.amount),
-//         paidBy: form.paidBy, cat: form.cat,
-//         split: splitWith, date: form.date,
-//       });
-//       setExpenses(es => [data.expense, ...es]);
-//       setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: todayStr, splitMode: 'all', splitWith: [...memberNames] });
-//       setShowForm(false);
-//     } catch (err) { alert('Could not save: ' + err.message); }
-//     setSaving(false);
-//   };
-
-//   const handleDelete = async (expId) => {
-//     try { await deleteExpense(trip.id, expId); setExpenses(es => es.filter(x => x.id !== expId)); }
-//     catch (err) { alert('Could not delete: ' + err.message); }
-//   };
-
-//   const toggleSplitMember = (name) => {
-//     setForm(f => {
-//       const already = f.splitWith.includes(name);
-//       if (already && f.splitWith.length === 1) return f; // keep at least 1
-//       return { ...f, splitWith: already ? f.splitWith.filter(n => n !== name) : [...f.splitWith, name] };
-//     });
-//   };
-
-//   const filteredExpenses = filterCat === 'all' ? expenses : expenses.filter(e => e.cat === filterCat);
-//   const sortedExpenses = [...filteredExpenses].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-//   const SECTION_TABS = [
-//     { id: 'expenses', label: 'Expenses' },
-//     { id: 'shares',   label: 'Shares' },
-//     { id: 'balances', label: 'Balances' },
-//     { id: 'insights', label: 'Insights' },
-//   ];
-
-//   return (
-//     <div>
-//       {/* ── Hero ── */}
-//       <div style={{ background: 'linear-gradient(135deg,#0F6E56,#1D9E75)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
-//         <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 90, opacity: 0.07 }}>₹</div>
-//         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, marginBottom: budget ? 14 : 0 }}>
-//           {[
-//             { label: 'Total spent', value: `₹${Math.round(total).toLocaleString('en-IN')}`, sub: `${expenses.length} expenses` },
-//             { label: 'Per person',  value: `₹${Math.round(perPerson).toLocaleString('en-IN')}`, sub: 'equal share' },
-//             { label: 'Days left',   value: daysLeft, sub: `of ${days} nights` },
-//           ].map((s, i) => (
-//             <div key={s.label} style={{ textAlign: i === 1 ? 'center' : i === 2 ? 'right' : 'left' }}>
-//               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>{s.label}</div>
-//               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: '#fff' }}>{s.value}</div>
-//               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>{s.sub}</div>
-//             </div>
-//           ))}
-//         </div>
-//         {budget && (
-//           <div style={{ marginTop: 14 }}>
-//             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-//               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{budgetPct}% of ₹{budget.toLocaleString('en-IN')} used</span>
-//               <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>₹{Math.round(Math.max(0, budgetLeft)).toLocaleString('en-IN')} left</span>
-//             </div>
-//             <div style={{ height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
-//               <div style={{ height: '100%', width: `${budgetPct}%`, background: budgetPct > 85 ? '#FCA5A5' : '#86EFAC', borderRadius: 4, transition: 'width .6s' }} />
-//             </div>
-//             <div style={{ textAlign: 'center', marginTop: 10 }}>
-//               <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
-//                 style={{ background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.25)', borderRadius: 8, padding: '4px 14px', fontSize: 12, color: 'rgba(255,255,255,0.75)', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
-//                 Edit budget
-//               </button>
-//             </div>
-//           </div>
-//         )}
-//         {!budget && (
-//           <button onClick={() => setShowBudgetEdit(true)}
-//             style={{ ...S.btn, background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', fontSize: 12, marginTop: 8 }}>
-//             + Set a budget
-//           </button>
-//         )}
-//       </div>
-//       {showBudgetEdit && (
-//         <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '0.75rem' }}>
-//           <label style={S.label}>Total trip budget ₹</label>
-//           <input style={S.input} type="number" value={budgetInput}
-//             onChange={e => setBudgetInput(e.target.value)}
-//             placeholder="e.g. 50000" autoFocus />
-//           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-//             <button style={{ ...S.btn, ...S.btnP, flex: 1, justifyContent: 'center', padding: '9px' }}
-//               onClick={async () => {
-//                 const v = parseFloat(budgetInput);
-//                 if (!isNaN(v) && v > 0) {
-//                   setLocalBudget(v);
-//                   try {
-//                     const { updateTrip } = await import('./api');
-//                     await updateTrip(trip.id, { budget: v });
-//                   } catch (_) {}
-//                 }
-//                 setShowBudgetEdit(false);
-//               }}>
-//               ✓ Save
-//             </button>
-//             {budget && (
-//               <button style={{ ...S.btn, color: '#993C1D', borderColor: '#F5C4B3' }}
-//                 onClick={async () => {
-//                   setLocalBudget(null);
-//                   try {
-//                     const { updateTrip } = await import('./api');
-//                     await updateTrip(trip.id, { budget: null });
-//                   } catch (_) {}
-//                   setShowBudgetEdit(false);
-//                 }}>
-//                 Remove
-//               </button>
-//             )}
-//             <button style={S.btn} onClick={() => setShowBudgetEdit(false)}>✕</button>
-//           </div>
-//         </div>
-//       )}
-
-//       {/* ── Member pills ── */}
-//       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1rem' }}>
-//         {memberNames.map(m => (
-//           <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 20, padding: '4px 12px 4px 5px', fontSize: 13 }}>
-//             <div style={{ width: 22, height: 22, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700 }}>{m.slice(0, 2).toUpperCase()}</div>
-//             {m}
-//           </div>
-//         ))}
-//       </div>
-
-//       {/* ── Section tabs ── */}
-//       <div style={{ display: 'flex', gap: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 13, padding: 3, marginBottom: '1rem' }}>
-//         {SECTION_TABS.map(t => (
-//           <button key={t.id} onClick={() => setSection(t.id)}
-//             style={{ flex: 1, padding: '8px 4px', fontSize: 12, fontWeight: section === t.id ? 600 : 400, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
-//               background: section === t.id ? '#1D9E75' : 'transparent',
-//               color: section === t.id ? '#fff' : '#6b6b68', transition: 'all .15s' }}>
-//             {t.label}
-//           </button>
-//         ))}
-//       </div>
-
-//       {/* ══ EXPENSES TAB ══ */}
-//       {section === 'expenses' && (
-//         <div>
-//           <button style={{ ...S.btn, ...S.btnP, width: '100%', justifyContent: 'center', padding: '10px', borderRadius: 12, fontSize: 14, marginBottom: '0.75rem' }}
-//             onClick={() => setShowForm(v => !v)}>
-//             + {showForm ? 'Cancel' : 'Add expense'}
-//           </button>
-
-//           {showForm && (
-//             <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '0.75rem' }}>
-
-//               {/* Big amount input */}
-//               <div style={{ textAlign: 'center', padding: '0.25rem 0 1rem' }}>
-//                 <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: .4, textTransform: 'uppercase', marginBottom: 8 }}>Amount ₹</div>
-//                 <input
-//                   style={{ fontFamily: "'Sora',sans-serif", fontSize: 38, fontWeight: 700, color: '#0F6E56', border: 'none', background: 'transparent', textAlign: 'center', width: '100%', outline: 'none' }}
-//                   type="number" placeholder="0" value={form.amount}
-//                   onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-//                   autoFocus
-//                 />
-//                 <div style={{ height: 1.5, background: 'linear-gradient(90deg,transparent,#9FE1CB,transparent)' }} />
-//               </div>
-
-//               {/* Description */}
-//               <input style={{ ...S.input, marginBottom: 12 }} placeholder="What was it? e.g. Hotel checkout"
-//                 value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} />
-
-//               {/* Category pills */}
-//               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-//                 {CATS.map(c => (
-//                   <button key={c.id} onClick={() => setForm(f => ({ ...f, cat: c.id }))}
-//                     style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 18, fontSize: 12, border: `0.5px solid ${form.cat === c.id ? '#1D9E75' : 'rgba(0,0,0,0.12)'}`, background: form.cat === c.id ? '#E1F5EE' : '#fff', color: form.cat === c.id ? '#0F6E56' : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .12s' }}>
-//                     {c.icon} {c.label}
-//                   </button>
-//                 ))}
-//                 <button
-//                   onClick={() => {
-//                     const tag = prompt('Enter custom tag name:');
-//                     if (tag && tag.trim()) {
-//                       const id = 'custom_' + tag.trim().toLowerCase().replace(/\s+/g, '_');
-//                       if (!CATS.find(c => c.id === id)) {
-//                         CATS.push({ id, icon: '🏷️', label: tag.trim(), bg: '#F1EFE8' });
-//                       }
-//                       setForm(f => ({ ...f, cat: id }));
-//                     }
-//                   }}
-//                   style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 11px', borderRadius: 18, fontSize: 12, border: '0.5px dashed rgba(0,0,0,0.2)', background: '#fff', color: '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
-//                   + tag
-//                 </button>
-//               </div>
-
-//               {/* Date row */}
-//               <div style={{ marginBottom: 14 }}>
-//                 <label style={S.label}>Date</label>
-//                 <input style={S.input} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
-//               </div>
-
-//               {/*Paid by X and split Y — Splitwise style*/}
-//               <div style={{ background: '#f4f3f0', borderRadius: 12, padding: '12px 14px', marginBottom: 14 }}>
-//                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 14, color: '#1a1a18' }}>
-//                   <span style={{ color: '#6b6b68' }}>Paid by</span>
-//                   <select
-//                     value={form.paidBy}
-//                     onChange={e => setForm(f => ({ ...f, paidBy: e.target.value }))}
-//                     style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, fontWeight: 600, color: '#0F6E56', background: '#fff', border: '1.5px solid #9FE1CB', borderRadius: 10, padding: '5px 10px', cursor: 'pointer', outline: 'none' }}>
-//                     {memberNames.map(m => <option key={m}>{m}</option>)}
-//                   </select>
-//                   <span style={{ color: '#6b6b68' }}>and split</span>
-//                   {/* Split dropdown trigger */}
-//                   <div style={{ position: 'relative' }}>
-//                     <button
-//                       onClick={() => setForm(f => ({ ...f, _splitOpen: !f._splitOpen }))}
-//                       style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, fontWeight: 600, color: '#0F6E56', background: '#fff', border: '1.5px solid #9FE1CB', borderRadius: 10, padding: '5px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
-//                       {form.splitMode === 'all' ? 'equally' : `${form.splitWith.length} people`} ▾
-//                     </button>
-//                     {form._splitOpen && (
-//                       <>
-//                         <div style={{ position: 'fixed', inset: 0, zIndex: 50 }} onClick={() => setForm(f => ({ ...f, _splitOpen: false }))} />
-//                         <div style={{ position: 'absolute', top: '110%', left: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.12)', zIndex: 51, minWidth: 200, padding: '8px' }}>
-//                           {/* Select all toggle */}
-//                           <button
-//                             onClick={() => setForm(f => ({ ...f, splitMode: 'all', splitWith: [...memberNames] }))}
-//                             style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 10px', borderRadius: 9, border: 'none', background: form.splitMode === 'all' ? '#E1F5EE' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: form.splitMode === 'all' ? '#0F6E56' : '#1a1a18', marginBottom: 4 }}>
-//                             <div style={{ width: 20, height: 20, borderRadius: 6, border: `1.5px solid ${form.splitMode === 'all' ? '#1D9E75' : '#D3D1C7'}`, background: form.splitMode === 'all' ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff' }}>{form.splitMode === 'all' ? '✓' : ''}</div>
-//                             Everyone equally
-//                           </button>
-//                           <div style={{ height: '0.5px', background: 'rgba(0,0,0,0.07)', margin: '4px 0' }} />
-//                           {memberNames.map(m => {
-//                             const sel = form.splitWith.includes(m);
-//                             return (
-//                               <button key={m}
-//                                 onClick={() => {
-//                                   setForm(f => {
-//                                     const already = f.splitWith.includes(m);
-//                                     const newWith = already
-//                                       ? f.splitWith.filter(n => n !== m)
-//                                       : [...f.splitWith, m];
-//                                     if (newWith.length === 0) return f;
-//                                     return { ...f, splitMode: 'select', splitWith: newWith };
-//                                   });
-//                                 }}
-//                                 style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '8px 10px', borderRadius: 9, border: 'none', background: (form.splitMode === 'select' && sel) ? '#E1F5EE' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 13, color: '#1a1a18' }}>
-//                                 <div style={{ width: 20, height: 20, borderRadius: 6, border: `1.5px solid ${form.splitMode === 'select' && sel ? '#1D9E75' : '#D3D1C7'}`, background: form.splitMode === 'select' && sel ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, color: '#fff' }}>
-//                                   {form.splitMode === 'select' && sel ? '✓' : ''}
-//                                 </div>
-//                                 <div style={{ width: 24, height: 24, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700 }}>{m.slice(0,2).toUpperCase()}</div>
-//                                 {m}
-//                               </button>
-//                             );
-//                           })}
-//                         </div>
-//                       </>
-//                     )}
-//                   </div>
-//                 </div>
-
-//                 {/* Per person preview */}
-//                 {form.amount && parseFloat(form.amount) > 0 && (
-//                   <div style={{ marginTop: 10, fontSize: 12, color: '#6b6b68' }}>
-//                     ₹{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : (form.splitWith.length || 1))).toFixed(0)} per person · {form.splitMode === 'all' ? memberNames.length : form.splitWith.length} ways
-//                   </div>
-//                 )}
-//               </div>
-
-//               <button style={{ ...S.btn, ...S.btnP, width: '100%', justifyContent: 'center', padding: '11px', fontSize: 14, borderRadius: 12, opacity: saving ? 0.6 : 1 }}
-//                 onClick={handleAdd} disabled={saving || !form.desc || !form.amount}>
-//                 {saving ? 'Saving…' : '✓ Add expense'}
-//               </button>
-//             </div>
-//           )}
-
-//           {/* Category filter chips */}
-//           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-//             {[{ id: 'all', label: 'All', icon: '' }, ...CATS.filter(c => catTotals[c.id] > 0)].map(c => (
-//               <button key={c.id} onClick={() => setFilterCat(c.id)}
-//                 style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16,
-//                   background: filterCat === c.id ? (c.id === 'all' ? '#1D9E75' : CATS.find(x => x.id === c.id)?.bg || '#E1F5EE') : '#fff',
-//                   color: filterCat === c.id ? (c.id === 'all' ? '#fff' : CAT_COLORS[c.id] || '#1D9E75') : '#6b6b68',
-//                   border: `0.5px solid ${filterCat === c.id ? (c.id === 'all' ? '#1D9E75' : (CAT_COLORS[c.id] || '#1D9E75') + '44') : 'rgba(0,0,0,0.12)'}` }}>
-//                 {c.icon} {c.label}
-//               </button>
-//             ))}
-//           </div>
-
-//           {sortedExpenses.length === 0 && (
-//             <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#6b6b68' }}>
-//               <div style={{ fontSize: 42, marginBottom: 12 }}>🧾</div>
-//               <p style={{ fontSize: 14 }}>No expenses yet. Add the first one!</p>
-//             </div>
-//           )}
-
-//           {sortedExpenses.map(exp => {
-//             const cat = CATS.find(c => c.id === exp.cat) || CATS[5];
-//             const splitArr = Array.isArray(exp.split) && exp.split.length > 0 ? exp.split : memberNames;
-//             return (
-//               <div key={exp.id} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8,
-//                 borderLeft: `3px solid ${CAT_COLORS[exp.cat] || '#ccc'}`, borderRadius: '0 14px 14px 0', padding: '12px 14px 12px 12px' }}>
-//                 <div style={{ width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 20 }}>{cat.icon}</div>
-//                 <div style={{ flex: 1, minWidth: 0 }}>
-//                   <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 2 }}>{exp.desc}</div>
-//                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-//                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-//                       <div style={{ width: 16, height: 16, borderRadius: '50%', background: mcolor(exp.paidBy), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{exp.paidBy.slice(0, 2).toUpperCase()}</div>
-//                       <span style={{ fontSize: 12, color: '#6b6b68' }}>{exp.paidBy}</span>
-//                     </div>
-//                     <span style={{ fontSize: 11, color: '#D3D1C7' }}>·</span>
-//                     {/* Show who's splitting */}
-//                     <div style={{ display: 'flex', gap: -4 }}>
-//                       {splitArr.slice(0, 4).map((m, i) => (
-//                         <div key={m} style={{ width: 16, height: 16, borderRadius: '50%', background: mcolor(m), border: '1.5px solid #fff', marginLeft: i > 0 ? -5 : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 7, fontWeight: 700 }}>{m.slice(0, 1).toUpperCase()}</div>
-//                       ))}
-//                       {splitArr.length > 4 && <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#D3D1C7', border: '1.5px solid #fff', marginLeft: -5, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#6b6b68', fontWeight: 700 }}>+{splitArr.length - 4}</div>}
-//                     </div>
-//                     <span style={{ fontSize: 11, color: '#a8a8a5' }}>{splitArr.length} people</span>
-//                     <span style={{ fontSize: 11, color: '#D3D1C7' }}>·</span>
-//                     <span style={{ fontSize: 11, color: '#a8a8a5' }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
-//                   </div>
-//                 </div>
-//                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-//                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700 }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
-//                   <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>₹{Math.round(exp.amount / splitArr.length).toLocaleString('en-IN')} each</div>
-//                   <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 6px', fontSize: 11, color: '#ccc', border: 'none', background: 'transparent', marginTop: 2 }}>✕</button>
-//                 </div>
-//               </div>
-//             );
-//           })}
-//         </div>
-//       )}
-
-//       {/* ══ SHARES TAB ══ */}
-//       {section === 'shares' && (
-//         <div>
-//           <div style={{ ...S.card, background: 'linear-gradient(135deg,#E1F5EE,#E6F1FB)', border: '0.5px solid #9FE1CB', marginBottom: '1rem' }}>
-//             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: '#085041' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
-//             <div style={{ fontSize: 12, color: '#0F6E56', marginTop: 3 }}>{memberNames.length} members · {expenses.length} expenses · {days} days</div>
-//           </div>
-
-//           <div style={{ ...S.card, marginBottom: '0.75rem' }}>
-//             {memberNames.map((m, i) => {
-//               const paid = expenses.filter(e => e.paidBy === m).reduce((s, e) => s + e.amount, 0);
-//               const owes = expenses.reduce((s, e) => {
-//                 const sp = Array.isArray(e.split) && e.split.length > 0 ? e.split : memberNames;
-//                 return sp.includes(m) ? s + e.amount / sp.length : s;
-//               }, 0);
-//               const net = paid - owes;
-//               return (
-//                 <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < memberNames.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none' }}>
-//                   <div style={{ width: 34, height: 34, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{m.slice(0, 2).toUpperCase()}</div>
-//                   <div style={{ flex: 1 }}>
-//                     <div style={{ fontSize: 14, fontWeight: 500 }}>{m}</div>
-//                     <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 1 }}>paid ₹{Math.round(paid).toLocaleString('en-IN')} · share ₹{Math.round(owes).toLocaleString('en-IN')}</div>
-//                   </div>
-//                   <div style={{ textAlign: 'right' }}>
-//                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: net >= 0 ? '#0F6E56' : '#993C1D' }}>{net >= 0 ? '+' : '−'}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}</div>
-//                     <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 1 }}>{net > 0.5 ? 'gets back' : net < -0.5 ? 'owes' : 'settled'}</div>
-//                   </div>
-//                 </div>
-//               );
-//             })}
-//           </div>
-
-//           <div style={{ fontSize: 12, fontWeight: 600, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Who pays whom</div>
-//           {settlements.length === 0
-//             ? <div style={{ background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 12, padding: '1rem 1.25rem', fontSize: 14, color: '#085041', fontWeight: 500 }}>✅ Everyone is squared up!</div>
-//             : settlements.map((s, i) => (
-//               <div key={i} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-//                 <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(s.from), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.from.slice(0, 2).toUpperCase()}</div>
-//                 <span style={{ fontSize: 13, fontWeight: 500 }}>{s.from}</span>
-//                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
-//                   <div style={{ height: 1, flex: 1, background: 'rgba(0,0,0,0.09)' }} />
-//                   <span style={{ fontSize: 11, color: '#D85A30', padding: '2px 6px', background: '#FAECE7', borderRadius: 8, fontWeight: 600 }}>→</span>
-//                   <div style={{ height: 1, flex: 1, background: 'rgba(0,0,0,0.09)' }} />
-//                 </div>
-//                 <span style={{ fontSize: 13, fontWeight: 500 }}>{s.to}</span>
-//                 <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(s.to), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.to.slice(0, 2).toUpperCase()}</div>
-//                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#0F6E56', marginLeft: 6 }}>₹{Math.round(s.amt).toLocaleString('en-IN')}</div>
-//               </div>
-//             ))
-//           }
-//         </div>
-//       )}
-
-//       {/* ══ BALANCES TAB ══ */}
-//       {section === 'balances' && (
-//         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-//           {memberNames.map(m => {
-//             const b = balances[m];
-//             const isPos = b >= 0.5, isNeg = b < -0.5;
-//             return (
-//               <div key={m} style={{ ...S.card, borderTop: `3px solid ${isPos ? '#1D9E75' : isNeg ? '#D85A30' : '#D3D1C7'}`, borderRadius: '0 0 14px 14px', padding: '1rem' }}>
-//                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-//                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700 }}>{m.slice(0, 2).toUpperCase()}</div>
-//                   <div style={{ fontSize: 14, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m}</div>
-//                 </div>
-//                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: isPos ? '#0F6E56' : isNeg ? '#993C1D' : '#6b6b68' }}>
-//                   {isPos ? '+' : ''}₹{Math.abs(Math.round(b)).toLocaleString('en-IN')}
-//                 </div>
-//                 <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 4 }}>
-//                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: isPos ? '#1D9E75' : isNeg ? '#D85A30' : '#D3D1C7', display: 'inline-block', marginRight: 4 }} />
-//                   {isPos ? 'gets back' : isNeg ? 'owes' : 'all settled'}
-//                 </div>
-//               </div>
-//             );
-//           })}
-//         </div>
-//       )}
-
-//       {/* ══ INSIGHTS TAB ══ */}
-//       {section === 'insights' && (
-//         <div>
-//           {/* Stat row */}
-//           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
-//             {[
-//               { label: 'Avg/day', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: 'burn rate' },
-//               { label: 'Projected', value: `₹${projected.toLocaleString('en-IN')}`, sub: 'at current rate', warn: budget && projected > budget },
-//               { label: 'Days left', value: daysLeft, sub: `${daysElapsed}d elapsed` },
-//             ].map(s => (
-//               <div key={s.label} style={{ background: s.warn ? '#FAECE7' : '#f7f6f2', borderRadius: 12, padding: '10px 12px', border: s.warn ? '0.5px solid #F5C4B3' : 'none' }}>
-//                 <div style={{ fontSize: 11, color: s.warn ? '#993C1D' : '#6b6b68', marginBottom: 3 }}>{s.label}</div>
-//                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: s.warn ? '#993C1D' : '#1a1a18' }}>{s.value}</div>
-//                 <div style={{ fontSize: 11, color: s.warn ? '#D85A30' : '#a8a8a5', marginTop: 2 }}>{s.sub}</div>
-//               </div>
-//             ))}
-//           </div>
-
-//           {/* Donut + TSR */}
-//           <div style={{ display: 'grid', gridTemplateColumns: budget ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 10 }}>
-//             {budget && (
-//               <div style={{ ...S.card, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.25rem 1rem' }}>
-//                 <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Budget health</div>
-//                 <div style={{ position: 'relative', width: 130, height: 130 }}>
-//                   <canvas ref={donutRef} role="img" aria-label={`${budgetPct}% of budget spent`}>{budgetPct}% used.</canvas>
-//                 </div>
-//                 <div style={{ marginTop: 12, display: 'flex', gap: 12, fontSize: 11, color: '#6b6b68' }}>
-//                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: budgetPct > 85 ? '#D85A30' : '#1D9E75', display: 'inline-block' }} />Spent</span>
-//                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ width: 8, height: 8, borderRadius: 2, background: '#E1F5EE', border: '0.5px solid #9FE1CB', display: 'inline-block' }} />Left</span>
-//                 </div>
-//               </div>
-//             )}
-//             <div style={{ ...S.card }}>
-//               <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>TSR projection</div>
-//               <div style={{ fontSize: 12, color: '#6b6b68', marginBottom: 4 }}>Daily burn rate</div>
-//               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 10 }}>₹{Math.round(tsr).toLocaleString('en-IN')}</div>
-//               <div style={{ fontSize: 12, color: '#6b6b68', marginBottom: 4 }}>Trip-end projection</div>
-//               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: budget && projected > budget ? '#993C1D' : '#1a1a18', marginBottom: 10 }}>₹{projected.toLocaleString('en-IN')}</div>
-//               {budget && (
-//                 <div style={{ padding: '8px 10px', background: projected > budget ? '#FAECE7' : '#E1F5EE', borderRadius: 8, fontSize: 11, color: projected > budget ? '#993C1D' : '#0F6E56', lineHeight: 1.4 }}>
-//                   {projected > budget ? `⚠️ Over by ₹${(projected - budget).toLocaleString('en-IN')}` : `✅ ₹${(budget - projected).toLocaleString('en-IN')} under budget`}
-//                 </div>
-//               )}
-//               {!budget && <div style={{ fontSize: 12, color: '#a8a8a5', fontStyle: 'italic' }}>No trip budget set</div>}
-//             </div>
-//           </div>
-
-//           {/* Top 3 */}
-//           {top3.length > 0 && (
-//             <div style={{ ...S.card, marginBottom: 10 }}>
-//               <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Top expenses</div>
-//               {top3.map((exp, idx) => {
-//                 const cat = CATS.find(c => c.id === exp.cat) || CATS[5];
-//                 const pct = total > 0 ? Math.round(exp.amount / total * 100) : 0;
-//                 return (
-//                   <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: idx < top3.length - 1 ? '0 0 10px' : '0', borderBottom: idx < top3.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', marginBottom: idx < top3.length - 1 ? 10 : 0 }}>
-//                     <span style={{ fontSize: 18, flexShrink: 0 }}>{['🥇','🥈','🥉'][idx]}</span>
-//                     <div style={{ width: 34, height: 34, borderRadius: 9, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{cat.icon}</div>
-//                     <div style={{ flex: 1, minWidth: 0 }}>
-//                       <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
-//                       <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2 }}>{exp.paidBy} · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
-//                       <div style={{ height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 4, overflow: 'hidden', marginTop: 5 }}>
-//                         <div style={{ height: '100%', width: `${pct}%`, background: CAT_COLORS[exp.cat] || '#1D9E75', borderRadius: 4, transition: 'width .5s' }} />
-//                       </div>
-//                     </div>
-//                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-//                       <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700 }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
-//                       <div style={{ fontSize: 11, color: '#a8a8a5' }}>{pct}%</div>
-//                     </div>
-//                   </div>
-//                 );
-//               })}
-//             </div>
-//           )}
-
-//           {/* Who's carrying */}
-//           <div style={{ ...S.card, marginBottom: 10 }}>
-//             <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Who's carrying the trip</div>
-//             {[...memberNames].sort((a, b) => (payTotal[b] || 0) - (payTotal[a] || 0)).map((m, i) => (
-//               <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < memberNames.length - 1 ? 10 : 0 }}>
-//                 <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{m.slice(0, 2).toUpperCase()}</div>
-//                 <div style={{ flex: 1 }}>
-//                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-//                     <span style={{ fontWeight: 500 }}>{m}</span>
-//                     <span style={{ color: '#6b6b68' }}>₹{Math.round(payTotal[m] || 0).toLocaleString('en-IN')}</span>
-//                   </div>
-//                   <div style={{ height: 5, background: 'rgba(0,0,0,0.06)', borderRadius: 4, overflow: 'hidden' }}>
-//                     <div style={{ height: '100%', width: `${Math.round((payTotal[m] || 0) / maxPay * 100)}%`, background: mcolor(m), borderRadius: 4, transition: 'width .5s' }} />
-//                   </div>
-//                 </div>
-//                 <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, flexShrink: 0,
-//                   background: balances[m] >= 0.5 ? '#E1F5EE' : balances[m] <= -0.5 ? '#FAECE7' : '#F1EFE8',
-//                   color: balances[m] >= 0.5 ? '#0F6E56' : balances[m] <= -0.5 ? '#993C1D' : '#6b6b68' }}>
-//                   {balances[m] >= 0.5 ? '+' : ''}₹{Math.abs(Math.round(balances[m])).toLocaleString('en-IN')}
-//                 </span>
-//               </div>
-//             ))}
-//           </div>
-
-//           {/* Category bar chart */}
-//           {Object.values(catTotals).some(v => v > 0) && (
-//             <div style={{ ...S.card, marginBottom: 10 }}>
-//               <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Category breakdown</div>
-//               <div style={{ position: 'relative', height: 160 }}>
-//                 <canvas ref={barRef} role="img" aria-label="Spending by category">Category breakdown chart.</canvas>
-//               </div>
-//             </div>
-//           )}
-
-//           {/* Fun facts */}
-//           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-//             {memberNames.length > 0 && (() => {
-//               const topPayer = memberNames.reduce((a, b) => (payTotal[a] || 0) > (payTotal[b] || 0) ? a : b);
-//               const topCat = CATS.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id])[0];
-//               return (
-//                 <>
-//                   <div style={{ ...S.card }}>
-//                     <div style={{ fontSize: 11, color: '#6b6b68', marginBottom: 8 }}>Most generous</div>
-//                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-//                       <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(topPayer), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{topPayer.slice(0, 2).toUpperCase()}</div>
-//                       <div>
-//                         <div style={{ fontSize: 14, fontWeight: 500 }}>{topPayer}</div>
-//                         <div style={{ fontSize: 11, color: '#a8a8a5' }}>₹{Math.round(payTotal[topPayer] || 0).toLocaleString('en-IN')} paid</div>
-//                       </div>
-//                     </div>
-//                   </div>
-//                   <div style={{ ...S.card }}>
-//                     <div style={{ fontSize: 11, color: '#6b6b68', marginBottom: 8 }}>Top category</div>
-//                     {topCat ? (
-//                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-//                         <div style={{ width: 30, height: 30, borderRadius: 8, background: topCat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{topCat.icon}</div>
-//                         <div>
-//                           <div style={{ fontSize: 14, fontWeight: 500 }}>{topCat.label}</div>
-//                           <div style={{ fontSize: 11, color: '#a8a8a5' }}>₹{Math.round(catTotals[topCat.id]).toLocaleString('en-IN')}</div>
-//                         </div>
-//                       </div>
-//                     ) : <div style={{ fontSize: 14, color: '#a8a8a5' }}>—</div>}
-//                   </div>
-//                 </>
-//               );
-//             })()}
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// }
 function SplitPage({ trip, myNickname }) {
   const memberNames = normalizeMembers(trip.members);
   const [expenses, setExpenses] = useState(trip.expenses || []);
