@@ -4478,6 +4478,100 @@ function SplitPage({ trip, myNickname }) {
 }
 
 /* ═══════════════════════════════════════════════════════
+   PHOTOS PAGE
+═══════════════════════════════════════════════════════ */
+function PhotosPage({ trip, myNickname }) {
+  const memberNames = normalizeMembers(trip.members);
+  const [photos, setPhotos] = useState(trip.photos || []);
+  const [selected, setSelected] = useState(new Set());
+  const [viewer, setViewer] = useState(myNickname || memberNames[0] || 'Me');
+
+  const handleUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    for (const file of files) {
+      const url = URL.createObjectURL(file);
+      try {
+        const data = await addPhoto(trip.id, url);
+        setPhotos(p => [...p, data.photo || { id: Date.now() + Math.random(), url, uploader: viewer }]);
+      } catch {
+        setPhotos(p => [...p, { id: Date.now() + Math.random(), url, uploader: viewer }]);
+      }
+    }
+  };
+
+  const toggle = id => setSelected(s => {
+    const n = new Set(s);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
+
+  return (
+    <div style={{ paddingBottom: '5rem' }}>
+      {/* Uploading as — member selector */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
+        <span style={{ fontSize: 13, color: '#6b6b68' }}>Uploading as</span>
+        {memberNames.map(m => (
+          <button key={m} onClick={() => setViewer(m)}
+            style={{ ...S.btn, ...(viewer === m ? S.btnP : {}), padding: '5px 10px', gap: 5, fontSize: 12 }}>
+            <Avatar name={m} size={16} />{m}
+          </button>
+        ))}
+      </div>
+
+      {/* Upload dropzone */}
+      <label style={{ border: '1.5px dashed rgba(0,0,0,0.17)', borderRadius: 14, padding: '1.75rem', textAlign: 'center', background: '#fff', cursor: 'pointer', display: 'block', marginBottom: '1.25rem' }}>
+        <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
+        <div style={{ fontSize: 32, marginBottom: 10 }}>📤</div>
+        <p style={{ fontSize: 14, color: '#6b6b68' }}>Drop photos here or click to upload</p>
+        <small style={{ fontSize: 12, color: '#a8a8a5', display: 'block', marginTop: 4 }}>
+          Uploading as <strong>{viewer}</strong>
+        </small>
+      </label>
+
+      <p style={{ fontSize: 13, color: '#6b6b68', marginBottom: 10 }}>
+        {photos.length} photo{photos.length !== 1 ? 's' : ''} · tap to select
+      </p>
+
+      {/* Photo grid */}
+      {photos.length === 0 && (
+        <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#6b6b68' }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>📷</div>
+          <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>No photos yet</p>
+          <p style={{ fontSize: 13 }}>Upload your first trip memory!</p>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))', gap: 8 }}>
+        {photos.map(p => (
+          <div key={p.id} onClick={() => toggle(p.id)}
+            style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', aspectRatio: '1', cursor: 'pointer', border: selected.has(p.id) ? '2.5px solid #1D9E75' : '2.5px solid transparent', transition: 'all .15s' }}>
+            <img src={p.url} alt="" loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+            <div style={{ position: 'absolute', top: 7, right: 7, width: 22, height: 22, borderRadius: '50%', background: selected.has(p.id) ? '#1D9E75' : 'rgba(255,255,255,.85)', border: '2px solid rgba(255,255,255,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#fff' }}>
+              {selected.has(p.id) ? '✓' : ''}
+            </div>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent,rgba(0,0,0,.55))', padding: '18px 7px 7px', fontSize: 10, color: 'rgba(255,255,255,.92)', fontWeight: 500 }}>
+              📸 {p.uploader}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Selection action bar */}
+      {selected.size > 0 && (
+        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 880, background: '#fff', borderTop: '0.5px solid rgba(0,0,0,0.09)', padding: '12px 1.25rem', display: 'flex', alignItems: 'center', gap: 10, zIndex: 190 }}>
+          <div style={{ flex: 1, fontSize: 13, color: '#6b6b68' }}>
+            <strong>{selected.size}</strong> photo{selected.size > 1 ? 's' : ''} selected
+          </div>
+          <button style={S.btn} onClick={() => setSelected(new Set())}>Clear</button>
+          <button style={{ ...S.btn, ...S.btnP }}>⬇ Download</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
    ITINERARY PAGE
 ═══════════════════════════════════════════════════════ */
 function ItineraryPage({ trip }) {
