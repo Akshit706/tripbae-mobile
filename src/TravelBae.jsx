@@ -4573,9 +4573,9 @@ function PhotosPage({ trip, myNickname }) {
 
     .photos-root {
       font-family: 'DM Sans', sans-serif;
-      background: #f7f6f2;
+      background: #0e0e10;
       min-height: 100vh;
-      color: #1a1a18;
+      color: #e8e6e0;
       padding-bottom: 6rem;
     }
 
