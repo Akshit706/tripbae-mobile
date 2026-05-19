@@ -4552,6 +4552,19 @@ function PhotosPage({ trip, myNickname }) {
     setUploading(false);
   };
 
+  const handleDelete = async (photo) => {
+    const fileName = `${trip.id}/${me}/${photo.url.split('/').pop()}`;
+    
+    await supabase.storage.from('trip-photos').remove([fileName]);
+    
+    try {
+      // remove from backend too if your api supports it
+      await fetch(`/api/trips/${trip.id}/photos/${photo.id}`, { method: 'DELETE' });
+    } catch {}
+    
+    setAllPhotos(p => p.filter(x => x.id !== photo.id));
+  };
+
   const handleUpload = (e) => processFiles(Array.from(e.target.files));
 
   const handleDrop = (e) => {
@@ -5060,7 +5073,30 @@ function PhotosPage({ trip, myNickname }) {
               <div className="photo-expand" onClick={(e) => { e.stopPropagation(); openLightbox(idx); }}>
                 <div className="photo-expand-icon">⛶</div>
               </div>
-            </div>
+              {/* ── Delete button (only on my folder) ── */}
+              {isMyFolder && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDelete(p); }}
+                  style={{
+                    position: 'absolute',
+                    top: 7, left: 7,
+                    width: 24, height: 24,
+                    borderRadius: '50%',
+                    background: 'rgba(0,0,0,0.55)',
+                    border: 'none',
+                    color: '#fff',
+                    fontSize: 13,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 2,
+                  }}
+                >
+                  🗑️
+                </button>
+              )}  
+            </div>          
           ))}
         </div>
       )}
