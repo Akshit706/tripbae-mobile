@@ -2955,7 +2955,8 @@ function LocalTastePage({ destination, isSolo }) {
     setStep('loading');
     setDoneItems(new Set());
     try {
-      const r = await callClaudeJSON(`Local Taste guide for "${dest}". ONLY JSON: {"headline":"string","tagline":"string","dishes":[{"emoji":"string","name":"string","desc":"string","tags":["string"]}],"places":[{"emoji":"string","name":"string","desc":"string","tags":["string"]}],"experiences":[{"emoji":"string","name":"string","desc":"string","tags":["string"]}],"tip":"string"} 4 each.`);
+      const { generateLocalTaste } = await import('./api');
+      const r = await generateLocalTaste({ destination: dest });
       setData(r);
     } catch {
       setData({ headline: `${dest} — Local Flavours`, tagline: 'Curated picks', dishes: [], places: [], experiences: [], tip: '' });
@@ -4484,44 +4485,65 @@ function ItineraryPage({ trip }) {
   const [iTab, setITab] = useState('planner');
   const [step, setStep] = useState('form');
   const [itin, setItin] = useState(null);
-  const [weather, setWeather] = useState(null);
+  const [sources, setSources] = useState([]);
   const [form, setForm] = useState({
     dest: trip.destination || '',
     arrival: trip.arrival ? new Date(trip.arrival).toISOString().split('T')[0] : '',
     departure: trip.departure ? new Date(trip.departure).toISOString().split('T')[0] : '',
     budget: trip.budget ? String(trip.budget) : '',
     people: String(normalizeMembers(trip.members).length || 1),
-    interests: ['🛕 Temples','🍽️ Food','🛍️ Shopping'],
+    interests: ['🛕 Temples', '🍽️ Food', '🛍️ Shopping'],
   });
 
-  const toggle = tag => setForm(f => ({ ...f, interests: f.interests.includes(tag) ? f.interests.filter(t => t !== tag) : [...f.interests, tag] }));
+  const toggle = tag => setForm(f => ({
+    ...f,
+    interests: f.interests.includes(tag) ? f.interests.filter(t => t !== tag) : [...f.interests, tag],
+  }));
+
+  const days = form.arrival && form.departure
+    ? Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000))
+    : 1;
 
   const generate = async () => {
+    if (!form.dest) return;
     setStep('loading');
-    const days = Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000));
     try {
-      const [ir, wr] = await Promise.all([
-        callClaudeJSON(`Create a ${days}-day ${isSolo ? 'solo ' : ''}itinerary for ${form.dest}, ${form.people} people, budget ₹${form.budget}. Interests: ${form.interests.join(', ')}. ONLY JSON array: [{"day":1,"title":"Title","activities":[{"time":"9:00 AM","name":"Place","note":"Tip"}]}]. Max 4 activities/day.`),
-        callClaudeJSON(`Weather for ${form.dest}, ${days} days from ${form.arrival}. ONLY JSON array: [{"day":1,"high":26,"low":12,"condition":"Clear","tip":"Bring sunscreen"}]`),
-      ]);
-      setItin(ir); setWeather(wr);
-    } catch {
-      const d = Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000));
-      setItin(Array.from({ length: d }, (_, i) => ({ day: i + 1, title: `Day ${i + 1}`, activities: [{ time: '9:00 AM', name: 'Morning sightseeing', note: 'Start early' }, { time: '12:00 PM', name: 'Local lunch', note: 'Try regional food' }, { time: '4:00 PM', name: 'Explore markets', note: 'Great for souvenirs' }, { time: '7:00 PM', name: 'Dinner', note: 'Enjoy local cuisine' }] })));
-      setWeather(Array.from({ length: d }, (_, i) => ({ day: i + 1, high: 24, low: 12, condition: 'Clear & Cool', tip: 'Carry a light jacket' })));
+      const { generateItinerary } = await import('./api');
+      const result = await generateItinerary({
+        destination: form.dest,
+        days,
+        budget: form.budget ? parseFloat(form.budget) : null,
+        people: parseInt(form.people) || 1,
+        interests: form.interests,
+      });
+      setItin(result.itinerary);
+      setSources(result.sources || []);
+    } catch (err) {
+      alert('Could not generate itinerary: ' + err.message);
+      setStep('form');
+      return;
     }
     setStep('result');
   };
 
   const accentStyle = isSolo ? S.btnSolo : S.btnP;
+  const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
+  const headerBg = isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)';
+
+  const TYPE_ICONS = {
+    attraction: '🏛️', food: '🍽️', experience: '✨',
+    transport: '🚗', hotel: '🏨', shopping: '🛍️',
+  };
+
   const ITABS = [{ id: 'planner', label: '🗺️ Day Planner' }, { id: 'taste', label: '🍜 Local Taste' }];
 
   return (
     <div>
+      {/* Sub tabs */}
       <div style={{ display: 'flex', gap: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 13, padding: 3, marginBottom: '1.1rem' }}>
         {ITABS.map(t => (
           <button key={t.id} onClick={() => setITab(t.id)}
-            style={{ flex: 1, padding: '8px 8px', fontSize: 12, fontWeight: 500, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: iTab === t.id ? (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75') : 'transparent', color: iTab === t.id ? '#fff' : '#6b6b68', transition: 'all .15s', whiteSpace: 'nowrap' }}>
+            style={{ flex: 1, padding: '8px 8px', fontSize: 12, fontWeight: 500, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: iTab === t.id ? (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75') : 'transparent', color: iTab === t.id ? '#fff' : '#6b6b68', transition: 'all .15s' }}>
             {t.label}
           </button>
         ))}
@@ -4529,128 +4551,211 @@ function ItineraryPage({ trip }) {
 
       {iTab === 'planner' && (
         <div>
+          {/* ── FORM ── */}
           {step === 'form' && (
-            <div style={S.card}>
-              <label style={S.label}>Destination</label>
-              <input style={S.input} value={form.dest} onChange={e => setForm(f => ({ ...f, dest: e.target.value }))} placeholder="e.g. Udaipur" />
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
-                <div><label style={S.label}>Arrival</label><input style={S.input} type="date" value={form.arrival} onChange={e => setForm(f => ({ ...f, arrival: e.target.value }))} /></div>
-                <div><label style={S.label}>Departure</label><input style={S.input} type="date" value={form.departure} onChange={e => setForm(f => ({ ...f, departure: e.target.value }))} /></div>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
-                <div><label style={S.label}>Budget ₹</label><input style={S.input} type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} /></div>
-                {!isSolo && <div><label style={S.label}>People</label><input style={S.input} type="number" value={form.people} onChange={e => setForm(f => ({ ...f, people: e.target.value }))} /></div>}
-              </div>
-              <label style={S.label}>What do you love?</label>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, margin: '7px 0 14px' }}>
-                {INTERESTS.map(t => (
-                  <div key={t} onClick={() => toggle(t)}
-                    style={{ padding: '5px 12px', borderRadius: 18, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '0.5px solid rgba(0,0,0,0.17)', background: form.interests.includes(t) ? (isSolo ? '#EEEDFE' : '#E1F5EE') : '#F1EFE8', color: form.interests.includes(t) ? (isSolo ? '#534AB7' : '#085041') : '#6b6b68', userSelect: 'none', transition: 'all .15s' }}>
-                    {t}
-                  </div>
-                ))}
-              </div>
-              <button style={{ ...S.btn, ...accentStyle, width: '100%', justifyContent: 'center', padding: '11px', fontSize: 14, borderRadius: 11 }} onClick={generate}>
-                ✨ Generate {isSolo ? 'solo ' : ''}itinerary + weather
-              </button>
-            </div>
-          )}
-          {step === 'loading' && <Spinner text="Building itinerary + weather forecast…" solo={isSolo} />}
-          {step === 'result' && itin && (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap', marginBottom: '1.1rem' }}>
-                <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, flex: 1 }}>{form.dest}</span>
-                <button style={{ ...S.btn, fontSize: 12 }} onClick={() => { setStep('form'); setItin(null); setWeather(null); }}>↺ Redo</button>
+              <div style={{ background: headerBg, borderRadius: 16, padding: '1.25rem 1.5rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: -10, right: -10, fontSize: 70, opacity: 0.08 }}>🗺️</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>AI Itinerary Planner</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>Researches top travel sites in real-time and builds the perfect day-by-day plan.</div>
               </div>
-              {itin.map((d, di) => {
-                const w = weather?.[di];
-                const headerBg = isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)';
-                return (
-                  <div key={d.day} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 12 }}>
-                    <div style={{ padding: '11px 15px', display: 'flex', alignItems: 'center', gap: 9, background: headerBg }}>
-                      <div style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: 7, padding: '2px 9px', fontSize: 11, fontWeight: 700, fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>Day {d.day}</div>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#fff', flex: 1 }}>{d.title}</div>
-                      {w && <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', gap: 4 }}><span style={{ fontSize: 16 }}>{w.high > 30 ? '☀️' : w.high > 18 ? '⛅' : '🧊'}</span>{w.high}°/{w.low}°</div>}
+
+              <div style={S.card}>
+                <label style={S.label}>Destination *</label>
+                <input style={S.input} value={form.dest}
+                  onChange={e => setForm(f => ({ ...f, dest: e.target.value }))}
+                  placeholder="e.g. Jaipur, Rajasthan" />
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 2 }}>
+                  <div>
+                    <label style={S.label}>Arrival</label>
+                    <input style={S.input} type="date" value={form.arrival}
+                      onChange={e => setForm(f => ({ ...f, arrival: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label style={S.label}>Departure</label>
+                    <input style={S.input} type="date" value={form.departure}
+                      onChange={e => setForm(f => ({ ...f, departure: e.target.value }))} />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 2 }}>
+                  <div>
+                    <label style={S.label}>Budget ₹</label>
+                    <input style={S.input} type="number" value={form.budget}
+                      onChange={e => setForm(f => ({ ...f, budget: e.target.value }))}
+                      placeholder="e.g. 25000" />
+                  </div>
+                  {!isSolo && (
+                    <div>
+                      <label style={S.label}>People</label>
+                      <input style={S.input} type="number" value={form.people}
+                        onChange={e => setForm(f => ({ ...f, people: e.target.value }))} />
                     </div>
-                    {w?.tip && <div style={{ padding: '6px 15px', background: isSolo ? '#f4f3ff' : '#f0faf6', borderBottom: `0.5px solid ${isSolo ? '#c9c5f5' : '#c8ecd8'}`, fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56' }}>💡 {w.tip}</div>}
-                    <div style={{ padding: '9px 15px' }}>
-                      {d.activities.map((a, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 11, padding: '7px 0', borderBottom: i < d.activities.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
-                          <div style={{ fontSize: 11, color: '#6b6b68', width: 50, flexShrink: 0, paddingTop: 3 }}>{a.time}</div>
-                          <div style={{ width: 7, height: 7, borderRadius: '50%', background: isSolo ? '#7F77DD' : '#1D9E75', marginTop: 5, flexShrink: 0 }} />
-                          <div><div style={{ fontSize: 13, fontWeight: 500 }}>{a.name}</div>{a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>{a.note}</div>}</div>
+                  )}
+                </div>
+
+                <label style={{ ...S.label, marginTop: 12 }}>Interests</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, margin: '8px 0 16px' }}>
+                  {INTERESTS.map(t => (
+                    <div key={t} onClick={() => toggle(t)}
+                      style={{ padding: '6px 13px', borderRadius: 18, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '0.5px solid rgba(0,0,0,0.17)', background: form.interests.includes(t) ? (isSolo ? '#EEEDFE' : '#E1F5EE') : '#F1EFE8', color: form.interests.includes(t) ? (isSolo ? '#534AB7' : '#085041') : '#6b6b68', userSelect: 'none', transition: 'all .15s' }}>
+                      {t}
+                    </div>
+                  ))}
+                </div>
+
+                {form.arrival && form.departure && (
+                  <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', borderRadius: 10, padding: '8px 12px', marginBottom: 14, fontSize: 13, color: isSolo ? '#534AB7' : '#0F6E56', fontWeight: 500 }}>
+                    📅 {days} day{days !== 1 ? 's' : ''} · {form.dest || 'destination'}
+                    {form.budget ? ` · ₹${parseFloat(form.budget).toLocaleString('en-IN')} budget` : ''}
+                  </div>
+                )}
+
+                <button
+                  style={{ ...S.btn, ...accentStyle, width: '100%', justifyContent: 'center', padding: '12px', fontSize: 14, borderRadius: 12 }}
+                  onClick={generate}
+                  disabled={!form.dest}>
+                  ✨ Generate AI Itinerary
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ── LOADING ── */}
+          {step === 'loading' && (
+            <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
+              <div style={isSolo ? S.soloSpinner : S.spinner} />
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Researching {form.dest}…</div>
+              <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.7 }}>
+                🔍 Scanning TripAdvisor, Lonely Planet & travel blogs<br />
+                📊 Ranking attractions by ratings & reviews<br />
+                🗺️ Building your optimised day-by-day plan
+              </div>
+            </div>
+          )}
+
+          {/* ── RESULT ── */}
+          {step === 'result' && itin && (
+            <div style={{ paddingBottom: '2rem' }}>
+              {/* Header card */}
+              <div style={{ background: headerBg, borderRadius: 16, padding: '1.25rem 1.5rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: -10, right: -10, fontSize: 80, opacity: 0.08 }}>✈️</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{itin.headline || `${days}-Day ${form.dest} Itinerary`}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginBottom: 12 }}>{itin.summary}</div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {itin.totalEstimatedCost && (
+                    <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '4px 10px', fontSize: 12, color: '#fff' }}>
+                      💰 {itin.totalEstimatedCost}
+                    </div>
+                  )}
+                  {itin.bestTimeToVisit && (
+                    <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '4px 10px', fontSize: 12, color: '#fff' }}>
+                      🌤️ {itin.bestTimeToVisit}
+                    </div>
+                  )}
+                  <button style={{ marginLeft: 'auto', ...S.btn, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '0.5px solid rgba(255,255,255,0.3)', fontSize: 12 }}
+                    onClick={() => { setStep('form'); setItin(null); setSources([]); }}>
+                    ↺ Redo
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick tips */}
+              {itin.quickTips?.length > 0 && (
+                <div style={{ ...S.card, marginBottom: '1rem', background: '#FAEEDA', border: '0.5px solid #FAC775' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#854F0B', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 8 }}>💡 Quick Tips</div>
+                  {itin.quickTips.map((tip, i) => (
+                    <div key={i} style={{ fontSize: 13, color: '#5a3a0a', lineHeight: 1.5, marginBottom: i < itin.quickTips.length - 1 ? 5 : 0 }}>
+                      · {tip}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Day cards */}
+              {(itin.days || []).map((d) => (
+                <div key={d.day} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
+                  {/* Day header */}
+                  <div style={{ background: headerBg, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: 8, padding: '3px 10px', fontSize: 11, fontWeight: 700, fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>Day {d.day}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{d.title}</div>
+                      {d.theme && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 1 }}>{d.theme}</div>}
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      {d.weather && (
+                        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
+                          {d.weather.high > 30 ? '☀️' : d.weather.high > 18 ? '⛅' : '🧊'} {d.weather.high}°/{d.weather.low}°
                         </div>
-                      ))}
+                      )}
+                      {d.estimatedCost && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginTop: 2 }}>{d.estimatedCost}</div>}
                     </div>
                   </div>
-                );
-              })}
+
+                  {/* Weather tip */}
+                  {d.weather?.tip && (
+                    <div style={{ padding: '6px 16px', background: isSolo ? '#f4f3ff' : '#f0faf6', borderBottom: `0.5px solid ${isSolo ? '#c9c5f5' : '#c8ecd8'}`, fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56' }}>
+                      💡 {d.weather.tip}
+                    </div>
+                  )}
+
+                  {/* Activities */}
+                  <div style={{ padding: '10px 16px' }}>
+                    {(d.activities || []).map((a, i) => (
+                      <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < d.activities.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none', position: 'relative' }}>
+                        {/* Timeline dot */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 14 }}>
+                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: a.mustDo ? accentColor : '#D3D1C7', marginTop: 4, flexShrink: 0, border: a.mustDo ? `2px solid ${accentColor}33` : 'none', boxSizing: 'border-box' }} />
+                          {i < d.activities.length - 1 && <div style={{ width: 1, flex: 1, background: 'rgba(0,0,0,0.06)', marginTop: 3 }} />}
+                        </div>
+
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 3 }}>
+                            <span style={{ fontSize: 11, color: '#a8a8a5', width: 58, flexShrink: 0, paddingTop: 2 }}>{a.time}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: 16 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
+                                <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{a.name}</span>
+                                {a.mustDo && (
+                                  <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
+                                )}
+                              </div>
+                              {a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 3, lineHeight: 1.5 }}>{a.note}</div>}
+                              <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
+                                {a.duration && <span style={{ fontSize: 11, color: '#a8a8a5' }}>⏱ {a.duration}</span>}
+                                {a.cost && <span style={{ fontSize: 11, color: '#a8a8a5' }}>💰 {a.cost}</span>}
+                                {a.rating && <span style={{ fontSize: 11, color: '#BA7517' }}>{a.rating}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {/* Sources */}
+              {sources.length > 0 && (
+                <div style={{ ...S.card, marginBottom: '1rem' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 10 }}>🔍 Researched from</div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {sources.map((s, i) => (
+                      <a key={i} href={s.url} target="_blank" rel="noreferrer"
+                        style={{ fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56', background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 8, padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        🔗 {s.title?.slice(0, 28) || new URL(s.url).hostname}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
       )}
+
       {iTab === 'taste' && <LocalTastePage destination={form.dest} isSolo={isSolo} />}
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════════
-   PHOTOS PAGE
-═══════════════════════════════════════════════════════ */
-function PhotosPage({ trip, myNickname }) {
-  const memberNames = normalizeMembers(trip.members);
-  const [photos, setPhotos] = useState(trip.photos || []);
-  const [selected, setSelected] = useState(new Set());
-  const [viewer, setViewer] = useState(myNickname || memberNames[0] || 'Me');
-
-  const handleUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    for (const file of files) {
-      const url = URL.createObjectURL(file);
-      try {
-        const data = await addPhoto(trip.id, url);
-        setPhotos(p => [...p, data.photo || { id: Date.now() + Math.random(), url, uploader: viewer }]);
-      } catch {
-        setPhotos(p => [...p, { id: Date.now() + Math.random(), url, uploader: viewer }]);
-      }
-    }
-  };
-
-  const toggle = id => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
-
-  return (
-    <div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
-        <span style={{ fontSize: 13, color: '#6b6b68' }}>Uploading as</span>
-        {memberNames.map(m => (
-          <button key={m} onClick={() => setViewer(m)} style={{ ...S.btn, ...(viewer === m ? S.btnP : {}), padding: '5px 10px', gap: 5, fontSize: 12 }}>
-            <Avatar name={m} size={16} />{m}
-          </button>
-        ))}
-      </div>
-      <label style={{ border: '1.5px dashed rgba(0,0,0,0.17)', borderRadius: 14, padding: '1.75rem', textAlign: 'center', background: '#fff', cursor: 'pointer', display: 'block', marginBottom: '1.25rem' }}>
-        <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
-        <div style={{ fontSize: 32, marginBottom: 10 }}>📤</div>
-        <p style={{ fontSize: 14, color: '#6b6b68' }}>Drop photos here or click to upload</p>
-        <small style={{ fontSize: 12, color: '#a8a8a5', display: 'block', marginTop: 4 }}>Uploading as <strong>{viewer}</strong></small>
-      </label>
-      <p style={{ fontSize: 13, color: '#6b6b68', marginBottom: 10 }}>{photos.length} photos · tap to select</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))', gap: 8, marginBottom: '5rem' }}>
-        {photos.map(p => (
-          <div key={p.id} onClick={() => toggle(p.id)} style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', aspectRatio: '1', cursor: 'pointer', border: selected.has(p.id) ? '2.5px solid #1D9E75' : '2.5px solid transparent', transition: 'all .15s' }}>
-            <img src={p.url} alt="" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            <div style={{ position: 'absolute', top: 7, right: 7, width: 22, height: 22, borderRadius: '50%', background: selected.has(p.id) ? '#1D9E75' : 'rgba(255,255,255,.85)', border: '2px solid rgba(255,255,255,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#fff' }}>{selected.has(p.id) ? '✓' : ''}</div>
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent,rgba(0,0,0,.55))', padding: '18px 7px 7px', fontSize: 10, color: 'rgba(255,255,255,.92)', fontWeight: 500 }}>📸 {p.uploader}</div>
-          </div>
-        ))}
-      </div>
-      {selected.size > 0 && (
-        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 880, background: '#fff', borderTop: '0.5px solid rgba(0,0,0,0.09)', padding: '12px 1.25rem', display: 'flex', alignItems: 'center', gap: 10, zIndex: 190 }}>
-          <div style={{ flex: 1, fontSize: 13, color: '#6b6b68' }}><strong>{selected.size}</strong> photo{selected.size > 1 ? 's' : ''} selected</div>
-          <button style={S.btn} onClick={() => setSelected(new Set())}>Clear</button>
-          <button style={{ ...S.btn, ...S.btnP }}>⬇ Download</button>
-        </div>
-      )}
     </div>
   );
 }

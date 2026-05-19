@@ -63,3 +63,9 @@ export const aiChat = (system, messages) =>
 
 export const aiItinerary = (destination, days, interests) =>
   apiFetch('/ai/itinerary', { method: 'POST', body: { destination, days, interests } });
+
+export const generateItinerary = (data) =>
+  apiFetch('/ai/itinerary', { method: 'POST', body: data });
+
+export const generateLocalTaste = (data) =>
+  apiFetch('/ai/local-taste', { method: 'POST', body: data });
