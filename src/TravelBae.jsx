@@ -2252,6 +2252,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 max={maxDate}
                 onChange={e => {
                   const v = e.target.value;
+                  if (v < today) return;
                   setForm(f => ({
                     ...f,
                     arrival: v,
@@ -2268,7 +2269,12 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 value={form.departure}
                 min={form.arrival || today}
                 max={maxDate}
-                onChange={e => setForm(f => ({ ...f, departure: e.target.value }))}
+                onChange={e => {
+                  const v = e.target.value;
+                  const minDep = form.arrival || today;
+                  if (v < minDep) return;
+                  setForm(f => ({ ...f, departure: v }));
+                }}
               />
             </div>
             {!isSoloMode && (
