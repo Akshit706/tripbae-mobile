@@ -2001,10 +2001,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     people: 2, createdBy: '', budget: '',
   });
 
-
-  const todayStr = new Date().toISOString().split('T')[0];
-  const maxDateStr = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
   const EMOJI_OPTIONS_GROUP = ['✈️','🏖️','🏔️','🏰','🌴','🗺️','🎡','🛕','🌅','🌿','🎭','🏛️'];
   const EMOJI_OPTIONS_SOLO  = ['🎒','🧳','🛺','🚂','🏍️','🌏','🪂','🧗','🌄','☕','📖','🦋'];
 
@@ -2205,7 +2201,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       )}
 
-      {/* {showCreate && (
+      {showCreate && (
         <div style={{ ...S.card, border: `0.5px solid ${isSoloMode ? '#AFA9EC' : '#9FE1CB'}`, background: isSoloMode ? '#fdfcff' : '#f9fffe', marginBottom: '1.25rem' }}>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: isSoloMode ? '#534AB7' : '#0F6E56', marginBottom: 14 }}>
             {isSoloMode ? '🎒 New Solo Adventure' : '✈️ Create New Group Trip'}
@@ -2249,100 +2245,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             <div>
               <label style={S.label}>Date of Departure *</label>
               <input style={S.input} type="date" value={form.departure} onChange={e => setForm(f => ({ ...f, departure: e.target.value }))} />
-            </div>
-            {!isSoloMode && (
-              <div>
-                <label style={S.label}>Number of People</label>
-                <input style={S.input} type="number" min={1} max={50} value={form.people} onChange={e => setForm(f => ({ ...f, people: e.target.value }))} />
-              </div>
-            )}
-            <div style={{ gridColumn: isSoloMode ? '1/-1' : 'auto' }}>
-              <label style={S.label}>Budget ₹ (optional)</label>
-              <input style={S.input} type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
-            </div>
-            <div style={{ gridColumn: isSoloMode ? '1/-1' : 'auto' }}>
-              <label style={S.label}>Your Name *</label>
-              <input style={S.input} value={form.createdBy} onChange={e => setForm(f => ({ ...f, createdBy: e.target.value }))} placeholder="e.g. Arjun" />
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-            <button
-              style={{ ...S.btn, ...(isSoloMode ? S.btnSolo : S.btnP), flex: 1, justifyContent: 'center', padding: '11px', fontSize: 14, borderRadius: 12, opacity: creating ? 0.6 : 1 }}
-              onClick={handleCreate}
-              disabled={!form.groupName || !form.destination || !form.arrival || !form.departure || !form.createdBy || creating}>
-              {creating ? 'Creating…' : isSoloMode ? '🎒 Start Solo Adventure' : '🚀 Create & Get Share Code'}
-            </button>
-            <button style={S.btn} onClick={() => setShowCreate(false)}>✕</button>
-          </div>
-        </div>
-      )} */}
-
-
-      
-
-      {showCreate && (
-        <div style={{ ...S.card, border: `0.5px solid ${isSoloMode ? '#AFA9EC' : '#9FE1CB'}`, background: isSoloMode ? '#fdfcff' : '#f9fffe', marginBottom: '1.25rem' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: isSoloMode ? '#534AB7' : '#0F6E56', marginBottom: 14 }}>
-            {isSoloMode ? '🎒 New Solo Adventure' : '✈️ Create New Group Trip'}
-          </div>
-          <div style={{ display: 'flex', gap: 0, background: '#F1EFE8', borderRadius: 12, padding: 3, marginBottom: 16 }}>
-            {[{ val: false, label: '👥 Group', desc: 'Travel with friends' }, { val: true, label: '🎒 Solo', desc: 'Just me, myself & I' }].map(opt => (
-              <button key={String(opt.val)} onClick={() => { setIsSoloMode(opt.val); setForm(f => ({ ...f, emoji: opt.val ? '🎒' : '✈️', people: opt.val ? 1 : 2 })); }}
-                style={{ flex: 1, padding: '9px 10px', borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
-                  background: isSoloMode === opt.val ? (opt.val ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75') : 'transparent',
-                  color: isSoloMode === opt.val ? '#fff' : '#6b6b68', fontWeight: 500, fontSize: 13, transition: 'all .2s' }}>
-                {opt.label}
-                <div style={{ fontSize: 10, opacity: 0.75, marginTop: 1 }}>{opt.desc}</div>
-              </button>
-            ))}
-          </div>
-          <label style={S.label}>Trip Emoji</label>
-          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', margin: '6px 0 10px' }}>
-            {emojiOptions.map(e => (
-              <div key={e} onClick={() => setForm(f => ({ ...f, emoji: e }))}
-                style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer',
-                  border: form.emoji === e ? `2px solid ${isSoloMode ? '#7F77DD' : '#1D9E75'}` : '0.5px solid rgba(0,0,0,0.12)',
-                  background: form.emoji === e ? (isSoloMode ? '#EEEDFE' : '#E1F5EE') : '#fff', transition: 'all .12s' }}>
-                {e}
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div style={{ gridColumn: '1/-1' }}>
-              <label style={S.label}>{isSoloMode ? 'Adventure Name *' : 'Group Name *'}</label>
-              <input style={S.input} value={form.groupName} onChange={e => setForm(f => ({ ...f, groupName: e.target.value }))}
-                placeholder={isSoloMode ? 'e.g. My Jaipur Chapter' : 'e.g. Pink City Explorers'} />
-            </div>
-            <div style={{ gridColumn: '1/-1' }}>
-              <label style={S.label}>Destination *</label>
-              <input style={S.input} value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))} placeholder="e.g. Jaipur, Rajasthan" />
-            </div>
-            <div>
-              <label style={S.label}>Date of Arrival *</label>
-              <input
-                style={S.input}
-                type="date"
-                value={form.arrival}
-                min={todayStr}
-                max={maxDateStr}
-                onChange={e => setForm(f => ({
-                  ...f,
-                  arrival: e.target.value,
-                  // if departure is now before the new arrival, push it forward
-                  departure: f.departure < e.target.value ? e.target.value : f.departure,
-                }))}
-              />
-            </div>
-            <div>
-              <label style={S.label}>Date of Departure *</label>
-              <input
-                style={S.input}
-                type="date"
-                value={form.departure}
-                min={form.arrival || todayStr}
-                max={maxDateStr}
-                onChange={e => setForm(f => ({ ...f, departure: e.target.value }))}
-              />
             </div>
             {!isSoloMode && (
               <div>
