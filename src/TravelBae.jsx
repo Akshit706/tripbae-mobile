@@ -4493,14 +4493,14 @@ function PhotosPage({ trip, myNickname }) {
   const memberNames = normalizeMembers(trip.members);
   const me = myNickname || memberNames[0] || 'Me';
 
-  // photos grouped by uploader
   const initialPhotos = trip.photos || [];
   const [allPhotos, setAllPhotos] = useState(initialPhotos);
   const [activeFolder, setActiveFolder] = useState(me);
   const [dragging, setDragging] = useState(false);
-  const [lightbox, setLightbox] = useState(null); // { photos, index }
+  const [lightbox, setLightbox] = useState(null);
   const [selected, setSelected] = useState(new Set());
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const byMember = useMemo(() => {
     const map = {};
@@ -4518,17 +4518,16 @@ function PhotosPage({ trip, myNickname }) {
   /* ── upload ── */
   const processFiles = async (files) => {
     setUploading(true);
-    for (const file of files) {
+    setUploadProgress(0);
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
       const fileName = `${trip.id}/${me}/${Date.now()}-${file.name}`;
 
       const { error } = await supabase.storage
         .from('trip-photos')
         .upload(fileName, file);
 
-      if (error) {
-        console.error('Upload error:', error.message);
-        continue;
-      }
+      if (error) { console.error('Upload error:', error.message); continue; }
 
       const { data: { publicUrl } } = supabase.storage
         .from('trip-photos')
@@ -4536,37 +4535,18 @@ function PhotosPage({ trip, myNickname }) {
 
       try {
         const res = await addPhoto(trip.id, publicUrl);
-        setAllPhotos(p => [...p, res.photo || {
-          id: Date.now() + Math.random(),
-          url: publicUrl,
-          uploader: me
-        }]);
+        setAllPhotos(p => [...p, res.photo || { id: Date.now() + Math.random(), url: publicUrl, uploader: me }]);
       } catch {
-        setAllPhotos(p => [...p, {
-          id: Date.now() + Math.random(),
-          url: publicUrl,
-          uploader: me
-        }]);
+        setAllPhotos(p => [...p, { id: Date.now() + Math.random(), url: publicUrl, uploader: me }]);
       }
+      setUploadProgress(Math.round(((i + 1) / files.length) * 100));
     }
     setUploading(false);
-  };
-
-  const handleDelete = async (photo) => {
-    const fileName = `${trip.id}/${me}/${photo.url.split('/').pop()}`;
-    
-    await supabase.storage.from('trip-photos').remove([fileName]);
-    
-    try {
-      // remove from backend too if your api supports it
-      await fetch(`/api/trips/${trip.id}/photos/${photo.id}`, { method: 'DELETE' });
-    } catch {}
-    
-    setAllPhotos(p => p.filter(x => x.id !== photo.id));
+    setUploadProgress(0);
+    setActiveFolder(me);
   };
 
   const handleUpload = (e) => processFiles(Array.from(e.target.files));
-
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
@@ -4574,15 +4554,35 @@ function PhotosPage({ trip, myNickname }) {
     if (files.length) processFiles(files);
   };
 
+  /* ── delete ── */
+  const handleDelete = async (photo) => {
+    const fileName = `${trip.id}/${me}/${photo.url.split('/').pop()}`;
+    await supabase.storage.from('trip-photos').remove([fileName]);
+    try { await fetch(`/api/trips/${trip.id}/photos/${photo.id}`, { method: 'DELETE' }); } catch {}
+    setAllPhotos(p => p.filter(x => x.id !== photo.id));
+    setSelected(s => { const n = new Set(s); n.delete(photo.id); return n; });
+  };
+
   /* ── selection ── */
   const toggle = (id) => setSelected(s => {
-    const n = new Set(s);
-    n.has(id) ? n.delete(id) : n.add(id);
-    return n;
+    const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n;
   });
   const clearSel = () => setSelected(new Set());
 
-  /* ── lightbox nav ── */
+  /* ── download selected ── */
+  const downloadSelected = () => {
+    folderPhotos
+      .filter(p => selected.has(p.id))
+      .forEach(p => {
+        const a = document.createElement('a');
+        a.href = p.url;
+        a.download = p.url.split('/').pop();
+        a.target = '_blank';
+        a.click();
+      });
+  };
+
+  /* ── lightbox ── */
   const openLightbox = (idx) => setLightbox({ photos: folderPhotos, index: idx });
   const lbPrev = () => setLightbox(l => ({ ...l, index: Math.max(0, l.index - 1) }));
   const lbNext = () => setLightbox(l => ({ ...l, index: Math.min(l.photos.length - 1, l.index + 1) }));
@@ -4598,405 +4598,260 @@ function PhotosPage({ trip, myNickname }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox]);
 
-  /* ── palette / styles ── */
+  const initials = (name) => name.slice(0, 2).toUpperCase();
+
   const styles = `
-    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
 
-    .photos-root {
-      font-family: 'DM Sans', sans-serif;
-      background: #0e0e10;
-      min-height: 100vh;
-      color: #e8e6e0;
-      display: block;
-      padding-bottom: 6rem;
-    }
+    .pr { font-family:'DM Sans',sans-serif; background:#0c0c0f; color:#e2e0da; display:block; padding-bottom:7rem; min-height:100vh; }
 
-    /* ─ folder tabs ─ */
-    .folders-bar {
-      display: flex;
-      gap: 10px;
-      overflow-x: auto;
-      padding: 1.25rem 1.25rem 0;
-      scrollbar-width: none;
-    }
-    .folders-bar::-webkit-scrollbar { display: none; }
+    /* ── folders bar ── */
+    .fb { display:flex; gap:12px; overflow-x:auto; padding:1.25rem 1.25rem 1rem; scrollbar-width:none; }
+    .fb::-webkit-scrollbar { display:none; }
 
-    .folder-tab {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: transform .2s;
-    }
-    .folder-tab:hover { transform: translateY(-2px); }
+    .ft { display:flex; flex-direction:column; align-items:center; gap:7px; cursor:pointer; flex-shrink:0; }
 
-    .folder-icon {
-      width: 58px;
-      height: 50px;
-      border-radius: 10px;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      transition: all .2s;
+    .fi {
+      width:62px; height:54px; border-radius:14px; position:relative;
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; font-weight:700; letter-spacing:.5px;
+      background:#1c1c20; border:1.5px solid rgba(255,255,255,0.06);
+      transition:all .2s; color:#9e9c96;
     }
-    .folder-icon::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 10px;
-      border: 1.5px solid rgba(255,255,255,0.07);
-      background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01));
+    .ft:hover .fi { border-color:rgba(255,255,255,0.14); transform:translateY(-2px); }
+    .ft.active .fi {
+      background:linear-gradient(135deg,#1D9E75,#0f6e56);
+      border-color:rgba(29,158,117,0.5);
+      color:#fff;
+      box-shadow:0 6px 24px rgba(29,158,117,0.3);
+      transform:translateY(-2px);
     }
-    .folder-tab.active .folder-icon {
-      background: linear-gradient(135deg, #1D9E75 0%, #15785a 100%);
-      box-shadow: 0 0 20px rgba(29,158,117,0.4);
-    }
-    .folder-tab.active .folder-icon::before {
-      border-color: rgba(29,158,117,0.4);
-    }
-    .folder-tab.mine .folder-icon {
-      background: linear-gradient(135deg, #2a2a2e, #1a1a1e);
-    }
-    .folder-tab.mine.active .folder-icon {
-      background: linear-gradient(135deg, #1D9E75 0%, #15785a 100%);
+    .ft.mine .fi { background:linear-gradient(135deg,#1e1e23,#161619); }
+    .ft.mine.active .fi { background:linear-gradient(135deg,#1D9E75,#0f6e56); }
+
+    .fc {
+      position:absolute; top:-6px; right:-6px;
+      background:#1D9E75; color:#fff; font-size:9px; font-weight:700;
+      min-width:18px; height:18px; border-radius:9px;
+      display:flex; align-items:center; justify-content:center;
+      padding:0 4px; border:2px solid #0c0c0f;
     }
 
-    .folder-count {
-      position: absolute;
-      top: -5px; right: -5px;
-      background: #1D9E75;
-      color: #fff;
-      font-size: 9px;
-      font-weight: 600;
-      min-width: 17px;
-      height: 17px;
-      border-radius: 9px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 4px;
-      border: 2px solid #0e0e10;
+    .fl { font-size:10px; font-weight:500; color:#6e6c66; max-width:66px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:color .2s; letter-spacing:.2px; }
+    .ft.active .fl { color:#c8c6c0; }
+
+    /* ── divider ── */
+    .divider { height:1px; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.06),transparent); margin:0 1.25rem; }
+
+    /* ── section header ── */
+    .sh { display:flex; align-items:baseline; gap:10px; padding:1.25rem 1.25rem 1rem; }
+    .st { font-family:'DM Serif Display',serif; font-size:24px; color:#e2e0da; margin:0; line-height:1; }
+    .st em { font-style:italic; color:#1D9E75; }
+    .ss { font-size:11px; color:#4a4845; letter-spacing:.3px; }
+
+    /* ── upload zone ── */
+    .uz {
+      margin:0 1.25rem 1.25rem;
+      border-radius:18px; padding:2rem 1.5rem;
+      text-align:center; cursor:pointer;
+      position:relative; z-index:1; display:block; width:auto;
+      overflow:hidden; transition:all .3s;
+      background:#141418;
+      border:1.5px dashed rgba(255,255,255,0.1);
+    }
+    .uz:hover { border-color:rgba(29,158,117,0.5); background:#161a18; }
+    .uz.drag { border-color:#1D9E75; background:#0f1a16; box-shadow:0 0 40px rgba(29,158,117,0.1); }
+
+    .ui { font-size:40px; margin-bottom:12px; display:block; animation:bob 3s ease-in-out infinite; }
+    @keyframes bob { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-6px) rotate(3deg)} }
+
+    .ut { font-size:14px; font-weight:500; color:#b8b6b0; margin:0 0 5px; }
+    .usub { font-size:12px; color:#4a4845; margin:0; }
+
+    .ubadge {
+      display:inline-flex; align-items:center; gap:6px;
+      background:rgba(29,158,117,0.1); border:1px solid rgba(29,158,117,0.2);
+      color:#1D9E75; font-size:11px; font-weight:600;
+      padding:4px 12px; border-radius:99px; margin-top:12px; letter-spacing:.2px;
     }
 
-    .folder-label {
-      font-size: 11px;
-      font-weight: 500;
-      color: #9e9c96;
-      max-width: 62px;
-      text-align: center;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      transition: color .2s;
+    /* uploading overlay */
+    .upl-overlay {
+      position:absolute; inset:0; background:rgba(12,12,15,0.75);
+      backdrop-filter:blur(4px); border-radius:16px;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px;
+      z-index:10;
     }
-    .folder-tab.active .folder-label { color: #e8e6e0; }
+    .upl-spin {
+      width:32px; height:32px; border:3px solid rgba(29,158,117,0.2);
+      border-top-color:#1D9E75; border-radius:50%;
+      animation:spin .7s linear infinite;
+    }
+    @keyframes spin { to{transform:rotate(360deg)} }
+    .upl-text { font-size:12px; color:#1D9E75; font-weight:600; }
 
-    /* ─ section header ─ */
-    .section-header {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      padding: 1.5rem 1.25rem 0.75rem;
+    /* ── view banner ── */
+    .vb {
+      margin:0 1.25rem 1.25rem;
+      background:#141418; border:1px solid rgba(255,255,255,0.05);
+      border-radius:16px; padding:.9rem 1.25rem;
+      display:flex; align-items:center; gap:12px;
     }
-    .section-title {
-      font-family: 'DM Serif Display', serif;
-      font-size: 22px;
-      color: #e8e6e0;
-      margin: 0;
+    .vba {
+      width:38px; height:38px; border-radius:50%;
+      background:linear-gradient(135deg,#252529,#1a1a1e);
+      display:flex; align-items:center; justify-content:center;
+      font-size:13px; font-weight:700; color:#9e9c96;
+      border:1.5px solid rgba(255,255,255,0.07); flex-shrink:0;
     }
-    .section-title em {
-      font-style: italic;
-      color: #1D9E75;
-    }
-    .section-subtitle {
-      font-size: 12px;
-      color: #5e5c56;
-    }
+    .vbt { font-size:13px; color:#6e6c66; line-height:1.5; }
+    .vbt strong { color:#c8c6c0; }
 
-    /* ─ upload zone ─ */
-    .upload-zone {
-      margin: 0 1.25rem 1.5rem;
-      border-radius: 16px;
-      padding: 1.75rem 1.25rem;
-      text-align: center;
-      cursor: pointer;
-      position: relative;
-      z-index: 1;
-      display: block;        /* ← add this */
-      width: auto
-      overflow: hidden;
-      transition: all .25s;
-      background: linear-gradient(145deg, #1a1a1e, #141416);
-      border: 1.5px dashed rgba(255,255,255,0.1);
-    }
-    .upload-zone.drag-over {
-      border-color: #1D9E75;
-      background: linear-gradient(145deg, #111f1a, #0e1a15);
-      box-shadow: inset 0 0 40px rgba(29,158,117,0.08), 0 0 30px rgba(29,158,117,0.15);
-    }
-    .upload-zone:hover {
-      border-color: rgba(255,255,255,0.2);
-      background: linear-gradient(145deg, #1d1d22, #171719);
-    }
-    .upload-icon {
-      font-size: 36px;
-      margin-bottom: 10px;
-      display: block;
-      filter: drop-shadow(0 0 12px rgba(29,158,117,0.5));
-      animation: float 3s ease-in-out infinite;
-    }
-    @keyframes float {
-      0%,100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
-    .upload-title {
-      font-size: 14px;
-      font-weight: 500;
-      color: #c8c6c0;
-      margin: 0 0 4px;
-    }
-    .upload-sub {
-      font-size: 12px;
-      color: #5e5c56;
-      margin: 0;
-    }
-    .upload-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      background: rgba(29,158,117,0.12);
-      border: 1px solid rgba(29,158,117,0.25);
-      color: #1D9E75;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 3px 9px;
-      border-radius: 99px;
-      margin-top: 10px;
-    }
-    .uploading-bar {
-      position: absolute;
-      bottom: 0; left: 0;
-      height: 3px;
-      background: linear-gradient(90deg, #1D9E75, #4fd4a8);
-      border-radius: 3px;
-      animation: loading 1.2s ease-in-out infinite;
-    }
-    @keyframes loading {
-      0% { width: 0%; left: 0; }
-      50% { width: 70%; left: 15%; }
-      100% { width: 0%; left: 100%; }
+    /* ── photo grid ── */
+    .pg {
+      display:grid; clear:both;
+      grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
+      gap:4px; padding:0 1.25rem;
     }
 
-    /* ─ view-only banner ─ */
-    .view-banner {
-      margin: 0 1.25rem 1.25rem;
-      background: linear-gradient(145deg, #1a1a1e, #141416);
-      border: 1px solid rgba(255,255,255,0.06);
-      border-radius: 14px;
-      padding: 1rem 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 12px;
+    .pc {
+      position:relative; border-radius:10px; overflow:hidden;
+      aspect-ratio:1; cursor:pointer;
+      transition:transform .2s, box-shadow .2s;
+      border:2px solid transparent;
+      background:#1c1c20;
     }
-    .view-banner-avatar {
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #2a2a2e, #1a1a1e);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; font-weight: 600;
-      border: 1.5px solid rgba(255,255,255,0.08);
-      flex-shrink: 0;
-    }
-    .view-banner-text { font-size: 13px; color: #9e9c96; line-height: 1.4; }
-    .view-banner-text strong { color: #e8e6e0; }
+    .pc:hover { transform:scale(1.02); box-shadow:0 10px 30px rgba(0,0,0,0.6); }
+    .pc.sel { border-color:#1D9E75; box-shadow:0 0 0 2px rgba(29,158,117,0.3); }
 
-    /* ─ photo grid ─ */
-    .photo-grid {
-      display: grid;
-      clear: both; 
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 6px;
-      padding: 0 1.25rem;
+    .pc img { width:100%; height:100%; object-fit:cover; display:block; transition:filter .2s; }
+    .pc:hover img { filter:brightness(.8); }
+
+    /* checkmark */
+    .pck {
+      position:absolute; top:7px; right:7px;
+      width:22px; height:22px; border-radius:50%;
+      background:rgba(0,0,0,0.55); border:2px solid rgba(255,255,255,0.4);
+      display:flex; align-items:center; justify-content:center;
+      font-size:11px; color:#fff; transition:all .15s; z-index:3;
+      backdrop-filter:blur(4px);
     }
-    .photo-cell {
-      position: relative;
-      border-radius: 10px;
-      overflow: hidden;
-      aspect-ratio: 1;
-      cursor: pointer;
-      transition: transform .18s, box-shadow .18s;
-      border: 2.5px solid transparent;
+    .pc.sel .pck { background:#1D9E75; border-color:#1D9E75; }
+
+    /* expand — hover only, pointer-events none until hovered */
+    .pex {
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; transition:opacity .2s;
+      pointer-events:none; z-index:2;
     }
-    .photo-cell:hover { transform: scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
-    .photo-cell.sel {
-      border-color: #1D9E75;
-      box-shadow: 0 0 0 1px rgba(29,158,117,0.4), 0 8px 24px rgba(0,0,0,0.4);
+    .pc:hover .pex { opacity:1; pointer-events:all; }
+    .pexi {
+      background:rgba(0,0,0,0.6); backdrop-filter:blur(6px);
+      border-radius:50%; width:36px; height:36px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:16px; border:1px solid rgba(255,255,255,0.15);
+      transition:transform .15s;
     }
-    .photo-cell img {
-      width: 100%; height: 100%;
-      object-fit: cover; display: block;
-      transition: filter .2s;
+    .pexi:hover { transform:scale(1.1); }
+
+    /* delete btn — hover only */
+    .pdel {
+      position:absolute; top:7px; left:7px;
+      width:26px; height:26px; border-radius:50%;
+      background:rgba(0,0,0,0.6); border:1px solid rgba(255,255,255,0.1);
+      color:#fff; font-size:12px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      opacity:0; transition:opacity .15s, background .15s;
+      z-index:3; backdrop-filter:blur(4px);
     }
-    .photo-cell:hover img { filter: brightness(0.85); }
-    .photo-check {
-      position: absolute;
-      top: 7px; right: 7px;
-      width: 22px; height: 22px;
-      border-radius: 50%;
-      background: rgba(0,0,0,0.5);
-      border: 2px solid rgba(255,255,255,0.5);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 11px; color: #fff;
-      transition: all .15s;
+    .pc:hover .pdel { opacity:1; }
+    .pdel:hover { background:rgba(153,60,29,0.85) !important; }
+
+    /* ── empty state ── */
+    .es { text-align:center; padding:4rem 1.25rem; color:#4a4845; }
+    .ei { font-size:56px; margin-bottom:16px; display:block; opacity:.5; }
+    .etit { font-size:16px; font-weight:500; color:#6e6c66; margin:0 0 6px; }
+    .esub { font-size:13px; margin:0; }
+
+    /* ── action bar ── */
+    .ab {
+      position:fixed; bottom:0; left:50%;
+      transform:translateX(-50%);
+      width:100%; max-width:880px;
+      background:rgba(12,12,15,0.96);
+      backdrop-filter:blur(24px);
+      border-top:1px solid rgba(255,255,255,0.07);
+      padding:14px 1.25rem;
+      display:flex; align-items:center; gap:10px;
+      z-index:190;
+      animation:slideUp .2s ease-out;
     }
-    .photo-cell.sel .photo-check {
-      background: #1D9E75;
-      border-color: #1D9E75;
+    @keyframes slideUp { from{transform:translateX(-50%) translateY(100%)} to{transform:translateX(-50%) translateY(0)} }
+
+    .al { flex:1; font-size:13px; color:#6e6c66; }
+    .al strong { color:#e2e0da; font-size:15px; }
+
+    .bgh {
+      background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+      color:#9e9c96; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:500;
+      padding:9px 16px; border-radius:10px; cursor:pointer; transition:all .15s;
     }
-    .photo-expand {
-      position: absolute;
-      inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      opacity: 0;
-      transition: opacity .18s;
+    .bgh:hover { background:rgba(255,255,255,0.1); color:#e2e0da; }
+
+    .bpr {
+      background:linear-gradient(135deg,#1D9E75,#0f6e56); border:none;
+      color:#fff; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:600;
+      padding:9px 18px; border-radius:10px; cursor:pointer;
+      transition:all .15s; box-shadow:0 4px 16px rgba(29,158,117,0.35);
+      display:flex; align-items:center; gap:7px;
     }
-    .photo-cell:hover .photo-expand { opacity: 1; }
-    .photo-expand-icon {
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(4px);
-      border-radius: 50%;
-      width: 34px; height: 34px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px;
+    .bpr:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(29,158,117,0.45); }
+
+    .dl-count {
+      background:rgba(255,255,255,0.2); border-radius:99px;
+      padding:1px 7px; font-size:12px; font-weight:700;
     }
 
-    /* ─ empty state ─ */
-    .empty-state {
-      text-align: center;
-      padding: 3.5rem 1.25rem;
-      color: #5e5c56;
+    /* ── lightbox ── */
+    .lbo {
+      position:fixed; inset:0; background:rgba(0,0,0,0.96);
+      z-index:600; display:flex; align-items:center;
+      justify-content:center; flex-direction:column;
+      animation:fadeIn .18s ease;
     }
-    .empty-icon {
-      font-size: 52px;
-      margin-bottom: 14px;
-      display: block;
-      opacity: 0.6;
-    }
-    .empty-title { font-size: 16px; font-weight: 500; color: #9e9c96; margin: 0 0 6px; }
-    .empty-sub { font-size: 13px; margin: 0; }
+    @keyframes fadeIn { from{opacity:0} to{opacity:1} }
 
-    /* ─ action bar ─ */
-    .action-bar {
-      position: fixed;
-      bottom: 0; left: 50%;
-      transform: translateX(-50%);
-      width: 100%; max-width: 880px;
-      background: rgba(14,14,16,0.92);
-      backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(255,255,255,0.07);
-      padding: 12px 1.25rem;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      z-index: 190;
+    .lbi {
+      max-width:92vw; max-height:78vh; object-fit:contain;
+      border-radius:10px; box-shadow:0 30px 100px rgba(0,0,0,0.8);
     }
-    .action-label { flex: 1; font-size: 13px; color: #9e9c96; }
-    .action-label strong { color: #e8e6e0; }
-    .btn-ghost {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #9e9c96;
-      font-size: 13px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 500;
-      padding: 8px 14px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all .15s;
+    .lbnav { display:flex; align-items:center; gap:20px; margin-top:20px; }
+    .lbb {
+      background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1);
+      color:#e2e0da; width:42px; height:42px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; font-size:18px; transition:all .15s;
     }
-    .btn-ghost:hover { background: rgba(255,255,255,0.1); color: #e8e6e0; }
-    .btn-primary {
-      background: linear-gradient(135deg, #1D9E75, #15785a);
-      border: none;
-      color: #fff;
-      font-size: 13px;
-      font-family: 'DM Sans', sans-serif;
-      font-weight: 600;
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all .15s;
-      box-shadow: 0 4px 12px rgba(29,158,117,0.35);
+    .lbb:hover { background:rgba(255,255,255,0.14); }
+    .lbb:disabled { opacity:.2; cursor:default; }
+    .lbc { font-size:12px; color:#4a4845; min-width:55px; text-align:center; letter-spacing:.5px; }
+    .lbclose {
+      position:absolute; top:16px; right:16px;
+      background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.1);
+      color:#e2e0da; width:38px; height:38px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; font-size:16px; transition:all .15s;
     }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(29,158,117,0.45); }
-
-    /* ─ lightbox ─ */
-    .lightbox-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.93);
-      z-index: 500;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-    }
-    .lightbox-img {
-      max-width: 92vw;
-      max-height: 78vh;
-      object-fit: contain;
-      border-radius: 10px;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.7);
-    }
-    .lightbox-nav {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      margin-top: 16px;
-    }
-    .lb-btn {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #e8e6e0;
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      font-size: 16px;
-      transition: all .15s;
-    }
-    .lb-btn:hover { background: rgba(255,255,255,0.14); }
-    .lb-btn:disabled { opacity: 0.25; cursor: default; }
-    .lb-counter { font-size: 13px; color: #5e5c56; min-width: 55px; text-align: center; }
-    .lb-close {
-      position: absolute;
-      top: 16px; right: 16px;
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.1);
-      color: #e8e6e0;
-      width: 36px; height: 36px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      cursor: pointer;
-      font-size: 16px;
-      transition: all .15s;
-    }
-    .lb-close:hover { background: rgba(255,255,255,0.14); }
+    .lbclose:hover { background:rgba(255,255,255,0.14); }
   `;
 
-  const initials = (name) => name.slice(0, 2).toUpperCase();
-  const folderEmoji = (name) => name === me ? '📁' : '🗂';
-
   return (
-    <div className="photos-root">
+    <div className="pr">
       <style>{styles}</style>
 
       {/* ── Folder tabs ── */}
-      <div className="folders-bar">
+      <div className="fb">
         {memberNames.map(m => {
           const count = (byMember[m] || []).length;
           const isActive = activeFolder === m;
@@ -5004,126 +4859,133 @@ function PhotosPage({ trip, myNickname }) {
           return (
             <div
               key={m}
-              className={`folder-tab ${isActive ? 'active' : ''} ${isMe ? 'mine' : ''}`}
+              className={`ft ${isActive ? 'active' : ''} ${isMe ? 'mine' : ''}`}
               onClick={() => { setActiveFolder(m); setSelected(new Set()); }}
             >
-              <div className="folder-icon">
+              <div className="fi">
                 {isMe ? '👤' : initials(m)}
-                {count > 0 && <span className="folder-count">{count}</span>}
+                {count > 0 && <span className="fc">{count}</span>}
               </div>
-              <span className="folder-label">{isMe ? 'Mine' : m}</span>
+              <span className="fl">{isMe ? 'Mine' : m}</span>
             </div>
           );
         })}
       </div>
 
-      
-      <div className="section-header">
-      {/* ── Section header ── */}  <h2 className="section-title">
+      <div className="divider" />
+
+      {/* ── Section header ── */}
+      <div className="sh">
+        <h2 className="st">
           {isMyFolder ? <>Your <em>shots</em></> : <><em>{activeFolder}</em>'s shots</>}
         </h2>
-        <span className="section-subtitle">{folderPhotos.length} photo{folderPhotos.length !== 1 ? 's' : ''}</span>
+        <span className="ss">{folderPhotos.length} photo{folderPhotos.length !== 1 ? 's' : ''}</span>
       </div>
 
-      {/* ── Upload zone (only in my folder) ── */}
+      {/* ── Upload zone / View banner ── */}
       {isMyFolder ? (
         <label
-          className={`upload-zone ${dragging ? 'drag-over' : ''}`}
+          className={`uz ${dragging ? 'drag' : ''}`}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
         >
           <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
-          <span className="upload-icon">{dragging ? '🎯' : '📤'}</span>
-          <p className="upload-title">{dragging ? 'Drop to add to your collection' : 'Drop photos or click to upload'}</p>
-          <p className="upload-sub">JPG, PNG, HEIC — as many as you like</p>
-          <div className="upload-badge">
-            <span>👤</span> Uploading as <strong style={{ marginLeft: 3 }}>{me}</strong>
+
+          {uploading && (
+            <div className="upl-overlay">
+              <div className="upl-spin" />
+              <div className="upl-text">Uploading… {uploadProgress}%</div>
+              <div style={{ width: '60%', height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${uploadProgress}%`, background: '#1D9E75', borderRadius: 4, transition: 'width .3s' }} />
+              </div>
+            </div>
+          )}
+
+          <span className="ui">{dragging ? '🎯' : '📷'}</span>
+          <p className="ut">{dragging ? 'Release to upload' : 'Drop photos or tap to pick'}</p>
+          <p className="usub">JPG · PNG · HEIC · WebP</p>
+          <div className="ubadge">
+            <span>👤</span> {me}
           </div>
-          {uploading && <div className="uploading-bar" />}
         </label>
       ) : (
-        /* ── View-only banner for other's folders ── */
-        <div className="view-banner">
-          <div className="view-banner-avatar">{initials(activeFolder)}</div>
-          <div className="view-banner-text">
-            You're viewing <strong>{activeFolder}'s</strong> photos. Select any to download them to your device.
+        <div className="vb">
+          <div className="vba">{initials(activeFolder)}</div>
+          <div className="vbt">
+            Viewing <strong>{activeFolder}'s</strong> collection — tap to select, then download.
           </div>
         </div>
       )}
 
       {/* ── Photo grid ── */}
       {folderPhotos.length === 0 ? (
-        <div className="empty-state">
-          <span className="empty-icon">{isMyFolder ? '🌄' : '🫙'}</span>
-          <p className="empty-title">{isMyFolder ? 'Your roll is empty' : `${activeFolder} hasn't uploaded yet`}</p>
-          <p className="empty-sub">{isMyFolder ? 'Tap above to add your first memory' : 'Check back soon!'}</p>
+        <div className="es">
+          <span className="ei">{isMyFolder ? '🌄' : '🫙'}</span>
+          <p className="etit">{isMyFolder ? 'Your roll is empty' : `${activeFolder} hasn't shared yet`}</p>
+          <p className="esub">{isMyFolder ? 'Tap above to add your first memory' : 'Check back soon!'}</p>
         </div>
       ) : (
-        <div className="photo-grid">
+        <div className="pg">
           {folderPhotos.map((p, idx) => (
             <div
               key={p.id}
-              className={`photo-cell ${selected.has(p.id) ? 'sel' : ''}`}
+              className={`pc ${selected.has(p.id) ? 'sel' : ''}`}
               onClick={() => toggle(p.id)}
             >
-              <img src={p.url} alt="" loading="lazy" />
-              <div className="photo-check">{selected.has(p.id) ? '✓' : ''}</div>
-              {/* tap centre to open lightbox */}
-              <div className="photo-expand" onClick={(e) => { e.stopPropagation(); openLightbox(idx); }}>
-                <div className="photo-expand-icon">⛶</div>
+              <img src={p.url} alt="" loading="lazy" onError={e => { e.target.style.display = 'none'; }} />
+
+              {/* Checkmark — always visible, top right */}
+              <div className="pck">{selected.has(p.id) ? '✓' : ''}</div>
+
+              {/* Expand to fullscreen — hover only, no pointer events otherwise */}
+              <div className="pex" onClick={(e) => { e.stopPropagation(); openLightbox(idx); }}>
+                <div className="pexi">⛶</div>
               </div>
-              {/* ── Delete button (only on my folder) ── */}
+
+              {/* Delete — my folder only, appears on hover */}
               {isMyFolder && (
                 <button
+                  className="pdel"
                   onClick={(e) => { e.stopPropagation(); handleDelete(p); }}
-                  style={{
-                    position: 'absolute',
-                    top: 7, left: 7,
-                    width: 24, height: 24,
-                    borderRadius: '50%',
-                    background: 'rgba(0,0,0,0.55)',
-                    border: 'none',
-                    color: '#fff',
-                    fontSize: 13,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 2,
-                  }}
+                  title="Delete photo"
                 >
-                  🗑️
+                  🗑
                 </button>
-              )}  
-            </div>          
+              )}
+            </div>
           ))}
         </div>
       )}
 
       {/* ── Selection action bar ── */}
       {selected.size > 0 && (
-        <div className="action-bar">
-          <div className="action-label"><strong>{selected.size}</strong> photo{selected.size > 1 ? 's' : ''} selected</div>
-          <button className="btn-ghost" onClick={clearSel}>Clear</button>
-          <button className="btn-primary">⬇ Download</button>
+        <div className="ab">
+          <div className="al">
+            <strong>{selected.size}</strong> photo{selected.size > 1 ? 's' : ''} selected
+          </div>
+          <button className="bgh" onClick={clearSel}>Clear</button>
+          <button className="bpr" onClick={downloadSelected}>
+            ⬇ Download
+            <span className="dl-count">{selected.size}</span>
+          </button>
         </div>
       )}
 
       {/* ── Lightbox ── */}
       {lightbox && (
-        <div className="lightbox-overlay" onClick={() => setLightbox(null)}>
-          <button className="lb-close" onClick={() => setLightbox(null)}>✕</button>
+        <div className="lbo" onClick={() => setLightbox(null)}>
+          <button className="lbclose" onClick={() => setLightbox(null)}>✕</button>
           <img
-            className="lightbox-img"
+            className="lbi"
             src={lightbox.photos[lightbox.index]?.url}
             alt=""
             onClick={(e) => e.stopPropagation()}
           />
-          <div className="lightbox-nav" onClick={(e) => e.stopPropagation()}>
-            <button className="lb-btn" onClick={lbPrev} disabled={lightbox.index === 0}>‹</button>
-            <span className="lb-counter">{lightbox.index + 1} / {lightbox.photos.length}</span>
-            <button className="lb-btn" onClick={lbNext} disabled={lightbox.index === lightbox.photos.length - 1}>›</button>
+          <div className="lbnav" onClick={(e) => e.stopPropagation()}>
+            <button className="lbb" onClick={lbPrev} disabled={lightbox.index === 0}>‹</button>
+            <span className="lbc">{lightbox.index + 1} / {lightbox.photos.length}</span>
+            <button className="lbb" onClick={lbNext} disabled={lightbox.index === lightbox.photos.length - 1}>›</button>
           </div>
         </div>
       )}
