@@ -4518,7 +4518,12 @@ function PhotosPage({ trip, myNickname }) {
   const processFiles = async (files) => {
     setUploading(true);
     for (const file of files) {
-      const url = URL.createObjectURL(file);
+      // Convert to base64 so the img src persists
+      const url = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.readAsDataURL(file);
+      });
       try {
         const data = await addPhoto(trip.id, url);
         setAllPhotos(p => [...p, data.photo || { id: Date.now() + Math.random(), url, uploader: me }]);
@@ -4568,9 +4573,9 @@ function PhotosPage({ trip, myNickname }) {
 
     .photos-root {
       font-family: 'DM Sans', sans-serif;
-      background: #0e0e10;
+      background: #f7f6f2;
       min-height: 100vh;
-      color: #e8e6e0;
+      color: #1a1a18;
       padding-bottom: 6rem;
     }
 
