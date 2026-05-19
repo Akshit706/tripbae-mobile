@@ -1978,9 +1978,6 @@ const S = {
   soloSpinner: { width: 36, height: 36, border: '3px solid #EEEDFE', borderTopColor: '#7F77DD', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
 };
 
-/* ═══════════════════════════════════════════════════════
-   HOME PAGE
-═══════════════════════════════════════════════════════ */
 function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive }) {
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
@@ -1993,18 +1990,25 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [isSoloMode, setIsSoloMode] = useState(false);
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(null); // trip object
-  const [confirmComplete, setConfirmComplete] = useState(null); // trip object
-  const [menuOpen, setMenuOpen] = useState(null); // trip id
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [confirmComplete, setConfirmComplete] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(null);
+
+  const today = new Date().toISOString().split('T')[0];
+  const maxDate = (() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().split('T')[0];
+  })();
+
   const [form, setForm] = useState({
-    groupName: '', destination: '', emoji: '✈️', arrival: '', departure: '',
+    groupName: '', destination: '', emoji: '✈️', arrival: today, departure: '',
     people: 2, createdBy: '', budget: '',
   });
 
   const EMOJI_OPTIONS_GROUP = ['✈️','🏖️','🏔️','🏰','🌴','🗺️','🎡','🛕','🌅','🌿','🎭','🏛️'];
   const EMOJI_OPTIONS_SOLO  = ['🎒','🧳','🛺','🚂','🏍️','🌏','🪂','🧗','🌄','☕','📖','🦋'];
 
-  // ── KEY CHANGE: active = not completed, past = completed ──
   const activeTrips = trips.filter(t => !t.completed);
   const pastTrips   = trips.filter(t =>  t.completed);
 
@@ -2024,7 +2028,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         nickname: form.createdBy,
       });
       setShowCreate(false);
-      setForm({ groupName: '', destination: '', emoji: '✈️', arrival: '', departure: '', people: 2, createdBy: '', budget: '' });
+      setForm({ groupName: '', destination: '', emoji: '✈️', arrival: today, departure: '', people: 2, createdBy: '', budget: '' });
     } catch (err) {
       alert('Could not create trip: ' + err.message);
     }
@@ -2240,11 +2244,32 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             </div>
             <div>
               <label style={S.label}>Date of Arrival *</label>
-              <input style={S.input} type="date" value={form.arrival} onChange={e => setForm(f => ({ ...f, arrival: e.target.value }))} />
+              <input
+                style={S.input}
+                type="date"
+                value={form.arrival}
+                min={today}
+                max={maxDate}
+                onChange={e => {
+                  const v = e.target.value;
+                  setForm(f => ({
+                    ...f,
+                    arrival: v,
+                    departure: f.departure < v ? '' : f.departure,
+                  }));
+                }}
+              />
             </div>
             <div>
               <label style={S.label}>Date of Departure *</label>
-              <input style={S.input} type="date" value={form.departure} onChange={e => setForm(f => ({ ...f, departure: e.target.value }))} />
+              <input
+                style={S.input}
+                type="date"
+                value={form.departure}
+                min={form.arrival || today}
+                max={maxDate}
+                onChange={e => setForm(f => ({ ...f, departure: e.target.value }))}
+              />
             </div>
             {!isSoloMode && (
               <div>
@@ -2292,7 +2317,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
         return (
           <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'visible', marginBottom: 14, position: 'relative' }}>
-            {/* Trip card header — clickable to open */}
             <div style={{ overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
               <div style={{ position: 'relative', height: 110, background: trip.coverUrl ? 'transparent' : (trip.isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'), overflow: 'hidden' }}>
                 {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => e.target.style.display = 'none'} />}
@@ -2336,7 +2360,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               </div>
             )}
 
-            {/* Bottom bar: avatars + share code + ⋯ menu */}
             <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, borderRadius: '0 0 14px 14px' }}>
               {trip.isSolo ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1 }} onClick={() => onOpenTrip(trip.id)}>
@@ -2358,14 +2381,12 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 </div>
               )}
 
-              {/* Share code copy */}
               <div onClick={e => { e.stopPropagation(); copyCode(trip.shareCode, trip.id); }}
                 style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#EEEDFE', border: '0.5px solid #AFA9EC', borderRadius: 20, padding: '5px 12px', cursor: 'pointer', flexShrink: 0 }}>
                 <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 700, color: '#3C3489', letterSpacing: 1 }}>{trip.shareCode}</span>
                 <span style={{ fontSize: 11, color: copied === trip.id ? '#0F6E56' : '#534AB7' }}>{copied === trip.id ? '✓ Copied!' : '📋'}</span>
               </div>
 
-              {/* ⋯ kebab menu */}
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <button
                   onClick={e => { e.stopPropagation(); setMenuOpen(isMenuOpen ? null : trip.id); }}
@@ -2374,7 +2395,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 </button>
                 {isMenuOpen && (
                   <>
-                    {/* backdrop to close menu */}
                     <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => setMenuOpen(null)} />
                     <div style={{ position: 'absolute', bottom: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 101, minWidth: 180, overflow: 'hidden' }}>
                       <button
