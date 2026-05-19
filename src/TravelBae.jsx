@@ -4480,91 +4480,587 @@ function SplitPage({ trip, myNickname }) {
 /* ═══════════════════════════════════════════════════════
    PHOTOS PAGE
 ═══════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════
+   PHOTOS PAGE — Redesigned
+   - Each member has their own folder
+   - You can only upload as yourself (myNickname)
+   - Others see your folder; you see theirs
+   - Glassmorphic dark-film aesthetic
+═══════════════════════════════════════════════════════ */
+
 function PhotosPage({ trip, myNickname }) {
   const memberNames = normalizeMembers(trip.members);
-  const [photos, setPhotos] = useState(trip.photos || []);
-  const [selected, setSelected] = useState(new Set());
-  const [viewer, setViewer] = useState(myNickname || memberNames[0] || 'Me');
+  const me = myNickname || memberNames[0] || 'Me';
 
-  const handleUpload = async (e) => {
-    const files = Array.from(e.target.files);
+  // photos grouped by uploader
+  const initialPhotos = trip.photos || [];
+  const [allPhotos, setAllPhotos] = useState(initialPhotos);
+  const [activeFolder, setActiveFolder] = useState(me);
+  const [dragging, setDragging] = useState(false);
+  const [lightbox, setLightbox] = useState(null); // { photos, index }
+  const [selected, setSelected] = useState(new Set());
+  const [uploading, setUploading] = useState(false);
+
+  const byMember = useMemo(() => {
+    const map = {};
+    memberNames.forEach(m => { map[m] = []; });
+    allPhotos.forEach(p => {
+      if (map[p.uploader]) map[p.uploader].push(p);
+      else map[p.uploader] = [p];
+    });
+    return map;
+  }, [allPhotos, memberNames]);
+
+  const folderPhotos = byMember[activeFolder] || [];
+  const isMyFolder = activeFolder === me;
+
+  /* ── upload ── */
+  const processFiles = async (files) => {
+    setUploading(true);
     for (const file of files) {
       const url = URL.createObjectURL(file);
       try {
         const data = await addPhoto(trip.id, url);
-        setPhotos(p => [...p, data.photo || { id: Date.now() + Math.random(), url, uploader: viewer }]);
+        setAllPhotos(p => [...p, data.photo || { id: Date.now() + Math.random(), url, uploader: me }]);
       } catch {
-        setPhotos(p => [...p, { id: Date.now() + Math.random(), url, uploader: viewer }]);
+        setAllPhotos(p => [...p, { id: Date.now() + Math.random(), url, uploader: me }]);
       }
     }
+    setUploading(false);
   };
 
-  const toggle = id => setSelected(s => {
+  const handleUpload = (e) => processFiles(Array.from(e.target.files));
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    if (files.length) processFiles(files);
+  };
+
+  /* ── selection ── */
+  const toggle = (id) => setSelected(s => {
     const n = new Set(s);
     n.has(id) ? n.delete(id) : n.add(id);
     return n;
   });
+  const clearSel = () => setSelected(new Set());
+
+  /* ── lightbox nav ── */
+  const openLightbox = (idx) => setLightbox({ photos: folderPhotos, index: idx });
+  const lbPrev = () => setLightbox(l => ({ ...l, index: Math.max(0, l.index - 1) }));
+  const lbNext = () => setLightbox(l => ({ ...l, index: Math.min(l.photos.length - 1, l.index + 1) }));
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (!lightbox) return;
+      if (e.key === 'ArrowLeft') lbPrev();
+      if (e.key === 'ArrowRight') lbNext();
+      if (e.key === 'Escape') setLightbox(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [lightbox]);
+
+  /* ── palette / styles ── */
+  const styles = `
+    @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap');
+
+    .photos-root {
+      font-family: 'DM Sans', sans-serif;
+      background: #0e0e10;
+      min-height: 100vh;
+      color: #e8e6e0;
+      padding-bottom: 6rem;
+    }
+
+    /* ─ folder tabs ─ */
+    .folders-bar {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 1.25rem 1.25rem 0;
+      scrollbar-width: none;
+    }
+    .folders-bar::-webkit-scrollbar { display: none; }
+
+    .folder-tab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: transform .2s;
+    }
+    .folder-tab:hover { transform: translateY(-2px); }
+
+    .folder-icon {
+      width: 58px;
+      height: 50px;
+      border-radius: 10px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      transition: all .2s;
+    }
+    .folder-icon::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      border: 1.5px solid rgba(255,255,255,0.07);
+      background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.01));
+    }
+    .folder-tab.active .folder-icon {
+      background: linear-gradient(135deg, #1D9E75 0%, #15785a 100%);
+      box-shadow: 0 0 20px rgba(29,158,117,0.4);
+    }
+    .folder-tab.active .folder-icon::before {
+      border-color: rgba(29,158,117,0.4);
+    }
+    .folder-tab.mine .folder-icon {
+      background: linear-gradient(135deg, #2a2a2e, #1a1a1e);
+    }
+    .folder-tab.mine.active .folder-icon {
+      background: linear-gradient(135deg, #1D9E75 0%, #15785a 100%);
+    }
+
+    .folder-count {
+      position: absolute;
+      top: -5px; right: -5px;
+      background: #1D9E75;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 600;
+      min-width: 17px;
+      height: 17px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+      border: 2px solid #0e0e10;
+    }
+
+    .folder-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #9e9c96;
+      max-width: 62px;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color .2s;
+    }
+    .folder-tab.active .folder-label { color: #e8e6e0; }
+
+    /* ─ section header ─ */
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      padding: 1.5rem 1.25rem 0.75rem;
+    }
+    .section-title {
+      font-family: 'DM Serif Display', serif;
+      font-size: 22px;
+      color: #e8e6e0;
+      margin: 0;
+    }
+    .section-title em {
+      font-style: italic;
+      color: #1D9E75;
+    }
+    .section-subtitle {
+      font-size: 12px;
+      color: #5e5c56;
+    }
+
+    /* ─ upload zone ─ */
+    .upload-zone {
+      margin: 0 1.25rem 1.5rem;
+      border-radius: 16px;
+      padding: 1.75rem 1.25rem;
+      text-align: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      transition: all .25s;
+      background: linear-gradient(145deg, #1a1a1e, #141416);
+      border: 1.5px dashed rgba(255,255,255,0.1);
+    }
+    .upload-zone.drag-over {
+      border-color: #1D9E75;
+      background: linear-gradient(145deg, #111f1a, #0e1a15);
+      box-shadow: inset 0 0 40px rgba(29,158,117,0.08), 0 0 30px rgba(29,158,117,0.15);
+    }
+    .upload-zone:hover {
+      border-color: rgba(255,255,255,0.2);
+      background: linear-gradient(145deg, #1d1d22, #171719);
+    }
+    .upload-icon {
+      font-size: 36px;
+      margin-bottom: 10px;
+      display: block;
+      filter: drop-shadow(0 0 12px rgba(29,158,117,0.5));
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+    .upload-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #c8c6c0;
+      margin: 0 0 4px;
+    }
+    .upload-sub {
+      font-size: 12px;
+      color: #5e5c56;
+      margin: 0;
+    }
+    .upload-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      background: rgba(29,158,117,0.12);
+      border: 1px solid rgba(29,158,117,0.25);
+      color: #1D9E75;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 99px;
+      margin-top: 10px;
+    }
+    .uploading-bar {
+      position: absolute;
+      bottom: 0; left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #1D9E75, #4fd4a8);
+      border-radius: 3px;
+      animation: loading 1.2s ease-in-out infinite;
+    }
+    @keyframes loading {
+      0% { width: 0%; left: 0; }
+      50% { width: 70%; left: 15%; }
+      100% { width: 0%; left: 100%; }
+    }
+
+    /* ─ view-only banner ─ */
+    .view-banner {
+      margin: 0 1.25rem 1.25rem;
+      background: linear-gradient(145deg, #1a1a1e, #141416);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .view-banner-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #2a2a2e, #1a1a1e);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 600;
+      border: 1.5px solid rgba(255,255,255,0.08);
+      flex-shrink: 0;
+    }
+    .view-banner-text { font-size: 13px; color: #9e9c96; line-height: 1.4; }
+    .view-banner-text strong { color: #e8e6e0; }
+
+    /* ─ photo grid ─ */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 6px;
+      padding: 0 1.25rem;
+    }
+    .photo-cell {
+      position: relative;
+      border-radius: 10px;
+      overflow: hidden;
+      aspect-ratio: 1;
+      cursor: pointer;
+      transition: transform .18s, box-shadow .18s;
+      border: 2.5px solid transparent;
+    }
+    .photo-cell:hover { transform: scale(1.02); box-shadow: 0 8px 24px rgba(0,0,0,0.5); }
+    .photo-cell.sel {
+      border-color: #1D9E75;
+      box-shadow: 0 0 0 1px rgba(29,158,117,0.4), 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .photo-cell img {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+      transition: filter .2s;
+    }
+    .photo-cell:hover img { filter: brightness(0.85); }
+    .photo-check {
+      position: absolute;
+      top: 7px; right: 7px;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.5);
+      border: 2px solid rgba(255,255,255,0.5);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; color: #fff;
+      transition: all .15s;
+    }
+    .photo-cell.sel .photo-check {
+      background: #1D9E75;
+      border-color: #1D9E75;
+    }
+    .photo-expand {
+      position: absolute;
+      inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity .18s;
+    }
+    .photo-cell:hover .photo-expand { opacity: 1; }
+    .photo-expand-icon {
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px);
+      border-radius: 50%;
+      width: 34px; height: 34px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
+    }
+
+    /* ─ empty state ─ */
+    .empty-state {
+      text-align: center;
+      padding: 3.5rem 1.25rem;
+      color: #5e5c56;
+    }
+    .empty-icon {
+      font-size: 52px;
+      margin-bottom: 14px;
+      display: block;
+      opacity: 0.6;
+    }
+    .empty-title { font-size: 16px; font-weight: 500; color: #9e9c96; margin: 0 0 6px; }
+    .empty-sub { font-size: 13px; margin: 0; }
+
+    /* ─ action bar ─ */
+    .action-bar {
+      position: fixed;
+      bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; max-width: 880px;
+      background: rgba(14,14,16,0.92);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.07);
+      padding: 12px 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      z-index: 190;
+    }
+    .action-label { flex: 1; font-size: 13px; color: #9e9c96; }
+    .action-label strong { color: #e8e6e0; }
+    .btn-ghost {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #9e9c96;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,0.1); color: #e8e6e0; }
+    .btn-primary {
+      background: linear-gradient(135deg, #1D9E75, #15785a);
+      border: none;
+      color: #fff;
+      font-size: 13px;
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all .15s;
+      box-shadow: 0 4px 12px rgba(29,158,117,0.35);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(29,158,117,0.45); }
+
+    /* ─ lightbox ─ */
+    .lightbox-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.93);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .lightbox-img {
+      max-width: 92vw;
+      max-height: 78vh;
+      object-fit: contain;
+      border-radius: 10px;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.7);
+    }
+    .lightbox-nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 16px;
+    }
+    .lb-btn {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #e8e6e0;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all .15s;
+    }
+    .lb-btn:hover { background: rgba(255,255,255,0.14); }
+    .lb-btn:disabled { opacity: 0.25; cursor: default; }
+    .lb-counter { font-size: 13px; color: #5e5c56; min-width: 55px; text-align: center; }
+    .lb-close {
+      position: absolute;
+      top: 16px; right: 16px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #e8e6e0;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all .15s;
+    }
+    .lb-close:hover { background: rgba(255,255,255,0.14); }
+  `;
+
+  const initials = (name) => name.slice(0, 2).toUpperCase();
+  const folderEmoji = (name) => name === me ? '📁' : '🗂';
 
   return (
-    <div style={{ paddingBottom: '5rem' }}>
-      {/* Uploading as — member selector */}
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', marginBottom: '1rem' }}>
-        <span style={{ fontSize: 13, color: '#6b6b68' }}>Uploading as</span>
-        {memberNames.map(m => (
-          <button key={m} onClick={() => setViewer(m)}
-            style={{ ...S.btn, ...(viewer === m ? S.btnP : {}), padding: '5px 10px', gap: 5, fontSize: 12 }}>
-            <Avatar name={m} size={16} />{m}
-          </button>
-        ))}
+    <div className="photos-root">
+      <style>{styles}</style>
+
+      {/* ── Folder tabs ── */}
+      <div className="folders-bar">
+        {memberNames.map(m => {
+          const count = (byMember[m] || []).length;
+          const isActive = activeFolder === m;
+          const isMe = m === me;
+          return (
+            <div
+              key={m}
+              className={`folder-tab ${isActive ? 'active' : ''} ${isMe ? 'mine' : ''}`}
+              onClick={() => { setActiveFolder(m); setSelected(new Set()); }}
+            >
+              <div className="folder-icon">
+                {isMe ? '👤' : initials(m)}
+                {count > 0 && <span className="folder-count">{count}</span>}
+              </div>
+              <span className="folder-label">{isMe ? 'Mine' : m}</span>
+            </div>
+          );
+        })}
       </div>
 
-      {/* Upload dropzone */}
-      <label style={{ border: '1.5px dashed rgba(0,0,0,0.17)', borderRadius: 14, padding: '1.75rem', textAlign: 'center', background: '#fff', cursor: 'pointer', display: 'block', marginBottom: '1.25rem' }}>
-        <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
-        <div style={{ fontSize: 32, marginBottom: 10 }}>📤</div>
-        <p style={{ fontSize: 14, color: '#6b6b68' }}>Drop photos here or click to upload</p>
-        <small style={{ fontSize: 12, color: '#a8a8a5', display: 'block', marginTop: 4 }}>
-          Uploading as <strong>{viewer}</strong>
-        </small>
-      </label>
+      {/* ── Section header ── */}
+      <div className="section-header">
+        <h2 className="section-title">
+          {isMyFolder ? <>Your <em>shots</em></> : <><em>{activeFolder}</em>'s shots</>}
+        </h2>
+        <span className="section-subtitle">{folderPhotos.length} photo{folderPhotos.length !== 1 ? 's' : ''}</span>
+      </div>
 
-      <p style={{ fontSize: 13, color: '#6b6b68', marginBottom: 10 }}>
-        {photos.length} photo{photos.length !== 1 ? 's' : ''} · tap to select
-      </p>
-
-      {/* Photo grid */}
-      {photos.length === 0 && (
-        <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#6b6b68' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>📷</div>
-          <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>No photos yet</p>
-          <p style={{ fontSize: 13 }}>Upload your first trip memory!</p>
+      {/* ── Upload zone (only in my folder) ── */}
+      {isMyFolder ? (
+        <label
+          className={`upload-zone ${dragging ? 'drag-over' : ''}`}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={handleDrop}
+        >
+          <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
+          <span className="upload-icon">{dragging ? '🎯' : '📤'}</span>
+          <p className="upload-title">{dragging ? 'Drop to add to your collection' : 'Drop photos or click to upload'}</p>
+          <p className="upload-sub">JPG, PNG, HEIC — as many as you like</p>
+          <div className="upload-badge">
+            <span>👤</span> Uploading as <strong style={{ marginLeft: 3 }}>{me}</strong>
+          </div>
+          {uploading && <div className="uploading-bar" />}
+        </label>
+      ) : (
+        /* ── View-only banner for other's folders ── */
+        <div className="view-banner">
+          <div className="view-banner-avatar">{initials(activeFolder)}</div>
+          <div className="view-banner-text">
+            You're viewing <strong>{activeFolder}'s</strong> photos. Select any to download them to your device.
+          </div>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(130px,1fr))', gap: 8 }}>
-        {photos.map(p => (
-          <div key={p.id} onClick={() => toggle(p.id)}
-            style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', aspectRatio: '1', cursor: 'pointer', border: selected.has(p.id) ? '2.5px solid #1D9E75' : '2.5px solid transparent', transition: 'all .15s' }}>
-            <img src={p.url} alt="" loading="lazy"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-            <div style={{ position: 'absolute', top: 7, right: 7, width: 22, height: 22, borderRadius: '50%', background: selected.has(p.id) ? '#1D9E75' : 'rgba(255,255,255,.85)', border: '2px solid rgba(255,255,255,.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#fff' }}>
-              {selected.has(p.id) ? '✓' : ''}
+      {/* ── Photo grid ── */}
+      {folderPhotos.length === 0 ? (
+        <div className="empty-state">
+          <span className="empty-icon">{isMyFolder ? '🌄' : '🫙'}</span>
+          <p className="empty-title">{isMyFolder ? 'Your roll is empty' : `${activeFolder} hasn't uploaded yet`}</p>
+          <p className="empty-sub">{isMyFolder ? 'Tap above to add your first memory' : 'Check back soon!'}</p>
+        </div>
+      ) : (
+        <div className="photo-grid">
+          {folderPhotos.map((p, idx) => (
+            <div
+              key={p.id}
+              className={`photo-cell ${selected.has(p.id) ? 'sel' : ''}`}
+              onClick={() => toggle(p.id)}
+            >
+              <img src={p.url} alt="" loading="lazy" />
+              <div className="photo-check">{selected.has(p.id) ? '✓' : ''}</div>
+              {/* tap centre to open lightbox */}
+              <div className="photo-expand" onClick={(e) => { e.stopPropagation(); openLightbox(idx); }}>
+                <div className="photo-expand-icon">⛶</div>
+              </div>
             </div>
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent,rgba(0,0,0,.55))', padding: '18px 7px 7px', fontSize: 10, color: 'rgba(255,255,255,.92)', fontWeight: 500 }}>
-              📸 {p.uploader}
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {/* Selection action bar */}
+      {/* ── Selection action bar ── */}
       {selected.size > 0 && (
-        <div style={{ position: 'fixed', bottom: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 880, background: '#fff', borderTop: '0.5px solid rgba(0,0,0,0.09)', padding: '12px 1.25rem', display: 'flex', alignItems: 'center', gap: 10, zIndex: 190 }}>
-          <div style={{ flex: 1, fontSize: 13, color: '#6b6b68' }}>
-            <strong>{selected.size}</strong> photo{selected.size > 1 ? 's' : ''} selected
+        <div className="action-bar">
+          <div className="action-label"><strong>{selected.size}</strong> photo{selected.size > 1 ? 's' : ''} selected</div>
+          <button className="btn-ghost" onClick={clearSel}>Clear</button>
+          <button className="btn-primary">⬇ Download</button>
+        </div>
+      )}
+
+      {/* ── Lightbox ── */}
+      {lightbox && (
+        <div className="lightbox-overlay" onClick={() => setLightbox(null)}>
+          <button className="lb-close" onClick={() => setLightbox(null)}>✕</button>
+          <img
+            className="lightbox-img"
+            src={lightbox.photos[lightbox.index]?.url}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="lightbox-nav" onClick={(e) => e.stopPropagation()}>
+            <button className="lb-btn" onClick={lbPrev} disabled={lightbox.index === 0}>‹</button>
+            <span className="lb-counter">{lightbox.index + 1} / {lightbox.photos.length}</span>
+            <button className="lb-btn" onClick={lbNext} disabled={lightbox.index === lightbox.photos.length - 1}>›</button>
           </div>
-          <button style={S.btn} onClick={() => setSelected(new Set())}>Clear</button>
-          <button style={{ ...S.btn, ...S.btnP }}>⬇ Download</button>
         </div>
       )}
     </div>
