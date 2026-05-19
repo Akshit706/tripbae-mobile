@@ -1783,6 +1783,7 @@
 // }
 
 import { useState, useRef, useEffect, useMemo } from "react";
+import { supabase } from './supabase';
 import {
   aiChat,
   getTrips,
@@ -4518,17 +4519,34 @@ function PhotosPage({ trip, myNickname }) {
   const processFiles = async (files) => {
     setUploading(true);
     for (const file of files) {
-      // Convert to base64 so the img src persists
-      const url = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsDataURL(file);
-      });
+      const fileName = `${trip.id}/${me}/${Date.now()}-${file.name}`;
+
+      const { error } = await supabase.storage
+        .from('trip-photos')
+        .upload(fileName, file);
+
+      if (error) {
+        console.error('Upload error:', error.message);
+        continue;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('trip-photos')
+        .getPublicUrl(fileName);
+
       try {
-        const data = await addPhoto(trip.id, url);
-        setAllPhotos(p => [...p, data.photo || { id: Date.now() + Math.random(), url, uploader: me }]);
+        const res = await addPhoto(trip.id, publicUrl);
+        setAllPhotos(p => [...p, res.photo || {
+          id: Date.now() + Math.random(),
+          url: publicUrl,
+          uploader: me
+        }]);
       } catch {
-        setAllPhotos(p => [...p, { id: Date.now() + Math.random(), url, uploader: me }]);
+        setAllPhotos(p => [...p, {
+          id: Date.now() + Math.random(),
+          url: publicUrl,
+          uploader: me
+        }]);
       }
     }
     setUploading(false);
