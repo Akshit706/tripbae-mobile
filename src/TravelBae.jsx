@@ -1794,6 +1794,7 @@ import {
   addContact,
   deleteContact,
   addPhoto,
+  deletePhoto
 } from './api';
 
 // Add these two to your api.js:
@@ -4561,7 +4562,9 @@ function PhotosPage({ trip, myNickname }) {
   const doDeleteSingle = async (photo) => {
     const fileName = `${trip.id}/${me}/${photo.url.split('/').pop()}`;
     await supabase.storage.from('trip-photos').remove([fileName]);
-    try { await fetch(`/api/trips/${trip.id}/photos/${photo.id}`, { method: 'DELETE' }); } catch {}
+    
+    await deletePhoto(trip.id, photo.id); // ← replaces the silent try/catch fetch
+
     setAllPhotos(p => p.filter(x => x.id !== photo.id));
     setSelected(s => { const n = new Set(s); n.delete(photo.id); return n; });
     setPendingDeletePhoto(null);
@@ -4574,7 +4577,7 @@ function PhotosPage({ trip, myNickname }) {
     for (const photo of toDelete) {
       const fileName = `${trip.id}/${me}/${photo.url.split('/').pop()}`;
       await supabase.storage.from('trip-photos').remove([fileName]);
-      try { await fetch(`/api/trips/${trip.id}/photos/${photo.id}`, { method: 'DELETE' }); } catch {}
+      await deletePhoto(trip.id, photo.id); // ← same fix
     }
     const deletedIds = new Set(toDelete.map(p => p.id));
     setAllPhotos(p => p.filter(x => !deletedIds.has(x.id)));

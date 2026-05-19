@@ -53,6 +53,9 @@ export const deleteContact = (tripId, cid)   => apiFetch(`/trips/${tripId}/conta
 export const addPhoto = (tripId, url) =>
   apiFetch(`/trips/${tripId}/photos`, { method: 'POST', body: { url } });
 
+export const deletePhoto = (tripId, photoId) =>
+  apiFetch(`/trips/${tripId}/photos/${photoId}`, { method: 'DELETE' });
+
 // Itinerary
 export const addItineraryItem = (tripId, data) =>
   apiFetch(`/trips/${tripId}/itinerary`, { method: 'POST', body: data });
