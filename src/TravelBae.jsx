@@ -4649,7 +4649,6 @@ const SLOT_ORDER = ['morning', 'afternoon', 'evening'];
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 function formatTripDate(arrivalStr, dayIndex) {
-  // dayIndex: 0 = arrival day
   const base = new Date(arrivalStr);
   base.setDate(base.getDate() + dayIndex);
   return `${base.getDate()} ${MONTH_NAMES[base.getMonth()]}`;
@@ -4658,6 +4657,10 @@ function formatTripDate(arrivalStr, dayIndex) {
 function ItineraryPage({ trip }) {
   const isSolo = trip.isSolo;
   const [iTab, setITab] = useState('planner');
+
+  // ── Stable storage keys per trip ──
+  const cacheKey = `itin:${trip.id}`;
+  const tasteKey = `taste:${trip.id}`;
 
   const [form] = useState({
     dest: trip.destination || '',
@@ -4673,13 +4676,13 @@ function ItineraryPage({ trip }) {
     ? Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000))
     : 1;
 
-  // ── Use cache if available, otherwise generate ──
-  const [step, setStep] = useState(trip._cachedItin ? 'result' : 'loading');
-  const [itin, setItin] = useState(trip._cachedItin?.itinerary || null);
-  const [sources, setSources] = useState(trip._cachedItin?.sources || []);
-  const [localTasteData, setLocalTasteData] = useState(trip._cachedTaste || null);
-  const [localTasteStep, setLocalTasteStep] = useState(trip._cachedTaste ? 'result' : 'loading');
-  const hasGenerated = useRef(!!trip._cachedItin);
+  // ── Start in loading state; useEffect will resolve from storage or generate ──
+  const [step, setStep] = useState('loading');
+  const [itin, setItin] = useState(null);
+  const [sources, setSources] = useState([]);
+  const [localTasteData, setLocalTasteData] = useState(null);
+  const [localTasteStep, setLocalTasteStep] = useState('loading');
+  const hasGenerated = useRef(false);
 
   const accentStyle = isSolo ? S.btnSolo : S.btnP;
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
@@ -4695,11 +4698,41 @@ function ItineraryPage({ trip }) {
     return SLOT_ORDER[Math.min(idx + 1, SLOT_ORDER.length - 1)];
   };
 
+  // ── On mount: check storage first, fall back to generating ──
   useEffect(() => {
     if (hasGenerated.current) return;
     hasGenerated.current = true;
-    runGenerateItinerary();
-    runGenerateLocalTaste();
+
+    Promise.all([
+      window.storage.get(cacheKey).catch(() => null),
+      window.storage.get(tasteKey).catch(() => null),
+    ]).then(([itinResult, tasteResult]) => {
+      // Itinerary
+      if (itinResult?.value) {
+        try {
+          const cached = JSON.parse(itinResult.value);
+          setItin(cached.itinerary);
+          setSources(cached.sources || []);
+          setStep('result');
+        } catch {
+          runGenerateItinerary();
+        }
+      } else {
+        runGenerateItinerary();
+      }
+
+      // Local Taste
+      if (tasteResult?.value) {
+        try {
+          setLocalTasteData(JSON.parse(tasteResult.value));
+          setLocalTasteStep('result');
+        } catch {
+          runGenerateLocalTaste();
+        }
+      } else {
+        runGenerateLocalTaste();
+      }
+    });
   }, []);
 
   const runGenerateItinerary = async () => {
@@ -4720,6 +4753,12 @@ function ItineraryPage({ trip }) {
       setItin(result.itinerary);
       setSources(result.sources || []);
       setStep('result');
+
+      // ── Persist so future visits skip generation ──
+      await window.storage.set(cacheKey, JSON.stringify({
+        itinerary: result.itinerary,
+        sources: result.sources || [],
+      })).catch(() => {});
     } catch {
       setStep('error');
     }
@@ -4732,9 +4771,18 @@ function ItineraryPage({ trip }) {
       const r = await generateLocalTaste({ destination: form.dest });
       setLocalTasteData(r);
       setLocalTasteStep('result');
+
+      // ── Persist ──
+      await window.storage.set(tasteKey, JSON.stringify(r)).catch(() => {});
     } catch {
       setLocalTasteStep('error');
     }
+  };
+
+  const handleRedo = async () => {
+    // Clear storage cache then regenerate
+    await window.storage.delete(cacheKey).catch(() => {});
+    runGenerateItinerary();
   };
 
   const SlotBadge = ({ slot, label }) => (
@@ -4763,7 +4811,7 @@ function ItineraryPage({ trip }) {
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
-                {trip._cachedItin ? 'Loading your itinerary…' : 'Building your itinerary…'}
+                Building your itinerary…
               </div>
               <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.7 }}>
                 🔍 Scanning TripAdvisor, Lonely Planet & travel blogs<br />
@@ -4800,7 +4848,7 @@ function ItineraryPage({ trip }) {
                   )}
                   <button
                     style={{ marginLeft: 'auto', ...S.btn, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '0.5px solid rgba(255,255,255,0.3)', fontSize: 12 }}
-                    onClick={() => { hasGenerated.current = false; runGenerateItinerary(); }}>
+                    onClick={handleRedo}>
                     ↺ Redo
                   </button>
                 </div>
@@ -4816,7 +4864,7 @@ function ItineraryPage({ trip }) {
                 </div>
               )}
 
-              {/* Day cards — real dates instead of Day 1/2 */}
+              {/* Day cards */}
               {(itin.days || []).map((d, dayIndex) => {
                 const dateLabel = form.arrival
                   ? formatTripDate(form.arrival, dayIndex)
@@ -4835,7 +4883,6 @@ function ItineraryPage({ trip }) {
                         {d.theme && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 1 }}>{d.theme}</div>}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
-                        {/* Arrival/departure slot badges */}
                         {isArrivalDay && (
                           <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>
                             ✈️ Arrives {SLOT_LABELS[form.arrivalSlot]}
