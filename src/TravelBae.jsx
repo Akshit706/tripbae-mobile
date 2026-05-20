@@ -6463,60 +6463,60 @@ export default function App() {
 /* ═══════════════════════════════════════════════════════
    TRIP ACTION MENU — shown in top bar when inside a trip
 ═══════════════════════════════════════════════════════ */
-function TripActionMenu({ trip, onMarkComplete, onDelete }) {
-  const [open, setOpen] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [confirmComplete, setConfirmComplete] = useState(false);
-  const isSolo = trip?.isSolo;
+// function TripActionMenu({ trip, onMarkComplete, onDelete }) {
+//   const [open, setOpen] = useState(false);
+//   const [confirmDelete, setConfirmDelete] = useState(false);
+//   const [confirmComplete, setConfirmComplete] = useState(false);
+//   const isSolo = trip?.isSolo;
 
-  return (
-    <>
-      {confirmDelete && (
-        <ConfirmDialog
-          title="Delete Trip"
-          message={`Delete "${trip.groupName}"? All expenses, contacts and photos will be lost. This cannot be undone.`}
-          confirmLabel="🗑️ Delete"
-          confirmStyle="danger"
-          onConfirm={() => { setConfirmDelete(false); onDelete(); }}
-          onCancel={() => setConfirmDelete(false)}
-        />
-      )}
-      {confirmComplete && (
-        <ConfirmDialog
-          title="Mark as Completed?"
-          message={`"${trip.groupName}" will be moved to Past Trips. You can restore it anytime.`}
-          confirmLabel="✅ Mark Complete"
-          confirmStyle="primary"
-          onConfirm={() => { setConfirmComplete(false); onMarkComplete(); }}
-          onCancel={() => setConfirmComplete(false)}
-        />
-      )}
-      <div style={{ position: 'relative' }}>
-        <button
-          onClick={() => setOpen(v => !v)}
-          style={{ ...S.btn, padding: '5px 9px', fontSize: 15, color: '#6b6b68', borderColor: 'rgba(0,0,0,0.12)' }}>
-          ⋯
-        </button>
-        {open && (
-          <>
-            <div style={{ position: 'fixed', inset: 0, zIndex: 198 }} onClick={() => setOpen(false)} />
-            <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 199, minWidth: 190, overflow: 'hidden' }}>
-              {!trip.completed && (
-                <button
-                  onClick={() => { setOpen(false); setConfirmComplete(true); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)', textAlign: 'left' }}>
-                  ✅ Mark as Completed
-                </button>
-              )}
-              <button
-                onClick={() => { setOpen(false); setConfirmDelete(true); }}
-                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#993C1D', fontFamily: "'DM Sans',sans-serif", textAlign: 'left' }}>
-                🗑️ Delete Trip
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </>
-  );
-}
+//   return (
+//     <>
+//       {confirmDelete && (
+//         <ConfirmDialog
+//           title="Delete Trip"
+//           message={`Delete "${trip.groupName}"? All expenses, contacts and photos will be lost. This cannot be undone.`}
+//           confirmLabel="🗑️ Delete"
+//           confirmStyle="danger"
+//           onConfirm={() => { setConfirmDelete(false); onDelete(); }}
+//           onCancel={() => setConfirmDelete(false)}
+//         />
+//       )}
+//       {confirmComplete && (
+//         <ConfirmDialog
+//           title="Mark as Completed?"
+//           message={`"${trip.groupName}" will be moved to Past Trips. You can restore it anytime.`}
+//           confirmLabel="✅ Mark Complete"
+//           confirmStyle="primary"
+//           onConfirm={() => { setConfirmComplete(false); onMarkComplete(); }}
+//           onCancel={() => setConfirmComplete(false)}
+//         />
+//       )}
+//       <div style={{ position: 'relative' }}>
+//         <button
+//           onClick={() => setOpen(v => !v)}
+//           style={{ ...S.btn, padding: '5px 9px', fontSize: 15, color: '#6b6b68', borderColor: 'rgba(0,0,0,0.12)' }}>
+//           ⋯
+//         </button>
+//         {open && (
+//           <>
+//             <div style={{ position: 'fixed', inset: 0, zIndex: 198 }} onClick={() => setOpen(false)} />
+//             <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 199, minWidth: 190, overflow: 'hidden' }}>
+//               {!trip.completed && (
+//                 <button
+//                   onClick={() => { setOpen(false); setConfirmComplete(true); }}
+//                   style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)', textAlign: 'left' }}>
+//                   ✅ Mark as Completed
+//                 </button>
+//               )}
+//               <button
+//                 onClick={() => { setOpen(false); setConfirmDelete(true); }}
+//                 style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#993C1D', fontFamily: "'DM Sans',sans-serif", textAlign: 'left' }}>
+//                 🗑️ Delete Trip
+//               </button>
+//             </div>
+//           </>
+//         )}
+//       </div>
+//     </>
+//   );
+// }
