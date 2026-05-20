@@ -3261,7 +3261,7 @@ function formatTripDate(arrivalStr, dayIndex) {
   return `${base.getDate()} ${MONTH_NAMES[base.getMonth()]}`;
 }
 
-function ItineraryPage({ trip }) {
+function ItineraryPage({ trip, onCacheUpdate }) {
   const isSolo = trip.isSolo;
   const [iTab, setITab] = useState('planner');
 
@@ -3279,13 +3279,12 @@ function ItineraryPage({ trip }) {
     ? Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000))
     : 1;
 
-  // ── Use cache if available, otherwise generate ──
   const [step, setStep] = useState(trip._cachedItin ? 'result' : 'loading');
   const [itin, setItin] = useState(trip._cachedItin?.itinerary || null);
   const [sources, setSources] = useState(trip._cachedItin?.sources || []);
   const [localTasteData, setLocalTasteData] = useState(trip._cachedTaste || null);
   const [localTasteStep, setLocalTasteStep] = useState(trip._cachedTaste ? 'result' : 'loading');
-  const hasGenerated = useRef(!!trip._cachedItin);
+  const hasGenerated = useRef(false);
 
   const accentStyle = isSolo ? S.btnSolo : S.btnP;
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
@@ -3302,11 +3301,24 @@ function ItineraryPage({ trip }) {
   };
 
   useEffect(() => {
-    if (hasGenerated.current) return;
-    hasGenerated.current = true;
-    runGenerateItinerary();
-    runGenerateLocalTaste();
-  }, []);
+    // If we already have cached data from the trip prop, show it immediately
+    if (trip._cachedItin) {
+      setItin(trip._cachedItin.itinerary);
+      setSources(trip._cachedItin.sources || []);
+      setStep('result');
+    }
+    if (trip._cachedTaste) {
+      setLocalTasteData(trip._cachedTaste);
+      setLocalTasteStep('result');
+    }
+
+    // Only generate what's missing
+    if (!hasGenerated.current) {
+      hasGenerated.current = true;
+      if (!trip._cachedItin) runGenerateItinerary();
+      if (!trip._cachedTaste) runGenerateLocalTaste();
+    }
+  }, [trip._cachedItin, trip._cachedTaste]);
 
   const runGenerateItinerary = async () => {
     setStep('loading');
@@ -3326,6 +3338,8 @@ function ItineraryPage({ trip }) {
       setItin(result.itinerary);
       setSources(result.sources || []);
       setStep('result');
+      // ── Save back to parent trips state so it persists across tab switches ──
+      onCacheUpdate?.({ _cachedItin: result });
     } catch {
       setStep('error');
     }
@@ -3338,9 +3352,16 @@ function ItineraryPage({ trip }) {
       const r = await generateLocalTaste({ destination: form.dest });
       setLocalTasteData(r);
       setLocalTasteStep('result');
+      // ── Save back to parent ──
+      onCacheUpdate?.({ _cachedTaste: r });
     } catch {
       setLocalTasteStep('error');
     }
+  };
+
+  const handleRedo = () => {
+    onCacheUpdate?.({ _cachedItin: null });
+    runGenerateItinerary();
   };
 
   const SlotBadge = ({ slot, label }) => (
@@ -3362,14 +3383,13 @@ function ItineraryPage({ trip }) {
         ))}
       </div>
 
-      {/* ══ DAY PLANNER ══ */}
       {iTab === 'planner' && (
         <div>
           {step === 'loading' && (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
-                {trip._cachedItin ? 'Loading your itinerary…' : 'Building your itinerary…'}
+                Building your itinerary…
               </div>
               <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.7 }}>
                 🔍 Scanning TripAdvisor, Lonely Planet & travel blogs<br />
@@ -3389,7 +3409,6 @@ function ItineraryPage({ trip }) {
 
           {step === 'result' && itin && (
             <div style={{ paddingBottom: '2rem' }}>
-              {/* Header */}
               <div style={{ background: headerBg, borderRadius: 16, padding: '1.25rem 1.5rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: -10, right: -10, fontSize: 80, opacity: 0.08 }}>✈️</div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
@@ -3406,13 +3425,12 @@ function ItineraryPage({ trip }) {
                   )}
                   <button
                     style={{ marginLeft: 'auto', ...S.btn, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '0.5px solid rgba(255,255,255,0.3)', fontSize: 12 }}
-                    onClick={() => { hasGenerated.current = false; runGenerateItinerary(); }}>
+                    onClick={handleRedo}>
                     ↺ Redo
                   </button>
                 </div>
               </div>
 
-              {/* Quick tips */}
               {itin.quickTips?.length > 0 && (
                 <div style={{ ...S.card, marginBottom: '1rem', background: '#FAEEDA', border: '0.5px solid #FAC775' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#854F0B', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 8 }}>💡 Quick Tips</div>
@@ -3422,14 +3440,10 @@ function ItineraryPage({ trip }) {
                 </div>
               )}
 
-              {/* Day cards — real dates instead of Day 1/2 */}
               {(itin.days || []).map((d, dayIndex) => {
-                const dateLabel = form.arrival
-                  ? formatTripDate(form.arrival, dayIndex)
-                  : `Day ${d.day}`;
+                const dateLabel = form.arrival ? formatTripDate(form.arrival, dayIndex) : `Day ${d.day}`;
                 const isArrivalDay = dayIndex === 0;
                 const isDepartureDay = dayIndex === (itin.days.length - 1);
-
                 return (
                   <div key={d.day} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
                     <div style={{ background: headerBg, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -3441,7 +3455,6 @@ function ItineraryPage({ trip }) {
                         {d.theme && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 1 }}>{d.theme}</div>}
                       </div>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
-                        {/* Arrival/departure slot badges */}
                         {isArrivalDay && (
                           <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>
                             ✈️ Arrives {SLOT_LABELS[form.arrivalSlot]}
@@ -3460,13 +3473,11 @@ function ItineraryPage({ trip }) {
                         {d.estimatedCost && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{d.estimatedCost}</div>}
                       </div>
                     </div>
-
                     {d.weather?.tip && (
                       <div style={{ padding: '6px 16px', background: isSolo ? '#f4f3ff' : '#f0faf6', borderBottom: `0.5px solid ${isSolo ? '#c9c5f5' : '#c8ecd8'}`, fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56' }}>
                         💡 {d.weather.tip}
                       </div>
                     )}
-
                     <div style={{ padding: '10px 16px' }}>
                       {(d.activities || []).map((a, i) => (
                         <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < d.activities.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
@@ -3501,7 +3512,6 @@ function ItineraryPage({ trip }) {
                 );
               })}
 
-              {/* Sources */}
               {sources.length > 0 && (
                 <div style={{ ...S.card, marginBottom: '1rem' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 10 }}>🔍 Researched from</div>
@@ -3520,7 +3530,6 @@ function ItineraryPage({ trip }) {
         </div>
       )}
 
-      {/* ══ LOCAL TASTE TAB ══ */}
       {iTab === 'taste' && (
         <LocalTastePage
           destination={form.dest}
@@ -3667,12 +3676,12 @@ export default function App() {
     import('./api').then(({ getTrip }) => {
       getTrip(activeTrip)
         .then(d => {
-          // Merge any background-generated cache from local trips state
+          // Always prefer the locally cached itin/taste over server (server doesn't store these)
           const localTrip = trips.find(x => x.id === activeTrip);
           setActiveTripData({
             ...d.trip,
-            _cachedItin: localTrip?._cachedItin || d.trip._cachedItin,
-            _cachedTaste: localTrip?._cachedTaste || d.trip._cachedTaste,
+            _cachedItin: localTrip?._cachedItin ?? d.trip._cachedItin ?? null,
+            _cachedTaste: localTrip?._cachedTaste ?? d.trip._cachedTaste ?? null,
           });
           setMyNickname(d.myNickname);
         })
@@ -3683,7 +3692,7 @@ export default function App() {
         })
         .finally(() => setTripLoading(false));
     });
-  }, [activeTrip]);
+  }, [activeTrip, trips]); // ← ADD trips as dependency
 
   const isSolo = activeTripData?.isSolo || false;
 
@@ -3808,6 +3817,13 @@ export default function App() {
     }
     setTrips(ts => ts.map(t => t.id === tripId ? { ...t, completed: false } : t));
   };
+  const handleItineraryCache = useCallback((tripId, update) => {
+    setTrips(ts => ts.map(t => t.id === tripId ? { ...t, ...update } : t));
+    setActiveTripData(d => d ? { ...d, ...update } : d);
+  }, []);
+
+
+
 
   const groupTabs = [
     { id: 'main', label: '💳 Split' },
@@ -3934,13 +3950,13 @@ export default function App() {
                   <>
                     {tab === 'main' && <SoloExpensesPage trip={activeTripData} myNickname={myNickname} />}
                     {tab === 'contacts' && <ContactsPage trip={activeTripData} myNickname={myNickname} isSolo={true} />}
-                    {tab === 'itinerary' && <ItineraryPage trip={activeTripData} />}
+                    {tab === 'itinerary' && <ItineraryPage trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
                   </>
                 ) : (
                   <>
                     {tab === 'main' && <SplitPage trip={activeTripData} myNickname={myNickname} />}
                     {tab === 'contacts' && <ContactsPage trip={activeTripData} myNickname={myNickname} isSolo={false} />}
-                    {tab === 'itinerary' && <ItineraryPage trip={activeTripData} />}
+                    {tab === 'itinerary' && <ItineraryPage trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
                     {tab === 'photos' && (
                       <div style={{ margin: '-1.25rem', marginBottom: '-6rem' }}>
                         <PhotosPage trip={activeTripData} myNickname={myNickname} />
