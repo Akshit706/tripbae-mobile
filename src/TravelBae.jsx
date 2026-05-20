@@ -2409,14 +2409,14 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 value={form.arrival}
                 min={today}
                 max={maxDate}
-                onChange={e => {
+                onChange={e => setForm(f => ({
+                  ...f,
+                  arrival: e.target.value,
+                  departure: f.departure && f.departure < e.target.value ? '' : f.departure,
+                }))}
+                onBlur={e => {
                   const v = e.target.value;
-                  if (v < today) return;
-                  setForm(f => ({
-                    ...f,
-                    arrival: v,
-                    departure: f.departure < v ? '' : f.departure,
-                  }));
+                  if (v && v < today) setForm(f => ({ ...f, arrival: today }));
                 }}
               />
               <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
@@ -2441,11 +2441,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 value={form.departure}
                 min={form.arrival || today}
                 max={maxDate}
-                onChange={e => {
+                onChange={e => setForm(f => ({ ...f, departure: e.target.value }))}
+                onBlur={e => {
                   const v = e.target.value;
                   const minDep = form.arrival || today;
-                  if (v < minDep) return;
-                  setForm(f => ({ ...f, departure: v }));
+                  if (v && v < minDep) setForm(f => ({ ...f, departure: minDep }));
                 }}
               />
               <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
