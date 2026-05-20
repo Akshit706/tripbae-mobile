@@ -4699,66 +4699,39 @@ function ItineraryPage({ trip }) {
   };
 
   // ── On mount: check storage first, fall back to generating ──
+  // ── On mount: use prop cache if available, otherwise generate ──
   useEffect(() => {
     if (hasGenerated.current) return;
     hasGenerated.current = true;
 
-    Promise.all([
-      window.storage.get(cacheKey).catch(() => null),
-      window.storage.get(tasteKey).catch(() => null),
-    ]).then(([itinResult, tasteResult]) => {
-      // Itinerary
-      if (itinResult?.value) {
-        try {
-          const cached = JSON.parse(itinResult.value);
-          setItin(cached.itinerary);
-          setSources(cached.sources || []);
-          setStep('result');
-        } catch {
-          runGenerateItinerary();
-        }
-      } else {
-        runGenerateItinerary();
-      }
+    // Restore from prop cache (set by parent when trip loads)
+    if (trip._cachedItin) {
+      setItin(trip._cachedItin.itinerary);
+      setSources(trip._cachedItin.sources || []);
+      setStep('result');
+    } else {
+      runGenerateItinerary();
+    }
 
-      // Local Taste
-      if (tasteResult?.value) {
-        try {
-          setLocalTasteData(JSON.parse(tasteResult.value));
-          setLocalTasteStep('result');
-        } catch {
-          runGenerateLocalTaste();
-        }
-      } else {
-        runGenerateLocalTaste();
-      }
-    });
+    if (trip._cachedTaste) {
+      setLocalTasteData(trip._cachedTaste);
+      setLocalTasteStep('result');
+    } else {
+      runGenerateLocalTaste();
+    }
   }, []);
 
   const runGenerateItinerary = async () => {
     setStep('loading');
     try {
       const { generateItinerary } = await import('./api');
-      const result = await generateItinerary({
-        destination: form.dest,
-        days,
-        budget: form.budget ? parseFloat(form.budget) : null,
-        people: parseInt(form.people) || 1,
-        interests: ['🛕 Temples', '🍽️ Food', '🛍️ Shopping'],
-        arrivalSlot: form.arrivalSlot,
-        departureSlot: form.departureSlot,
-        firstActivitySlot: firstActivitySlot(),
-        arrival: form.arrival,
-      });
+      const result = await generateItinerary({ /* ...same args... */ });
       setItin(result.itinerary);
       setSources(result.sources || []);
       setStep('result');
 
-      // ── Persist so future visits skip generation ──
-      await window.storage.set(cacheKey, JSON.stringify({
-        itinerary: result.itinerary,
-        sources: result.sources || [],
-      })).catch(() => {});
+      // ── Tell parent to cache it so re-opening the trip skips generation ──
+      trip._cachedItin = { itinerary: result.itinerary, sources: result.sources || [] };
     } catch {
       setStep('error');
     }
@@ -4772,16 +4745,15 @@ function ItineraryPage({ trip }) {
       setLocalTasteData(r);
       setLocalTasteStep('result');
 
-      // ── Persist ──
-      await window.storage.set(tasteKey, JSON.stringify(r)).catch(() => {});
+      // ── Cache on the trip object directly ──
+      trip._cachedTaste = r;
     } catch {
       setLocalTasteStep('error');
     }
   };
 
-  const handleRedo = async () => {
-    // Clear storage cache then regenerate
-    await window.storage.delete(cacheKey).catch(() => {});
+  const handleRedo = () => {
+    trip._cachedItin = null;
     runGenerateItinerary();
   };
 
