@@ -2055,6 +2055,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
   const [form, setForm] = useState({
     groupName: '', destination: '', emoji: '✈️', arrival: today, departure: '',
+    arrivalSlot: 'morning', departureSlot: 'morning',
     people: 2, createdBy: '', budget: '',
   });
 
@@ -2074,6 +2075,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         emoji: form.emoji,
         arrival: form.arrival,
         departure: form.departure,
+        arrivalSlot: form.arrivalSlot,
+        departureSlot: form.departureSlot,
         isSolo: isSoloMode,
         people: isSoloMode ? 1 : parseInt(form.people),
         budget: form.budget ? parseFloat(form.budget) : null,
@@ -2416,6 +2419,19 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                   }));
                 }}
               />
+              <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
+                {[
+                  { id: 'morning', label: '🌅 6AM–12PM' },
+                  { id: 'afternoon', label: '☀️ 12–6PM' },
+                  { id: 'evening', label: '🌆 6PM–12AM' },
+                ].map(slot => (
+                  <button key={slot.id} type="button"
+                    onClick={() => setForm(f => ({ ...f, arrivalSlot: slot.id }))}
+                    style={{ flex: 1, padding: '5px 4px', borderRadius: 8, border: `1.5px solid ${form.arrivalSlot === slot.id ? (isSoloMode ? '#7F77DD' : '#1D9E75') : 'rgba(0,0,0,0.12)'}`, background: form.arrivalSlot === slot.id ? (isSoloMode ? '#EEEDFE' : '#E1F5EE') : '#fff', color: form.arrivalSlot === slot.id ? (isSoloMode ? '#534AB7' : '#0F6E56') : '#6b6b68', fontSize: 10, fontWeight: form.arrivalSlot === slot.id ? 600 : 400, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .12s', whiteSpace: 'nowrap' }}>
+                    {slot.label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <label style={S.label}>Date of Departure *</label>
@@ -2432,6 +2448,19 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                   setForm(f => ({ ...f, departure: v }));
                 }}
               />
+              <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
+                {[
+                  { id: 'morning', label: '🌅 6AM–12PM' },
+                  { id: 'afternoon', label: '☀️ 12–6PM' },
+                  { id: 'evening', label: '🌆 6PM–12AM' },
+                ].map(slot => (
+                  <button key={slot.id} type="button"
+                    onClick={() => setForm(f => ({ ...f, departureSlot: slot.id }))}
+                    style={{ flex: 1, padding: '5px 4px', borderRadius: 8, border: `1.5px solid ${form.departureSlot === slot.id ? (isSoloMode ? '#7F77DD' : '#1D9E75') : 'rgba(0,0,0,0.12)'}`, background: form.departureSlot === slot.id ? (isSoloMode ? '#EEEDFE' : '#E1F5EE') : '#fff', color: form.departureSlot === slot.id ? (isSoloMode ? '#534AB7' : '#0F6E56') : '#6b6b68', fontSize: 10, fontWeight: form.departureSlot === slot.id ? 600 : 400, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .12s', whiteSpace: 'nowrap' }}>
+                    {slot.label}
+                  </button>
+                ))}
+              </div>
             </div>
             {!isSoloMode && (
               <div>
@@ -3128,24 +3157,32 @@ function ContactsPage({ trip, myNickname, isSolo }) {
 /* ═══════════════════════════════════════════════════════
    LOCAL TASTE PAGE
 ═══════════════════════════════════════════════════════ */
-function LocalTastePage({ destination, isSolo }) {
-  const [step, setStep] = useState('idle');
-  const [data, setData] = useState(null);
+function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
+  const [step, setStep] = useState(autoStep || 'idle');
+  const [data, setData] = useState(autoData || null);
   const [dest, setDest] = useState(destination || '');
   const [doneItems, setDoneItems] = useState(new Set());
 
+  // Sync if parent finishes loading after mount
+  useEffect(() => {
+    if (autoStep && autoStep !== step) setStep(autoStep);
+    if (autoData && !data) setData(autoData);
+  }, [autoStep, autoData]);
+
   const generate = async () => {
     if (!dest.trim()) return;
+    if (onRetry && dest === destination) { onRetry(); return; }
     setStep('loading');
     setDoneItems(new Set());
     try {
       const { generateLocalTaste } = await import('./api');
       const r = await generateLocalTaste({ destination: dest });
       setData(r);
+      setStep('result');
     } catch {
       setData({ headline: `${dest} — Local Flavours`, tagline: 'Curated picks', dishes: [], places: [], experiences: [], tip: '' });
+      setStep('result');
     }
-    setStep('result');
   };
 
   const toggleDone = (key) => setDoneItems(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
@@ -4601,51 +4638,38 @@ function PhotosPage({ trip, myNickname }) {
 /* ═══════════════════════════════════════════════════════
    ITINERARY PAGE
 ═══════════════════════════════════════════════════════ */
+const SLOT_LABELS = {
+  morning: '6AM–12PM',
+  afternoon: '12PM–6PM',
+  evening: '6PM–12AM',
+};
+
 function ItineraryPage({ trip }) {
   const isSolo = trip.isSolo;
   const [iTab, setITab] = useState('planner');
-  const [step, setStep] = useState('form');
-  const [itin, setItin] = useState(null);
-  const [sources, setSources] = useState([]);
+
+  // ── Pre-fill everything from trip data ──
   const [form, setForm] = useState({
     dest: trip.destination || '',
     arrival: trip.arrival ? new Date(trip.arrival).toISOString().split('T')[0] : '',
     departure: trip.departure ? new Date(trip.departure).toISOString().split('T')[0] : '',
+    arrivalSlot: trip.arrivalSlot || 'morning',
+    departureSlot: trip.departureSlot || 'morning',
     budget: trip.budget ? String(trip.budget) : '',
     people: String(normalizeMembers(trip.members).length || 1),
     interests: ['🛕 Temples', '🍽️ Food', '🛍️ Shopping'],
   });
 
-  const toggle = tag => setForm(f => ({
-    ...f,
-    interests: f.interests.includes(tag) ? f.interests.filter(t => t !== tag) : [...f.interests, tag],
-  }));
+  const [step, setStep] = useState('loading'); // start as loading, auto-generate
+  const [itin, setItin] = useState(null);
+  const [sources, setSources] = useState([]);
+  const [localTasteData, setLocalTasteData] = useState(null);
+  const [localTasteStep, setLocalTasteStep] = useState('loading');
+  const hasAutoGenerated = useRef(false);
 
   const days = form.arrival && form.departure
     ? Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000))
     : 1;
-
-  const generate = async () => {
-    if (!form.dest) return;
-    setStep('loading');
-    try {
-      const { generateItinerary } = await import('./api');
-      const result = await generateItinerary({
-        destination: form.dest,
-        days,
-        budget: form.budget ? parseFloat(form.budget) : null,
-        people: parseInt(form.people) || 1,
-        interests: form.interests,
-      });
-      setItin(result.itinerary);
-      setSources(result.sources || []);
-    } catch (err) {
-      alert('Could not generate itinerary: ' + err.message);
-      setStep('form');
-      return;
-    }
-    setStep('result');
-  };
 
   const accentStyle = isSolo ? S.btnSolo : S.btnP;
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
@@ -4656,7 +4680,62 @@ function ItineraryPage({ trip }) {
     transport: '🚗', hotel: '🏨', shopping: '🛍️',
   };
 
+  const toggle = tag => setForm(f => ({
+    ...f,
+    interests: f.interests.includes(tag) ? f.interests.filter(t => t !== tag) : [...f.interests, tag],
+  }));
+
+  // ── Auto-generate both on mount ──
+  useEffect(() => {
+    if (hasAutoGenerated.current || !form.dest) return;
+    hasAutoGenerated.current = true;
+    generateItinerary();
+    generateLocalTaste();
+  }, []);
+
+  const generateItinerary = async () => {
+    setStep('loading');
+    try {
+      const { generateItinerary: gen } = await import('./api');
+      const slotNote = `Arriving ${SLOT_LABELS[form.arrivalSlot]}, departing ${SLOT_LABELS[form.departureSlot]}.`;
+      const result = await gen({
+        destination: form.dest,
+        days,
+        budget: form.budget ? parseFloat(form.budget) : null,
+        people: parseInt(form.people) || 1,
+        interests: form.interests,
+        arrivalSlot: form.arrivalSlot,
+        departureSlot: form.departureSlot,
+        note: slotNote,
+      });
+      setItin(result.itinerary);
+      setSources(result.sources || []);
+      setStep('result');
+    } catch (err) {
+      setStep('error');
+    }
+  };
+
+  const generateLocalTaste = async () => {
+    setLocalTasteStep('loading');
+    try {
+      const { generateLocalTaste } = await import('./api');
+      const r = await generateLocalTaste({ destination: form.dest });
+      setLocalTasteData(r);
+      setLocalTasteStep('result');
+    } catch {
+      setLocalTasteStep('error');
+    }
+  };
+
   const ITABS = [{ id: 'planner', label: '🗺️ Day Planner' }, { id: 'taste', label: '🍜 Local Taste' }];
+
+  // ── Slot badge shown in header ──
+  const SlotBadge = ({ slot, label }) => (
+    <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '4px 10px', fontSize: 11, color: '#fff' }}>
+      {label} {SLOT_LABELS[slot]}
+    </div>
+  );
 
   return (
     <div>
@@ -4670,89 +4749,28 @@ function ItineraryPage({ trip }) {
         ))}
       </div>
 
+      {/* ══ DAY PLANNER TAB ══ */}
       {iTab === 'planner' && (
         <div>
-          {/* ── FORM ── */}
-          {step === 'form' && (
-            <div>
-              <div style={{ background: headerBg, borderRadius: 16, padding: '1.25rem 1.5rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: -10, right: -10, fontSize: 70, opacity: 0.08 }}>🗺️</div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 4 }}>AI Itinerary Planner</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', lineHeight: 1.5 }}>Researches top travel sites in real-time and builds the perfect day-by-day plan.</div>
-              </div>
-
-              <div style={S.card}>
-                <label style={S.label}>Destination *</label>
-                <input style={S.input} value={form.dest}
-                  onChange={e => setForm(f => ({ ...f, dest: e.target.value }))}
-                  placeholder="e.g. Jaipur, Rajasthan" />
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 2 }}>
-                  <div>
-                    <label style={S.label}>Arrival</label>
-                    <input style={S.input} type="date" value={form.arrival}
-                      onChange={e => setForm(f => ({ ...f, arrival: e.target.value }))} />
-                  </div>
-                  <div>
-                    <label style={S.label}>Departure</label>
-                    <input style={S.input} type="date" value={form.departure}
-                      onChange={e => setForm(f => ({ ...f, departure: e.target.value }))} />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9, marginTop: 2 }}>
-                  <div>
-                    <label style={S.label}>Budget ₹</label>
-                    <input style={S.input} type="number" value={form.budget}
-                      onChange={e => setForm(f => ({ ...f, budget: e.target.value }))}
-                      placeholder="e.g. 25000" />
-                  </div>
-                  {!isSolo && (
-                    <div>
-                      <label style={S.label}>People</label>
-                      <input style={S.input} type="number" value={form.people}
-                        onChange={e => setForm(f => ({ ...f, people: e.target.value }))} />
-                    </div>
-                  )}
-                </div>
-
-                <label style={{ ...S.label, marginTop: 12 }}>Interests</label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, margin: '8px 0 16px' }}>
-                  {INTERESTS.map(t => (
-                    <div key={t} onClick={() => toggle(t)}
-                      style={{ padding: '6px 13px', borderRadius: 18, fontSize: 12, fontWeight: 500, cursor: 'pointer', border: '0.5px solid rgba(0,0,0,0.17)', background: form.interests.includes(t) ? (isSolo ? '#EEEDFE' : '#E1F5EE') : '#F1EFE8', color: form.interests.includes(t) ? (isSolo ? '#534AB7' : '#085041') : '#6b6b68', userSelect: 'none', transition: 'all .15s' }}>
-                      {t}
-                    </div>
-                  ))}
-                </div>
-
-                {form.arrival && form.departure && (
-                  <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', borderRadius: 10, padding: '8px 12px', marginBottom: 14, fontSize: 13, color: isSolo ? '#534AB7' : '#0F6E56', fontWeight: 500 }}>
-                    📅 {days} day{days !== 1 ? 's' : ''} · {form.dest || 'destination'}
-                    {form.budget ? ` · ₹${parseFloat(form.budget).toLocaleString('en-IN')} budget` : ''}
-                  </div>
-                )}
-
-                <button
-                  style={{ ...S.btn, ...accentStyle, width: '100%', justifyContent: 'center', padding: '12px', fontSize: 14, borderRadius: 12 }}
-                  onClick={generate}
-                  disabled={!form.dest}>
-                  ✨ Generate AI Itinerary
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* ── LOADING ── */}
           {step === 'loading' && (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Researching {form.dest}…</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Building your itinerary…</div>
               <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.7 }}>
                 🔍 Scanning TripAdvisor, Lonely Planet & travel blogs<br />
                 📊 Ranking attractions by ratings & reviews<br />
-                🗺️ Building your optimised day-by-day plan
+                🗓️ Tailoring schedule to your arrival & departure times
               </div>
+            </div>
+          )}
+
+          {/* ── ERROR ── */}
+          {step === 'error' && (
+            <div style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+              <div style={{ fontSize: 40, marginBottom: 12 }}>😕</div>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Couldn't generate itinerary</div>
+              <button style={{ ...S.btn, ...accentStyle, padding: '10px 24px' }} onClick={generateItinerary}>Try Again</button>
             </div>
           )}
 
@@ -4764,19 +4782,16 @@ function ItineraryPage({ trip }) {
                 <div style={{ position: 'absolute', top: -10, right: -10, fontSize: 80, opacity: 0.08 }}>✈️</div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 4 }}>{itin.headline || `${days}-Day ${form.dest} Itinerary`}</div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginBottom: 12 }}>{itin.summary}</div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <SlotBadge slot={form.arrivalSlot} label="✈️ Arrives" />
+                  <SlotBadge slot={form.departureSlot} label="🛫 Departs" />
                   {itin.totalEstimatedCost && (
-                    <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '4px 10px', fontSize: 12, color: '#fff' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '4px 10px', fontSize: 11, color: '#fff' }}>
                       💰 {itin.totalEstimatedCost}
                     </div>
                   )}
-                  {itin.bestTimeToVisit && (
-                    <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '4px 10px', fontSize: 12, color: '#fff' }}>
-                      🌤️ {itin.bestTimeToVisit}
-                    </div>
-                  )}
                   <button style={{ marginLeft: 'auto', ...S.btn, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '0.5px solid rgba(255,255,255,0.3)', fontSize: 12 }}
-                    onClick={() => { setStep('form'); setItin(null); setSources([]); }}>
+                    onClick={generateItinerary}>
                     ↺ Redo
                   </button>
                 </div>
@@ -4787,9 +4802,7 @@ function ItineraryPage({ trip }) {
                 <div style={{ ...S.card, marginBottom: '1rem', background: '#FAEEDA', border: '0.5px solid #FAC775' }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#854F0B', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 8 }}>💡 Quick Tips</div>
                   {itin.quickTips.map((tip, i) => (
-                    <div key={i} style={{ fontSize: 13, color: '#5a3a0a', lineHeight: 1.5, marginBottom: i < itin.quickTips.length - 1 ? 5 : 0 }}>
-                      · {tip}
-                    </div>
+                    <div key={i} style={{ fontSize: 13, color: '#5a3a0a', lineHeight: 1.5, marginBottom: i < itin.quickTips.length - 1 ? 5 : 0 }}>· {tip}</div>
                   ))}
                 </div>
               )}
@@ -4797,7 +4810,6 @@ function ItineraryPage({ trip }) {
               {/* Day cards */}
               {(itin.days || []).map((d) => (
                 <div key={d.day} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
-                  {/* Day header */}
                   <div style={{ background: headerBg, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: 8, padding: '3px 10px', fontSize: 11, fontWeight: 700, fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>Day {d.day}</div>
                     <div style={{ flex: 1 }}>
@@ -4814,23 +4826,19 @@ function ItineraryPage({ trip }) {
                     </div>
                   </div>
 
-                  {/* Weather tip */}
                   {d.weather?.tip && (
                     <div style={{ padding: '6px 16px', background: isSolo ? '#f4f3ff' : '#f0faf6', borderBottom: `0.5px solid ${isSolo ? '#c9c5f5' : '#c8ecd8'}`, fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56' }}>
                       💡 {d.weather.tip}
                     </div>
                   )}
 
-                  {/* Activities */}
                   <div style={{ padding: '10px 16px' }}>
                     {(d.activities || []).map((a, i) => (
-                      <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < d.activities.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none', position: 'relative' }}>
-                        {/* Timeline dot */}
+                      <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < d.activities.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 14 }}>
                           <div style={{ width: 10, height: 10, borderRadius: '50%', background: a.mustDo ? accentColor : '#D3D1C7', marginTop: 4, flexShrink: 0, border: a.mustDo ? `2px solid ${accentColor}33` : 'none', boxSizing: 'border-box' }} />
                           {i < d.activities.length - 1 && <div style={{ width: 1, flex: 1, background: 'rgba(0,0,0,0.06)', marginTop: 3 }} />}
                         </div>
-
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 3 }}>
                             <span style={{ fontSize: 11, color: '#a8a8a5', width: 58, flexShrink: 0, paddingTop: 2 }}>{a.time}</span>
@@ -4876,7 +4884,16 @@ function ItineraryPage({ trip }) {
         </div>
       )}
 
-      {iTab === 'taste' && <LocalTastePage destination={form.dest} isSolo={isSolo} />}
+      {/* ══ LOCAL TASTE TAB ══ */}
+      {iTab === 'taste' && (
+        <LocalTastePage
+          destination={form.dest}
+          isSolo={isSolo}
+          autoData={localTasteData}
+          autoStep={localTasteStep}
+          onRetry={generateLocalTaste}
+        />
+      )}
     </div>
   );
 }
