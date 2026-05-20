@@ -1782,7 +1782,7 @@
 //   );
 // }
 
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { supabase } from './supabase';
 import {
   aiChat,
@@ -1821,6 +1821,60 @@ const CONTACT_CATS = [
   {id:'other',icon:'👤',label:'Other',bg:'#F1EFE8',color:'#6b6b68'},
 ];
 const INTERESTS = ['🏖️ Beaches','🛕 Temples','🌿 Nature','🍽️ Food','🧗 Adventure','🎭 Culture','🛍️ Shopping','🌙 Nightlife','🏛️ History','💆 Wellness'];
+
+const [showDestPicker, setShowDestPicker] = useState(false);
+const [destQuery, setDestQuery] = useState('');
+const [destSuggestions, setDestSuggestions] = useState([]);
+const [destLoading, setDestLoading] = useState(false);
+const destDebounce = useRef(null);
+
+const searchDest = useCallback(async (text) => {
+  if (text.length < 2) { setDestSuggestions([]); return; }
+  setDestLoading(true);
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=7&accept-language=en`,
+      { headers: { 'User-Agent': 'TravelBae/1.0', 'Accept-Language': 'en' } }
+    );
+    const data = await res.json();
+    const TYPES = ['city','town','village','suburb','county','state','district','region'];
+    const seen = new Set();
+    const filtered = data.filter(p => {
+      const ok = TYPES.includes(p.type) || TYPES.includes(p.addresstype);
+      const key = formatDestName(p);
+      if (!ok || seen.has(key)) return false;
+      seen.add(key); return true;
+    });
+    setDestSuggestions(filtered);
+  } catch { setDestSuggestions([]); }
+  setDestLoading(false);
+}, []);
+
+const formatDestName = (item) => {
+  const a = item.address || {};
+  const city = a.city || a.town || a.village || a.county || a.state_district || a.suburb || '';
+  const state = a.state || '';
+  const country = a.country || '';
+  if (city && state && country) return `${city}, ${state}, ${country}`;
+  if (city && country) return `${city}, ${country}`;
+  if (state && country) return `${state}, ${country}`;
+  return item.display_name.split(',').slice(0, 2).join(',').trim();
+};
+
+const getDestIcon = (item) => {
+  const t = item.type || item.addresstype || '';
+  if (['city','town'].includes(t)) return '🏙️';
+  if (['village','suburb','district'].includes(t)) return '🏘️';
+  if (['state','region','county'].includes(t)) return '🗺️';
+  if (t === 'country') return '🌏';
+  return '📍';
+};
+
+
+
+
+
+
 
 /* ─── HELPERS ───────────────────────────────────────── */
 function nickName(m) {
@@ -2240,7 +2294,111 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             </div>
             <div style={{ gridColumn: '1/-1' }}>
               <label style={S.label}>Destination *</label>
-              <input style={S.input} value={form.destination} onChange={e => setForm(f => ({ ...f, destination: e.target.value }))} placeholder="e.g. Jaipur, Rajasthan" />
+
+              {/* Tappable field — opens picker */}
+              <div
+                onClick={() => { setShowDestPicker(true); setDestQuery(form.destination); setDestSuggestions([]); }}
+                style={{ ...S.input, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: form.destination ? '#111' : '#aaa', userSelect: 'none' }}
+              >
+                <span>📍</span>
+                <span style={{ flex: 1 }}>{form.destination || 'Search city or place…'}</span>
+                {form.destination && (
+                  <span
+                    onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, destination: '' })); }}
+                    style={{ fontSize: 13, color: '#aaa', padding: '0 2px', cursor: 'pointer' }}>✕</span>
+                )}
+              </div>
+
+              {/* Inline fullscreen picker overlay */}
+              {showDestPicker && (
+                <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: '#fff', display: 'flex', flexDirection: 'column' }}>
+
+                  {/* Header */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', borderBottom: '0.5px solid rgba(0,0,0,0.08)', background: '#fff', flexShrink: 0 }}>
+                    <button
+                      onClick={() => { setShowDestPicker(false); setDestSuggestions([]); }}
+                      style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>
+                      ←
+                    </button>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>Destination</div>
+                  </div>
+
+                  {/* Search box */}
+                  <div style={{ padding: '12px 14px', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F5F5F3', borderRadius: 12, padding: '0 12px', border: '0.5px solid #e0e0e0' }}>
+                      <span style={{ fontSize: 15 }}>🔍</span>
+                      <input
+                        autoFocus
+                        style={{ ...S.input, border: 'none', background: 'transparent', flex: 1, padding: '10px 0', fontSize: 15, outline: 'none' }}
+                        value={destQuery}
+                        onChange={e => {
+                          setDestQuery(e.target.value);
+                          clearTimeout(destDebounce.current);
+                          destDebounce.current = setTimeout(() => searchDest(e.target.value), 350);
+                        }}
+                        placeholder="Search city or place…"
+                      />
+                      {destLoading && <div style={{ width: 18, height: 18, border: '2px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', flexShrink: 0 }} />}
+                      {destQuery && !destLoading && (
+                        <span onClick={() => { setDestQuery(''); setDestSuggestions([]); }} style={{ fontSize: 16, color: '#aaa', cursor: 'pointer', flexShrink: 0 }}>✕</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Suggestions */}
+                  <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {destSuggestions.length > 0 && destSuggestions.map((item, i) => {
+                      const a = item.address || {};
+                      const mainText = a.city || a.town || a.village || a.state_district || a.county || a.state || item.display_name.split(',')[0];
+                      const subText = [a.state, a.country].filter(Boolean).join(', ');
+                      return (
+                        <div key={item.osm_id + item.osm_type}
+                          onClick={() => {
+                            const name = formatDestName(item);
+                            setForm(f => ({ ...f, destination: name }));
+                            setShowDestPicker(false);
+                            setDestSuggestions([]);
+                            setDestQuery('');
+                          }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: '0.5px solid #f0f0f0', cursor: 'pointer' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#f7f6f2'}
+                          onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                        >
+                          <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>
+                            {getDestIcon(item)}
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mainText}</div>
+                            {subText && <div style={{ fontSize: 12, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subText}</div>}
+                          </div>
+                          <span style={{ fontSize: 18, color: '#ccc' }}>›</span>
+                        </div>
+                      );
+                    })}
+
+                    {/* No results */}
+                    {destQuery.length >= 2 && !destLoading && destSuggestions.length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '4rem 1.5rem', color: '#6b6b68' }}>
+                        <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
+                        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>No results for "{destQuery}"</div>
+                        <div style={{ fontSize: 13 }}>Try a different spelling or nearby city</div>
+                      </div>
+                    )}
+
+                    {/* Hint */}
+                    {destQuery.length < 2 && (
+                      <div style={{ textAlign: 'center', paddingTop: 40, color: '#bbb', fontSize: 13 }}>
+                        Start typing to search destinations…
+                      </div>
+                    )}
+                  </div>
+
+                  {/* OSM attribution — required */}
+                  <div style={{ padding: '10px', textAlign: 'center', borderTop: '0.5px solid #f0f0f0', fontSize: 11, color: '#bbb', flexShrink: 0 }}>
+                    © OpenStreetMap contributors
+                  </div>
+                </div>
+              )}
             </div>
             <div>
               <label style={S.label}>Date of Arrival *</label>
