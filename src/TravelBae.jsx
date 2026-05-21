@@ -3931,8 +3931,11 @@ export default function App() {
               onMarkComplete={() => handleMarkComplete(activeTripData.id)}
               onDelete={() => handleDeleteTrip(activeTripData.id)}
               onEditTrip={(updates) => {
-                setActiveTripData(d => d ? { ...d, ...updates } : d);
-                setTrips(ts => ts.map(t => t.id === activeTripData.id ? { ...t, ...updates } : t));
+                setActiveTripData(d => d ? { ...d, ...updates, _cachedItin: null, _cachedTaste: null } : d);
+                setTrips(ts => ts.map(t => t.id === activeTripData.id 
+                  ? { ...t, ...updates, _cachedItin: null, _cachedTaste: null } 
+                  : t
+                ));
               }}
             />
           </div>
