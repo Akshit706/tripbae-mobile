@@ -2230,23 +2230,7 @@ function SplitPage({ trip, myNickname }) {
             </div>
           ))}
         </div>
-        {budget && (
-          <div style={{ marginTop: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>{budgetPct}% of ₹{budget.toLocaleString('en-IN')} used</span>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>₹{Math.round(Math.max(0, budgetLeft)).toLocaleString('en-IN')} left</span>
-            </div>
-            <div style={{ height: 5, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${budgetPct}%`, background: budgetPct > 85 ? '#FCA5A5' : '#86EFAC', borderRadius: 4, transition: 'width .6s' }} />
-            </div>
-            <div style={{ textAlign: 'center', marginTop: 10 }}>
-              <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
-                style={{ background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.25)', borderRadius: 8, padding: '4px 14px', fontSize: 12, color: 'rgba(255,255,255,0.75)', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
-                Edit budget
-              </button>
-            </div>
-          </div>
-        )}
+        
         {!budget && (
           <button onClick={() => setShowBudgetEdit(true)}
             style={{ ...S.btn, background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', fontSize: 12, marginTop: 8 }}>
@@ -3285,6 +3269,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [localTasteData, setLocalTasteData] = useState(trip._cachedTaste || null);
   const [localTasteStep, setLocalTasteStep] = useState(trip._cachedTaste ? 'result' : 'loading');
   const hasGenerated = useRef(false);
+  const [customDesc, setCustomDesc] = useState('');
+  const [showDescBox, setShowDescBox] = useState(false);
 
   const accentStyle = isSolo ? S.btnSolo : S.btnP;
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
@@ -3320,7 +3306,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     }
   }, [trip._cachedItin, trip._cachedTaste]);
 
-  const runGenerateItinerary = async () => {
+  const runGenerateItinerary = async (descOverride) => {
     setStep('loading');
     try {
       const { generateItinerary } = await import('./api');
@@ -3334,6 +3320,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         departureSlot: form.departureSlot,
         firstActivitySlot: firstActivitySlot(),
         arrival: form.arrival,
+        customDescription: descOverride ?? customDesc,
       });
       setItin(result.itinerary);
       setSources(result.sources || []);
@@ -3361,7 +3348,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
   const handleRedo = () => {
     onCacheUpdate?.({ _cachedItin: null });
-    runGenerateItinerary();
+    setShowDescBox(true);
   };
 
   const SlotBadge = ({ slot, label }) => (
@@ -3385,6 +3372,46 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
       {iTab === 'planner' && (
         <div>
+        {/* Description / customize box */}
+          <div style={{ marginBottom: '1rem' }}>
+            {!showDescBox && step === 'result' && (
+              <button
+                style={{ ...S.btn, width: '100%', justifyContent: 'center', fontSize: 13, color: isSolo ? '#534AB7' : '#0F6E56', background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}` }}
+                onClick={() => setShowDescBox(true)}>
+                ✏️ Customize & regenerate itinerary
+              </button>
+            )}
+            {(showDescBox || step === 'error' || (!trip._cachedItin && step !== 'loading')) && (
+              <div style={{ ...S.card, border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, background: isSolo ? '#fdfcff' : '#f9fffe' }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: isSolo ? '#534AB7' : '#0F6E56', marginBottom: 4 }}>
+                  ✏️ Customize your itinerary
+                </div>
+                <div style={{ fontSize: 12, color: '#6b6b68', marginBottom: 10 }}>
+                  Describe what you want — pace, priorities, special interests. Leave blank for a balanced itinerary.
+                </div>
+                <textarea
+                  style={{ ...S.input, resize: 'none', minHeight: 80, lineHeight: 1.55, fontSize: 13 }}
+                  value={customDesc}
+                  onChange={e => setCustomDesc(e.target.value)}
+                  placeholder={`e.g. "Focus on heritage sites and street food. Avoid malls. We prefer a relaxed morning pace."`}
+                />
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button
+                    style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), flex: 1, justifyContent: 'center', padding: '10px', fontSize: 13 }}
+                    onClick={() => {
+                      setShowDescBox(false);
+                      onCacheUpdate?.({ _cachedItin: null });
+                      runGenerateItinerary(customDesc);
+                    }}>
+                    🗺️ Generate itinerary
+                  </button>
+                  {step === 'result' && (
+                    <button style={S.btn} onClick={() => setShowDescBox(false)}>✕</button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
           {step === 'loading' && (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
@@ -3904,6 +3931,10 @@ export default function App() {
               trip={activeTripData}
               onMarkComplete={() => handleMarkComplete(activeTripData.id)}
               onDelete={() => handleDeleteTrip(activeTripData.id)}
+              onEditTrip={(updates) => {
+                setActiveTripData(d => d ? { ...d, ...updates } : d);
+                setTrips(ts => ts.map(t => t.id === activeTripData.id ? { ...t, ...updates } : t));
+              }}
             />
           </div>
         ) : (
@@ -3977,11 +4008,51 @@ export default function App() {
 /* ═══════════════════════════════════════════════════════
    TRIP ACTION MENU — shown in top bar when inside a trip
 ═══════════════════════════════════════════════════════ */
-function TripActionMenu({ trip, onMarkComplete, onDelete }) {
+function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
   const [open, setOpen] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [confirmComplete, setConfirmComplete] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const isSolo = trip?.isSolo;
+
+  const today = new Date().toISOString().split('T')[0];
+  const maxDate = (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; })();
+  const EMOJI_OPTIONS = isSolo
+    ? ['🎒','🧳','🛺','🚂','🏍️','🌏','🪂','🧗','🌄','☕','📖','🦋']
+    : ['✈️','🏖️','🏔️','🏰','🌴','🗺️','🎡','🛕','🌅','🌿','🎭','🏛️'];
+
+  const [editForm, setEditForm] = useState({
+    groupName: trip?.groupName || '',
+    destination: trip?.destination || '',
+    emoji: trip?.emoji || '✈️',
+    arrival: trip?.arrival ? new Date(trip.arrival).toISOString().split('T')[0] : today,
+    departure: trip?.departure ? new Date(trip.departure).toISOString().split('T')[0] : '',
+    budget: trip?.budget ? String(trip.budget) : '',
+    people: String(normalizeMembers(trip?.members || []).length || 2),
+  });
+  const [saving, setSaving] = useState(false);
+
+  const handleSaveEdit = async () => {
+    if (!editForm.groupName || !editForm.destination || !editForm.arrival || !editForm.departure) return;
+    setSaving(true);
+    try {
+      const { updateTrip } = await import('./api');
+      const updates = {
+        groupName: editForm.groupName,
+        destination: editForm.destination,
+        emoji: editForm.emoji,
+        arrival: editForm.arrival,
+        departure: editForm.departure,
+        budget: editForm.budget ? parseFloat(editForm.budget) : null,
+      };
+      await updateTrip(trip.id, updates);
+      onEditTrip?.(updates);
+      setShowEdit(false);
+    } catch (err) {
+      alert('Could not save: ' + err.message);
+    }
+    setSaving(false);
+  };
 
   return (
     <>
@@ -4005,6 +4076,70 @@ function TripActionMenu({ trip, onMarkComplete, onDelete }) {
           onCancel={() => setConfirmComplete(false)}
         />
       )}
+
+      {/* Edit Trip Modal */}
+      {showEdit && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 600, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div style={{ background: '#f7f6f2', borderRadius: '20px 20px 0 0', maxHeight: '90vh', overflowY: 'auto' }}>
+            {/* Header */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.08)', position: 'sticky', top: 0, zIndex: 1, borderRadius: '20px 20px 0 0' }}>
+              <button onClick={() => setShowEdit(false)}
+                style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>Edit Trip Details</div>
+              <button onClick={handleSaveEdit} disabled={saving || !editForm.groupName || !editForm.destination || !editForm.arrival || !editForm.departure}
+                style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !editForm.groupName || !editForm.destination) ? 0.4 : 1 }}>
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+
+            <div style={{ padding: '1.25rem' }}>
+              {/* Emoji */}
+              <label style={S.label}>Trip Emoji</label>
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', margin: '6px 0 14px' }}>
+                {EMOJI_OPTIONS.map(e => (
+                  <div key={e} onClick={() => setEditForm(f => ({ ...f, emoji: e }))}
+                    style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer',
+                      border: editForm.emoji === e ? `2px solid ${isSolo ? '#7F77DD' : '#1D9E75'}` : '0.5px solid rgba(0,0,0,0.12)',
+                      background: editForm.emoji === e ? (isSolo ? '#EEEDFE' : '#E1F5EE') : '#fff' }}>
+                    {e}
+                  </div>
+                ))}
+              </div>
+
+              {/* Name */}
+              <label style={S.label}>{isSolo ? 'Adventure Name *' : 'Group Name *'}</label>
+              <input style={{ ...S.input, marginBottom: 14 }} value={editForm.groupName}
+                onChange={e => setEditForm(f => ({ ...f, groupName: e.target.value }))} />
+
+              {/* Destination */}
+              <label style={S.label}>Destination *</label>
+              <input style={{ ...S.input, marginBottom: 14 }} value={editForm.destination}
+                onChange={e => setEditForm(f => ({ ...f, destination: e.target.value }))}
+                placeholder="e.g. Jaipur, Rajasthan" />
+
+              {/* Dates */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+                <div>
+                  <label style={S.label}>Arrival *</label>
+                  <input style={S.input} type="date" value={editForm.arrival} min={today} max={maxDate}
+                    onChange={e => setEditForm(f => ({ ...f, arrival: e.target.value, departure: f.departure && f.departure < e.target.value ? '' : f.departure }))} />
+                </div>
+                <div>
+                  <label style={S.label}>Departure *</label>
+                  <input style={S.input} type="date" value={editForm.departure} min={editForm.arrival || today} max={maxDate}
+                    onChange={e => setEditForm(f => ({ ...f, departure: e.target.value }))} />
+                </div>
+              </div>
+
+              {/* Budget */}
+              <label style={S.label}>Budget ₹ (optional)</label>
+              <input style={{ ...S.input, marginBottom: 14 }} type="number" value={editForm.budget}
+                onChange={e => setEditForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ position: 'relative' }}>
         <button
           onClick={() => setOpen(v => !v)}
@@ -4015,6 +4150,11 @@ function TripActionMenu({ trip, onMarkComplete, onDelete }) {
           <>
             <div style={{ position: 'fixed', inset: 0, zIndex: 198 }} onClick={() => setOpen(false)} />
             <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 199, minWidth: 190, overflow: 'hidden' }}>
+              <button
+                onClick={() => { setOpen(false); setShowEdit(true); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#378ADD', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)', textAlign: 'left' }}>
+                ✏️ Edit Trip Details
+              </button>
               {!trip.completed && (
                 <button
                   onClick={() => { setOpen(false); setConfirmComplete(true); }}
@@ -4034,3 +4174,14 @@ function TripActionMenu({ trip, onMarkComplete, onDelete }) {
     </>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
