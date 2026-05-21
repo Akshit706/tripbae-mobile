@@ -1027,6 +1027,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               />
               <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
                 {[
+                  { id: 'night', label: '🌙 12AM–6AM' },
                   { id: 'morning', label: '🌅 6AM–12PM' },
                   { id: 'afternoon', label: '☀️ 12–6PM' },
                   { id: 'evening', label: '🌆 6PM–12AM' },
@@ -1056,6 +1057,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               />
               <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
                 {[
+                  { id: 'night', label: '🌙 12AM–6AM' },
                   { id: 'morning', label: '🌅 6AM–12PM' },
                   { id: 'afternoon', label: '☀️ 12–6PM' },
                   { id: 'evening', label: '🌆 6PM–12AM' },
@@ -3229,6 +3231,7 @@ function PhotosPage({ trip, myNickname }) {
    ITINERARY PAGE
 ═══════════════════════════════════════════════════════ */
 const SLOT_LABELS = {
+  night: '12AM–6AM',
   morning: '6AM–12PM',
   afternoon: '12PM–6PM',
   evening: '6PM–12AM',
