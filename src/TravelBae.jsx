@@ -1840,7 +1840,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#854F0B', marginBottom: 3 }}>{data.headline}</div>
           <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{data.tagline}</div>
         </div>
-        <button style={{ ...S.btn, fontSize: 12, flexShrink: 0 }} onClick={() => { setStep('idle'); setData(null); setDoneItems(new Set()); }}>↺</button>
+        {/* <button style={{ ...S.btn, fontSize: 12, flexShrink: 0 }} onClick={() => { setStep('idle'); setData(null); setDoneItems(new Set()); }}>↺</button> */}
       </div>
       <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" />
       <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" />
@@ -3450,11 +3450,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                       💰 {itin.totalEstimatedCost}
                     </div>
                   )}
-                  <button
-                    style={{ marginLeft: 'auto', ...S.btn, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '0.5px solid rgba(255,255,255,0.3)', fontSize: 12 }}
-                    onClick={handleRedo}>
-                    ↺ Redo
-                  </button>
+                  
                 </div>
               </div>
 
