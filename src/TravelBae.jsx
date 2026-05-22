@@ -3268,6 +3268,42 @@ function PlacePhoto({ query, style }) {
   );
 }
 
+
+function PlacePhoto({ query, style }) {
+  const [url, setUrl] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!query) return;
+    import('./api').then(({ fetchPlacePhotos }) => {
+      fetchPlacePhotos(query)
+        .then(data => {
+          const urls = data.urls || [];
+          if (urls.length > 0) setUrl(urls[0]);
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    });
+  }, [query]);
+
+  if (loading) return (
+    <div style={{ width: '100%', height: 140, borderRadius: 12, background: '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, ...style }}>
+      🌍
+    </div>
+  );
+
+  if (!url) return null;
+
+  return (
+    <img
+      src={url}
+      alt={query}
+      style={{ width: '100%', height: 140, borderRadius: 12, objectFit: 'cover', display: 'block', ...style }}
+      onError={e => e.target.style.display = 'none'}
+    />
+  );
+}
+
 function PlacePhotosStrip({ queries, style }) {
   const [urls, setUrls] = useState([]);
 
