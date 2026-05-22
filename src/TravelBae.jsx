@@ -1845,7 +1845,9 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         {/* <button style={{ ...S.btn, fontSize: 12, flexShrink: 0 }} onClick={() => { setStep('idle'); setData(null); setDoneItems(new Set()); }}>↺</button> */}
       </div>
       <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" />
+      <PlacePhotos query={`${dest} food`} style={{ marginBottom: '1rem' }} />
       <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" />
+      <PlacePhotos query={`${dest} landmarks`} style={{ marginBottom: '1rem' }} />
       <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" />
       {data.tip && <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '.75rem 1rem', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: '1rem', fontSize: 12, color: isSolo ? '#26215C' : '#085041', lineHeight: 1.5 }}>💡 <span><strong>Local tip:</strong> {data.tip}</span></div>}
     </div>
@@ -3227,6 +3229,39 @@ function PhotosPage({ trip, myNickname }) {
   );
 }
 
+
+function PlacePhotos({ query, style }) {
+  const [urls, setUrls] = useState([]);
+
+  useEffect(() => {
+    if (!query) return;
+    import('./api').then(({ fetchPlacePhotos }) => {
+      fetchPlacePhotos(query)
+        .then(data => setUrls(data.urls || []))
+        .catch(() => {});
+    });
+  }, [query]);
+
+  if (urls.length === 0) return null;
+
+  return (
+    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, ...style }}>
+      {urls.map((url, i) => (
+        <img
+          key={i}
+          src={url}
+          alt=""
+          style={{ width: 130, height: 90, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
+          onError={e => e.target.style.display = 'none'}
+        />
+      ))}
+    </div>
+  );
+}
+
+
+
+
 /* ═══════════════════════════════════════════════════════
    ITINERARY PAGE
 ═══════════════════════════════════════════════════════ */
@@ -3465,6 +3500,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   ))}
                 </div>
               )}
+
+              <PlacePhotos query={`${form.dest} travel`} style={{ marginBottom: '1rem' }} />
 
               {(itin.days || []).map((d, dayIndex) => {
                 const dateLabel = form.arrival ? formatTripDate(form.arrival, dayIndex) : `Day ${d.day}`;

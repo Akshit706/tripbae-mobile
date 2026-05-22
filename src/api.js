@@ -23,6 +23,10 @@ async function apiFetch(path, options = {}) {
   return data;
 }
 
+export const fetchPlacePhotos = (q) =>
+  apiFetch(`/ai/photos?q=${encodeURIComponent(q)}`);
+
+
 // Auth
 export const signup = (name, email, password) =>
   apiFetch('/auth/signup', { method: 'POST', body: { name, email, password } });
