@@ -1801,7 +1801,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   };
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
 
-  const Sec = ({ icon, title, items, iconBg, secKey }) => {
+  const Sec = ({ icon, title, items, iconBg, secKey, dest }) => {
     const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
     return (
       <div style={{ marginBottom: '1.25rem' }}>
@@ -1820,6 +1820,9 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 3, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? '#a8a8a5' : '#1a1a18' }}>{item.name}</div>
                 <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{item.desc}</div>
+                <div style={{ margin: '10px 0 4px' }}>
+                  <PlacePhoto query={`${item.name} ${dest}`} style={{ height: 110 }} />
+                </div>
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 7 }}>
                   {(item.tags || []).map(t => { const c = tagBg(t); return <span key={t} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, textTransform: 'uppercase', letterSpacing: .3, background: isDone ? '#F1EFE8' : c.bg, color: isDone ? '#a8a8a5' : c.color }}>{t}</span>; })}
                 </div>
@@ -1844,11 +1847,11 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         </div>
         {/* <button style={{ ...S.btn, fontSize: 12, flexShrink: 0 }} onClick={() => { setStep('idle'); setData(null); setDoneItems(new Set()); }}>↺</button> */}
       </div>
-      <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" />
+      <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" dest={dest} />
       <PlacePhotos query={`${dest} food`} style={{ marginBottom: '1rem' }} />
-      <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" />
+      <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" dest={dest} />
       <PlacePhotos query={`${dest} landmarks`} style={{ marginBottom: '1rem' }} />
-      <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" />
+      <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" dest={dest} />
       {data.tip && <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '.75rem 1rem', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: '1rem', fontSize: 12, color: isSolo ? '#26215C' : '#085041', lineHeight: 1.5 }}>💡 <span><strong>Local tip:</strong> {data.tip}</span></div>}
     </div>
   );
@@ -3230,17 +3233,52 @@ function PhotosPage({ trip, myNickname }) {
 }
 
 
-function PlacePhotos({ query, style }) {
-  const [urls, setUrls] = useState([]);
+function PlacePhoto({ query, style }) {
+  const [url, setUrl] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!query) return;
     import('./api').then(({ fetchPlacePhotos }) => {
       fetchPlacePhotos(query)
+        .then(data => {
+          const urls = data.urls || [];
+          if (urls.length > 0) setUrl(urls[0]);
+        })
+        .catch(() => {})
+        .finally(() => setLoading(false));
+    });
+  }, [query]);
+
+  if (loading) return (
+    <div style={{ width: '100%', height: 140, borderRadius: 12, background: '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, ...style }}>
+      🌍
+    </div>
+  );
+
+  if (!url) return null;
+
+  return (
+    <img
+      src={url}
+      alt={query}
+      style={{ width: '100%', height: 140, borderRadius: 12, objectFit: 'cover', display: 'block', ...style }}
+      onError={e => e.target.style.display = 'none'}
+    />
+  );
+}
+
+function PlacePhotosStrip({ queries, style }) {
+  const [urls, setUrls] = useState([]);
+
+  useEffect(() => {
+    if (!queries?.length) return;
+    import('./api').then(({ fetchPlacePhotos }) => {
+      fetchPlacePhotos(queries.join(' '))
         .then(data => setUrls(data.urls || []))
         .catch(() => {});
     });
-  }, [query]);
+  }, [queries?.join(',')]);
 
   if (urls.length === 0) return null;
 
@@ -3251,7 +3289,7 @@ function PlacePhotos({ query, style }) {
           key={i}
           src={url}
           alt=""
-          style={{ width: 130, height: 90, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
+          style={{ width: 140, height: 100, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
           onError={e => e.target.style.display = 'none'}
         />
       ))}
@@ -3501,7 +3539,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 </div>
               )}
 
-              <PlacePhotos query={`${form.dest} travel`} style={{ marginBottom: '1rem' }} />
+              <PlacePhotosStrip
+                queries={[form.dest, `${form.dest} landmarks`, `${form.dest} travel`]}
+                style={{ marginBottom: '1rem' }}
+              />
 
               {(itin.days || []).map((d, dayIndex) => {
                 const dateLabel = form.arrival ? formatTripDate(form.arrival, dayIndex) : `Day ${d.day}`;
@@ -3565,6 +3606,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                   {a.cost && <span style={{ fontSize: 11, color: '#a8a8a5' }}>💰 {a.cost}</span>}
                                   {a.rating && <span style={{ fontSize: 11, color: '#BA7517' }}>{a.rating}</span>}
                                 </div>
+                                {(a.type === 'attraction' || a.type === 'food' || a.type === 'experience' || a.type === 'shopping') && (
+                                  <div style={{ marginTop: 10 }}>
+                                    <PlacePhoto query={`${a.name} ${form.dest}`} style={{ height: 120 }} />
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
