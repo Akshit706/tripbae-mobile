@@ -1848,9 +1848,9 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         {/* <button style={{ ...S.btn, fontSize: 12, flexShrink: 0 }} onClick={() => { setStep('idle'); setData(null); setDoneItems(new Set()); }}>↺</button> */}
       </div>
       <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" dest={dest} />
-      <PlacePhotos query={`${dest} food`} style={{ marginBottom: '1rem' }} />
+      <PlacePhotosStrip queries={[`${dest} food`]} style={{ marginBottom: '1rem' }} />
       <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" dest={dest} />
-      <PlacePhotos query={`${dest} landmarks`} style={{ marginBottom: '1rem' }} />
+      <PlacePhotosStrip queries={[`${dest} landmarks`]} style={{ marginBottom: '1rem' }} />
       <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" dest={dest} />
       {data.tip && <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '.75rem 1rem', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: '1rem', fontSize: 12, color: isSolo ? '#26215C' : '#085041', lineHeight: 1.5 }}>💡 <span><strong>Local tip:</strong> {data.tip}</span></div>}
     </div>
@@ -3268,41 +3268,6 @@ function PlacePhoto({ query, style }) {
   );
 }
 
-
-function PlacePhoto({ query, style }) {
-  const [url, setUrl] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!query) return;
-    import('./api').then(({ fetchPlacePhotos }) => {
-      fetchPlacePhotos(query)
-        .then(data => {
-          const urls = data.urls || [];
-          if (urls.length > 0) setUrl(urls[0]);
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false));
-    });
-  }, [query]);
-
-  if (loading) return (
-    <div style={{ width: '100%', height: 140, borderRadius: 12, background: '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, ...style }}>
-      🌍
-    </div>
-  );
-
-  if (!url) return null;
-
-  return (
-    <img
-      src={url}
-      alt={query}
-      style={{ width: '100%', height: 140, borderRadius: 12, objectFit: 'cover', display: 'block', ...style }}
-      onError={e => e.target.style.display = 'none'}
-    />
-  );
-}
 
 function PlacePhotosStrip({ queries, style }) {
   const [urls, setUrls] = useState([]);
