@@ -1821,7 +1821,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 3, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? '#a8a8a5' : '#1a1a18' }}>{item.name}</div>
                 <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{item.desc}</div>
                 <div style={{ margin: '10px 0 4px' }}>
-                  <PlacePhoto query={`${item.name} ${dest}`} style={{ height: 110 }} />
+                  <PlacePhoto query={`${item.name} ${dest} photo`} style={{ height: 110 }} />
                 </div>
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 7 }}>
                   {(item.tags || []).map(t => { const c = tagBg(t); return <span key={t} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, textTransform: 'uppercase', letterSpacing: .3, background: isDone ? '#F1EFE8' : c.bg, color: isDone ? '#a8a8a5' : c.color }}>{t}</span>; })}
@@ -3609,7 +3609,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                 </div>
                                 {(a.type === 'attraction' || a.type === 'food' || a.type === 'experience' || a.type === 'shopping') && (
                                   <div style={{ marginTop: 10 }}>
-                                    <PlacePhoto query={`${a.name} ${form.dest}`} style={{ height: 120 }} />
+                                    <PlacePhoto query={`${a.name} ${form.dest} photo`} style={{ height: 120 }} />
                                   </div>
                                 )}
                               </div>
