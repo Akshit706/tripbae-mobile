@@ -1800,8 +1800,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     return { bg: '#FAEEDA', color: '#854F0B' };
   };
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
-
-  const Sec = ({ icon, title, items, iconBg, secKey, dest }) => {
+  const Sec = ({ icon, title, items, iconBg, secKey, dest, startIndex = 0 }) => {
     const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
     return (
       <div style={{ marginBottom: '1.25rem' }}>
@@ -1821,7 +1820,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 3, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? '#a8a8a5' : '#1a1a18' }}>{item.name}</div>
                 <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{item.desc}</div>
                 <div style={{ margin: '10px 0 4px' }}>
-                  <PlacePhoto query={`${item.name} ${dest} photo`} style={{ height: 110 }} />
+                  <PlacePhoto query={`${item.name} ${dest} photo`} style={{ height: 110 }} delay={(startIndex + i) * 600} />
                 </div>
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 7 }}>
                   {(item.tags || []).map(t => { const c = tagBg(t); return <span key={t} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, textTransform: 'uppercase', letterSpacing: .3, background: isDone ? '#F1EFE8' : c.bg, color: isDone ? '#a8a8a5' : c.color }}>{t}</span>; })}
@@ -1847,11 +1846,11 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         </div>
         {/* <button style={{ ...S.btn, fontSize: 12, flexShrink: 0 }} onClick={() => { setStep('idle'); setData(null); setDoneItems(new Set()); }}>↺</button> */}
       </div>
-      <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" dest={dest} />
+      <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" dest={dest} startIndex={0} />
       <PlacePhotosStrip queries={[`${dest} food`]} style={{ marginBottom: '1rem' }} />
-      <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" dest={dest} />
+      <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" dest={dest} startIndex={4} />
       <PlacePhotosStrip queries={[`${dest} landmarks`]} style={{ marginBottom: '1rem' }} />
-      <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" dest={dest} />
+      <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" dest={dest} startIndex={8} />
       {data.tip && <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '.75rem 1rem', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: '1rem', fontSize: 12, color: isSolo ? '#26215C' : '#085041', lineHeight: 1.5 }}>💡 <span><strong>Local tip:</strong> {data.tip}</span></div>}
     </div>
   );
@@ -3233,22 +3232,25 @@ function PhotosPage({ trip, myNickname }) {
 }
 
 
-function PlacePhoto({ query, style }) {
+function PlacePhoto({ query, style, delay = 0 }) {
   const [url, setUrl] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!query) return;
-    import('./api').then(({ fetchPlacePhotos }) => {
-      fetchPlacePhotos(query)
-        .then(data => {
-          const urls = data.urls || [];
-          if (urls.length > 0) setUrl(urls[0]);
-        })
-        .catch(() => {})
-        .finally(() => setLoading(false));
-    });
-  }, [query]);
+    const timer = setTimeout(() => {
+      import('./api').then(({ fetchPlacePhotos }) => {
+        fetchPlacePhotos(query)
+          .then(data => {
+            const urls = data.urls || [];
+            if (urls.length > 0) setUrl(urls[0]);
+          })
+          .catch(() => {})
+          .finally(() => setLoading(false));
+      });
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [query, delay]);
 
   if (loading) return (
     <div style={{ width: '100%', height: 140, borderRadius: 12, background: '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, ...style }}>
@@ -3545,82 +3547,89 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 style={{ marginBottom: '1rem' }}
               />
 
-              {(itin.days || []).map((d, dayIndex) => {
-                const dateLabel = form.arrival ? formatTripDate(form.arrival, dayIndex) : `Day ${d.day}`;
-                const isArrivalDay = dayIndex === 0;
-                const isDepartureDay = dayIndex === (itin.days.length - 1);
-                return (
-                  <div key={d.day} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
-                    <div style={{ background: headerBg, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <div style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: 8, padding: '3px 10px', fontSize: 11, fontWeight: 700, fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>
-                        {dateLabel}
+              {(() => {
+                let photoIndex = 0;
+                return (itin.days || []).map((d, dayIndex) => {
+                  const dateLabel = form.arrival ? formatTripDate(form.arrival, dayIndex) : `Day ${d.day}`;
+                  const isArrivalDay = dayIndex === 0;
+                  const isDepartureDay = dayIndex === (itin.days.length - 1);
+                  return (
+                    <div key={d.day} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
+                      <div style={{ background: headerBg, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: 8, padding: '3px 10px', fontSize: 11, fontWeight: 700, fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>
+                          {dateLabel}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{d.title}</div>
+                          {d.theme && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 1 }}>{d.theme}</div>}
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
+                          {isArrivalDay && (
+                            <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>
+                              ✈️ Arrives {SLOT_LABELS[form.arrivalSlot]}
+                            </span>
+                          )}
+                          {isDepartureDay && (
+                            <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>
+                              🛫 Departs {SLOT_LABELS[form.departureSlot]}
+                            </span>
+                          )}
+                          {d.weather && (
+                            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
+                              {d.weather.high > 30 ? '☀️' : d.weather.high > 18 ? '⛅' : '🧊'} {d.weather.high}°/{d.weather.low}°
+                            </div>
+                          )}
+                          {d.estimatedCost && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{d.estimatedCost}</div>}
+                        </div>
                       </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{d.title}</div>
-                        {d.theme && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 1 }}>{d.theme}</div>}
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
-                        {isArrivalDay && (
-                          <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>
-                            ✈️ Arrives {SLOT_LABELS[form.arrivalSlot]}
-                          </span>
-                        )}
-                        {isDepartureDay && (
-                          <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>
-                            🛫 Departs {SLOT_LABELS[form.departureSlot]}
-                          </span>
-                        )}
-                        {d.weather && (
-                          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
-                            {d.weather.high > 30 ? '☀️' : d.weather.high > 18 ? '⛅' : '🧊'} {d.weather.high}°/{d.weather.low}°
-                          </div>
-                        )}
-                        {d.estimatedCost && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{d.estimatedCost}</div>}
-                      </div>
-                    </div>
-                    {d.weather?.tip && (
-                      <div style={{ padding: '6px 16px', background: isSolo ? '#f4f3ff' : '#f0faf6', borderBottom: `0.5px solid ${isSolo ? '#c9c5f5' : '#c8ecd8'}`, fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56' }}>
-                        💡 {d.weather.tip}
-                      </div>
-                    )}
-                    <div style={{ padding: '10px 16px' }}>
-                      {(d.activities || []).map((a, i) => (
-                        <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < d.activities.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
-                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 14 }}>
-                            <div style={{ width: 10, height: 10, borderRadius: '50%', background: a.mustDo ? accentColor : '#D3D1C7', marginTop: 4, flexShrink: 0, border: a.mustDo ? `2px solid ${accentColor}33` : 'none', boxSizing: 'border-box' }} />
-                            {i < d.activities.length - 1 && <div style={{ width: 1, flex: 1, background: 'rgba(0,0,0,0.06)', marginTop: 3 }} />}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 3 }}>
-                              <span style={{ fontSize: 11, color: '#a8a8a5', width: 58, flexShrink: 0, paddingTop: 2 }}>{a.time}</span>
-                              <div style={{ flex: 1 }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                  <span style={{ fontSize: 16 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
-                                  <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{a.name}</span>
-                                  {a.mustDo && (
-                                    <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
-                                  )}
-                                </div>
-                                {a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 3, lineHeight: 1.5 }}>{a.note}</div>}
-                                <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
-                                  {a.duration && <span style={{ fontSize: 11, color: '#a8a8a5' }}>⏱ {a.duration}</span>}
-                                  {a.cost && <span style={{ fontSize: 11, color: '#a8a8a5' }}>💰 {a.cost}</span>}
-                                  {a.rating && <span style={{ fontSize: 11, color: '#BA7517' }}>{a.rating}</span>}
-                                </div>
-                                {(a.type === 'attraction' || a.type === 'food' || a.type === 'experience' || a.type === 'shopping') && (
-                                  <div style={{ marginTop: 10 }}>
-                                    <PlacePhoto query={`${a.name} ${form.dest} photo`} style={{ height: 120 }} />
+                      {d.weather?.tip && (
+                        <div style={{ padding: '6px 16px', background: isSolo ? '#f4f3ff' : '#f0faf6', borderBottom: `0.5px solid ${isSolo ? '#c9c5f5' : '#c8ecd8'}`, fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56' }}>
+                          💡 {d.weather.tip}
+                        </div>
+                      )}
+                      <div style={{ padding: '10px 16px' }}>
+                        {(d.activities || []).map((a, i) => {
+                          const showPhoto = a.type === 'attraction' || a.type === 'food' || a.type === 'experience' || a.type === 'shopping';
+                          const currentDelay = showPhoto ? photoIndex++ * 600 : 0;
+                          return (
+                            <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < d.activities.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 14 }}>
+                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: a.mustDo ? accentColor : '#D3D1C7', marginTop: 4, flexShrink: 0, border: a.mustDo ? `2px solid ${accentColor}33` : 'none', boxSizing: 'border-box' }} />
+                                {i < d.activities.length - 1 && <div style={{ width: 1, flex: 1, background: 'rgba(0,0,0,0.06)', marginTop: 3 }} />}
+                              </div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 3 }}>
+                                  <span style={{ fontSize: 11, color: '#a8a8a5', width: 58, flexShrink: 0, paddingTop: 2 }}>{a.time}</span>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                      <span style={{ fontSize: 16 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
+                                      <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{a.name}</span>
+                                      {a.mustDo && (
+                                        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
+                                      )}
+                                    </div>
+                                    {a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 3, lineHeight: 1.5 }}>{a.note}</div>}
+                                    <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
+                                      {a.duration && <span style={{ fontSize: 11, color: '#a8a8a5' }}>⏱ {a.duration}</span>}
+                                      {a.cost && <span style={{ fontSize: 11, color: '#a8a8a5' }}>💰 {a.cost}</span>}
+                                      {a.rating && <span style={{ fontSize: 11, color: '#BA7517' }}>{a.rating}</span>}
+                                    </div>
+                                    {showPhoto && (
+                                      <div style={{ marginTop: 10 }}>
+                                        <PlacePhoto query={`${a.name} ${form.dest}`} style={{ height: 120 }} delay={currentDelay} />
+                                      </div>
+                                    )}
                                   </div>
-                                )}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      ))}
+                          );
+                        })}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
 
               {sources.length > 0 && (
                 <div style={{ ...S.card, marginBottom: '1rem' }}>
