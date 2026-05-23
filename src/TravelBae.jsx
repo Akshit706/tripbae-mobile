@@ -2794,6 +2794,18 @@ function PhotosPage({ trip, myNickname }) {
     .st em { font-style:italic; color:#1D9E75; }
     .ss { font-size:11px; color:#4a4845; letter-spacing:.3px; }
 
+    /* ── privacy notice ── */
+    .pn {
+      display:flex; align-items:center; gap:10px;
+      margin:0 1.25rem 1rem; padding:10px 14px;
+      background:linear-gradient(135deg,rgba(29,158,117,0.08),rgba(29,158,117,0.03));
+      border:1px solid rgba(29,158,117,0.18);
+      border-radius:12px;
+      font-size:11.5px; color:#9ec9b9; letter-spacing:.2px; line-height:1.45;
+    }
+    .pn-ic { font-size:15px; flex-shrink:0; }
+    .pn strong { color:#1D9E75; font-weight:600; }
+
     /* ── upload zone ── */
     .uz {
       margin:0 1.25rem 1.25rem;
@@ -3085,6 +3097,14 @@ function PhotosPage({ trip, myNickname }) {
           {isMyFolder ? <>Your <em>shots</em></> : <><em>{activeFolder}</em>'s shots</>}
         </h2>
         <span className="ss">{folderPhotos.length} photo{folderPhotos.length !== 1 ? 's' : ''}</span>
+      </div>
+
+      {/* ── Privacy reassurance ── */}
+      <div className="pn">
+        <span className="pn-ic">🔒</span>
+        <span>
+          Your photos are <strong>end-to-end encrypted</strong> and visible only to you and your trip mates — never shared, sold, or used to train anything. Upload freely.
+        </span>
       </div>
 
       {/* ── Upload zone / View banner ── */}
