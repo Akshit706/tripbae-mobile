@@ -401,7 +401,12 @@ import {
   deleteContact,
   addPhoto,
   deletePhoto,
-  deleteAccount
+  deleteAccount,
+  getClubHub,
+  upsertClubProfile,
+  updateClubStatus,
+  sendClubRequest,
+  respondClubRequest
 } from './api';
 
 // Add these two to your api.js:
@@ -4827,6 +4832,189 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   );
 }
 
+function ClubPage({ trip }){
+  const [clubLoading, setClubLoading] = useState(true);
+  const [clubBusy, setClubBusy] = useState(false);
+  const [hub, setHub] = useState({ myProfile: null, discover: [], incomingRequests: [], outgoingRequests: [] });
+  const [profileForm, setProfileForm] = useState({ title: '', about: '', lookingFor: '' });
+  const [requestFor, setRequestFor] = useState(null);
+  const [requestMessage, setRequestMessage] = useState('');
+
+  const loadHub = useCallback(async () => {
+    setClubLoading(true);
+    try {
+      const data = await getClubHub(trip.id);
+      setHub(data);
+      setProfileForm({
+        title: data.myProfile?.title || trip.groupName,
+        about: data.myProfile?.about || '',
+        lookingFor: data.myProfile?.lookingFor || '',
+      });
+    } catch (err) {
+      alert('Could not load club: ' + err.message);
+    }
+    setClubLoading(false);
+  }, [trip.id, trip.groupName]);
+
+  useEffect(() => { loadHub(); }, [loadHub]);
+
+  const listed = (hub.myProfile?.status || 'snooze') === 'listed';
+
+  const handleToggle = async () => {
+    setClubBusy(true);
+    try {
+      await updateClubStatus(trip.id, listed ? 'snooze' : 'listed');
+      await loadHub();
+    } catch (err) {
+      alert('Could not change status: ' + err.message);
+    }
+    setClubBusy(false);
+  };
+
+  const handleSaveProfile = async () => {
+    if (!profileForm.title.trim() || !profileForm.about.trim()) {
+      alert('Please fill title and about.');
+      return;
+    }
+    setClubBusy(true);
+    try {
+      await upsertClubProfile(trip.id, profileForm);
+      await loadHub();
+    } catch (err) {
+      alert('Could not save profile: ' + err.message);
+    }
+    setClubBusy(false);
+  };
+
+  const handleSendRequest = async () => {
+    if (!requestFor || !requestMessage.trim()) return;
+    setClubBusy(true);
+    try {
+      await sendClubRequest(trip.id, requestFor, requestMessage.trim());
+      setRequestFor(null);
+      setRequestMessage('');
+      await loadHub();
+    } catch (err) {
+      alert('Could not send request: ' + err.message);
+    }
+    setClubBusy(false);
+  };
+
+  const handleRequestAction = async (requestId, action) => {
+    setClubBusy(true);
+    try {
+      await respondClubRequest(trip.id, requestId, action);
+      await loadHub();
+    } catch (err) {
+      alert('Could not update request: ' + err.message);
+    }
+    setClubBusy(false);
+  };
+
+  if (clubLoading) return <Spinner text="Loading Club…" solo={trip.isSolo} />;
+
+  return (
+    <div>
+      <div style={{ background: trip.isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 14, padding: '1.25rem', marginBottom: '1rem', color: '#fff' }}>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 4 }}>🧭 TravelBae Club</div>
+        <div style={{ fontSize: 12, opacity: 0.85, marginBottom: 12 }}>List your group profile, discover others, and handle incoming requests.</div>
+        <button
+          onClick={handleToggle}
+          disabled={clubBusy}
+          style={{ ...S.btn, border: 'none', background: '#fff', color: listed ? '#085041' : '#6b6b68', fontWeight: 600 }}>
+          {listed ? '🟢 Listed' : '🌙 Snooze'}
+        </button>
+      </div>
+
+      <div style={S.card}>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 6 }}>My Group Profile</div>
+        <div style={{ fontSize: 12, color: '#6b6b68', marginBottom: 10 }}>This profile is visible to other groups in Club.</div>
+        <label style={S.label}>Profile title</label>
+        <input
+          style={S.input}
+          value={profileForm.title}
+          onChange={e => setProfileForm(f => ({ ...f, title: e.target.value }))}
+          placeholder="e.g. Delhi Foodie Squad"
+        />
+        <label style={S.label}>About</label>
+        <textarea
+          style={{ ...S.input, resize: 'vertical', minHeight: 84 }}
+          value={profileForm.about}
+          onChange={e => setProfileForm(f => ({ ...f, about: e.target.value }))}
+          placeholder="Tell other groups about your travel vibe."
+        />
+        <label style={S.label}>Looking for (optional)</label>
+        <input
+          style={S.input}
+          value={profileForm.lookingFor}
+          onChange={e => setProfileForm(f => ({ ...f, lookingFor: e.target.value }))}
+          placeholder="e.g. Cafe hopping + local walks"
+        />
+        <button style={{ ...S.btn, ...S.btnP, marginTop: 12 }} onClick={handleSaveProfile} disabled={clubBusy}>💾 Save profile</button>
+      </div>
+
+      <div style={S.card}>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 8 }}>Incoming Requests</div>
+        {hub.incomingRequests.length === 0 && <div style={{ fontSize: 12, color: '#6b6b68' }}>No pending requests right now.</div>}
+        {hub.incomingRequests.map(req => (
+          <div key={req.id} style={{ border: '0.5px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10, marginBottom: 8 }}>
+            <div style={{ fontSize: 14, fontWeight: 600 }}>{req.requesterTrip.groupName}</div>
+            <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2 }}>📍 {req.requesterTrip.destination} · {req.requesterTrip.members.length} members</div>
+            {req.requesterTrip.clubProfile?.about && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 5, fontStyle: 'italic' }}>"{req.requesterTrip.clubProfile.about}"</div>}
+            <div style={{ fontSize: 12, marginTop: 6 }}>{req.message}</div>
+            <div style={{ display: 'flex', gap: 6, marginTop: 10 }}>
+              <button style={{ ...S.btn, ...S.btnP, fontSize: 12 }} onClick={() => handleRequestAction(req.id, 'accepted')} disabled={clubBusy}>✓ Accept</button>
+              <button style={{ ...S.btn, fontSize: 12 }} onClick={() => handleRequestAction(req.id, 'declined')} disabled={clubBusy}>✕ Decline</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div style={S.card}>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 15, marginBottom: 8 }}>Discover Groups</div>
+        {hub.discover.length === 0 && <div style={{ fontSize: 12, color: '#6b6b68' }}>No active listed groups found.</div>}
+        {hub.discover.map(item => {
+          const alreadySent = hub.outgoingRequests.some(r => r.targetTripId === item.tripId && r.status === 'pending');
+          return (
+            <div key={item.id} style={{ border: '0.5px solid rgba(0,0,0,0.1)', borderRadius: 12, padding: 10, marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: 22 }}>{item.trip.emoji}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600 }}>{item.trip.groupName}</div>
+                  <div style={{ fontSize: 11, color: '#6b6b68' }}>📍 {item.trip.destination} · {item.trip.members.length} members</div>
+                </div>
+              </div>
+              <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 7 }}>{item.about}</div>
+              {item.lookingFor && <div style={{ fontSize: 12, marginTop: 5 }}>Looking for: {item.lookingFor}</div>}
+              {requestFor === item.tripId ? (
+                <div style={{ marginTop: 10 }}>
+                  <textarea
+                    style={{ ...S.input, resize: 'vertical', minHeight: 70 }}
+                    value={requestMessage}
+                    onChange={e => setRequestMessage(e.target.value)}
+                    placeholder="Write a short request for this group"
+                  />
+                  <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                    <button style={{ ...S.btn, ...S.btnOrange, fontSize: 12 }} onClick={handleSendRequest} disabled={clubBusy || !requestMessage.trim()}>➤ Send request</button>
+                    <button style={{ ...S.btn, fontSize: 12 }} onClick={() => { setRequestFor(null); setRequestMessage(''); }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  style={{ ...S.btn, ...S.btnOrange, fontSize: 12, marginTop: 10, opacity: alreadySent ? 0.65 : 1 }}
+                  disabled={alreadySent || clubBusy}
+                  onClick={() => setRequestFor(item.tripId)}>
+                  {alreadySent ? '⏳ Request sent' : '➤ Send request'}
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════
    APP SHELL
 ═══════════════════════════════════════════════════════ */
@@ -5046,11 +5234,13 @@ export default function App() {
     { id: 'contacts', label: '📒 Contacts' },
     { id: 'itinerary', label: '🗺️ Itinerary' },
     { id: 'photos', label: '📸 Photos' },
+    { id: 'club', label: '🧭 Club' },
   ];
   const soloTabs = [
     { id: 'main', label: '💰 Expenses' },
     { id: 'contacts', label: '📒 Contacts' },
     { id: 'itinerary', label: '🗺️ Itinerary' },
+    { id: 'club', label: '🧭 Club' },
   ];
   const tabs = isSolo ? soloTabs : groupTabs;
 
@@ -5189,6 +5379,7 @@ export default function App() {
                     {tab === 'main' && <SoloExpensesPage trip={activeTripData} myNickname={myNickname} />}
                     {tab === 'contacts' && <ContactsPage trip={activeTripData} myNickname={myNickname} isSolo={true} />}
                     {tab === 'itinerary' && <ItineraryPage trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
+                    {tab === 'club' && <ClubPage trip={activeTripData} />}
                   </>
                 ) : (
                   <>
@@ -5200,6 +5391,7 @@ export default function App() {
                         <PhotosPage trip={activeTripData} myNickname={myNickname} />
                       </div>
                     )}
+                    {tab === 'club' && <ClubPage trip={activeTripData} />}
                   </>
                 )}
               </div>

@@ -78,3 +78,19 @@ export const generateItinerary = (data) =>
 
 export const generateLocalTaste = (data) =>
   apiFetch('/ai/local-taste', { method: 'POST', body: data });
+
+// Club
+export const getClubHub = (tripId) =>
+  apiFetch(`/trips/${tripId}/club`);
+
+export const upsertClubProfile = (tripId, data) =>
+  apiFetch(`/trips/${tripId}/club/profile`, { method: 'PUT', body: data });
+
+export const updateClubStatus = (tripId, status) =>
+  apiFetch(`/trips/${tripId}/club/status`, { method: 'PATCH', body: { status } });
+
+export const sendClubRequest = (tripId, targetTripId, message) =>
+  apiFetch(`/trips/${tripId}/club/requests`, { method: 'POST', body: { targetTripId, message } });
+
+export const respondClubRequest = (tripId, requestId, action) =>
+  apiFetch(`/trips/${tripId}/club/requests/${requestId}`, { method: 'PATCH', body: { action } });
