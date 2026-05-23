@@ -4000,6 +4000,10 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
     showToast('Thanks for the love! 💚');
   };
 
+  const handleFeedback = () => {
+    window.location.href = 'mailto:feedback@travelbae.app?subject=TravelBae%20feedback';
+  };
+
   const titleByView = {
     hub: 'My Profile',
     badges: 'Travel Badges',
@@ -4009,6 +4013,8 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
     currency: 'Default Currency',
     privacy: 'Privacy & Safety',
     help: 'Help & Support',
+    policy: 'Privacy Policy',
+    terms: 'Terms of Service',
     about: 'About TravelBae',
   };
 
@@ -4029,17 +4035,31 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
         { id: 'privacy',       icon: '🛡️', label: 'Privacy & Safety', sub: 'Control your data',                                accent: '#534AB7', action: 'view' },
         { id: 'currency',      icon: '💱', label: 'Default Currency', sub: `${currencyMeta.code} — ${currencyMeta.name}`,       accent: '#0F6E56', action: 'view' },
         { id: 'help',          icon: '❓', label: 'Help & Support',   sub: 'FAQs and contact us',                              accent: '#1D9E75', action: 'view' },
-        { id: 'rate',          icon: '⭐', label: 'Rate TravelBae',   sub: 'Love the app? Let us know!',                       accent: '#BA7517', action: 'rate' },
-        { id: 'share',         icon: '📤', label: 'Share TravelBae',  sub: 'Invite friends to plan together',                  accent: '#7F77DD', action: 'share' },
-        { id: 'about',         icon: 'ℹ️', label: 'About TravelBae',  sub: 'Version, credits & support',                       accent: '#6b6b68', action: 'view' },
+      ],
+    },
+    {
+      title: 'Support TravelBae',
+      items: [
+        { id: 'feedback', icon: '💌', label: 'Send feedback',   sub: 'Tell us what you love or hate',     accent: '#D85A30', action: 'feedback' },
+        { id: 'rate',     icon: '⭐', label: 'Rate TravelBae',  sub: 'Love the app? Let us know!',        accent: '#BA7517', action: 'rate' },
+        { id: 'share',    icon: '📤', label: 'Share TravelBae', sub: 'Invite friends to plan together',   accent: '#7F77DD', action: 'share' },
+      ],
+    },
+    {
+      title: 'Legal',
+      items: [
+        { id: 'policy', icon: '📄', label: 'Privacy policy',    sub: 'What we do and don\'t collect', accent: '#534AB7', action: 'view' },
+        { id: 'terms',  icon: '📖', label: 'Terms of service',  sub: 'How we keep things fair',       accent: '#6b6b68', action: 'view' },
+        { id: 'about',  icon: 'ℹ️', label: 'About TravelBae',   sub: 'Our story & version info',      accent: '#1D9E75', action: 'view' },
       ],
     },
   ];
 
   const handleMenuClick = (item) => {
-    if (item.action === 'view')  setView(item.id);
-    if (item.action === 'rate')  handleRate();
-    if (item.action === 'share') handleShare();
+    if (item.action === 'view')     setView(item.id);
+    if (item.action === 'rate')     handleRate();
+    if (item.action === 'share')    handleShare();
+    if (item.action === 'feedback') handleFeedback();
   };
 
   const headerTitle = titleByView[view] || 'My Profile';
@@ -4475,18 +4495,10 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
               <div style={{ fontSize: 18, width: 22, textAlign: 'center' }}>✉️</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>Email support</div>
-                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>support@travelbae.app</div>
+                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>support@travelbae.app — usually replies within a day</div>
               </div>
               <div style={{ fontSize: 14, color: '#c8c6c0' }}>↗</div>
             </a>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderTop: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer' }} onClick={() => showToast('Chat coming soon')}>
-              <div style={{ fontSize: 18, width: 22, textAlign: 'center' }}>💬</div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>Live chat</div>
-                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>Usually replies within an hour</div>
-              </div>
-              <div style={{ fontSize: 11, color: '#1D9E75', fontWeight: 700 }}>SOON</div>
-            </div>
           </div>
         </div>
       )}
@@ -4517,34 +4529,135 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
         </div>
       )}
 
-      {/* ════════ ABOUT VIEW ════════ */}
+      {/* ════════ PRIVACY POLICY VIEW ════════ */}
+      {view === 'policy' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', maxWidth: 680 }}>
+          <div style={{ fontSize: 11, color: '#6b6b68', marginBottom: 14 }}>Last updated · May 2026</div>
+          {[
+            { h: 'What we collect',  p: 'Only what you give us: your name, email, trip details, expenses, contacts, photos and itinerary notes. Nothing else.' },
+            { h: 'How we use it',    p: 'Strictly to make TravelBae work — render your trips, sync them across devices, and let your trip mates see shared data. We do not run analytics on your trip content.' },
+            { h: 'What we never do', p: 'We never sell your data, share it with advertisers, or use your photos, expenses, or messages to train any AI model — ours or anyone else\'s.' },
+            { h: 'Encryption',       p: 'All trip data is encrypted in transit. Photos sit in your private storage bucket, accessible only to you and the trip mates you invited.' },
+            { h: 'Your rights',      p: 'Edit or delete anything anytime. Deleting a trip permanently removes its expenses, contacts, photos and itinerary. Deleting your account wipes everything we have on you.' },
+            { h: 'Cookies',          p: 'We use a single auth token in localStorage to keep you signed in. No third-party tracking cookies.' },
+            { h: 'Contact',          p: 'Privacy questions? Email privacy@travelbae.app and a real human will reply.' },
+          ].map(s => (
+            <div key={s.h} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '14px 16px', marginBottom: 10 }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#1a1a18', marginBottom: 6 }}>{s.h}</div>
+              <div style={{ fontSize: 12.5, color: '#6b6b68', lineHeight: 1.6 }}>{s.p}</div>
+            </div>
+          ))}
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', marginTop: '1.25rem' }}>© 2026 TravelBae</div>
+        </div>
+      )}
+
+      {/* ════════ TERMS OF SERVICE VIEW ════════ */}
+      {view === 'terms' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', maxWidth: 680 }}>
+          <div style={{ fontSize: 11, color: '#6b6b68', marginBottom: 14 }}>Last updated · May 2026</div>
+          {[
+            { h: 'The deal',          p: 'TravelBae is a tool to help you plan trips, split expenses and share memories with people you travel with. By using it, you agree to keep things friendly and lawful.' },
+            { h: 'Your account',      p: 'You\'re responsible for what happens under your account. Keep your password secret. One human, one account.' },
+            { h: 'Your content',      p: 'Your trips, photos and notes belong to you. You grant us only the minimum permission needed to store and display them inside your trips.' },
+            { h: 'Acceptable use',    p: 'Don\'t upload anything illegal, hateful, or that isn\'t yours to share. Don\'t try to reverse-engineer, scrape, or break TravelBae.' },
+            { h: 'Group trips',       p: 'When you join a group trip, the other members can see the trip\'s expenses, contacts and photos. Only share share-codes with people you trust.' },
+            { h: 'No warranty',       p: 'TravelBae is provided "as is" — we try hard, but life and code happen. We aren\'t liable for indirect damages from app downtime or data loss.' },
+            { h: 'Changes',           p: 'We may tweak these terms occasionally. We\'ll surface changes inside the app. Continuing to use TravelBae means you accept the latest version.' },
+          ].map(s => (
+            <div key={s.h} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '14px 16px', marginBottom: 10 }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#1a1a18', marginBottom: 6 }}>{s.h}</div>
+              <div style={{ fontSize: 12.5, color: '#6b6b68', lineHeight: 1.6 }}>{s.p}</div>
+            </div>
+          ))}
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', marginTop: '1.25rem' }}>© 2026 TravelBae</div>
+        </div>
+      )}
+
+      {/* ════════ ABOUT VIEW — informational only ════════ */}
       {view === 'about' && (
-        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
-          <div style={{ textAlign: 'center', padding: '1.5rem 1rem 0.5rem' }}>
-            <div style={{ width: 70, height: 70, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, margin: '0 auto 12px', boxShadow: '0 8px 24px rgba(29,158,117,0.3)' }}>✈️</div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700 }}>Travel<span style={{ color: '#1D9E75' }}>Bae</span></div>
-            <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 4 }}>Plan, split, explore — together.</div>
-            <div style={{ fontSize: 11, color: '#9a9a96', marginTop: 8 }}>Version 1.0.0</div>
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', maxWidth: 680 }}>
+          {/* Hero */}
+          <div style={{ textAlign: 'center', padding: '1rem 1rem 1.5rem' }}>
+            <div style={{ width: 78, height: 78, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, margin: '0 auto 14px', boxShadow: '0 10px 28px rgba(29,158,117,0.35)' }}>✈️</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 700, letterSpacing: '-0.4px' }}>
+              Travel<span style={{ color: '#1D9E75' }}>Bae</span>
+            </div>
+            <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4, fontStyle: 'italic' }}>Plan, split, explore — together.</div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, padding: '4px 12px', borderRadius: 12, background: '#E1F5EE', border: '0.5px solid #9FE1CB', fontSize: 11, color: '#0F6E56', fontWeight: 600 }}>
+              <span>v1.0.0</span> · <span>Build 2026.05</span>
+            </div>
           </div>
-          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden', marginTop: '1.25rem' }}>
+
+          {/* What is TravelBae */}
+          <div style={{ background: 'linear-gradient(135deg,#fff,#F0FAF5)', border: '0.5px solid #9FE1CB', borderRadius: 16, padding: '18px 18px', marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#0F6E56', marginBottom: 8 }}>What is TravelBae?</div>
+            <div style={{ fontSize: 13, color: '#1a1a18', lineHeight: 1.65 }}>
+              TravelBae is a calm, all-in-one companion for travellers who'd rather spend their energy on the journey than the logistics. From the first spark of an idea to the photos you scroll through years later, every part of a trip — planning, money, people, memories — lives in one place. No spreadsheets, no scattered group chats, no awkward "who owes whom" maths.
+            </div>
+          </div>
+
+          {/* Why we built it */}
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, padding: '18px 18px', marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#1a1a18', marginBottom: 8 }}>Why we built it</div>
+            <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.65 }}>
+              Every group trip we'd taken ended the same way — endless screenshots of bills, a forgotten itinerary buried in someone's notes app, photos drifting across five different cloud folders. We wanted one quiet home for it all. So we built one, designed around the people we actually travel with.
+            </div>
+          </div>
+
+          {/* What you can do */}
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, padding: '18px 18px 14px', marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#1a1a18', marginBottom: 12 }}>What you can do</div>
             {[
-              { icon: '💌', label: 'Send feedback', sub: 'Tell us what you love or hate' },
-              { icon: '⭐', label: 'Rate TravelBae', sub: 'Spread the love on the store' },
-              { icon: '📖', label: 'Terms of service', sub: 'How we keep things fair' },
-              { icon: '🛡️', label: 'Privacy policy',  sub: 'What we do and don\'t collect' },
-            ].map((it, idx) => (
-              <div key={it.label} className="pf-row" style={{ padding: '13px 16px', borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', transition: 'background .15s' }}>
-                <div style={{ fontSize: 18, width: 22, textAlign: 'center' }}>{it.icon}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>{it.label}</div>
-                  <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>{it.sub}</div>
+              { icon: '🗺️', title: 'Plan',    body: 'Generate AI itineraries, pin must-see places, and shape each day around your pace.' },
+              { icon: '💳', title: 'Split',   body: 'Add expenses on the go. Balances and settle-up suggestions appear instantly.' },
+              { icon: '🎒', title: 'Solo or together', body: 'Spin up a solo journey or a group trip — TravelBae adapts to either mode.' },
+              { icon: '📸', title: 'Remember', body: 'Private photo folders per traveller, encrypted and visible only to your trip mates.' },
+            ].map((f, idx) => (
+              <div key={f.title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingTop: idx === 0 ? 0 : 10, paddingBottom: 10, borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.05)' }}>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: '#F0FAF5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{f.icon}</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13.5, fontWeight: 700, color: '#1a1a18', marginBottom: 2 }}>{f.title}</div>
+                  <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55 }}>{f.body}</div>
                 </div>
-                <div style={{ fontSize: 16, color: '#c8c6c0' }}>›</div>
               </div>
             ))}
           </div>
-          <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', marginTop: '2rem', paddingBottom: '1rem' }}>
-            Made with 💚 for travellers
+
+          {/* Values */}
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, padding: '18px 18px', marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#1a1a18', marginBottom: 10 }}>What we stand for</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
+              {[
+                { icon: '🔒', t: 'Privacy first',    s: 'Your data is yours. Encrypted, never sold.' },
+                { icon: '🧘', t: 'Calm by design',    s: 'No dark patterns. No noise. Just clarity.' },
+                { icon: '🤝', t: 'Built for groups',  s: 'Travelling together should feel easy.' },
+                { icon: '🌱', t: 'Made by travellers', s: 'Crafted by people who love going places.' },
+              ].map(v => (
+                <div key={v.t} style={{ padding: '10px 12px', background: '#fafaf6', borderRadius: 12, border: '0.5px solid rgba(0,0,0,0.05)' }}>
+                  <div style={{ fontSize: 20, marginBottom: 4 }}>{v.icon}</div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 12.5, fontWeight: 700, color: '#1a1a18' }}>{v.t}</div>
+                  <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2, lineHeight: 1.45 }}>{v.s}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Built with */}
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, padding: '16px 18px', marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#1a1a18', marginBottom: 8 }}>Built with</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {['React', 'Vite', 'Node.js', 'Prisma', 'Supabase', 'Gemini AI'].map(t => (
+                <span key={t} style={{ fontSize: 11, padding: '4px 10px', borderRadius: 10, background: '#F1EFE8', color: '#1a1a18', fontWeight: 500 }}>{t}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div style={{ textAlign: 'center', fontSize: 12, color: '#6b6b68', marginTop: '1.25rem', paddingBottom: '0.5rem', lineHeight: 1.6 }}>
+            Made with <span style={{ color: '#1D9E75' }}>💚</span> for travellers, everywhere.
+          </div>
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', paddingBottom: '1rem' }}>
+            © 2026 TravelBae · All rights reserved
           </div>
         </div>
       )}
