@@ -3824,19 +3824,67 @@ function computeProfileStats(trips) {
 }
 
 function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
-  const [view, setView] = useState('hub'); // 'hub' | 'badges' | 'stats' | 'history' | 'preferences' | 'privacy' | 'about'
+  const [view, setView] = useState('hub'); // 'hub' | 'badges' | 'stats' | 'history' | 'notifications' | 'currency' | 'privacy' | 'help' | 'about'
   const [name, setName] = useState(profile.name || '');
   const [avatar, setAvatar] = useState(profile.avatar || null);
   const [editingName, setEditingName] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [toast, setToast] = useState('');
   const [prefs, setPrefs] = useState(() => {
     try {
       const raw = localStorage.getItem('travelbae_prefs');
       if (raw) return JSON.parse(raw);
     } catch { /* ignore */ }
-    return { currency: '₹ INR', units: 'metric', notifications: true, theme: 'light' };
+    return {
+      currency: 'INR',
+      units: 'metric',
+      notifications: true,
+      notifTripReminders: true,
+      notifGroupUpdates: true,
+      notifTips: false,
+    };
   });
   const fileRef = useRef(null);
+
+  // Full currency list — code, symbol, name
+  const CURRENCIES = [
+    { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+    { code: 'USD', symbol: '$', name: 'US Dollar' },
+    { code: 'EUR', symbol: '€', name: 'Euro' },
+    { code: 'GBP', symbol: '£', name: 'British Pound' },
+    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+    { code: 'AED', symbol: 'د.إ', name: 'UAE Dirham' },
+    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+    { code: 'CHF', symbol: 'Fr', name: 'Swiss Franc' },
+    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' },
+    { code: 'HKD', symbol: 'HK$', name: 'Hong Kong Dollar' },
+    { code: 'IDR', symbol: 'Rp', name: 'Indonesian Rupiah' },
+    { code: 'KRW', symbol: '₩', name: 'South Korean Won' },
+    { code: 'LKR', symbol: 'Rs', name: 'Sri Lankan Rupee' },
+    { code: 'MYR', symbol: 'RM', name: 'Malaysian Ringgit' },
+    { code: 'NPR', symbol: 'रू', name: 'Nepalese Rupee' },
+    { code: 'NZD', symbol: 'NZ$', name: 'New Zealand Dollar' },
+    { code: 'PKR', symbol: '₨', name: 'Pakistani Rupee' },
+    { code: 'PHP', symbol: '₱', name: 'Philippine Peso' },
+    { code: 'SAR', symbol: '﷼', name: 'Saudi Riyal' },
+    { code: 'SGD', symbol: 'S$', name: 'Singapore Dollar' },
+    { code: 'THB', symbol: '฿', name: 'Thai Baht' },
+    { code: 'TRY', symbol: '₺', name: 'Turkish Lira' },
+    { code: 'VND', symbol: '₫', name: 'Vietnamese Dong' },
+    { code: 'ZAR', symbol: 'R', name: 'South African Rand' },
+  ];
+
+  // Migrate legacy currency strings like "₹ INR" → "INR"
+  useEffect(() => {
+    if (prefs.currency && prefs.currency.length > 4) {
+      const match = CURRENCIES.find(c => prefs.currency.includes(c.code));
+      if (match) setPrefs(p => ({ ...p, currency: match.code }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const currencyMeta = CURRENCIES.find(c => c.code === prefs.currency) || CURRENCIES[0];
 
   const stats = computeProfileStats(trips);
   const earned = BADGE_DEFS.filter(b => b.check(stats));
@@ -3854,6 +3902,11 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
     try { localStorage.setItem('travelbae_prefs', JSON.stringify(next)); } catch { /* ignore */ }
     setSaved(true);
     setTimeout(() => setSaved(false), 1400);
+  };
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast(''), 1800);
   };
 
   const handleAvatarPick = (e) => {
@@ -3893,9 +3946,10 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
 
   const initials = (name || '?').trim().slice(0, 2).toUpperCase();
 
-  // ── Top-spent destinations & misc derived metrics for stats view ──
+  // ── Derived stats for Travel Stats view ──
   const tripList = trips || [];
   const totalSpend = tripList.reduce((s, t) => s + (t.expenses || []).reduce((a, e) => a + (e.amount || 0), 0), 0);
+
   const destFreq = {};
   tripList.forEach(t => {
     if (t.destination) {
@@ -3905,24 +3959,88 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
   });
   const topDests = Object.entries(destFreq).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
+  const totalTravelDays = tripList.reduce((sum, t) => {
+    if (!t.arrival || !t.departure) return sum;
+    try { return sum + tripDuration(t.arrival, t.departure); } catch { return sum; }
+  }, 0);
+
+  // Unique travel companions across all trips (excluding self)
+  const selfKey = (name || '').trim().toLowerCase();
+  const companionSet = new Set();
+  tripList.forEach(t => {
+    if (t.isSolo) return;
+    (normalizeMembers(t.members) || []).forEach(m => {
+      const key = (m || '').trim().toLowerCase();
+      if (key && key !== selfKey) companionSet.add(key);
+    });
+  });
+  const companionCount = companionSet.size;
+
+  const fmtMoney = (n) => `${currencyMeta.symbol}${Math.round(n).toLocaleString('en-IN')}`;
+
+  const handleShare = async () => {
+    const shareData = {
+      title: 'TravelBae',
+      text: 'Plan trips, split expenses & explore together — try TravelBae with me!',
+      url: window.location.origin,
+    };
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareData.url);
+        showToast('Link copied to clipboard');
+      } else {
+        showToast(shareData.url);
+      }
+    } catch { /* user cancelled */ }
+  };
+
+  const handleRate = () => {
+    showToast('Thanks for the love! 💚');
+  };
+
   const titleByView = {
     hub: 'My Profile',
     badges: 'Travel Badges',
     stats: 'Travel Stats',
     history: 'Trip History',
-    preferences: 'Preferences',
-    privacy: 'Privacy & Data',
+    notifications: 'Notifications',
+    currency: 'Default Currency',
+    privacy: 'Privacy & Safety',
+    help: 'Help & Support',
     about: 'About TravelBae',
   };
 
-  const MENU_ITEMS = [
-    { id: 'badges',      icon: '🏆', label: 'Badges',          sub: `${earned.length}/${BADGE_DEFS.length} earned · ${earnedPct}%`, accent: '#1D9E75' },
-    { id: 'stats',       icon: '📊', label: 'Travel Stats',    sub: `${stats.tripCount} trips · ${stats.uniqueDests} places`, accent: '#7F77DD' },
-    { id: 'history',     icon: '🧳', label: 'Trip History',    sub: `${stats.completedCount} completed · ${stats.tripCount - stats.completedCount} active`, accent: '#FF6B35' },
-    { id: 'preferences', icon: '⚙️', label: 'Preferences',     sub: `${prefs.currency} · ${prefs.units}`, accent: '#0F6E56' },
-    { id: 'privacy',     icon: '🔒', label: 'Privacy & Data',  sub: 'Your photos & data are encrypted', accent: '#534AB7' },
-    { id: 'about',       icon: 'ℹ️', label: 'About TravelBae', sub: 'Version, credits & support',     accent: '#6b6b68' },
+  // Menu rendered in grouped sections
+  const MENU_SECTIONS = [
+    {
+      title: 'Your travels',
+      items: [
+        { id: 'badges',  icon: '🏆', label: 'Badges',       sub: `${earned.length}/${BADGE_DEFS.length} earned · ${earnedPct}%`,                          accent: '#1D9E75', action: 'view' },
+        { id: 'stats',   icon: '📊', label: 'Travel Stats', sub: `${stats.uniqueDests} places · ${totalTravelDays} days`,                                  accent: '#7F77DD', action: 'view' },
+        { id: 'history', icon: '🧳', label: 'Trip History', sub: `${stats.completedCount} completed · ${Math.max(0, stats.tripCount - stats.completedCount)} active`, accent: '#FF6B35', action: 'view' },
+      ],
+    },
+    {
+      title: 'Settings',
+      items: [
+        { id: 'notifications', icon: '🔔', label: 'Notifications',    sub: 'Trip reminders & updates',                          accent: '#FF6B35', action: 'view' },
+        { id: 'privacy',       icon: '🛡️', label: 'Privacy & Safety', sub: 'Control your data',                                accent: '#534AB7', action: 'view' },
+        { id: 'currency',      icon: '💱', label: 'Default Currency', sub: `${currencyMeta.code} — ${currencyMeta.name}`,       accent: '#0F6E56', action: 'view' },
+        { id: 'help',          icon: '❓', label: 'Help & Support',   sub: 'FAQs and contact us',                              accent: '#1D9E75', action: 'view' },
+        { id: 'rate',          icon: '⭐', label: 'Rate TravelBae',   sub: 'Love the app? Let us know!',                       accent: '#BA7517', action: 'rate' },
+        { id: 'share',         icon: '📤', label: 'Share TravelBae',  sub: 'Invite friends to plan together',                  accent: '#7F77DD', action: 'share' },
+        { id: 'about',         icon: 'ℹ️', label: 'About TravelBae',  sub: 'Version, credits & support',                       accent: '#6b6b68', action: 'view' },
+      ],
+    },
   ];
+
+  const handleMenuClick = (item) => {
+    if (item.action === 'view')  setView(item.id);
+    if (item.action === 'rate')  handleRate();
+    if (item.action === 'share') handleShare();
+  };
 
   const headerTitle = titleByView[view] || 'My Profile';
   const goBack = () => (view === 'hub' ? onClose() : setView('hub'));
@@ -3946,6 +4064,13 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700 }}>{headerTitle}</div>
         {saved && <div style={{ marginLeft: 'auto', fontSize: 11, color: '#0F6E56', background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 10, padding: '4px 10px', fontWeight: 600, animation: 'pfFadeIn .2s' }}>✓ Saved</div>}
       </div>
+
+      {/* Floating toast */}
+      {toast && (
+        <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a18', color: '#fff', padding: '10px 16px', borderRadius: 22, fontSize: 13, fontWeight: 500, zIndex: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', animation: 'pfFadeIn .2s' }}>
+          {toast}
+        </div>
+      )}
 
       {/* ════════ HUB VIEW ════════ */}
       {view === 'hub' && (
@@ -4020,34 +4145,41 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
             ))}
           </div>
 
-          {/* Menu list */}
-          <div style={{ padding: '1.25rem 1.25rem 0' }}>
-            <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, overflow: 'hidden' }}>
-              {MENU_ITEMS.map((m, idx) => (
-                <button
-                  key={m.id}
-                  className="pf-row"
-                  onClick={() => setView(m.id)}
-                  style={{
-                    width: '100%', background: '#fff', border: 'none',
-                    borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)',
-                    padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
-                    cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif",
-                    transition: 'background .15s, transform .1s',
-                  }}
-                >
-                  <div style={{ width: 38, height: 38, borderRadius: 10, background: `${m.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                    {m.icon}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{m.label}</div>
-                    <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2 }}>{m.sub}</div>
-                  </div>
-                  <div style={{ fontSize: 18, color: '#c8c6c0', flexShrink: 0 }}>›</div>
-                </button>
-              ))}
+          {/* Menu list — grouped sections */}
+          {MENU_SECTIONS.map(section => (
+            <div key={section.title} style={{ padding: '1.25rem 1.25rem 0' }}>
+              <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
+                {section.title}
+              </div>
+              <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, overflow: 'hidden' }}>
+                {section.items.map((m, idx) => (
+                  <button
+                    key={m.id}
+                    className="pf-row"
+                    onClick={() => handleMenuClick(m)}
+                    style={{
+                      width: '100%', background: '#fff', border: 'none',
+                      borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)',
+                      padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
+                      cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif",
+                      transition: 'background .15s, transform .1s',
+                    }}
+                  >
+                    <div style={{ width: 38, height: 38, borderRadius: 10, background: `${m.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                      {m.icon}
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{m.label}</div>
+                      <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2 }}>{m.sub}</div>
+                    </div>
+                    <div style={{ fontSize: 18, color: '#c8c6c0', flexShrink: 0 }}>
+                      {m.action === 'view' ? '›' : (m.action === 'share' ? '↗' : '★')}
+                    </div>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ))}
 
           {/* Log out */}
           {onLogout && (
@@ -4133,18 +4265,34 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
       {/* ════════ TRAVEL STATS VIEW ════════ */}
       {view === 'stats' && (
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
+          {/* Hero metrics — 4 key numbers */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 14 }}>
+            {[
+              { label: 'Countries & cities explored', val: stats.uniqueDests,                                 icon: '🌍', tint: '#E1F5EE', accent: '#1D9E75' },
+              { label: 'Total travel days',           val: totalTravelDays,                                   icon: '📅', tint: '#EEEDFE', accent: '#7F77DD' },
+              { label: `Total spent (${currencyMeta.symbol})`, val: fmtMoney(totalSpend),                     icon: '💰', tint: '#FFF1E0', accent: '#FF6B35' },
+              { label: 'Travel companions',           val: companionCount,                                    icon: '👥', tint: '#E6F1FB', accent: '#534AB7' },
+            ].map(s => (
+              <div key={s.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, padding: '14px 14px 16px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: s.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 8 }}>{s.icon}</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: s.accent, lineHeight: 1 }}>{s.val}</div>
+                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 6, lineHeight: 1.35 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Breakdown */}
+          <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', margin: '8px 0 8px 4px' }}>Breakdown</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 14 }}>
             {[
               { label: 'Total trips',       val: stats.tripCount,         icon: '🧳', tint: '#E1F5EE' },
-              { label: 'Destinations',      val: stats.uniqueDests,       icon: '🌍', tint: '#EEEDFE' },
-              { label: 'Completed trips',   val: stats.completedCount,    icon: '✅', tint: '#E6F1FB' },
-              { label: 'Active trips',      val: Math.max(0, stats.tripCount - stats.completedCount), icon: '⚡', tint: '#FFF1E0' },
+              { label: 'Completed',         val: stats.completedCount,    icon: '✅', tint: '#E6F1FB' },
+              { label: 'Active',            val: Math.max(0, stats.tripCount - stats.completedCount), icon: '⚡', tint: '#FFF1E0' },
               { label: 'Solo journeys',     val: stats.soloCount,         icon: '🎒', tint: '#EEEDFE' },
               { label: 'Group trips',       val: stats.groupCount,        icon: '👥', tint: '#E1F5EE' },
               { label: 'Photos uploaded',   val: stats.photoCount,        icon: '📸', tint: '#FAECE7' },
               { label: 'Contacts saved',    val: stats.contactCount,      icon: '📒', tint: '#F1EFE8' },
               { label: 'Itineraries built', val: stats.itineraryCount,    icon: '🗺️', tint: '#E6F1FB' },
-              { label: 'Total tracked',     val: `₹${Math.round(totalSpend).toLocaleString('en-IN')}`, icon: '💰', tint: '#E1F5EE' },
             ].map(s => (
               <div key={s.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ width: 38, height: 38, borderRadius: 10, background: s.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{s.icon}</div>
@@ -4215,43 +4363,129 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
         </div>
       )}
 
-      {/* ════════ PREFERENCES VIEW ════════ */}
-      {view === 'preferences' && (
+      {/* ════════ NOTIFICATIONS VIEW ════════ */}
+      {view === 'notifications' && (
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
-          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden' }}>
-            <div style={{ padding: '14px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-              <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 6 }}>Currency</div>
-              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                {['₹ INR', '$ USD', '€ EUR', '£ GBP', '¥ JPY'].map(c => (
-                  <button key={c} onClick={() => savePrefs({ ...prefs, currency: c })}
-                    style={{ padding: '6px 12px', borderRadius: 10, border: '0.5px solid ' + (prefs.currency === c ? '#1D9E75' : 'rgba(0,0,0,0.17)'), background: prefs.currency === c ? '#1D9E75' : '#fff', color: prefs.currency === c ? '#fff' : '#1a1a18', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{ padding: '14px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
-              <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 6 }}>Units</div>
-              <div style={{ display: 'flex', gap: 6 }}>
-                {['metric', 'imperial'].map(u => (
-                  <button key={u} onClick={() => savePrefs({ ...prefs, units: u })}
-                    style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: '0.5px solid ' + (prefs.units === u ? '#1D9E75' : 'rgba(0,0,0,0.17)'), background: prefs.units === u ? '#1D9E75' : '#fff', color: prefs.units === u ? '#fff' : '#1a1a18', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", textTransform: 'capitalize' }}>
-                    {u}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>Notifications</div>
-                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2 }}>Trip reminders and group updates</div>
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden', marginBottom: 14 }}>
+            <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>All notifications</div>
+                <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2 }}>Master switch for all alerts</div>
               </div>
               <button
                 onClick={() => savePrefs({ ...prefs, notifications: !prefs.notifications })}
-                style={{ width: 44, height: 26, borderRadius: 14, border: 'none', cursor: 'pointer', background: prefs.notifications ? '#1D9E75' : '#d1cfc8', position: 'relative', transition: 'background .2s' }}
+                style={{ width: 44, height: 26, borderRadius: 14, border: 'none', cursor: 'pointer', background: prefs.notifications ? '#1D9E75' : '#d1cfc8', position: 'relative', transition: 'background .2s', flexShrink: 0 }}
               >
                 <div style={{ position: 'absolute', top: 3, left: prefs.notifications ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'left .2s' }} />
               </button>
+            </div>
+          </div>
+
+          <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', margin: '4px 0 8px 4px' }}>Categories</div>
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden', opacity: prefs.notifications ? 1 : 0.45, pointerEvents: prefs.notifications ? 'auto' : 'none', transition: 'opacity .2s' }}>
+            {[
+              { key: 'notifTripReminders', icon: '📅', label: 'Trip reminders',     sub: 'Upcoming arrivals, departures & itinerary' },
+              { key: 'notifGroupUpdates',  icon: '👥', label: 'Group updates',      sub: 'Expenses, contacts & photos added by mates' },
+              { key: 'notifTips',          icon: '💡', label: 'Tips & inspiration', sub: 'Occasional travel ideas — never spammy' },
+            ].map((row, idx) => (
+              <div key={row.key} style={{ padding: '14px 16px', borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ fontSize: 18, width: 22, textAlign: 'center' }}>{row.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>{row.label}</div>
+                  <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>{row.sub}</div>
+                </div>
+                <button
+                  onClick={() => savePrefs({ ...prefs, [row.key]: !prefs[row.key] })}
+                  style={{ width: 40, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: prefs[row.key] ? '#1D9E75' : '#d1cfc8', position: 'relative', transition: 'background .2s', flexShrink: 0 }}
+                >
+                  <div style={{ position: 'absolute', top: 3, left: prefs[row.key] ? 19 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'left .2s' }} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ════════ CURRENCY VIEW ════════ */}
+      {view === 'currency' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
+          <div style={{ background: 'linear-gradient(135deg,#E1F5EE,#F0FAF5)', border: '0.5px solid #9FE1CB', borderRadius: 14, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', border: '0.5px solid #9FE1CB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontFamily: "'Sora',sans-serif", fontWeight: 700, color: '#0F6E56' }}>{currencyMeta.symbol}</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#0F6E56' }}>Currently using {currencyMeta.code}</div>
+              <div style={{ fontSize: 11.5, color: '#0F6E56', opacity: 0.85, marginTop: 2 }}>{currencyMeta.name}</div>
+            </div>
+          </div>
+
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden' }}>
+            {CURRENCIES.map((c, idx) => {
+              const active = prefs.currency === c.code;
+              return (
+                <button
+                  key={c.code}
+                  className="pf-row"
+                  onClick={() => savePrefs({ ...prefs, currency: c.code })}
+                  style={{
+                    width: '100%', background: active ? '#F0FAF5' : '#fff', border: 'none',
+                    borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)',
+                    padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
+                    cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif",
+                    transition: 'background .15s',
+                  }}
+                >
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: active ? '#1D9E75' : '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: active ? '#fff' : '#1a1a18', flexShrink: 0 }}>
+                    {c.symbol}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13.5, fontWeight: 600, color: '#1a1a18' }}>{c.code}</div>
+                    <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 1 }}>{c.name}</div>
+                  </div>
+                  {active && <div style={{ fontSize: 14, color: '#1D9E75', fontWeight: 700 }}>✓</div>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ════════ HELP VIEW ════════ */}
+      {view === 'help' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
+          <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', margin: '0 0 8px 4px' }}>Frequently asked</div>
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden', marginBottom: 16 }}>
+            {[
+              { q: 'How does expense splitting work?',     a: 'Add an expense, pick who paid and how to split. We crunch the balances and show who owes whom — settle anytime.' },
+              { q: 'Are my photos private?',                a: 'Yes. Photos are end-to-end encrypted and only visible to you and your trip mates. We never share or train on them.' },
+              { q: 'Can I edit a trip after creating it?',  a: 'Tap the menu inside any trip → Edit Trip. You can change dates, budget, destination, or members.' },
+              { q: 'How do I invite friends to a trip?',    a: 'Open a group trip → tap the share code at the top → send it to friends. They join with that code + a nickname.' },
+              { q: 'What happens if I delete a trip?',      a: 'Everything tied to the trip — expenses, contacts, photos, itinerary — is permanently removed. This cannot be undone.' },
+            ].map((it, idx) => (
+              <details key={it.q} style={{ padding: '12px 16px', borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)' }}>
+                <summary style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ color: '#1D9E75', fontWeight: 700 }}>›</span> {it.q}
+                </summary>
+                <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55, marginTop: 8, paddingLeft: 16 }}>{it.a}</div>
+              </details>
+            ))}
+          </div>
+
+          <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', margin: '0 0 8px 4px' }}>Contact us</div>
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden' }}>
+            <a href="mailto:support@travelbae.app" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', textDecoration: 'none', color: 'inherit' }}>
+              <div style={{ fontSize: 18, width: 22, textAlign: 'center' }}>✉️</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>Email support</div>
+                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>support@travelbae.app</div>
+              </div>
+              <div style={{ fontSize: 14, color: '#c8c6c0' }}>↗</div>
+            </a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderTop: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer' }} onClick={() => showToast('Chat coming soon')}>
+              <div style={{ fontSize: 18, width: 22, textAlign: 'center' }}>💬</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>Live chat</div>
+                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>Usually replies within an hour</div>
+              </div>
+              <div style={{ fontSize: 11, color: '#1D9E75', fontWeight: 700 }}>SOON</div>
             </div>
           </div>
         </div>
