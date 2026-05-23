@@ -3823,19 +3823,35 @@ function computeProfileStats(trips) {
   };
 }
 
-function ProfilePage({ profile, onSave, onClose, trips }) {
+function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
+  const [view, setView] = useState('hub'); // 'hub' | 'badges' | 'stats' | 'history' | 'preferences' | 'privacy' | 'about'
   const [name, setName] = useState(profile.name || '');
   const [avatar, setAvatar] = useState(profile.avatar || null);
   const [editingName, setEditingName] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [prefs, setPrefs] = useState(() => {
+    try {
+      const raw = localStorage.getItem('travelbae_prefs');
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return { currency: '₹ INR', units: 'metric', notifications: true, theme: 'light' };
+  });
   const fileRef = useRef(null);
 
   const stats = computeProfileStats(trips);
   const earned = BADGE_DEFS.filter(b => b.check(stats));
   const locked = BADGE_DEFS.filter(b => !b.check(stats));
+  const earnedPct = Math.round((earned.length / BADGE_DEFS.length) * 100);
 
   const persist = (next) => {
     onSave(next);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1400);
+  };
+
+  const savePrefs = (next) => {
+    setPrefs(next);
+    try { localStorage.setItem('travelbae_prefs', JSON.stringify(next)); } catch { /* ignore */ }
     setSaved(true);
     setTimeout(() => setSaved(false), 1400);
   };
@@ -3845,7 +3861,6 @@ function ProfilePage({ profile, onSave, onClose, trips }) {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
-      // Resize via canvas to keep localStorage small
       const img = new Image();
       img.onload = () => {
         const MAX = 240;
@@ -3877,155 +3892,427 @@ function ProfilePage({ profile, onSave, onClose, trips }) {
   };
 
   const initials = (name || '?').trim().slice(0, 2).toUpperCase();
-  const earnedPct = Math.round((earned.length / BADGE_DEFS.length) * 100);
+
+  // ── Top-spent destinations & misc derived metrics for stats view ──
+  const tripList = trips || [];
+  const totalSpend = tripList.reduce((s, t) => s + (t.expenses || []).reduce((a, e) => a + (e.amount || 0), 0), 0);
+  const destFreq = {};
+  tripList.forEach(t => {
+    if (t.destination) {
+      const k = t.destination.trim();
+      destFreq[k] = (destFreq[k] || 0) + 1;
+    }
+  });
+  const topDests = Object.entries(destFreq).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  const titleByView = {
+    hub: 'My Profile',
+    badges: 'Travel Badges',
+    stats: 'Travel Stats',
+    history: 'Trip History',
+    preferences: 'Preferences',
+    privacy: 'Privacy & Data',
+    about: 'About TravelBae',
+  };
+
+  const MENU_ITEMS = [
+    { id: 'badges',      icon: '🏆', label: 'Badges',          sub: `${earned.length}/${BADGE_DEFS.length} earned · ${earnedPct}%`, accent: '#1D9E75' },
+    { id: 'stats',       icon: '📊', label: 'Travel Stats',    sub: `${stats.tripCount} trips · ${stats.uniqueDests} places`, accent: '#7F77DD' },
+    { id: 'history',     icon: '🧳', label: 'Trip History',    sub: `${stats.completedCount} completed · ${stats.tripCount - stats.completedCount} active`, accent: '#FF6B35' },
+    { id: 'preferences', icon: '⚙️', label: 'Preferences',     sub: `${prefs.currency} · ${prefs.units}`, accent: '#0F6E56' },
+    { id: 'privacy',     icon: '🔒', label: 'Privacy & Data',  sub: 'Your photos & data are encrypted', accent: '#534AB7' },
+    { id: 'about',       icon: 'ℹ️', label: 'About TravelBae', sub: 'Version, credits & support',     accent: '#6b6b68' },
+  ];
+
+  const headerTitle = titleByView[view] || 'My Profile';
+  const goBack = () => (view === 'hub' ? onClose() : setView('hub'));
 
   return (
     <div style={{ position: 'fixed', inset: 0, background: '#f7f6f2', zIndex: 500, overflowY: 'auto', fontFamily: "'DM Sans',sans-serif" }}>
       <style>{`
         @keyframes pfFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pfBadgePop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
+        @keyframes pfSlideIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
         .pf-badge:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(29,158,117,0.18); }
         .pf-badge-locked:hover { transform: translateY(-2px); }
         .pf-avatar-edit:hover { background: #0F6E56 !important; }
+        .pf-row:hover { background: #faf9f5 !important; }
+        .pf-row:active { transform: scale(0.995); }
       `}</style>
 
       {/* Header */}
       <div style={{ background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.09)', padding: '13px 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}>
-        <button style={{ ...S.btn, padding: '5px 8px', fontSize: 16 }} onClick={onClose}>←</button>
-        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700 }}>My Profile</div>
+        <button style={{ ...S.btn, padding: '5px 8px', fontSize: 16 }} onClick={goBack}>←</button>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700 }}>{headerTitle}</div>
         {saved && <div style={{ marginLeft: 'auto', fontSize: 11, color: '#0F6E56', background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 10, padding: '4px 10px', fontWeight: 600, animation: 'pfFadeIn .2s' }}>✓ Saved</div>}
       </div>
 
-      {/* Identity card */}
-      <div style={{ padding: '1.5rem 1.25rem 0', animation: 'pfFadeIn .25s ease-out' }}>
-        <div style={{ background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, padding: '1.75rem 1.25rem', textAlign: 'center', color: '#fff', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(29,158,117,0.25)' }}>
-          <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-          <div style={{ position: 'absolute', bottom: -50, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+      {/* ════════ HUB VIEW ════════ */}
+      {view === 'hub' && (
+        <div style={{ animation: 'pfFadeIn .25s ease-out' }}>
+          {/* Identity card */}
+          <div style={{ padding: '1.5rem 1.25rem 0' }}>
+            <div style={{ background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, padding: '1.75rem 1.25rem', textAlign: 'center', color: '#fff', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(29,158,117,0.25)' }}>
+              <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+              <div style={{ position: 'absolute', bottom: -50, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
 
-          {/* Avatar with edit overlay */}
-          <div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
-            <div style={{ width: 110, height: 110, borderRadius: '50%', background: avatar ? `url(${avatar}) center/cover` : 'rgba(255,255,255,0.18)', border: '3px solid rgba(255,255,255,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: '#fff', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
-              {!avatar && initials}
-            </div>
-            <button
-              type="button"
-              className="pf-avatar-edit"
-              onClick={() => fileRef.current?.click()}
-              style={{ position: 'absolute', bottom: 2, right: 2, width: 34, height: 34, borderRadius: '50%', background: '#1D9E75', border: '2.5px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: '#fff', transition: 'all .15s', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
-              title="Upload photo"
-            >
-              📷
-            </button>
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarPick} />
-          </div>
-
-          {avatar && (
-            <div style={{ marginBottom: 10 }}>
-              <button onClick={removeAvatar} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 12, border: '0.5px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.12)', color: '#fff', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>Remove photo</button>
-            </div>
-          )}
-
-          {/* Name */}
-          {editingName ? (
-            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', maxWidth: 260, margin: '0 auto' }}>
-              <input
-                autoFocus
-                value={name}
-                onChange={e => setName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setName(profile.name || ''); setEditingName(false); } }}
-                style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 15, fontWeight: 600, textAlign: 'center', fontFamily: "'Sora',sans-serif", outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#0F6E56' }}
-                placeholder="Your name"
-                maxLength={30}
-              />
-              <button onClick={saveName} style={{ padding: '8px 12px', borderRadius: 10, border: 'none', background: '#fff', color: '#0F6E56', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>✓</button>
-            </div>
-          ) : (
-            <div onClick={() => setEditingName(true)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px' }}>
-                {name || 'Tap to add name'}
+              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
+                <div style={{ width: 110, height: 110, borderRadius: '50%', background: avatar ? `url(${avatar}) center/cover` : 'rgba(255,255,255,0.18)', border: '3px solid rgba(255,255,255,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: '#fff', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+                  {!avatar && initials}
+                </div>
+                <button
+                  type="button"
+                  className="pf-avatar-edit"
+                  onClick={() => fileRef.current?.click()}
+                  style={{ position: 'absolute', bottom: 2, right: 2, width: 34, height: 34, borderRadius: '50%', background: '#1D9E75', border: '2.5px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: '#fff', transition: 'all .15s', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
+                  title="Upload photo"
+                >
+                  📷
+                </button>
+                <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarPick} />
               </div>
-              <span style={{ fontSize: 13, opacity: 0.75 }}>✎</span>
+
+              {avatar && (
+                <div style={{ marginBottom: 10 }}>
+                  <button onClick={removeAvatar} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 12, border: '0.5px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.12)', color: '#fff', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>Remove photo</button>
+                </div>
+              )}
+
+              {editingName ? (
+                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', maxWidth: 260, margin: '0 auto' }}>
+                  <input
+                    autoFocus
+                    value={name}
+                    onChange={e => setName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setName(profile.name || ''); setEditingName(false); } }}
+                    style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 15, fontWeight: 600, textAlign: 'center', fontFamily: "'Sora',sans-serif", outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#0F6E56' }}
+                    placeholder="Your name"
+                    maxLength={30}
+                  />
+                  <button onClick={saveName} style={{ padding: '8px 12px', borderRadius: 10, border: 'none', background: '#fff', color: '#0F6E56', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>✓</button>
+                </div>
+              ) : (
+                <div onClick={() => setEditingName(true)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px' }}>
+                    {name || 'Tap to add name'}
+                  </div>
+                  <span style={{ fontSize: 13, opacity: 0.75 }}>✎</span>
+                </div>
+              )}
+              <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, position: 'relative', zIndex: 1 }}>
+                {stats.tripCount} trip{stats.tripCount === 1 ? '' : 's'} · {stats.uniqueDests} destination{stats.uniqueDests === 1 ? '' : 's'} · {earned.length} badge{earned.length === 1 ? '' : 's'}
+              </div>
             </div>
-          )}
-          <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, position: 'relative', zIndex: 1 }}>
-            {stats.tripCount} trip{stats.tripCount === 1 ? '' : 's'} · {stats.uniqueDests} destination{stats.uniqueDests === 1 ? '' : 's'}
           </div>
-        </div>
-      </div>
 
-      {/* Stats strip */}
-      <div style={{ padding: '1rem 1.25rem 0', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
-        {[
-          { label: 'Trips',    val: stats.tripCount },
-          { label: 'Places',   val: stats.uniqueDests },
-          { label: 'Photos',   val: stats.photoCount },
-          { label: 'Badges',   val: earned.length },
-        ].map(s => (
-          <div key={s.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 12, padding: '10px 6px', textAlign: 'center' }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#1a1a18' }}>{s.val}</div>
-            <div style={{ fontSize: 10, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600, marginTop: 2 }}>{s.label}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Badges progress */}
-      <div style={{ padding: '1.5rem 1.25rem 0.5rem', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700 }}>🏆 Travel Badges</div>
-        <div style={{ fontSize: 12, color: '#6b6b68' }}>{earned.length}/{BADGE_DEFS.length} earned · {earnedPct}%</div>
-      </div>
-      <div style={{ padding: '0 1.25rem' }}>
-        <div style={{ height: 6, background: '#E8E6DE', borderRadius: 6, overflow: 'hidden' }}>
-          <div style={{ width: `${earnedPct}%`, height: '100%', background: 'linear-gradient(90deg,#1D9E75,#0F6E56)', transition: 'width .4s' }} />
-        </div>
-      </div>
-
-      {/* Earned badges */}
-      {earned.length > 0 && (
-        <>
-          <div style={{ padding: '1.25rem 1.25rem 0.5rem', fontSize: 11, color: '#0F6E56', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>Earned</div>
-          <div style={{ padding: '0 1.25rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
-            {earned.map((b, i) => (
-              <div key={b.id} className="pf-badge" style={{
-                background: 'linear-gradient(135deg,#fff,#F0FAF5)',
-                border: '0.5px solid #9FE1CB',
-                borderRadius: 14, padding: '14px 10px', textAlign: 'center',
-                cursor: 'default', transition: 'all .18s',
-                animation: `pfBadgePop .3s ease-out ${i * 0.04}s both`,
-                position: 'relative', overflow: 'hidden',
-              }}>
-                <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 700, color: '#0F6E56', background: '#E1F5EE', padding: '2px 6px', borderRadius: 6 }}>✓</div>
-                <div style={{ fontSize: 32, marginBottom: 6, lineHeight: 1 }}>{b.emoji}</div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#0F6E56', marginBottom: 3 }}>{b.name}</div>
-                <div style={{ fontSize: 10.5, color: '#6b6b68', lineHeight: 1.4 }}>{b.desc}</div>
+          {/* Quick stats strip */}
+          <div style={{ padding: '1rem 1.25rem 0', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            {[
+              { label: 'Trips',  val: stats.tripCount },
+              { label: 'Places', val: stats.uniqueDests },
+              { label: 'Photos', val: stats.photoCount },
+              { label: 'Badges', val: earned.length },
+            ].map(s => (
+              <div key={s.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 12, padding: '10px 6px', textAlign: 'center' }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#1a1a18' }}>{s.val}</div>
+                <div style={{ fontSize: 10, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600, marginTop: 2 }}>{s.label}</div>
               </div>
             ))}
           </div>
-        </>
+
+          {/* Menu list */}
+          <div style={{ padding: '1.25rem 1.25rem 0' }}>
+            <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, overflow: 'hidden' }}>
+              {MENU_ITEMS.map((m, idx) => (
+                <button
+                  key={m.id}
+                  className="pf-row"
+                  onClick={() => setView(m.id)}
+                  style={{
+                    width: '100%', background: '#fff', border: 'none',
+                    borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)',
+                    padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 14,
+                    cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif",
+                    transition: 'background .15s, transform .1s',
+                  }}
+                >
+                  <div style={{ width: 38, height: 38, borderRadius: 10, background: `${m.accent}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
+                    {m.icon}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{m.label}</div>
+                    <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2 }}>{m.sub}</div>
+                  </div>
+                  <div style={{ fontSize: 18, color: '#c8c6c0', flexShrink: 0 }}>›</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Log out */}
+          {onLogout && (
+            <div style={{ padding: '1rem 1.25rem 2rem' }}>
+              <button
+                onClick={onLogout}
+                style={{
+                  width: '100%', padding: '13px', borderRadius: 14,
+                  border: '0.5px solid #F5C4B3', background: '#fff', color: '#993C1D',
+                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                  fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                }}
+              >
+                🚪 Log out
+              </button>
+            </div>
+          )}
+        </div>
       )}
 
-      {/* Locked badges */}
-      {locked.length > 0 && (
-        <>
-          <div style={{ padding: '1.5rem 1.25rem 0.5rem', fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>In progress</div>
-          <div style={{ padding: '0 1.25rem 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
-            {locked.map(b => (
-              <div key={b.id} className="pf-badge-locked" style={{
-                background: '#fff', border: '0.5px dashed rgba(0,0,0,0.15)',
-                borderRadius: 14, padding: '14px 10px', textAlign: 'center',
-                transition: 'all .18s', opacity: 0.78, position: 'relative',
-              }}>
-                <div style={{ fontSize: 32, marginBottom: 6, lineHeight: 1, filter: 'grayscale(0.7)', opacity: 0.55 }}>{b.emoji}</div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#6b6b68', marginBottom: 3 }}>{b.name}</div>
-                <div style={{ fontSize: 10.5, color: '#9a9a96', lineHeight: 1.4 }}>{b.desc}</div>
-                {b.progress && (
-                  <div style={{ marginTop: 8, fontSize: 10, fontWeight: 700, color: '#1D9E75', background: '#F1EFE8', borderRadius: 8, padding: '2px 8px', display: 'inline-block' }}>
-                    {b.progress(stats)}
+      {/* ════════ BADGES VIEW ════════ */}
+      {view === 'badges' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out' }}>
+          <div style={{ padding: '1.25rem 1.25rem 0.5rem', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700 }}>🏆 Travel Badges</div>
+            <div style={{ fontSize: 12, color: '#6b6b68' }}>{earned.length}/{BADGE_DEFS.length} · {earnedPct}%</div>
+          </div>
+          <div style={{ padding: '0 1.25rem' }}>
+            <div style={{ height: 6, background: '#E8E6DE', borderRadius: 6, overflow: 'hidden' }}>
+              <div style={{ width: `${earnedPct}%`, height: '100%', background: 'linear-gradient(90deg,#1D9E75,#0F6E56)', transition: 'width .4s' }} />
+            </div>
+          </div>
+
+          {earned.length > 0 && (
+            <>
+              <div style={{ padding: '1.25rem 1.25rem 0.5rem', fontSize: 11, color: '#0F6E56', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>Earned</div>
+              <div style={{ padding: '0 1.25rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
+                {earned.map((b, i) => (
+                  <div key={b.id} className="pf-badge" style={{
+                    background: 'linear-gradient(135deg,#fff,#F0FAF5)',
+                    border: '0.5px solid #9FE1CB',
+                    borderRadius: 14, padding: '14px 10px', textAlign: 'center',
+                    cursor: 'default', transition: 'all .18s',
+                    animation: `pfBadgePop .3s ease-out ${i * 0.04}s both`,
+                    position: 'relative', overflow: 'hidden',
+                  }}>
+                    <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 700, color: '#0F6E56', background: '#E1F5EE', padding: '2px 6px', borderRadius: 6 }}>✓</div>
+                    <div style={{ fontSize: 32, marginBottom: 6, lineHeight: 1 }}>{b.emoji}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#0F6E56', marginBottom: 3 }}>{b.name}</div>
+                    <div style={{ fontSize: 10.5, color: '#6b6b68', lineHeight: 1.4 }}>{b.desc}</div>
                   </div>
-                )}
+                ))}
+              </div>
+            </>
+          )}
+
+          {locked.length > 0 && (
+            <>
+              <div style={{ padding: '1.5rem 1.25rem 0.5rem', fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>In progress</div>
+              <div style={{ padding: '0 1.25rem 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
+                {locked.map(b => (
+                  <div key={b.id} className="pf-badge-locked" style={{
+                    background: '#fff', border: '0.5px dashed rgba(0,0,0,0.15)',
+                    borderRadius: 14, padding: '14px 10px', textAlign: 'center',
+                    transition: 'all .18s', opacity: 0.78, position: 'relative',
+                  }}>
+                    <div style={{ fontSize: 32, marginBottom: 6, lineHeight: 1, filter: 'grayscale(0.7)', opacity: 0.55 }}>{b.emoji}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#6b6b68', marginBottom: 3 }}>{b.name}</div>
+                    <div style={{ fontSize: 10.5, color: '#9a9a96', lineHeight: 1.4 }}>{b.desc}</div>
+                    {b.progress && (
+                      <div style={{ marginTop: 8, fontSize: 10, fontWeight: 700, color: '#1D9E75', background: '#F1EFE8', borderRadius: 8, padding: '2px 8px', display: 'inline-block' }}>
+                        {b.progress(stats)}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* ════════ TRAVEL STATS VIEW ════════ */}
+      {view === 'stats' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 14 }}>
+            {[
+              { label: 'Total trips',       val: stats.tripCount,         icon: '🧳', tint: '#E1F5EE' },
+              { label: 'Destinations',      val: stats.uniqueDests,       icon: '🌍', tint: '#EEEDFE' },
+              { label: 'Completed trips',   val: stats.completedCount,    icon: '✅', tint: '#E6F1FB' },
+              { label: 'Active trips',      val: Math.max(0, stats.tripCount - stats.completedCount), icon: '⚡', tint: '#FFF1E0' },
+              { label: 'Solo journeys',     val: stats.soloCount,         icon: '🎒', tint: '#EEEDFE' },
+              { label: 'Group trips',       val: stats.groupCount,        icon: '👥', tint: '#E1F5EE' },
+              { label: 'Photos uploaded',   val: stats.photoCount,        icon: '📸', tint: '#FAECE7' },
+              { label: 'Contacts saved',    val: stats.contactCount,      icon: '📒', tint: '#F1EFE8' },
+              { label: 'Itineraries built', val: stats.itineraryCount,    icon: '🗺️', tint: '#E6F1FB' },
+              { label: 'Total tracked',     val: `₹${Math.round(totalSpend).toLocaleString('en-IN')}`, icon: '💰', tint: '#E1F5EE' },
+            ].map(s => (
+              <div key={s.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, background: s.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{s.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#1a1a18' }}>{s.val}</div>
+                  <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>{s.label}</div>
+                </div>
               </div>
             ))}
           </div>
-        </>
+
+          {topDests.length > 0 && (
+            <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '14px 16px', marginBottom: '2rem' }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 10 }}>📍 Most visited</div>
+              {topDests.map(([dest, count]) => {
+                const max = topDests[0][1];
+                const pct = Math.round((count / max) * 100);
+                return (
+                  <div key={dest} style={{ marginBottom: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
+                      <span style={{ color: '#1a1a18', fontWeight: 500 }}>{dest}</span>
+                      <span style={{ color: '#6b6b68' }}>{count} trip{count === 1 ? '' : 's'}</span>
+                    </div>
+                    <div style={{ height: 5, background: '#F1EFE8', borderRadius: 5, overflow: 'hidden' }}>
+                      <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg,#1D9E75,#0F6E56)', borderRadius: 5 }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ════════ TRIP HISTORY VIEW ════════ */}
+      {view === 'history' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
+          {tripList.length === 0 ? (
+            <div style={{ background: '#fff', border: '0.5px dashed rgba(0,0,0,0.15)', borderRadius: 14, padding: '2rem 1rem', textAlign: 'center', color: '#6b6b68' }}>
+              <div style={{ fontSize: 38, marginBottom: 6 }}>🗺️</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>No trips yet</div>
+              <div style={{ fontSize: 12, marginTop: 4 }}>Create one from your home screen to start your travel log.</div>
+            </div>
+          ) : (
+            tripList.map(t => {
+              const spend = (t.expenses || []).reduce((a, e) => a + (e.amount || 0), 0);
+              return (
+                <div key={t.id} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: t.isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                    {t.emoji || (t.isSolo ? '🎒' : '✈️')}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.groupName || 'Untitled trip'}</div>
+                      {t.completed && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#E1F5EE', color: '#0F6E56' }}>DONE</span>}
+                      {t.isSolo && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#EEEDFE', color: '#534AB7' }}>SOLO</span>}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      📍 {t.destination || '—'}
+                      {spend > 0 && <> · ₹{Math.round(spend).toLocaleString('en-IN')}</>}
+                      {(t.photos || []).length > 0 && <> · {(t.photos || []).length} 📸</>}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      )}
+
+      {/* ════════ PREFERENCES VIEW ════════ */}
+      {view === 'preferences' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden' }}>
+            <div style={{ padding: '14px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+              <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 6 }}>Currency</div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {['₹ INR', '$ USD', '€ EUR', '£ GBP', '¥ JPY'].map(c => (
+                  <button key={c} onClick={() => savePrefs({ ...prefs, currency: c })}
+                    style={{ padding: '6px 12px', borderRadius: 10, border: '0.5px solid ' + (prefs.currency === c ? '#1D9E75' : 'rgba(0,0,0,0.17)'), background: prefs.currency === c ? '#1D9E75' : '#fff', color: prefs.currency === c ? '#fff' : '#1a1a18', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ padding: '14px 16px', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+              <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: 0.3, textTransform: 'uppercase', marginBottom: 6 }}>Units</div>
+              <div style={{ display: 'flex', gap: 6 }}>
+                {['metric', 'imperial'].map(u => (
+                  <button key={u} onClick={() => savePrefs({ ...prefs, units: u })}
+                    style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: '0.5px solid ' + (prefs.units === u ? '#1D9E75' : 'rgba(0,0,0,0.17)'), background: prefs.units === u ? '#1D9E75' : '#fff', color: prefs.units === u ? '#fff' : '#1a1a18', fontSize: 12, fontWeight: 500, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", textTransform: 'capitalize' }}>
+                    {u}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>Notifications</div>
+                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2 }}>Trip reminders and group updates</div>
+              </div>
+              <button
+                onClick={() => savePrefs({ ...prefs, notifications: !prefs.notifications })}
+                style={{ width: 44, height: 26, borderRadius: 14, border: 'none', cursor: 'pointer', background: prefs.notifications ? '#1D9E75' : '#d1cfc8', position: 'relative', transition: 'background .2s' }}
+              >
+                <div style={{ position: 'absolute', top: 3, left: prefs.notifications ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'left .2s' }} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════ PRIVACY VIEW ════════ */}
+      {view === 'privacy' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
+          <div style={{ background: 'linear-gradient(135deg,#E1F5EE,#F0FAF5)', border: '0.5px solid #9FE1CB', borderRadius: 14, padding: '14px 16px', marginBottom: 12, display: 'flex', gap: 10 }}>
+            <div style={{ fontSize: 22, lineHeight: 1 }}>🔒</div>
+            <div style={{ fontSize: 12.5, color: '#0F6E56', lineHeight: 1.5 }}>
+              Your photos, expenses and trip data are <strong>end-to-end encrypted</strong> and visible only to you and your trip mates. We never share, sell, or use your content to train any models.
+            </div>
+          </div>
+          {[
+            { icon: '📸', title: 'Photos', body: 'Stored encrypted in your private trip bucket. Only your trip mates can view them.' },
+            { icon: '💰', title: 'Expenses & contacts', body: 'Synced privately to your account. Visible only inside the specific trip.' },
+            { icon: '📍', title: 'Location', body: 'We never track your real-time location. Destinations come from what you type.' },
+            { icon: '🗑️', title: 'Right to delete', body: 'Delete a trip and all its photos, expenses and contacts disappear permanently.' },
+          ].map(it => (
+            <div key={it.title} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', marginBottom: 10, display: 'flex', gap: 12 }}>
+              <div style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{it.icon}</div>
+              <div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13.5, fontWeight: 600, color: '#1a1a18', marginBottom: 3 }}>{it.title}</div>
+                <div style={{ fontSize: 11.5, color: '#6b6b68', lineHeight: 1.5 }}>{it.body}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ════════ ABOUT VIEW ════════ */}
+      {view === 'about' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
+          <div style={{ textAlign: 'center', padding: '1.5rem 1rem 0.5rem' }}>
+            <div style={{ width: 70, height: 70, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36, margin: '0 auto 12px', boxShadow: '0 8px 24px rgba(29,158,117,0.3)' }}>✈️</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700 }}>Travel<span style={{ color: '#1D9E75' }}>Bae</span></div>
+            <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 4 }}>Plan, split, explore — together.</div>
+            <div style={{ fontSize: 11, color: '#9a9a96', marginTop: 8 }}>Version 1.0.0</div>
+          </div>
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden', marginTop: '1.25rem' }}>
+            {[
+              { icon: '💌', label: 'Send feedback', sub: 'Tell us what you love or hate' },
+              { icon: '⭐', label: 'Rate TravelBae', sub: 'Spread the love on the store' },
+              { icon: '📖', label: 'Terms of service', sub: 'How we keep things fair' },
+              { icon: '🛡️', label: 'Privacy policy',  sub: 'What we do and don\'t collect' },
+            ].map((it, idx) => (
+              <div key={it.label} className="pf-row" style={{ padding: '13px 16px', borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', transition: 'background .15s' }}>
+                <div style={{ fontSize: 18, width: 22, textAlign: 'center' }}>{it.icon}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>{it.label}</div>
+                  <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>{it.sub}</div>
+                </div>
+                <div style={{ fontSize: 16, color: '#c8c6c0' }}>›</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', marginTop: '2rem', paddingBottom: '1rem' }}>
+            Made with 💚 for travellers
+          </div>
+        </div>
       )}
 
       <div style={{ height: '2rem' }} />
@@ -4401,6 +4688,7 @@ export default function App() {
           profile={profile}
           onSave={saveProfile}
           onClose={() => setProfileOpen(false)}
+          onLogout={() => { setProfileOpen(false); handleLogout(); }}
           trips={trips}
         />
       )}
