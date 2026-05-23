@@ -3103,7 +3103,7 @@ function PhotosPage({ trip, myNickname }) {
       <div className="pn">
         <span className="pn-ic">🔒</span>
         <span>
-          Your photos are <strong>end-to-end encrypted</strong> and visible only to you and your trip mates — never shared, sold, or used to train anything. Upload freely.
+          Your photos are <strong>end-to-end encrypted</strong> and visible only to you and your trip mates — Upload freely.
         </span>
       </div>
 
@@ -3783,6 +3783,257 @@ function TripChatbot({ trip, myNickname }) {
 }
 
 /* ═══════════════════════════════════════════════════════
+   PROFILE — name, avatar & travel badges
+═══════════════════════════════════════════════════════ */
+const BADGE_DEFS = [
+  { id: 'early_bird',     name: 'Early Bird',      emoji: '🌅', desc: 'Joined the TravelBae crew',           check: () => true },
+  { id: 'first_flight',   name: 'First Flight',    emoji: '✈️', desc: 'Created your very first trip',         check: s => s.tripCount >= 1 },
+  { id: 'group_leader',   name: 'Group Leader',    emoji: '👥', desc: 'Set off on a group adventure',         check: s => s.groupCount >= 1 },
+  { id: 'solo_voyager',   name: 'Solo Voyager',    emoji: '🎒', desc: 'Embraced a solo journey',              check: s => s.soloCount >= 1 },
+  { id: 'globe_trotter',  name: 'Globe Trotter',   emoji: '🌍', desc: 'Visited 3+ different destinations',    check: s => s.uniqueDests >= 3, progress: s => `${Math.min(s.uniqueDests, 3)}/3` },
+  { id: 'budget_pro',     name: 'Budget Pro',      emoji: '💰', desc: 'Tracked expenses on 3+ trips',         check: s => s.tripsWithExpenses >= 3, progress: s => `${Math.min(s.tripsWithExpenses, 3)}/3` },
+  { id: 'photographer',   name: 'Photographer',    emoji: '📸', desc: 'Uploaded 10+ trip photos',             check: s => s.photoCount >= 10, progress: s => `${Math.min(s.photoCount, 10)}/10` },
+  { id: 'trail_blazer',   name: 'Trail Blazer',    emoji: '🔥', desc: 'Completed 5+ trips',                   check: s => s.completedCount >= 5, progress: s => `${Math.min(s.completedCount, 5)}/5` },
+  { id: 'social_butterfly', name: 'Social Butterfly', emoji: '🦋', desc: 'Saved 5+ trip contacts',           check: s => s.contactCount >= 5, progress: s => `${Math.min(s.contactCount, 5)}/5` },
+  { id: 'master_planner', name: 'Master Planner',  emoji: '🗺️', desc: 'Built itineraries for 3+ trips',       check: s => s.itineraryCount >= 3, progress: s => `${Math.min(s.itineraryCount, 3)}/3` },
+  { id: 'globe_elite',    name: 'Globe Elite',     emoji: '🌟', desc: 'Visited 7+ destinations',              check: s => s.uniqueDests >= 7, progress: s => `${Math.min(s.uniqueDests, 7)}/7` },
+  { id: 'shutterbug',     name: 'Shutterbug',      emoji: '🎞️', desc: 'Uploaded 50+ trip photos',             check: s => s.photoCount >= 50, progress: s => `${Math.min(s.photoCount, 50)}/50` },
+];
+
+function computeProfileStats(trips) {
+  const ts = trips || [];
+  const dests = new Set();
+  let photoCount = 0, contactCount = 0, soloCount = 0, groupCount = 0;
+  let completedCount = 0, tripsWithExpenses = 0, itineraryCount = 0;
+  ts.forEach(t => {
+    if (t.destination) dests.add(t.destination.trim().toLowerCase());
+    photoCount   += (t.photos   || []).length;
+    contactCount += (t.contacts || []).length;
+    if (t.isSolo) soloCount++; else groupCount++;
+    if (t.completed) completedCount++;
+    if ((t.expenses || []).length > 0) tripsWithExpenses++;
+    if (t._cachedItin) itineraryCount++;
+  });
+  return {
+    tripCount: ts.length,
+    uniqueDests: dests.size,
+    photoCount, contactCount,
+    soloCount, groupCount,
+    completedCount, tripsWithExpenses, itineraryCount,
+  };
+}
+
+function ProfilePage({ profile, onSave, onClose, trips }) {
+  const [name, setName] = useState(profile.name || '');
+  const [avatar, setAvatar] = useState(profile.avatar || null);
+  const [editingName, setEditingName] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const fileRef = useRef(null);
+
+  const stats = computeProfileStats(trips);
+  const earned = BADGE_DEFS.filter(b => b.check(stats));
+  const locked = BADGE_DEFS.filter(b => !b.check(stats));
+
+  const persist = (next) => {
+    onSave(next);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1400);
+  };
+
+  const handleAvatarPick = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      // Resize via canvas to keep localStorage small
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 240;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        const dataUrl = c.toDataURL('image/jpeg', 0.85);
+        setAvatar(dataUrl);
+        persist({ name, avatar: dataUrl });
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const saveName = () => {
+    const n = name.trim();
+    if (!n) return;
+    setEditingName(false);
+    persist({ name: n, avatar });
+  };
+
+  const removeAvatar = () => {
+    setAvatar(null);
+    persist({ name, avatar: null });
+  };
+
+  const initials = (name || '?').trim().slice(0, 2).toUpperCase();
+  const earnedPct = Math.round((earned.length / BADGE_DEFS.length) * 100);
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: '#f7f6f2', zIndex: 500, overflowY: 'auto', fontFamily: "'DM Sans',sans-serif" }}>
+      <style>{`
+        @keyframes pfFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pfBadgePop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
+        .pf-badge:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(29,158,117,0.18); }
+        .pf-badge-locked:hover { transform: translateY(-2px); }
+        .pf-avatar-edit:hover { background: #0F6E56 !important; }
+      `}</style>
+
+      {/* Header */}
+      <div style={{ background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.09)', padding: '13px 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}>
+        <button style={{ ...S.btn, padding: '5px 8px', fontSize: 16 }} onClick={onClose}>←</button>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700 }}>My Profile</div>
+        {saved && <div style={{ marginLeft: 'auto', fontSize: 11, color: '#0F6E56', background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 10, padding: '4px 10px', fontWeight: 600, animation: 'pfFadeIn .2s' }}>✓ Saved</div>}
+      </div>
+
+      {/* Identity card */}
+      <div style={{ padding: '1.5rem 1.25rem 0', animation: 'pfFadeIn .25s ease-out' }}>
+        <div style={{ background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, padding: '1.75rem 1.25rem', textAlign: 'center', color: '#fff', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(29,158,117,0.25)' }}>
+          <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+          <div style={{ position: 'absolute', bottom: -50, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+
+          {/* Avatar with edit overlay */}
+          <div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
+            <div style={{ width: 110, height: 110, borderRadius: '50%', background: avatar ? `url(${avatar}) center/cover` : 'rgba(255,255,255,0.18)', border: '3px solid rgba(255,255,255,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: '#fff', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+              {!avatar && initials}
+            </div>
+            <button
+              type="button"
+              className="pf-avatar-edit"
+              onClick={() => fileRef.current?.click()}
+              style={{ position: 'absolute', bottom: 2, right: 2, width: 34, height: 34, borderRadius: '50%', background: '#1D9E75', border: '2.5px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: '#fff', transition: 'all .15s', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
+              title="Upload photo"
+            >
+              📷
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarPick} />
+          </div>
+
+          {avatar && (
+            <div style={{ marginBottom: 10 }}>
+              <button onClick={removeAvatar} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 12, border: '0.5px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.12)', color: '#fff', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>Remove photo</button>
+            </div>
+          )}
+
+          {/* Name */}
+          {editingName ? (
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'center', maxWidth: 260, margin: '0 auto' }}>
+              <input
+                autoFocus
+                value={name}
+                onChange={e => setName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setName(profile.name || ''); setEditingName(false); } }}
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 15, fontWeight: 600, textAlign: 'center', fontFamily: "'Sora',sans-serif", outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#0F6E56' }}
+                placeholder="Your name"
+                maxLength={30}
+              />
+              <button onClick={saveName} style={{ padding: '8px 12px', borderRadius: 10, border: 'none', background: '#fff', color: '#0F6E56', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>✓</button>
+            </div>
+          ) : (
+            <div onClick={() => setEditingName(true)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px' }}>
+                {name || 'Tap to add name'}
+              </div>
+              <span style={{ fontSize: 13, opacity: 0.75 }}>✎</span>
+            </div>
+          )}
+          <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, position: 'relative', zIndex: 1 }}>
+            {stats.tripCount} trip{stats.tripCount === 1 ? '' : 's'} · {stats.uniqueDests} destination{stats.uniqueDests === 1 ? '' : 's'}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats strip */}
+      <div style={{ padding: '1rem 1.25rem 0', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+        {[
+          { label: 'Trips',    val: stats.tripCount },
+          { label: 'Places',   val: stats.uniqueDests },
+          { label: 'Photos',   val: stats.photoCount },
+          { label: 'Badges',   val: earned.length },
+        ].map(s => (
+          <div key={s.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 12, padding: '10px 6px', textAlign: 'center' }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#1a1a18' }}>{s.val}</div>
+            <div style={{ fontSize: 10, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600, marginTop: 2 }}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Badges progress */}
+      <div style={{ padding: '1.5rem 1.25rem 0.5rem', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700 }}>🏆 Travel Badges</div>
+        <div style={{ fontSize: 12, color: '#6b6b68' }}>{earned.length}/{BADGE_DEFS.length} earned · {earnedPct}%</div>
+      </div>
+      <div style={{ padding: '0 1.25rem' }}>
+        <div style={{ height: 6, background: '#E8E6DE', borderRadius: 6, overflow: 'hidden' }}>
+          <div style={{ width: `${earnedPct}%`, height: '100%', background: 'linear-gradient(90deg,#1D9E75,#0F6E56)', transition: 'width .4s' }} />
+        </div>
+      </div>
+
+      {/* Earned badges */}
+      {earned.length > 0 && (
+        <>
+          <div style={{ padding: '1.25rem 1.25rem 0.5rem', fontSize: 11, color: '#0F6E56', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>Earned</div>
+          <div style={{ padding: '0 1.25rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
+            {earned.map((b, i) => (
+              <div key={b.id} className="pf-badge" style={{
+                background: 'linear-gradient(135deg,#fff,#F0FAF5)',
+                border: '0.5px solid #9FE1CB',
+                borderRadius: 14, padding: '14px 10px', textAlign: 'center',
+                cursor: 'default', transition: 'all .18s',
+                animation: `pfBadgePop .3s ease-out ${i * 0.04}s both`,
+                position: 'relative', overflow: 'hidden',
+              }}>
+                <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 700, color: '#0F6E56', background: '#E1F5EE', padding: '2px 6px', borderRadius: 6 }}>✓</div>
+                <div style={{ fontSize: 32, marginBottom: 6, lineHeight: 1 }}>{b.emoji}</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#0F6E56', marginBottom: 3 }}>{b.name}</div>
+                <div style={{ fontSize: 10.5, color: '#6b6b68', lineHeight: 1.4 }}>{b.desc}</div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Locked badges */}
+      {locked.length > 0 && (
+        <>
+          <div style={{ padding: '1.5rem 1.25rem 0.5rem', fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>In progress</div>
+          <div style={{ padding: '0 1.25rem 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
+            {locked.map(b => (
+              <div key={b.id} className="pf-badge-locked" style={{
+                background: '#fff', border: '0.5px dashed rgba(0,0,0,0.15)',
+                borderRadius: 14, padding: '14px 10px', textAlign: 'center',
+                transition: 'all .18s', opacity: 0.78, position: 'relative',
+              }}>
+                <div style={{ fontSize: 32, marginBottom: 6, lineHeight: 1, filter: 'grayscale(0.7)', opacity: 0.55 }}>{b.emoji}</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#6b6b68', marginBottom: 3 }}>{b.name}</div>
+                <div style={{ fontSize: 10.5, color: '#9a9a96', lineHeight: 1.4 }}>{b.desc}</div>
+                {b.progress && (
+                  <div style={{ marginTop: 8, fontSize: 10, fontWeight: 700, color: '#1D9E75', background: '#F1EFE8', borderRadius: 8, padding: '2px 8px', display: 'inline-block' }}>
+                    {b.progress(stats)}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div style={{ height: '2rem' }} />
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
    APP SHELL
 ═══════════════════════════════════════════════════════ */
 export default function App() {
@@ -3799,6 +4050,19 @@ export default function App() {
   const [tripLoading, setTripLoading] = useState(false);
   const [newTripModal, setNewTripModal] = useState(null);
   const [tab, setTab] = useState('main');
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profile, setProfile] = useState(() => {
+    try {
+      const raw = localStorage.getItem('travelbae_profile');
+      if (raw) return JSON.parse(raw);
+    } catch { /* ignore */ }
+    return { name: '', avatar: null };
+  });
+
+  const saveProfile = (next) => {
+    setProfile(next);
+    try { localStorage.setItem('travelbae_profile', JSON.stringify(next)); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     if (!authToken) return;
@@ -4024,6 +4288,21 @@ export default function App() {
 
       {/* Top Bar */}
       <div style={S.topBar}>
+        {/* Profile button — always top-left */}
+        <button
+          onClick={() => setProfileOpen(true)}
+          title="My profile"
+          style={{
+            width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+            border: '1.5px solid rgba(0,0,0,0.09)', background: profile.avatar ? `url(${profile.avatar}) center/cover` : (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'),
+            color: '#fff', fontWeight: 700, fontSize: 12, fontFamily: "'Sora',sans-serif",
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', padding: 0, marginRight: 4,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+          }}
+        >
+          {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
+        </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0' }}>
           {activeTrip && <button style={{ ...S.btn, padding: '5px 8px', marginRight: 2, fontSize: 16 }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>←</button>}
           <div style={{ width: 34, height: 34, background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
@@ -4116,6 +4395,15 @@ export default function App() {
       </div>
 
       {/* {activeTrip && activeTripData && <TripChatbot trip={activeTripData} myNickname={myNickname} />} */}
+
+      {profileOpen && (
+        <ProfilePage
+          profile={profile}
+          onSave={saveProfile}
+          onClose={() => setProfileOpen(false)}
+          trips={trips}
+        />
+      )}
     </div>
   );
 }
