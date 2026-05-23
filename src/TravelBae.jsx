@@ -4032,7 +4032,6 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
       title: 'Settings',
       items: [
         { id: 'notifications', icon: '🔔', label: 'Notifications',    sub: 'Trip reminders & updates',                          accent: '#FF6B35', action: 'view' },
-        { id: 'privacy',       icon: '🛡️', label: 'Privacy & Safety', sub: 'Control your data',                                accent: '#534AB7', action: 'view' },
         { id: 'currency',      icon: '💱', label: 'Default Currency', sub: `${currencyMeta.code} — ${currencyMeta.name}`,       accent: '#0F6E56', action: 'view' },
         { id: 'help',          icon: '❓', label: 'Help & Support',   sub: 'FAQs and contact us',                              accent: '#1D9E75', action: 'view' },
       ],
