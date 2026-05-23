@@ -400,7 +400,8 @@ import {
   addContact,
   deleteContact,
   addPhoto,
-  deletePhoto
+  deletePhoto,
+  deleteAccount
 } from './api';
 
 // Add these two to your api.js:
@@ -3823,13 +3824,19 @@ function computeProfileStats(trips) {
   };
 }
 
-function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
+function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trips }) {
   const [view, setView] = useState('hub'); // 'hub' | 'badges' | 'stats' | 'history' | 'notifications' | 'currency' | 'privacy' | 'help' | 'about'
   const [name, setName] = useState(profile.name || '');
   const [avatar, setAvatar] = useState(profile.avatar || null);
   const [editingName, setEditingName] = useState(false);
   const [saved, setSaved] = useState(false);
   const [toast, setToast] = useState('');
+  const [rateModal, setRateModal] = useState(false);
+  const [rateStars, setRateStars] = useState(() => {
+    const saved = parseInt(localStorage.getItem('travelbae_rating') || '0', 10);
+    return Number.isFinite(saved) ? saved : 0;
+  });
+  const [rateHover, setRateHover] = useState(0);
   const [prefs, setPrefs] = useState(() => {
     try {
       const raw = localStorage.getItem('travelbae_prefs');
@@ -3997,7 +4004,23 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
   };
 
   const handleRate = () => {
-    showToast('Thanks for the love! 💚');
+    setRateHover(0);
+    setRateModal(true);
+  };
+
+  const submitRating = (stars) => {
+    if (!stars) return;
+    setRateStars(stars);
+    localStorage.setItem('travelbae_rating', String(stars));
+    setRateModal(false);
+    const msgs = {
+      1: 'Thanks — we’ll do better. 💚',
+      2: 'Got it. We’ll keep improving. 💚',
+      3: 'Thanks for the feedback! 💚',
+      4: 'Glad you’re enjoying it! 💚',
+      5: 'You just made our day! 💚',
+    };
+    showToast(msgs[stars] || 'Thanks for rating! 💚');
   };
 
   const handleFeedback = () => {
@@ -4088,6 +4111,73 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', background: '#1a1a18', color: '#fff', padding: '10px 16px', borderRadius: 22, fontSize: 13, fontWeight: 500, zIndex: 600, boxShadow: '0 8px 24px rgba(0,0,0,0.25)', animation: 'pfFadeIn .2s' }}>
           {toast}
+        </div>
+      )}
+
+      {/* Rate TravelBae modal */}
+      {rateModal && (
+        <div
+          onClick={() => setRateModal(false)}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(20,20,18,0.55)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 700, padding: '1rem', animation: 'pfFadeIn .15s' }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ background: '#fff', borderRadius: 22, padding: '1.75rem 1.5rem 1.5rem', width: '100%', maxWidth: 360, boxShadow: '0 20px 60px rgba(0,0,0,0.25)', textAlign: 'center', animation: 'pfSlideIn .2s ease-out', position: 'relative' }}
+          >
+            <button
+              onClick={() => setRateModal(false)}
+              aria-label="Close"
+              style={{ position: 'absolute', top: 10, right: 10, width: 32, height: 32, border: 'none', background: 'transparent', fontSize: 20, color: '#9a9a96', cursor: 'pointer', lineHeight: 1 }}
+            >
+              ×
+            </button>
+            <div style={{ fontSize: 38, marginBottom: 8 }}>✨</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 700, color: '#1a1a18', marginBottom: 6 }}>
+              Enjoying TravelBae?
+            </div>
+            <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 18, lineHeight: 1.5 }}>
+              Tap a star to rate your experience.
+            </div>
+            <div
+              onMouseLeave={() => setRateHover(0)}
+              style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 18 }}
+            >
+              {[1, 2, 3, 4, 5].map(n => {
+                const active = (rateHover || rateStars) >= n;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    onMouseEnter={() => setRateHover(n)}
+                    onFocus={() => setRateHover(n)}
+                    onClick={() => submitRating(n)}
+                    aria-label={`${n} star${n > 1 ? 's' : ''}`}
+                    style={{
+                      width: 46, height: 46, border: 'none', background: 'transparent',
+                      fontSize: 34, lineHeight: 1, cursor: 'pointer',
+                      color: active ? '#F5B301' : '#E4E2D9',
+                      transform: active ? 'scale(1.08)' : 'scale(1)',
+                      transition: 'transform .12s, color .12s',
+                      padding: 0,
+                    }}
+                  >
+                    ★
+                  </button>
+                );
+              })}
+            </div>
+            <div style={{ fontSize: 12, color: '#9a9a96', minHeight: 16, marginBottom: 16 }}>
+              {(rateHover || rateStars)
+                ? ['', 'Not great', 'Could be better', 'It’s okay', 'Pretty good!', 'Loved it!'][rateHover || rateStars]
+                : (rateStars ? `You rated ${rateStars}★` : 'Pick a rating')}
+            </div>
+            <button
+              onClick={() => setRateModal(false)}
+              style={{ width: '100%', padding: '11px', borderRadius: 12, border: '0.5px solid rgba(0,0,0,0.08)', background: '#fafaf6', color: '#6b6b68', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}
+            >
+              Maybe later
+            </button>
+          </div>
         </div>
       )}
 
@@ -4200,20 +4290,38 @@ function ProfilePage({ profile, onSave, onClose, onLogout, trips }) {
             </div>
           ))}
 
-          {/* Log out */}
-          {onLogout && (
-            <div style={{ padding: '1rem 1.25rem 2rem' }}>
-              <button
-                onClick={onLogout}
-                style={{
-                  width: '100%', padding: '13px', borderRadius: 14,
-                  border: '0.5px solid #F5C4B3', background: '#fff', color: '#993C1D',
-                  fontSize: 14, fontWeight: 600, cursor: 'pointer',
-                  fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                }}
-              >
-                🚪 Log out
-              </button>
+          {/* Log out + Delete account */}
+          {(onLogout || onDeleteAccount) && (
+            <div style={{ padding: '1rem 1.25rem 0.5rem', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  style={{
+                    width: '100%', padding: '13px', borderRadius: 14,
+                    border: '0.5px solid #F5C4B3', background: '#fff', color: '#993C1D',
+                    fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                    fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  🚪 Log out
+                </button>
+              )}
+              {onDeleteAccount && (
+                <button
+                  onClick={onDeleteAccount}
+                  style={{
+                    width: '100%', padding: '13px', borderRadius: 14,
+                    border: '0.5px solid #C44545', background: '#C44545', color: '#fff',
+                    fontSize: 14, fontWeight: 600, cursor: 'pointer',
+                    fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  }}
+                >
+                  🗑️ Delete account
+                </button>
+              )}
+              <div style={{ fontSize: 11, color: '#9a9a96', textAlign: 'center', marginTop: 4, lineHeight: 1.5 }}>
+                Deleting your account permanently wipes your profile and any trips where you're the only member.
+              </div>
             </div>
           )}
         </div>
@@ -4754,6 +4862,25 @@ export default function App() {
 
   const handleLogout = () => { localStorage.removeItem('travelbae_token'); setAuthToken(null); setTrips([]); setActiveTrip(null); };
 
+  const handleDeleteAccount = async () => {
+    const first = window.confirm('Delete your TravelBae account?\n\nThis permanently removes your profile, trip memberships, and any trips where you were the only member (along with their expenses, contacts, photos and itinerary).\n\nThis cannot be undone.');
+    if (!first) return;
+    const typed = window.prompt('Type DELETE to confirm permanent account deletion.');
+    if (typed !== 'DELETE') return;
+    try {
+      await deleteAccount();
+      localStorage.removeItem('travelbae_token');
+      localStorage.removeItem('travelbae_profile');
+      localStorage.removeItem('travelbae_prefs');
+      setAuthToken(null);
+      setTrips([]);
+      setActiveTrip(null);
+      window.alert('Your account has been deleted.');
+    } catch (err) {
+      window.alert('Could not delete account: ' + (err.message || 'Unknown error'));
+    }
+  };
+
   const handleCreateTrip = async (tripData) => {
     const { trip } = await createTrip(tripData);
     setTrips(ts => [trip, ...ts]);
@@ -5035,6 +5162,7 @@ export default function App() {
           onSave={saveProfile}
           onClose={() => setProfileOpen(false)}
           onLogout={() => { setProfileOpen(false); handleLogout(); }}
+          onDeleteAccount={() => { setProfileOpen(false); handleDeleteAccount(); }}
           trips={trips}
         />
       )}
