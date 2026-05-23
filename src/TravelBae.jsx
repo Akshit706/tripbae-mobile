@@ -2029,6 +2029,50 @@ function SplitPage({ trip, myNickname }) {
 
   const top3 = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 3);
 
+  const topPayer = memberNames.reduce((a, b) => (payTotal[a] || 0) > (payTotal[b] || 0) ? a : b, memberNames[0] || '');
+  const topPayerAmount = topPayer ? (payTotal[topPayer] || 0) : 0;
+  const topPayerSharePct = total > 0 ? Math.round((topPayerAmount / total) * 100) : 0;
+
+  const positiveBalances = memberNames
+    .map(m => ({ name: m, balance: balances[m] || 0 }))
+    .filter(x => x.balance > 0.5)
+    .sort((a, b) => b.balance - a.balance);
+  const negativeBalances = memberNames
+    .map(m => ({ name: m, balance: balances[m] || 0 }))
+    .filter(x => x.balance < -0.5)
+    .sort((a, b) => a.balance - b.balance);
+
+  const topGetsBack = positiveBalances[0] || null;
+  const topOwes = negativeBalances[0] || null;
+
+  const funInsightLines = [];
+  if (expenses.length === 0) {
+    funInsightLines.push('No spends yet. Wallets are meditating and UPI is on standby.');
+  } else {
+    if (budget && budgetPct <= 60 && daysElapsed >= Math.max(2, Math.round(days * 0.4))) {
+      funInsightLines.push('The crew is low-key saving money. This trip has strong middle-class superhero energy.');
+    }
+    if (budget && budgetPct >= 90) {
+      funInsightLines.push('Budget is in thriller mode now. Every chai deserves committee approval.');
+    }
+    if (topPayer && topPayerSharePct >= 55) {
+      funInsightLines.push(`${topPayer} has paid ${topPayerSharePct}% of the bill so far. Main character wallet behavior.`);
+    }
+    if (topGetsBack) {
+      funInsightLines.push(`${topGetsBack.name} is waiting for ₹${Math.round(topGetsBack.balance).toLocaleString('en-IN')} back. Finance villain origin story loading.`);
+    }
+    if (topOwes) {
+      funInsightLines.push(`${topOwes.name} currently owes ₹${Math.round(Math.abs(topOwes.balance)).toLocaleString('en-IN')}. Traveling on vibes and pending UPI requests.`);
+    }
+    if (settlements.length === 0) {
+      funInsightLines.push('Plot twist: everyone is settled. This is rarer than finding a clean public washroom on a road trip.');
+    }
+  }
+  if (funInsightLines.length === 0) {
+    funInsightLines.push('Money flow looks balanced right now. Calm spreadsheets, happy friendships.');
+  }
+  const funInsightLine = funInsightLines[(expenses.length + settlements.length + memberNames.length) % funInsightLines.length];
+
   function renderCharts() {
     Object.values(chartInstances.current).forEach(c => { try { c.destroy(); } catch (_) {} });
     chartInstances.current = {};
@@ -2499,6 +2543,11 @@ function SplitPage({ trip, myNickname }) {
               </div>
             ))}
           </div>
+          <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FFF6DA,#FDEBD2)', border: '0.5px solid #F5D08D', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', right: 10, top: 6, fontSize: 26, opacity: 0.35 }}>💸</div>
+            <div style={{ fontSize: 11, color: '#9A6400', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 600 }}>Finance gossip</div>
+            <div style={{ fontSize: 14, color: '#6B4600', lineHeight: 1.5, paddingRight: 20 }}>{funInsightLine}</div>
+          </div>
           <div style={{ display: 'grid', gridTemplateColumns: budget ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 10 }}>
             {budget && (
               <div style={{ ...S.card, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.25rem 1rem' }}>
@@ -2582,7 +2631,6 @@ function SplitPage({ trip, myNickname }) {
           )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {memberNames.length > 0 && (() => {
-              const topPayer = memberNames.reduce((a, b) => (payTotal[a] || 0) > (payTotal[b] || 0) ? a : b);
               const topCat = CATS.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id])[0];
               return (
                 <>
