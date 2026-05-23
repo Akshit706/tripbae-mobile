@@ -1509,6 +1509,9 @@ function ContactsPage({ trip, myNickname, isSolo }) {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', role: '', cat: 'driver', phone: '', note: '' });
+  const [emergencyBannerDismissed, setEmergencyBannerDismissed] = useState(
+    () => localStorage.getItem(`travelbae_contacts_emg_dismissed_${trip.id}`) === '1'
+  );
 
   const handleAdd = async () => {
     if (!form.name.trim() || !form.phone.trim()) return;
@@ -1641,6 +1644,56 @@ function ContactsPage({ trip, myNickname, isSolo }) {
           <div style={{ fontSize: 11, color: '#6b6b68' }}>saved</div>
         </div>
       </div>
+
+      {/* Emergency / guardian contact reminder */}
+      {(() => {
+        const dismissKey = `travelbae_contacts_emg_dismissed_${trip.id}`;
+        if (emergencyBannerDismissed) return null;
+        const isEmg = c => c.cat === 'guardian' || c.cat === 'emergency';
+        const membersMissing = isSolo
+          ? (contacts.some(isEmg) ? [] : [myNickname || 'You'])
+          : memberNames.filter(m => {
+              const ml = (m || '').toLowerCase();
+              return !contacts.some(c => isEmg(c) && (c.addedBy || '').toLowerCase() === ml);
+            });
+        if (membersMissing.length === 0) return null;
+        return (
+          <div style={{ background: 'linear-gradient(135deg,#FFF6E0,#FFEAD6)', border: '0.5px solid #F2C679', borderRadius: 16, padding: '12px 14px', marginBottom: '1.1rem', display: 'flex', alignItems: 'flex-start', gap: 12, position: 'relative' }}>
+            <div style={{ width: 38, height: 38, borderRadius: 11, background: '#FFE0A8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, flexShrink: 0 }}>🚨</div>
+            <div style={{ flex: 1, minWidth: 0, paddingRight: 18 }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13.5, fontWeight: 700, color: '#7A4A0B', marginBottom: 2 }}>
+                Add a guardian or emergency contact
+              </div>
+              <div style={{ fontSize: 12, color: '#7A4A0B', lineHeight: 1.5, opacity: 0.85 }}>
+                {isSolo
+                  ? 'Save at least one trusted contact we can reach in an emergency.'
+                  : `Each traveller should add at least one. Still pending: ${membersMissing.slice(0, 3).join(', ')}${membersMissing.length > 3 ? ` +${membersMissing.length - 3} more` : ''}.`}
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 9, flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => { setForm({ name: '', role: '', cat: 'guardian', phone: '', note: '' }); setShowForm(true); }}
+                  style={{ background: '#7A4A0B', color: '#fff', border: 'none', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}
+                >
+                  + Add guardian
+                </button>
+                <button
+                  onClick={() => { setForm({ name: '', role: '', cat: 'emergency', phone: '', note: '' }); setShowForm(true); }}
+                  style={{ background: '#fff', color: '#7A4A0B', border: '0.5px solid #F2C679', borderRadius: 10, padding: '6px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}
+                >
+                  🚨 Add emergency
+                </button>
+              </div>
+            </div>
+            <button
+              onClick={() => { localStorage.setItem(dismissKey, '1'); setEmergencyBannerDismissed(true); }}
+              aria-label="Dismiss"
+              style={{ position: 'absolute', top: 8, right: 10, width: 22, height: 22, border: 'none', background: 'transparent', fontSize: 16, color: '#7A4A0B', cursor: 'pointer', lineHeight: 1, opacity: 0.6 }}
+            >
+              ×
+            </button>
+          </div>
+        );
+      })()}
 
       {/* Search */}
       <div style={{ marginBottom: '0.75rem' }}>
