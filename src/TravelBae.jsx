@@ -393,6 +393,7 @@ import { supabase } from './supabase';
 import {
   aiChat,
   getTrips,
+  getMe,
   createTrip,
   joinTrip,
   addExpense,
@@ -594,7 +595,7 @@ const S = {
   soloSpinner: { width: 36, height: 36, border: '3px solid #EEEDFE', borderTopColor: '#7F77DD', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
 };
 
-function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive }) {
+function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive, profileName }) {
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
   const [showPast, setShowPast] = useState(false);
@@ -668,8 +669,12 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [form, setForm] = useState({
     groupName: '', destination: '', emoji: '✈️', arrival: today, departure: '',
     arrivalSlot: 'morning', departureSlot: 'morning',
-    people: 2, createdBy: '', budget: '',
+    people: 2, createdBy: profileName || '', budget: '',
   });
+
+  useEffect(() => {
+    setForm(f => ({ ...f, createdBy: profileName || '' }));
+  }, [profileName]);
 
   const EMOJI_OPTIONS_GROUP = ['✈️','🏖️','🏔️','🏰','🌴','🗺️','🎡','🛕','🌅','🌿','🎭','🏛️'];
   const EMOJI_OPTIONS_SOLO  = ['🎒','🧳','🛺','🚂','🏍️','🌏','🪂','🧗','🌄','☕','📖','🦋'];
@@ -678,7 +683,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const pastTrips   = trips.filter(t =>  t.completed);
 
   const handleCreate = async () => {
-    if (!form.groupName || !form.destination || !form.arrival || !form.departure || !form.createdBy) return;
+    if (!form.groupName || !form.destination || !form.arrival || !form.departure) return;
     setCreating(true);
     try {
       await onCreateTrip({
@@ -692,10 +697,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         isSolo: isSoloMode,
         people: isSoloMode ? 1 : parseInt(form.people),
         budget: form.budget ? parseFloat(form.budget) : null,
-        nickname: form.createdBy,
+        nickname: (profileName || form.createdBy || 'Me').trim(),
       });
       setShowCreate(false);
-      setForm({ groupName: '', destination: '', emoji: '✈️', arrival: today, departure: '', people: 2, createdBy: '', budget: '' });
+      setForm({ groupName: '', destination: '', emoji: '✈️', arrival: today, departure: '', people: 2, createdBy: profileName || '', budget: '' });
     } catch (err) {
       alert('Could not create trip: ' + err.message);
     }
@@ -1086,16 +1091,12 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               <label style={S.label}>Budget ₹ (optional)</label>
               <input style={S.input} type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
             </div>
-            <div style={{ gridColumn: isSoloMode ? '1/-1' : 'auto' }}>
-              <label style={S.label}>Your Name *</label>
-              <input style={S.input} value={form.createdBy} onChange={e => setForm(f => ({ ...f, createdBy: e.target.value }))} placeholder="e.g. Arjun" />
-            </div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
             <button
               style={{ ...S.btn, ...(isSoloMode ? S.btnSolo : S.btnP), flex: 1, justifyContent: 'center', padding: '11px', fontSize: 14, borderRadius: 12, opacity: creating ? 0.6 : 1 }}
               onClick={handleCreate}
-              disabled={!form.groupName || !form.destination || !form.arrival || !form.departure || !form.createdBy || creating}>
+              disabled={!form.groupName || !form.destination || !form.arrival || !form.departure || creating}>
               {creating ? 'Creating…' : isSoloMode ? '🎒 Start Solo Adventure' : '🚀 Create & Get Share Code'}
             </button>
             <button style={S.btn} onClick={() => setShowCreate(false)}>✕</button>
@@ -1186,11 +1187,13 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 </div>
               )}
 
-              <div onClick={e => { e.stopPropagation(); copyCode(trip.shareCode, trip.id); }}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#EEEDFE', border: '0.5px solid #AFA9EC', borderRadius: 20, padding: '5px 12px', cursor: 'pointer', flexShrink: 0 }}>
-                <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 700, color: '#3C3489', letterSpacing: 1 }}>{trip.shareCode}</span>
-                <span style={{ fontSize: 11, color: copied === trip.id ? '#0F6E56' : '#534AB7' }}>{copied === trip.id ? '✓ Copied!' : '📋'}</span>
-              </div>
+              {!trip.isSolo && (
+                <div onClick={e => { e.stopPropagation(); copyCode(trip.shareCode, trip.id); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#EEEDFE', border: '0.5px solid #AFA9EC', borderRadius: 20, padding: '5px 12px', cursor: 'pointer', flexShrink: 0 }}>
+                  <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 700, color: '#3C3489', letterSpacing: 1 }}>{trip.shareCode}</span>
+                  <span style={{ fontSize: 11, color: copied === trip.id ? '#0F6E56' : '#534AB7' }}>{copied === trip.id ? '✓ Copied!' : '📋'}</span>
+                </div>
+              )}
 
               <div style={{ position: 'relative', flexShrink: 0 }}>
                 <button
@@ -1249,16 +1252,20 @@ function ShareCodeModal({ trip, onDismiss }) {
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{isSolo ? 'Adventure Ready! 🎒' : 'Trip Created! 🎉'}</div>
         <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 24, lineHeight: 1.6 }}>
           {isSolo
-            ? <>Your solo trip <strong>{trip.groupName}</strong> is set up. Save your code to find it again.</>
+            ? <>Your solo trip <strong>{trip.groupName}</strong> is set up. Jump in and start tracking your journey.</>
             : <>Share this code with your friends so they can join <strong>{trip.groupName}</strong></>}
         </div>
-        <div style={{ background: isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : '#EEEDFE', border: '0.5px solid #AFA9EC', borderRadius: 14, padding: '18px', marginBottom: 18 }}>
-          <div style={{ fontSize: 11, color: '#534AB7', fontWeight: 600, letterSpacing: .4, textTransform: 'uppercase', marginBottom: 8 }}>Your {isSolo ? 'Trip' : 'Share'} Code</div>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: '#26215C', letterSpacing: 3 }}>{trip.shareCode}</div>
-        </div>
-        <button style={{ ...S.btn, ...(copied ? { background: '#E1F5EE', color: '#0F6E56', border: '0.5px solid #9FE1CB' } : (isSolo ? S.btnSolo : S.btnP)), width: '100%', justifyContent: 'center', padding: '12px', fontSize: 15, borderRadius: 12, marginBottom: 10 }} onClick={copy}>
-          {copied ? '✓ Copied!' : '📋 Copy Code'}
-        </button>
+        {!isSolo && (
+          <>
+            <div style={{ background: '#EEEDFE', border: '0.5px solid #AFA9EC', borderRadius: 14, padding: '18px', marginBottom: 18 }}>
+              <div style={{ fontSize: 11, color: '#534AB7', fontWeight: 600, letterSpacing: .4, textTransform: 'uppercase', marginBottom: 8 }}>Your Share Code</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: '#26215C', letterSpacing: 3 }}>{trip.shareCode}</div>
+            </div>
+            <button style={{ ...S.btn, ...(copied ? { background: '#E1F5EE', color: '#0F6E56', border: '0.5px solid #9FE1CB' } : S.btnP), width: '100%', justifyContent: 'center', padding: '12px', fontSize: 15, borderRadius: 12, marginBottom: 10 }} onClick={copy}>
+              {copied ? '✓ Copied!' : '📋 Copy Code'}
+            </button>
+          </>
+        )}
         <button style={{ ...S.btn, width: '100%', justifyContent: 'center', padding: '10px', fontSize: 14, borderRadius: 12 }} onClick={onDismiss}>
           {isSolo ? 'Start Exploring →' : 'Open Trip →'}
         </button>
@@ -1277,7 +1284,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [showBudgetEdit, setShowBudgetEdit] = useState(false);
   const [editBudget, setEditBudget] = useState(String(budget || ''));
   const [filterCat, setFilterCat] = useState('all');
-  const [section, setSection] = useState('log');
+  const [section, setSection] = useState('expenses');
   const [saving, setSaving] = useState(false);
   const todayStr = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' });
@@ -1292,6 +1299,36 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   CATS.forEach(c => { catTotals[c.id] = 0; });
   expenses.forEach(e => { catTotals[e.cat] = (catTotals[e.cat] || 0) + e.amount; });
   const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
+  const top3 = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 3);
+  const projected = Math.round(dailyAvg * days);
+  const activeCats = CATS.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id]);
+  const topCatMeta = CATS.find(c => c.id === topCat?.[0]) || null;
+  const overBy = budget ? Math.max(0, projected - budget) : 0;
+  const underBy = budget ? Math.max(0, budget - projected) : 0;
+  const uniqueSpendDays = new Set(expenses.map(e => e.date)).size;
+
+  const soloFunLines = [];
+  if (expenses.length === 0) {
+    soloFunLines.push('No expenses yet. Your wallet currently thinks this is a spiritual retreat.');
+  } else {
+    if (budget && budgetPct <= 60 && uniqueSpendDays >= Math.max(2, Math.round(days * 0.4))) {
+      soloFunLines.push('You are spending like a pro traveler, not a panic buyer at airport shops.');
+    }
+    if (budget && budgetPct >= 90) {
+      soloFunLines.push('Budget alert: your card is brave, but your future self is filing a complaint.');
+    }
+    if (topCatMeta && total > 0) {
+      const catPct = Math.round((catTotals[topCatMeta.id] / total) * 100);
+      soloFunLines.push(`${topCatMeta.label} owns ${catPct}% of your spend. Priorities: crystal clear.`);
+    }
+    if (top3[0]) {
+      soloFunLines.push(`Biggest spend was ${top3[0].desc}. Iconic decision, no notes.`);
+    }
+  }
+  if (soloFunLines.length === 0) {
+    soloFunLines.push('Your solo money flow looks balanced. Calm plan, clean execution.');
+  }
+  const soloInsightLine = soloFunLines[(expenses.length + uniqueSpendDays + days) % soloFunLines.length];
   const filtered = filterCat === 'all' ? expenses : expenses.filter(e => e.cat === filterCat);
   const sortedFiltered = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -1327,11 +1364,28 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   };
 
   const CAT_COLORS = { food: '#BA7517', transport: '#0F6E56', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E'};
+  const SOLO_ACCENT = '#0F6E56';
+  const SOLO_ACCENT_2 = '#1D9E75';
+  const SOLO_ACCENT_BG = '#E1F5EE';
+  const SOLO_ACCENT_BORDER = '#9FE1CB';
+  const SOLO_ACCENT_TEXT = '#085041';
+  const SOLO_WARN = '#D85A30';
+  const SECTION_TABS = [
+    { id: 'expenses', label: 'Expenses' },
+    { id: 'insights', label: 'Insights' },
+  ];
 
   return (
     <div>
-      <div style={{ background: 'linear-gradient(135deg,#26215C,#534AB7)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -15, right: -15, fontSize: 80, opacity: 0.08 }}>💰</div>
+      <style>{`
+        @keyframes soloFadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      <div style={{ background: 'linear-gradient(135deg,#063F32,#0F6E56 48%,#1D9E75)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -18, right: -18, fontSize: 84, opacity: 0.08 }}>💸</div>
+        <div style={{ position: 'absolute', left: -40, bottom: -48, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 4 }}>Total Spent</div>
@@ -1341,7 +1395,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           {budget && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', marginBottom: 4 }}>Budget Left</div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FCA5A5' : '#86EFAC' }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#B8F5D9' }}>
                 {budgetLeft < 0 ? '-' : ''}₹{Math.abs(Math.round(budgetLeft)).toLocaleString('en-IN')}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of ₹{budget.toLocaleString('en-IN')}</div>
@@ -1351,7 +1405,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         {budget && (
           <div>
             <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? '#FCA5A5' : '#86EFAC', transition: 'width .6s' }} />
+              <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? '#FFD3C4' : '#B8F5D9', transition: 'width .6s' }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
               <span>{budgetPct}% used</span><span>{100 - budgetPct}% remaining</span>
@@ -1359,52 +1413,45 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           </div>
         )}
         {!budget && (
-          <button onClick={() => setShowBudgetEdit(true)} style={{ ...S.btn, background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', fontSize: 12, marginTop: 8 }}>
+          <button onClick={() => setShowBudgetEdit(true)} style={{ ...S.btn, background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.88)', border: '0.5px solid rgba(255,255,255,0.26)', fontSize: 12, marginTop: 8 }}>
             + Set a budget
           </button>
         )}
         {budget && (
-          <button onClick={() => { setEditBudget(String(budget)); setShowBudgetEdit(true); }} style={{ ...S.btn, background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.6)', border: '0.5px solid rgba(255,255,255,0.15)', fontSize: 11, marginTop: 8 }}>
+          <button onClick={() => { setEditBudget(String(budget)); setShowBudgetEdit(true); }} style={{ ...S.btn, background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', fontSize: 11, marginTop: 8 }}>
             ✏️ Edit budget
           </button>
         )}
       </div>
 
       {showBudgetEdit && (
-        <div style={{ ...S.card, border: '0.5px solid #AFA9EC', background: '#fdfcff', marginBottom: '1rem' }}>
+        <div style={{ ...S.card, border: `0.5px solid ${SOLO_ACCENT_BORDER}`, background: '#f9fffe', marginBottom: '1rem' }}>
           <label style={S.label}>Total trip budget ₹</label>
           <input style={S.input} type="number" value={editBudget} onChange={e => setEditBudget(e.target.value)} placeholder="e.g. 15000" autoFocus />
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <button style={{ ...S.btn, ...S.btnSolo, flex: 1, justifyContent: 'center', padding: '9px' }} onClick={() => { const v = parseFloat(editBudget); if (!isNaN(v) && v > 0) setBudget(v); setShowBudgetEdit(false); }}>✓ Save</button>
+            <button style={{ ...S.btn, ...S.btnP, flex: 1, justifyContent: 'center', padding: '9px' }} onClick={() => { const v = parseFloat(editBudget); if (!isNaN(v) && v > 0) setBudget(v); setShowBudgetEdit(false); }}>✓ Save</button>
             <button style={S.btn} onClick={() => setShowBudgetEdit(false)}>✕</button>
           </div>
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: '1.25rem' }}>
-        {[
-          ['📅', `${days}d trip`, formatDateRange(trip.arrival, trip.departure)],
-          ['🏆', CATS.find(c => c.id === topCat?.[0])?.label || '—', `₹${Math.round(topCat?.[1] || 0).toLocaleString('en-IN')}`],
-          ['📝', `${expenses.length} entries`, 'logged'],
-        ].map(([icon, label, val]) => (
-          <div key={label} style={S.card}>
-            <div style={{ fontSize: 18, marginBottom: 5 }}>{icon}</div>
-            <div style={{ fontSize: 13, fontWeight: 600 }}>{label}</div>
-            <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>{val}</div>
-          </div>
-        ))}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', gap: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 13, padding: 3, flex: 1 }}>
+          {SECTION_TABS.map(t => (
+            <button key={t.id} onClick={() => setSection(t.id)}
+              style={{ flex: 1, padding: '8px 4px', fontSize: 12, fontWeight: section === t.id ? 600 : 400, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: section === t.id ? `linear-gradient(135deg,${SOLO_ACCENT_2},${SOLO_ACCENT})` : 'transparent', color: section === t.id ? '#fff' : '#6b6b68', transition: 'all .15s' }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+        {section === 'expenses' && (
+          <button style={{ ...S.btn, background: SOLO_ACCENT_BG, color: SOLO_ACCENT_TEXT, border: `0.5px solid ${SOLO_ACCENT_BORDER}`, flexShrink: 0 }} onClick={() => setShowForm(v => !v)}>+ Add</button>
+        )}
       </div>
 
-      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1.1rem', alignItems: 'center' }}>
-        {[{ id: 'log', label: '📋 Log' }, { id: 'breakdown', label: '📊 Breakdown' }].map(sec => (
-          <button key={sec.id} style={{ ...S.btn, ...(section === sec.id ? S.btnSolo : {}) }} onClick={() => setSection(sec.id)}>{sec.label}</button>
-        ))}
-        <button style={{ ...S.btn, marginLeft: 'auto', background: '#EEEDFE', color: '#534AB7', border: '0.5px solid #AFA9EC' }} onClick={() => setShowForm(v => !v)}>+ Add</button>
-      </div>
-
-      {showForm && (
-        <div style={{ ...S.card, border: '0.5px solid #AFA9EC', background: '#fdfcff', marginBottom: '1rem' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#534AB7', marginBottom: 12 }}>Add expense</div>
+      {section === 'expenses' && showForm && (
+        <div style={{ ...S.card, border: `0.5px solid ${SOLO_ACCENT_BORDER}`, background: '#f9fffe', marginBottom: '1rem' }}>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: SOLO_ACCENT, marginBottom: 12 }}>Add expense</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 10, marginBottom: 10 }}>
             <div>
               <label style={S.label}>What was it?</label>
@@ -1430,7 +1477,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           <label style={S.label}>Note (optional)</label>
           <input style={S.input} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="e.g. Amazing views!" />
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button style={{ ...S.btn, ...S.btnSolo, flex: 1, justifyContent: 'center', padding: '10px', opacity: saving ? 0.6 : 1 }}
+            <button style={{ ...S.btn, ...S.btnP, flex: 1, justifyContent: 'center', padding: '10px', opacity: saving ? 0.6 : 1 }}
               onClick={handleAdd} disabled={!form.desc || !form.amount || saving}>
               {saving ? 'Saving…' : '✓ Add expense'}
             </button>
@@ -1439,10 +1486,10 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         </div>
       )}
 
-      {section === 'log' && (
+      {section === 'expenses' && (
         <div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: '1rem' }}>
-            <button onClick={() => setFilterCat('all')} style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, ...(filterCat === 'all' ? S.btnSolo : {}) }}>All</button>
+            <button onClick={() => setFilterCat('all')} style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, ...(filterCat === 'all' ? S.btnP : {}) }}>All</button>
             {CATS.filter(c => catTotals[c.id] > 0).map(c => (
               <button key={c.id} onClick={() => setFilterCat(filterCat === c.id ? 'all' : c.id)}
                 style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, background: filterCat === c.id ? c.bg : '#fff', color: filterCat === c.id ? CAT_COLORS[c.id] : '#6b6b68', border: `0.5px solid ${filterCat === c.id ? CAT_COLORS[c.id] + '44' : 'rgba(0,0,0,0.12)'}` }}>
@@ -1473,30 +1520,108 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         </div>
       )}
 
-      {section === 'breakdown' && (
+      {section === 'insights' && (
         <div>
-          {CATS.filter(c => catTotals[c.id] > 0).map(c => {
-            const pct = Math.round(catTotals[c.id] / total * 100);
-            return (
-              <div key={c.id} style={{ ...S.card, marginBottom: 8 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: 9, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>{c.icon}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontSize: 13, fontWeight: 600 }}>{c.label}</span>
-                      <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: CAT_COLORS[c.id] || '#534AB7' }}>₹{Math.round(catTotals[c.id]).toLocaleString('en-IN')}</span>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
+            {[
+              { label: 'Avg/day', value: `₹${Math.round(dailyAvg).toLocaleString('en-IN')}`, sub: `${uniqueSpendDays || 0} spend days` },
+              { label: 'Projected', value: `₹${projected.toLocaleString('en-IN')}`, sub: budget && projected > budget ? 'above budget pace' : 'on current pace', warn: budget && projected > budget },
+              { label: 'Top cat', value: topCatMeta?.label || '—', sub: `₹${Math.round(topCat?.[1] || 0).toLocaleString('en-IN')}` },
+            ].map((s, idx) => (
+              <div key={s.label} style={{ background: s.warn ? '#FAECE7' : '#f7f6f2', borderRadius: 12, padding: '10px 12px', border: s.warn ? '0.5px solid #F5C4B3' : 'none', animation: 'soloFadeUp .35s ease-out both', animationDelay: `${idx * 55}ms` }}>
+                <div style={{ fontSize: 11, color: s.warn ? '#993C1D' : '#6b6b68', marginBottom: 3 }}>{s.label}</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: s.warn ? '#993C1D' : '#1a1a18' }}>{s.value}</div>
+                <div style={{ fontSize: 11, color: s.warn ? '#D85A30' : '#a8a8a5', marginTop: 2 }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#E1F5EE,#EAFBF5)', border: `0.5px solid ${SOLO_ACCENT_BORDER}`, position: 'relative', overflow: 'hidden', animation: 'soloFadeUp .4s ease-out both', animationDelay: '120ms' }}>
+            <div style={{ position: 'absolute', right: 10, top: 6, fontSize: 26, opacity: 0.3 }}>🎒</div>
+            <div style={{ fontSize: 11, color: SOLO_ACCENT_TEXT, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Solo money mood</div>
+            <div style={{ fontSize: 14, color: SOLO_ACCENT_TEXT, lineHeight: 1.55, paddingRight: 20 }}>{soloInsightLine}</div>
+          </div>
+
+          {budget && (
+            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FCFDFD,#F4FBF8)', animation: 'soloFadeUp .42s ease-out both', animationDelay: '170ms' }}>
+              <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Budget health</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 11, color: '#a8a8a5', marginBottom: 2 }}>Trip budget</div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#1a1a18' }}>₹{Math.round(budget).toLocaleString('en-IN')}</div>
+                </div>
+                <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '8px 10px' }}>
+                  <div style={{ fontSize: 11, color: '#a8a8a5', marginBottom: 2 }}>Projected end</div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: projected > budget ? '#993C1D' : SOLO_ACCENT }}>₹{Math.round(projected).toLocaleString('en-IN')}</div>
+                </div>
+              </div>
+
+              <div style={{ height: 7, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? SOLO_WARN : SOLO_ACCENT_2, transition: 'width .6s' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 6 }}>
+                <span style={{ color: '#a8a8a5' }}>{budgetPct}% used</span>
+                <span style={{ color: projected > budget ? '#993C1D' : SOLO_ACCENT, fontWeight: 600 }}>
+                  {projected > budget ? `Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `Under by ₹${Math.round(underBy).toLocaleString('en-IN')}`}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {activeCats.length > 0 && (
+            <div style={{ ...S.card, marginBottom: 10, animation: 'soloFadeUp .44s ease-out both', animationDelay: '220ms' }}>
+              <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Category breakdown</div>
+              {activeCats.map(c => {
+                const pct = Math.round(catTotals[c.id] / total * 100);
+                return (
+                  <div key={c.id} style={{ marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 9, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{c.icon}</div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: 13, fontWeight: 600 }}>{c.label}</span>
+                          <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: CAT_COLORS[c.id] || '#534AB7' }}>₹{Math.round(catTotals[c.id]).toLocaleString('en-IN')}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ flex: 1, height: 6, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, borderRadius: 4, background: CAT_COLORS[c.id] || '#7F77DD', transition: 'width .5s' }} />
                       </div>
                       <span style={{ fontSize: 11, color: '#6b6b68', width: 32, textAlign: 'right' }}>{pct}%</span>
                     </div>
                   </div>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
+
+          {top3.length > 0 && (
+            <div style={{ ...S.card, animation: 'soloFadeUp .46s ease-out both', animationDelay: '270ms' }}>
+              <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Top expenses</div>
+              {top3.map((exp, idx) => {
+                const cat = CATS.find(c => c.id === exp.cat) || CATS[0];
+                const pct = total > 0 ? Math.round((exp.amount / total) * 100) : 0;
+                return (
+                  <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: idx < top3.length - 1 ? '0 0 10px' : 0, borderBottom: idx < top3.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', marginBottom: idx < top3.length - 1 ? 10 : 0, animation: 'soloFadeUp .32s ease-out both', animationDelay: `${320 + idx * 45}ms` }}>
+                    <span style={{ fontSize: 18, flexShrink: 0 }}>{['🥇','🥈','🥉'][idx]}</span>
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{cat.icon}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
+                      <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2 }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
+                      <div style={{ height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 4, overflow: 'hidden', marginTop: 6 }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: CAT_COLORS[exp.cat] || '#7F77DD', borderRadius: 4 }} />
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700 }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
+                      <div style={{ fontSize: 11, color: '#a8a8a5' }}>{pct}%</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -5223,6 +5348,22 @@ export default function App() {
   }, [authToken]);
 
   useEffect(() => {
+    if (!authToken) return;
+    getMe()
+      .then(d => {
+        const accountName = d?.user?.name || d?.name || '';
+        if (!accountName) return;
+        setProfile(prev => {
+          if ((prev?.name || '') === accountName) return prev;
+          const next = { ...prev, name: accountName };
+          try { localStorage.setItem('travelbae_profile', JSON.stringify(next)); } catch (_) {}
+          return next;
+        });
+      })
+      .catch(() => {});
+  }, [authToken]);
+
+  useEffect(() => {
     if (!activeTrip) { setActiveTripData(null); setMyNickname(null); return; }
     setTripLoading(true);
     import('./api').then(({ getTrip }) => {
@@ -5292,7 +5433,12 @@ export default function App() {
   const handleCreateTrip = async (tripData) => {
     const { trip } = await createTrip(tripData);
     setTrips(ts => [trip, ...ts]);
-    setNewTripModal(trip);
+    if (trip.isSolo) {
+      setActiveTrip(trip.id);
+      setTab('main');
+    } else {
+      setNewTripModal(trip);
+    }
     // Kick off itinerary generation in background immediately
     if (trip.destination) {
       import('./api').then(async ({ generateItinerary, generateLocalTaste }) => {
@@ -5533,6 +5679,7 @@ export default function App() {
                 onDeleteTrip={handleDeleteTrip}
                 onMarkComplete={handleMarkComplete}
                 onMarkActive={handleMarkActive}
+                profileName={profile.name}
               />
         )}
 
