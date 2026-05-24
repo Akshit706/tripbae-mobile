@@ -574,23 +574,23 @@ function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, 
 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
-  root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(circle at 12% 8%, #ffffff 0%, #f8f7f3 35%, #f3f2ed 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased' },
-  topBar: { background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(12px)', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 8px 24px rgba(0,0,0,0.05)' },
+  root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(140% 120% at 10% 6%, #ffffff 0%, #f8f7f3 42%, #efece4 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased', position: 'relative', overflowX: 'hidden' },
+  topBar: { background: 'rgba(255,255,255,0.74)', backdropFilter: 'blur(16px) saturate(1.15)', borderBottom: '0.5px solid rgba(0,0,0,0.09)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 14px 30px rgba(0,0,0,0.07)' },
   logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 700, letterSpacing: '-0.45px' },
   tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#085041', fontWeight: 500, cursor: 'pointer' },
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#EEEDFE,#E6F1FB)', border: '0.5px solid #AFA9EC', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#534AB7', fontWeight: 500, cursor: 'pointer' },
-  navTabs: { background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)', borderBottom: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', padding: '0 1rem', overflowX: 'auto' },
+  navTabs: { background: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(12px) saturate(1.08)', borderBottom: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', padding: '0 1rem', overflowX: 'auto', boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.6)' },
   navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '12px 12px', fontSize: 12, fontWeight: 400, color: '#6b6b68', borderBottom: '2px solid transparent', cursor: 'pointer', background: 'none', border: 'none', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' },
   navTabActive: { color: '#0F6E56', borderBottom: '2px solid #1D9E75', fontWeight: 600 },
   soloNavTabActive: { color: '#534AB7', borderBottom: '2px solid #7F77DD', fontWeight: 600 },
-  page: { padding: '1.25rem', flex: 1, paddingBottom: '6rem' },
-  btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 11, fontSize: 13, fontWeight: 500, border: '0.5px solid rgba(0,0,0,0.15)', background: '#fff', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .15s', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' },
-  btnP: { background: '#1D9E75', color: '#fff', border: '0.5px solid #1D9E75' },
+  page: { padding: '1.25rem', flex: 1, paddingBottom: '6rem', animation: 'tbPageIn .4s cubic-bezier(.2,.7,.2,1)' },
+  btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 11, fontSize: 13, fontWeight: 500, border: '0.5px solid rgba(0,0,0,0.13)', background: 'linear-gradient(180deg,#ffffff,#f6f6f3)', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s ease, border-color .22s ease, background .22s ease', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden' },
+  btnP: { background: 'linear-gradient(135deg,#28B88A,#0F6E56)', color: '#fff', border: '0.5px solid rgba(15,110,86,0.68)', boxShadow: '0 10px 22px rgba(15,110,86,0.24)' },
   btnSolo: { background: 'linear-gradient(135deg,#7F77DD,#534AB7)', color: '#fff', border: 'none' },
   btnOrange: { background: '#FF6B35', color: '#fff', border: '0.5px solid #FF6B35' },
   btnDanger: { background: '#fff', color: '#993C1D', border: '0.5px solid #F5C4B3' },
-  card: { background: 'rgba(255,255,255,0.96)', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: '1rem 1.1rem', marginBottom: 10, boxShadow: '0 6px 20px rgba(0,0,0,0.04)' },
-  input: { fontFamily: "'DM Sans',sans-serif", padding: '10px 12px', border: '0.5px solid rgba(0,0,0,0.16)', borderRadius: 11, fontSize: 14, background: '#fff', color: '#1a1a18', width: '100%', outline: 'none', boxSizing: 'border-box', boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.02)' },
+  card: { background: 'linear-gradient(180deg,rgba(255,255,255,0.97),rgba(253,253,251,0.94))', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: '1rem 1.1rem', marginBottom: 10, boxShadow: '0 14px 30px rgba(0,0,0,0.06)', backdropFilter: 'blur(2px)', animation: 'tbCardIn .45s cubic-bezier(.2,.7,.2,1)' },
+  input: { fontFamily: "'DM Sans',sans-serif", padding: '10px 12px', border: '0.5px solid rgba(0,0,0,0.16)', borderRadius: 11, fontSize: 14, background: '#fff', color: '#1a1a18', width: '100%', outline: 'none', boxSizing: 'border-box', boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.02)', transition: 'border-color .2s ease, box-shadow .2s ease, transform .2s ease' },
   label: { fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', display: 'block', marginBottom: 5, marginTop: 10 },
   spinner: { width: 36, height: 36, border: '3px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
   soloSpinner: { width: 36, height: 36, border: '3px solid #EEEDFE', borderTopColor: '#7F77DD', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
@@ -755,11 +755,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             <p>No completed trips yet.</p>
           </div>
         )}
-        {pastTrips.map(trip => {
+        {pastTrips.map((trip, idx) => {
           const days = tripDuration(trip.arrival, trip.departure);
           const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
           return (
-            <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
+            <div className="tb-trip-card tb-stagger-item" key={trip.id} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14, animationDelay: `${idx * 55}ms` }}>
               <div style={{ position: 'relative', height: 90, overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }}
                 onClick={() => { setShowPast(false); onOpenTrip(trip.id); }}>
                 {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(30%)' }} onError={e => e.target.style.display = 'none'} />}
@@ -842,7 +842,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         />
       )}
 
-      <div style={{ background: 'linear-gradient(135deg,#0C5E49,#0F6E56 55%,#1D9E75)', borderRadius: 20, padding: '1.8rem 1.55rem', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden', boxShadow: '0 18px 36px rgba(15,110,86,0.26)' }}>
+      <div className="tb-hero-panel" style={{ background: 'linear-gradient(135deg,#0C5E49,#0F6E56 55%,#1D9E75)', borderRadius: 20, padding: '1.8rem 1.55rem', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden', boxShadow: '0 18px 36px rgba(15,110,86,0.26)' }}>
         <div style={{ position: 'absolute', top: -18, right: -18, fontSize: 92, opacity: 0.1 }}>✈️</div>
         <div style={{ position: 'absolute', left: -36, bottom: -58, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 6, lineHeight: 1.2 }}>Your Trips</div>
@@ -852,11 +852,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           <div style={{ background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.2)', borderRadius: 11, padding: '5px 10px', fontSize: 11, color: '#fff' }}>{pastTrips.length} archived</div>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button style={{ ...S.btn, background: '#fff', color: '#0F6E56', border: 'none', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 12 }}
+          <button className="tb-cta-main" style={{ ...S.btn, background: '#fff', color: '#0F6E56', border: 'none', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 12 }}
             onClick={() => { setShowCreate(true); setShowJoin(false); }}>
             + New Trip
           </button>
-          <button style={{ ...S.btn, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '0.5px solid rgba(255,255,255,0.3)', fontSize: 13, padding: '9px 16px', borderRadius: 12 }}
+          <button className="tb-cta-ghost" style={{ ...S.btn, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '0.5px solid rgba(255,255,255,0.3)', fontSize: 13, padding: '9px 16px', borderRadius: 12 }}
             onClick={() => { setShowJoin(true); setShowCreate(false); }}>
             🔗 Join with Code
           </button>
@@ -1119,7 +1119,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       )}
 
-      {activeTrips.map(trip => {
+      {activeTrips.map((trip, idx) => {
         const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
         const days = tripDuration(trip.arrival, trip.departure);
         const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
@@ -1128,7 +1128,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         const isMenuOpen = menuOpen === trip.id;
 
         return (
-          <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'visible', marginBottom: 14, position: 'relative', border: '0.5px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 24px rgba(0,0,0,0.06)' }}>
+          <div className="tb-trip-card tb-stagger-item" key={trip.id} style={{ ...S.card, padding: 0, overflow: 'visible', marginBottom: 14, position: 'relative', border: '0.5px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 24px rgba(0,0,0,0.06)', animationDelay: `${idx * 55}ms` }}>
             <div style={{ overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
               <div style={{ position: 'relative', height: 116, background: trip.coverUrl ? 'transparent' : (trip.isSolo ? 'linear-gradient(135deg,#6E67C8,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'), overflow: 'hidden' }}>
                 {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => e.target.style.display = 'none'} />}
@@ -1416,11 +1416,11 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   };
 
   const CAT_COLORS = { food: '#BA7517', transport: '#0F6E56', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E'};
-  const SOLO_ACCENT = '#0F6E56';
-  const SOLO_ACCENT_2 = '#1D9E75';
-  const SOLO_ACCENT_BG = '#E1F5EE';
-  const SOLO_ACCENT_BORDER = '#9FE1CB';
-  const SOLO_ACCENT_TEXT = '#085041';
+  const SOLO_ACCENT = '#534AB7';
+  const SOLO_ACCENT_2 = '#7F77DD';
+  const SOLO_ACCENT_BG = '#EEEDFE';
+  const SOLO_ACCENT_BORDER = '#AFA9EC';
+  const SOLO_ACCENT_TEXT = '#26215C';
   const SOLO_WARN = '#D85A30';
   const SECTION_TABS = [
     { id: 'expenses', label: 'Expenses' },
@@ -1439,7 +1439,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         data: {
           datasets: [{
             data: [Math.min(total, budget), Math.max(0, budget - total)],
-            backgroundColor: [budgetPct > 85 ? '#D85A30' : '#0F6E56', '#E1F5EE'],
+            backgroundColor: [budgetPct > 85 ? '#D85A30' : SOLO_ACCENT, SOLO_ACCENT_BG],
             borderWidth: 0,
             hoverOffset: 0,
           }],
@@ -1519,13 +1519,13 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         <button onClick={() => { setShowForm(false); setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' }); }} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>{editingExpenseId ? 'Edit Expense' : 'Add Expense'}</div>
         <button onClick={handleAdd} disabled={saving || !form.desc || !form.amount}
-          style={{ ...S.btn, ...S.btnP, padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !form.desc || !form.amount) ? 0.4 : 1 }}>
+          style={{ ...S.btn, ...S.btnSolo, padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !form.desc || !form.amount) ? 0.4 : 1 }}>
           {saving ? (editingExpenseId ? 'Updating…' : 'Saving…') : (editingExpenseId ? 'Update' : 'Save')}
         </button>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ background: 'linear-gradient(135deg,#0F6E56,#1D9E75)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
+        <div style={{ background: 'linear-gradient(135deg,#534AB7,#7F77DD)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .6, textTransform: 'uppercase', marginBottom: 12 }}>How much?</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>₹</span>
@@ -1551,7 +1551,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
               {CATS.map(c => (
                 <button key={c.id} onClick={() => setForm(f => ({ ...f, cat: c.id }))}
-                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: `1.5px solid ${form.cat === c.id ? '#1D9E75' : 'rgba(0,0,0,0.09)'}`, background: form.cat === c.id ? '#E1F5EE' : '#fafafa', color: form.cat === c.id ? '#0F6E56' : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: form.cat === c.id ? 600 : 400, transition: 'all .12s' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: `1.5px solid ${form.cat === c.id ? SOLO_ACCENT_2 : 'rgba(0,0,0,0.09)'}`, background: form.cat === c.id ? SOLO_ACCENT_BG : '#fafafa', color: form.cat === c.id ? SOLO_ACCENT : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: form.cat === c.id ? 600 : 400, transition: 'all .12s' }}>
                   <span style={{ fontSize: 13 }}>{c.icon}</span>
                   <span>{c.label}</span>
                 </button>
@@ -1581,7 +1581,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-      <div style={{ background: 'linear-gradient(135deg,#063F32,#0F6E56 48%,#1D9E75)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ background: 'linear-gradient(135deg,#26215C,#534AB7 48%,#7F77DD)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -18, right: -18, fontSize: 84, opacity: 0.08 }}>💸</div>
         <div style={{ position: 'absolute', left: -40, bottom: -48, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
@@ -1593,7 +1593,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           {budget && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', marginBottom: 4 }}>Budget Left</div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#B8F5D9' }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#DAD7FF' }}>
                 {budgetLeft < 0 ? '-' : ''}₹{Math.abs(Math.round(budgetLeft)).toLocaleString('en-IN')}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of ₹{budget.toLocaleString('en-IN')}</div>
@@ -1603,7 +1603,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         {budget && (
           <div>
             <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? '#FFD3C4' : '#B8F5D9', transition: 'width .6s' }} />
+              <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? '#FFD3C4' : '#DAD7FF', transition: 'width .6s' }} />
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
               <span>{budgetPct}% used</span><span>{100 - budgetPct}% remaining</span>
@@ -1628,7 +1628,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           <input style={S.input} type="number" value={editBudget} onChange={e => setEditBudget(e.target.value)} placeholder="e.g. 15000" autoFocus />
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <button
-              style={{ ...S.btn, ...S.btnP, flex: 1, justifyContent: 'center', padding: '9px' }}
+              style={{ ...S.btn, ...S.btnSolo, flex: 1, justifyContent: 'center', padding: '9px' }}
               onClick={async () => {
                 const v = parseFloat(editBudget);
                 if (!isNaN(v) && v > 0) {
@@ -1662,7 +1662,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       {section === 'expenses' && (
         <div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: '1rem' }}>
-            <button onClick={() => setFilterCat('all')} style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, ...(filterCat === 'all' ? S.btnP : {}) }}>All</button>
+            <button onClick={() => setFilterCat('all')} style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, ...(filterCat === 'all' ? S.btnSolo : {}) }}>All</button>
             {CATS.filter(c => catTotals[c.id] > 0).map(c => (
               <button key={c.id} onClick={() => setFilterCat(filterCat === c.id ? 'all' : c.id)}
                 style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, background: filterCat === c.id ? c.bg : '#fff', color: filterCat === c.id ? CAT_COLORS[c.id] : '#6b6b68', border: `0.5px solid ${filterCat === c.id ? CAT_COLORS[c.id] + '44' : 'rgba(0,0,0,0.12)'}` }}>
@@ -1712,14 +1712,14 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             ))}
           </div>
 
-          <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#E1F5EE,#EAFBF5)', border: `0.5px solid ${SOLO_ACCENT_BORDER}`, position: 'relative', overflow: 'hidden', animation: 'soloFadeUp .4s ease-out both', animationDelay: '120ms' }}>
+          <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#EEEDFE,#F3F2FF)', border: `0.5px solid ${SOLO_ACCENT_BORDER}`, position: 'relative', overflow: 'hidden', animation: 'soloFadeUp .4s ease-out both', animationDelay: '120ms' }}>
             <div style={{ position: 'absolute', right: 10, top: 6, fontSize: 26, opacity: 0.3 }}>🎒</div>
             <div style={{ fontSize: 11, color: SOLO_ACCENT_TEXT, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Solo money mood</div>
             <div style={{ fontSize: 14, color: SOLO_ACCENT_TEXT, lineHeight: 1.55, paddingRight: 20 }}>{soloInsightLine}</div>
           </div>
 
           {budget && (
-            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FCFDFD,#F4FBF8)', animation: 'soloFadeUp .42s ease-out both', animationDelay: '170ms' }}>
+            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FEFEFF,#F7F6FF)', animation: 'soloFadeUp .42s ease-out both', animationDelay: '170ms' }}>
               <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Budget health</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                 <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '8px 10px' }}>
@@ -1740,7 +1740,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
-                  <div style={{ padding: '10px 11px', background: projected > budget ? '#FAECE7' : '#E1F5EE', border: `0.5px solid ${projected > budget ? '#F5C4B3' : '#9FE1CB'}`, borderRadius: 10, fontSize: 12, color: projected > budget ? '#993C1D' : '#0F6E56', lineHeight: 1.45 }}>
+                  <div style={{ padding: '10px 11px', background: projected > budget ? '#FAECE7' : SOLO_ACCENT_BG, border: `0.5px solid ${projected > budget ? '#F5C4B3' : SOLO_ACCENT_BORDER}`, borderRadius: 10, fontSize: 12, color: projected > budget ? '#993C1D' : SOLO_ACCENT_TEXT, lineHeight: 1.45 }}>
                     {projected > budget ? `⚠️ Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `✅ ₹${Math.round(underBy).toLocaleString('en-IN')} under pace`}
                   </div>
                   <div style={{ height: 7, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
@@ -1815,7 +1815,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       {section === 'expenses' && (
         <button
           onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' }); setShowForm(true); }}
-          style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', border: 'none', boxShadow: '0 4px 20px rgba(15,110,86,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
+          style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', border: 'none', boxShadow: '0 4px 20px rgba(127,119,221,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
           +
@@ -5793,9 +5793,10 @@ export default function App() {
 
   // ── AUTH SCREEN ──
   if (!authToken) return (
-    <div style={{ ...S.root, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: -120, right: -90, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.18) 0%, rgba(29,158,117,0) 70%)' }} />
-      <div style={{ position: 'absolute', bottom: -140, left: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(55,138,221,0.14) 0%, rgba(55,138,221,0) 70%)' }} />
+    <div className="tb-app" style={{ ...S.root, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+      <div className="tb-orb" style={{ position: 'absolute', top: -120, right: -90, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.18) 0%, rgba(29,158,117,0) 70%)' }} />
+      <div className="tb-orb tb-orb-alt" style={{ position: 'absolute', bottom: -140, left: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(55,138,221,0.14) 0%, rgba(55,138,221,0) 70%)' }} />
+      <div className="tb-noise" />
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ width: 68, height: 68, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 33, margin: '0 auto 12px', boxShadow: '0 14px 30px rgba(15,110,86,0.28)' }}>✈️</div>
@@ -5803,7 +5804,7 @@ export default function App() {
           <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4 }}>Plan, split, explore — together.</div>
           <div style={{ fontSize: 11.5, color: '#8d8c87', marginTop: 7 }}>A calmer way to travel with friends.</div>
         </div>
-        <div style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', borderRadius: 22, padding: '1.75rem', boxShadow: '0 20px 45px rgba(0,0,0,0.1)', border: '0.5px solid rgba(0,0,0,0.08)' }}>
+        <div style={{ background: 'linear-gradient(180deg,rgba(255,255,255,0.97),rgba(255,255,255,0.91))', backdropFilter: 'blur(12px)', borderRadius: 22, padding: '1.75rem', boxShadow: '0 26px 60px rgba(0,0,0,0.14)', border: '0.5px solid rgba(0,0,0,0.08)', animation: 'tbModalIn .5s cubic-bezier(.2,.7,.2,1)' }}>
           <div style={{ display: 'flex', gap: 0, background: '#F1EFE8', borderRadius: 12, padding: 3, marginBottom: '1.5rem' }}>
             {['login', 'signup'].map(s => (
               <button key={s} onClick={() => { setAuthScreen(s); setAuthError(''); }}
@@ -5833,25 +5834,72 @@ export default function App() {
   );
 
   return (
-    <div style={S.root}>
+    <div className="tb-app" style={S.root}>
+      <div className="tb-orb" style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.13) 0%, rgba(29,158,117,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div className="tb-orb tb-orb-alt" style={{ position: 'fixed', bottom: -190, left: -110, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(127,119,221,0.11) 0%, rgba(127,119,221,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div className="tb-noise" />
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes tbPageIn{from{opacity:0;transform:translateY(9px) scale(.996)}to{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes tbCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes tbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+        @keyframes tbFloatAlt{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
+        @keyframes tbModalIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes tbShimmer{0%{transform:translateX(-140%)}100%{transform:translateX(180%)}}
+        @keyframes tbGlowPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,158,117,0)}50%{box-shadow:0 0 0 10px rgba(29,158,117,0.08)}}
+        @keyframes tbStaggerIn{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
         *{box-sizing:border-box;margin:0;padding:0}
         a{color:inherit;text-decoration:none}
         ::selection{background:#c7eedf;color:#053f31}
+        .tb-app > * { position: relative; z-index: 1; }
+        .tb-noise{
+          position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.18;
+          background-image: radial-gradient(rgba(0,0,0,.08) .5px, transparent .5px);
+          background-size: 3px 3px;
+          mask-image: linear-gradient(to bottom, rgba(0,0,0,.4), rgba(0,0,0,.12));
+        }
+        .tb-orb{animation:tbFloat 12s ease-in-out infinite}
+        .tb-orb-alt{animation:tbFloatAlt 14s ease-in-out infinite}
+        .tb-app button:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,0.11)}
+        .tb-app button:active{transform:translateY(0) scale(.985)}
+        .tb-topbar{position:sticky;top:0}
+        .tb-logo-badge{animation:tbGlowPulse 4.5s ease-in-out infinite}
+        .tb-profile-btn{transition:transform .2s ease, box-shadow .2s ease}
+        .tb-profile-btn:hover{transform:translateY(-1px) scale(1.04);box-shadow:0 10px 24px rgba(0,0,0,0.15)}
+        .tb-trip-pill{transition:transform .22s ease, box-shadow .22s ease}
+        .tb-trip-pill:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(0,0,0,0.12)}
+        .tb-nav-shell{position:sticky;top:63px;z-index:160}
+        .tb-nav-tab-btn{position:relative;overflow:hidden}
+        .tb-nav-tab-btn::after{content:'';position:absolute;inset:auto -10% 0 -10%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);opacity:0;transform:translateX(-100%);transition:opacity .2s ease}
+        .tb-nav-tab-btn:hover::after{opacity:1;transform:translateX(100%);transition:transform .65s ease,opacity .2s ease}
+        .tb-hero-panel{isolation:isolate}
+        .tb-hero-panel::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.2) 45%,transparent 70%);transform:translateX(-130%);animation:tbShimmer 7.5s ease-in-out infinite;pointer-events:none;z-index:0}
+        .tb-cta-main,.tb-cta-ghost{position:relative;overflow:hidden}
+        .tb-cta-main::before,.tb-cta-ghost::before{content:'';position:absolute;top:-20%;bottom:-20%;left:-120%;width:36%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg)}
+        .tb-cta-main:hover::before,.tb-cta-ghost:hover::before{animation:tbShimmer .95s ease}
+        .tb-trip-card{position:relative;transition:transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease, border-color .25s ease; transform-origin:center top}
+        .tb-trip-card::before{content:'';position:absolute;inset:0;border-radius:16px;padding:1px;background:linear-gradient(130deg,rgba(255,255,255,.9),rgba(29,158,117,.35),rgba(127,119,221,.35));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:0;transition:opacity .25s ease}
+        .tb-trip-card:hover{transform:translateY(-4px) scale(1.006);box-shadow:0 20px 38px rgba(0,0,0,0.12)}
+        .tb-trip-card:hover::before{opacity:1}
+        .tb-stagger-item{opacity:0;animation:tbStaggerIn .5s cubic-bezier(.2,.7,.2,1) both}
+        .tb-app input:hover,.tb-app select:hover,.tb-app textarea:hover{border-color:rgba(0,0,0,0.22)}
         input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#E1F5EE;outline:none}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1D9E75;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
         input:focus, select:focus, textarea:focus { border-color:#1D9E75 !important; box-shadow:0 0 0 3px rgba(29,158,117,0.14) !important; }
+        @media (prefers-reduced-motion: reduce){
+          *,*::before,*::after{animation:none !important;transition:none !important}
+        }
       `}</style>
 
       {newTripModal && <ShareCodeModal trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
 
       {/* Top Bar */}
-      <div style={S.topBar}>
+      <div className="tb-topbar" style={S.topBar}>
         {/* Profile button — always top-left */}
         <button
+          className="tb-profile-btn"
           onClick={() => setProfileOpen(true)}
           title="My profile"
           style={{
@@ -5867,7 +5915,7 @@ export default function App() {
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0' }}>
           {activeTrip && <button style={{ ...S.btn, padding: '5px 8px', marginRight: 2, fontSize: 16 }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>←</button>}
-          <div style={{ width: 34, height: 34, background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
+          <div className="tb-logo-badge" style={{ width: 34, height: 34, background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
             {isSolo ? '🎒' : '✈️'}
           </div>
           <div style={S.logoText}>Travel<span style={{ color: isSolo ? '#7F77DD' : '#1D9E75' }}>Bae</span></div>
@@ -5875,7 +5923,7 @@ export default function App() {
         {activeTrip && activeTripData ? (
           /* Top-bar pill with trip name + inline Mark Complete / Delete actions */
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={isSolo ? S.soloPill : S.tripPill} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>
+            <div className="tb-trip-pill" style={isSolo ? S.soloPill : S.tripPill} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>
               {activeTripData.emoji} {activeTripData.groupName}
               {isSolo && <span style={{ marginLeft: 4, fontSize: 10, fontWeight: 700, background: 'rgba(127,119,221,0.2)', borderRadius: 8, padding: '1px 6px' }}>Solo</span>}
             </div>
@@ -5903,9 +5951,9 @@ export default function App() {
 
       {/* Nav Tabs */}
       {activeTrip && activeTripData && (
-        <div style={{ ...S.navTabs, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
+        <div className="tb-nav-shell" style={{ ...S.navTabs, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
           {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
+            <button className="tb-nav-tab-btn" key={t.id} onClick={() => setTab(t.id)}
               style={{ ...S.navTab, ...(tab === t.id ? (isSolo ? S.soloNavTabActive : S.navTabActive) : {}) }}>
               {t.label}
             </button>
@@ -5933,7 +5981,7 @@ export default function App() {
           tripLoading || !activeTripData
             ? <Spinner text="Loading trip…" />
             : (
-              <div style={{ animation: 'slideIn .2s ease-out' }}>
+              <div style={{ animation: 'tbPageIn .35s cubic-bezier(.2,.7,.2,1)' }}>
                 {isSolo ? (
                   <>
                     {tab === 'main' && <SoloExpensesPage trip={activeTripData} myNickname={myNickname} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
