@@ -1286,8 +1286,28 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [filterCat, setFilterCat] = useState('all');
   const [section, setSection] = useState('expenses');
   const [saving, setSaving] = useState(false);
+  const [chartReady, setChartReady] = useState(false);
   const todayStr = new Date().toISOString().split('T')[0];
   const [form, setForm] = useState({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' });
+  const donutRef = useRef(null);
+  const barRef = useRef(null);
+  const chartInstances = useRef({});
+
+  useEffect(() => {
+    setExpenses(trip.expenses || []);
+  }, [trip.expenses]);
+
+  useEffect(() => {
+    setBudget(trip.budget || null);
+  }, [trip.budget]);
+
+  useEffect(() => {
+    if (window.Chart) { setChartReady(true); return; }
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
+    script.onload = () => setChartReady(true);
+    document.head.appendChild(script);
+  }, []);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const days = tripDuration(trip.arrival, trip.departure);
@@ -1332,6 +1352,12 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const filtered = filterCat === 'all' ? expenses : expenses.filter(e => e.cat === filterCat);
   const sortedFiltered = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  useEffect(() => {
+    if (section !== 'insights' || !chartReady) return;
+    const t = setTimeout(renderCharts, 80);
+    return () => clearTimeout(t);
+  }, [section, chartReady, expenses, budget]);
+
   const handleAdd = async () => {
     if (!form.desc || !form.amount) return;
     setSaving(true);
@@ -1374,6 +1400,90 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     { id: 'expenses', label: 'Expenses' },
     { id: 'insights', label: 'Insights' },
   ];
+
+  function renderCharts() {
+    Object.values(chartInstances.current).forEach(c => { try { c.destroy(); } catch (_) {} });
+    chartInstances.current = {};
+    const textColor = 'rgba(0,0,0,0.4)';
+    const gridColor = 'rgba(0,0,0,0.05)';
+
+    if (donutRef.current && budget) {
+      chartInstances.current.donut = new window.Chart(donutRef.current, {
+        type: 'doughnut',
+        data: {
+          datasets: [{
+            data: [Math.min(total, budget), Math.max(0, budget - total)],
+            backgroundColor: [budgetPct > 85 ? '#D85A30' : '#0F6E56', '#E1F5EE'],
+            borderWidth: 0,
+            hoverOffset: 0,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '74%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ctx.dataIndex === 0
+                  ? ` Spent: ₹${Math.round(Math.min(total, budget)).toLocaleString('en-IN')}`
+                  : ` Left: ₹${Math.round(Math.max(0, budget - total)).toLocaleString('en-IN')}`,
+              },
+            },
+          },
+        },
+        plugins: [{
+          id: 'center',
+          afterDraw(chart) {
+            const { ctx, chartArea: { width, height, left, top } } = chart;
+            const cx = left + width / 2;
+            const cy = top + height / 2;
+            ctx.save();
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = '600 17px system-ui';
+            ctx.fillStyle = '#1a1a18';
+            ctx.fillText(`${budgetPct}%`, cx, cy - 9);
+            ctx.font = '12px system-ui';
+            ctx.fillStyle = textColor;
+            ctx.fillText('used', cx, cy + 9);
+            ctx.restore();
+          },
+        }],
+      });
+    }
+
+    if (barRef.current) {
+      const cats = activeCats;
+      if (cats.length === 0) return;
+      const BAR_COLORS = { food:'#BA7517', transport:'#1D9E75', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E' };
+      chartInstances.current.bar = new window.Chart(barRef.current, {
+        type: 'bar',
+        data: {
+          labels: cats.map(c => c.label),
+          datasets: [{
+            data: cats.map(c => catTotals[c.id]),
+            backgroundColor: cats.map(c => BAR_COLORS[c.id] || '#888780'),
+            borderRadius: 6,
+            borderSkipped: false,
+          }],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: ctx => ` ₹${Math.round(ctx.raw).toLocaleString('en-IN')}` } },
+          },
+          scales: {
+            x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false }, border: { display: false } },
+            y: { ticks: { color: textColor, font: { size: 11 }, callback: v => `₹${v >= 1000 ? Math.round(v / 1000) + 'k' : v}` }, grid: { color: gridColor }, border: { display: false } },
+          },
+        },
+      });
+    }
+  }
 
   return (
     <div>
@@ -1429,7 +1539,22 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           <label style={S.label}>Total trip budget ₹</label>
           <input style={S.input} type="number" value={editBudget} onChange={e => setEditBudget(e.target.value)} placeholder="e.g. 15000" autoFocus />
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <button style={{ ...S.btn, ...S.btnP, flex: 1, justifyContent: 'center', padding: '9px' }} onClick={() => { const v = parseFloat(editBudget); if (!isNaN(v) && v > 0) setBudget(v); setShowBudgetEdit(false); }}>✓ Save</button>
+            <button
+              style={{ ...S.btn, ...S.btnP, flex: 1, justifyContent: 'center', padding: '9px' }}
+              onClick={async () => {
+                const v = parseFloat(editBudget);
+                if (!isNaN(v) && v > 0) {
+                  setBudget(v);
+                  try {
+                    const { updateTrip } = await import('./api');
+                    await updateTrip(trip.id, { budget: v });
+                    onTripUpdate?.({ budget: v });
+                  } catch (_) {}
+                }
+                setShowBudgetEdit(false);
+              }}>
+              ✓ Save
+            </button>
             <button style={S.btn} onClick={() => setShowBudgetEdit(false)}>✕</button>
           </div>
         </div>
@@ -1444,9 +1569,6 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             </button>
           ))}
         </div>
-        {section === 'expenses' && (
-          <button style={{ ...S.btn, background: SOLO_ACCENT_BG, color: SOLO_ACCENT_TEXT, border: `0.5px solid ${SOLO_ACCENT_BORDER}`, flexShrink: 0 }} onClick={() => setShowForm(v => !v)}>+ Add</button>
-        )}
       </div>
 
       {section === 'expenses' && showForm && (
@@ -1556,14 +1678,22 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                 </div>
               </div>
 
-              <div style={{ height: 7, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? SOLO_WARN : SOLO_ACCENT_2, transition: 'width .6s' }} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, marginTop: 6 }}>
-                <span style={{ color: '#a8a8a5' }}>{budgetPct}% used</span>
-                <span style={{ color: projected > budget ? '#993C1D' : SOLO_ACCENT, fontWeight: 600 }}>
-                  {projected > budget ? `Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `Under by ₹${Math.round(underBy).toLocaleString('en-IN')}`}
-                </span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+                <div style={{ ...S.card, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem .75rem', marginBottom: 0 }}>
+                  <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>Usage</div>
+                  <div style={{ position: 'relative', width: 120, height: 120 }}>
+                    <canvas ref={donutRef} role="img" aria-label={`${budgetPct}% of budget spent`}>{budgetPct}% used.</canvas>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
+                  <div style={{ padding: '10px 11px', background: projected > budget ? '#FAECE7' : '#E1F5EE', border: `0.5px solid ${projected > budget ? '#F5C4B3' : '#9FE1CB'}`, borderRadius: 10, fontSize: 12, color: projected > budget ? '#993C1D' : '#0F6E56', lineHeight: 1.45 }}>
+                    {projected > budget ? `⚠️ Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `✅ ₹${Math.round(underBy).toLocaleString('en-IN')} under pace`}
+                  </div>
+                  <div style={{ height: 7, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? SOLO_WARN : SOLO_ACCENT_2, transition: 'width .6s' }} />
+                  </div>
+                  <div style={{ fontSize: 11, color: '#a8a8a5' }}>{budgetPct}% used</div>
+                </div>
               </div>
             </div>
           )}
@@ -1571,6 +1701,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           {activeCats.length > 0 && (
             <div style={{ ...S.card, marginBottom: 10, animation: 'soloFadeUp .44s ease-out both', animationDelay: '220ms' }}>
               <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Category breakdown</div>
+              <div style={{ position: 'relative', height: 170, marginBottom: 12 }}>
+                <canvas ref={barRef} role="img" aria-label="Spending by category">Category breakdown chart.</canvas>
+              </div>
               {activeCats.map(c => {
                 const pct = Math.round(catTotals[c.id] / total * 100);
                 return (
@@ -1623,6 +1756,16 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             </div>
           )}
         </div>
+      )}
+
+      {section === 'expenses' && (
+        <button
+          onClick={() => setShowForm(v => !v)}
+          style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', border: 'none', boxShadow: '0 4px 20px rgba(15,110,86,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
+          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
+          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+          +
+        </button>
       )}
     </div>
   );
@@ -1777,6 +1920,7 @@ function ContactsPage({ trip, myNickname, isSolo }) {
 
       {/* Emergency / guardian contact reminder */}
       {(() => {
+        if (isSolo) return null;
         const dismissKey = `travelbae_contacts_emg_dismissed_${trip.id}`;
         if (emergencyBannerDismissed) return null;
         const isEmg = c => c.cat === 'guardian' || c.cat === 'emergency';
@@ -5403,6 +5547,12 @@ export default function App() {
       if (!res.ok) throw new Error(data.error || 'Something went wrong');
       localStorage.setItem('travelbae_token', data.token);
       setAuthToken(data.token);
+      const accountName = (data?.user?.name || data?.name || authForm.name || '').trim();
+      if (accountName) {
+        const nextProfile = { ...profile, name: accountName };
+        setProfile(nextProfile);
+        try { localStorage.setItem('travelbae_profile', JSON.stringify(nextProfile)); } catch (_) {}
+      }
     } catch (err) {
       setAuthError(err.message);
     }
@@ -5690,7 +5840,7 @@ export default function App() {
               <div style={{ animation: 'slideIn .2s ease-out' }}>
                 {isSolo ? (
                   <>
-                    {tab === 'main' && <SoloExpensesPage trip={activeTripData} myNickname={myNickname} />}
+                    {tab === 'main' && <SoloExpensesPage trip={activeTripData} myNickname={myNickname} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
                     {tab === 'contacts' && <ContactsPage trip={activeTripData} myNickname={myNickname} isSolo={true} />}
                     {tab === 'itinerary' && <ItineraryPage trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
                     {tab === 'club' && <ClubPage trip={activeTripData} />}
