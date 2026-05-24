@@ -369,7 +369,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           const days = tripDuration(trip.arrival, trip.departure);
           const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
           return (
-            <div className="tb-trip-card tb-stagger-item" key={trip.id} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14, animationDelay: `${idx * 55}ms` }}>
+            <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
               <div style={{ position: 'relative', height: 90, overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }}
                 onClick={() => { setShowPast(false); onOpenTrip(trip.id); }}>
                 {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(30%)' }} onError={e => e.target.style.display = 'none'} />}
@@ -452,7 +452,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         />
       )}
 
-      <div className="tb-hero-panel" style={{ background: 'linear-gradient(135deg,#0C5E49,#0F6E56 55%,#1D9E75)', borderRadius: 20, padding: '1.8rem 1.55rem', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden', boxShadow: '0 18px 36px rgba(15,110,86,0.26)' }}>
+      <div style={{ background: 'linear-gradient(135deg,#0C5E49,#0F6E56 55%,#1D9E75)', borderRadius: 20, padding: '1.8rem 1.55rem', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden', boxShadow: '0 18px 36px rgba(15,110,86,0.26)' }}>
         <div style={{ position: 'absolute', top: -18, right: -18, fontSize: 92, opacity: 0.1 }}>✈️</div>
         <div style={{ position: 'absolute', left: -36, bottom: -58, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 6, lineHeight: 1.2 }}>Your Trips</div>
@@ -462,11 +462,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           <div style={{ background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.2)', borderRadius: 11, padding: '5px 10px', fontSize: 11, color: '#fff' }}>{pastTrips.length} archived</div>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button className="tb-cta-main" style={{ ...S.btn, background: '#fff', color: '#0F6E56', border: 'none', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 12 }}
+          <button style={{ ...S.btn, background: '#fff', color: '#0F6E56', border: 'none', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 12 }}
             onClick={() => { setShowCreate(true); setShowJoin(false); }}>
             + New Trip
           </button>
-          <button className="tb-cta-ghost" style={{ ...S.btn, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '0.5px solid rgba(255,255,255,0.3)', fontSize: 13, padding: '9px 16px', borderRadius: 12 }}
+          <button style={{ ...S.btn, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '0.5px solid rgba(255,255,255,0.3)', fontSize: 13, padding: '9px 16px', borderRadius: 12 }}
             onClick={() => { setShowJoin(true); setShowCreate(false); }}>
             🔗 Join with Code
           </button>
@@ -738,7 +738,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         const isMenuOpen = menuOpen === trip.id;
 
         return (
-          <div className="tb-trip-card tb-stagger-item" key={trip.id} style={{ ...S.card, padding: 0, overflow: 'visible', marginBottom: 14, position: 'relative', border: '0.5px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 24px rgba(0,0,0,0.06)', animationDelay: `${idx * 55}ms` }}>
+          <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'visible', marginBottom: 14, position: 'relative', border: '0.5px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 24px rgba(0,0,0,0.06)' }}>
             <div style={{ overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
               <div style={{ position: 'relative', height: 116, background: trip.coverUrl ? 'transparent' : (trip.isSolo ? 'linear-gradient(135deg,#6E67C8,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'), overflow: 'hidden' }}>
                 {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => e.target.style.display = 'none'} />}
@@ -5404,7 +5404,7 @@ export default function App() {
 
   // ── AUTH SCREEN ──
   if (!authToken) return (
-    <div className="tb-app" style={{ ...S.root, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ ...S.root, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
       <div style={{ position: 'absolute', top: -120, right: -90, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.18) 0%, rgba(29,158,117,0) 70%)' }} />
       <div style={{ position: 'absolute', bottom: -140, left: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(55,138,221,0.14) 0%, rgba(55,138,221,0) 70%)' }} />
       <div style={{ width: '100%', maxWidth: 380 }}>
@@ -5444,52 +5444,27 @@ export default function App() {
   );
 
   return (
-    <div className="tb-app" style={S.root}>
+    <div style={S.root}>
       <div style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.13) 0%, rgba(29,158,117,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: -190, left: -110, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(127,119,221,0.11) 0%, rgba(127,119,221,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-        @keyframes tbPageIn{from{opacity:0;transform:translateY(9px) scale(.996)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes tbCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes tbModalIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes tbStaggerIn{from{transform:translateY(6px)}to{transform:translateY(0)}}
         *{box-sizing:border-box;margin:0;padding:0}
         a{color:inherit;text-decoration:none}
         ::selection{background:#c7eedf;color:#053f31}
-        .tb-app > * { position: relative; z-index: 1; }
-        .tb-app button:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,0.11)}
-        .tb-app button:active{transform:translateY(0) scale(.985)}
-        .tb-topbar{position:sticky;top:0}
-        .tb-profile-btn{transition:transform .2s ease, box-shadow .2s ease}
-        .tb-profile-btn:hover{transform:translateY(-1px) scale(1.04);box-shadow:0 10px 24px rgba(0,0,0,0.15)}
-        .tb-trip-pill{transition:transform .22s ease, box-shadow .22s ease}
-        .tb-trip-pill:hover{transform:translateY(-1px);box-shadow:0 10px 20px rgba(0,0,0,0.12)}
-        .tb-nav-shell{position:sticky;top:63px;z-index:160}
-        .tb-nav-tab-btn{position:relative;overflow:hidden}
-        .tb-nav-tab-btn::after{content:'';position:absolute;inset:auto -10% 0 -10%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);opacity:0;transform:translateX(-100%);transition:opacity .2s ease}
-        .tb-nav-tab-btn:hover::after{opacity:1;transform:translateX(100%);transition:transform .65s ease,opacity .2s ease}
-        .tb-trip-card{position:relative;transition:transform .2s ease, box-shadow .2s ease}
-        .tb-trip-card:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(0,0,0,0.1)}
-        .tb-stagger-item{opacity:1;animation:none}
-        .tb-app input:hover,.tb-app select:hover,.tb-app textarea:hover{border-color:rgba(0,0,0,0.22)}
         input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#E1F5EE;outline:none}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1D9E75;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
         input:focus, select:focus, textarea:focus { border-color:#1D9E75 !important; box-shadow:0 0 0 3px rgba(29,158,117,0.14) !important; }
-        @media (prefers-reduced-motion: reduce){
-          .tb-stagger-item{animation:none !important}
-          *,*::before,*::after{animation:none !important;transition:none !important}
-        }
       `}</style>
 
       {newTripModal && <ShareCodeModal trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
 
       {/* Top Bar */}
-      <div className="tb-topbar" style={S.topBar}>
+      <div style={S.topBar}>
         {/* Profile button — always top-left */}
         <button
-          className="tb-profile-btn"
           onClick={() => setProfileOpen(true)}
           title="My profile"
           style={{
@@ -5505,7 +5480,7 @@ export default function App() {
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0' }}>
           {activeTrip && <button style={{ ...S.btn, padding: '5px 8px', marginRight: 2, fontSize: 16 }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>←</button>}
-          <div className="tb-logo-badge" style={{ width: 34, height: 34, background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
+          <div style={{ width: 34, height: 34, background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
             {isSolo ? '🎒' : '✈️'}
           </div>
           <div style={S.logoText}>Travel<span style={{ color: isSolo ? '#7F77DD' : '#1D9E75' }}>Bae</span></div>
@@ -5513,7 +5488,7 @@ export default function App() {
         {activeTrip && activeTripData ? (
           /* Top-bar pill with trip name + inline Mark Complete / Delete actions */
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div className="tb-trip-pill" style={isSolo ? S.soloPill : S.tripPill} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>
+            <div style={isSolo ? S.soloPill : S.tripPill} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>
               {activeTripData.emoji} {activeTripData.groupName}
               {isSolo && <span style={{ marginLeft: 4, fontSize: 10, fontWeight: 700, background: 'rgba(127,119,221,0.2)', borderRadius: 8, padding: '1px 6px' }}>Solo</span>}
             </div>
@@ -5541,9 +5516,9 @@ export default function App() {
 
       {/* Nav Tabs */}
       {activeTrip && activeTripData && (
-        <div className="tb-nav-shell" style={{ ...S.navTabs, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
+        <div style={{ ...S.navTabs, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
           {tabs.map(t => (
-            <button className="tb-nav-tab-btn" key={t.id} onClick={() => setTab(t.id)}
+            <button key={t.id} onClick={() => setTab(t.id)}
               style={{ ...S.navTab, ...(tab === t.id ? (isSolo ? S.soloNavTabActive : S.navTabActive) : {}) }}>
               {t.label}
             </button>
