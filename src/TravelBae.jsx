@@ -5654,7 +5654,7 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
   const [confirmComplete, setConfirmComplete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const isSolo = trip?.isSolo;
-
+  console.log('TRIPS:', trips.length, trips);
   const today = new Date().toISOString().split('T')[0];
   const maxDate = (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; })();
   const EMOJI_OPTIONS = isSolo
