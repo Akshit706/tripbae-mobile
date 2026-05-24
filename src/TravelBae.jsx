@@ -5190,8 +5190,11 @@ export default function App() {
         setTrips(d.trips || []);
         localStorage.setItem('travelbae_trips_cache', JSON.stringify(d.trips || []));
       })
-      .catch(() => {}) // don't wipe trips
-      .finally(() => setTripsLoading(false));
+      .catch((e) => console.error('getTrips error:', e))
+      .finally(() => {
+        console.log('setting tripsLoading false');
+        setTripsLoading(false);
+      });
   }, [authToken]);
 
   useEffect(() => {
