@@ -5154,7 +5154,13 @@ export default function App() {
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
-  const [trips, setTrips] = useState([]);
+ //  const [trips, setTrips] = useState([])
+  const [trips, setTrips] = useState(() => {
+    try {
+      const cached = localStorage.getItem('travelbae_trips_cache');
+      return cached ? JSON.parse(cached) : [];
+    } catch { return []; }
+  });
   const [tripsLoading, setTripsLoading] = useState(false);
   const [activeTrip, setActiveTrip] = useState(null);
   const [activeTripData, setActiveTripData] = useState(null);
@@ -5180,8 +5186,11 @@ export default function App() {
     if (!authToken) return;
     setTripsLoading(true);
     getTrips()
-      .then(d => setTrips(d.trips || []))
-      .catch(() => setTrips([]))
+      .then(d => {
+        setTrips(d.trips || []);
+        localStorage.setItem('travelbae_trips_cache', JSON.stringify(d.trips || []));
+      })
+      .catch(() => {}) // don't wipe trips
       .finally(() => setTripsLoading(false));
   }, [authToken]);
 
