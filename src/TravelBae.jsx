@@ -5405,9 +5405,8 @@ export default function App() {
   // ── AUTH SCREEN ──
   if (!authToken) return (
     <div className="tb-app" style={{ ...S.root, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
-      <div className="tb-orb" style={{ position: 'absolute', top: -120, right: -90, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.18) 0%, rgba(29,158,117,0) 70%)' }} />
-      <div className="tb-orb tb-orb-alt" style={{ position: 'absolute', bottom: -140, left: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(55,138,221,0.14) 0%, rgba(55,138,221,0) 70%)' }} />
-      <div className="tb-noise" />
+      <div style={{ position: 'absolute', top: -120, right: -90, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.18) 0%, rgba(29,158,117,0) 70%)' }} />
+      <div style={{ position: 'absolute', bottom: -140, left: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(55,138,221,0.14) 0%, rgba(55,138,221,0) 70%)' }} />
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ width: 68, height: 68, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 33, margin: '0 auto 12px', boxShadow: '0 14px 30px rgba(15,110,86,0.28)' }}>✈️</div>
@@ -5446,37 +5445,23 @@ export default function App() {
 
   return (
     <div className="tb-app" style={S.root}>
-      <div className="tb-orb" style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.13) 0%, rgba(29,158,117,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
-      <div className="tb-orb tb-orb-alt" style={{ position: 'fixed', bottom: -190, left: -110, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(127,119,221,0.11) 0%, rgba(127,119,221,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
-      <div className="tb-noise" />
+      <div style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.13) 0%, rgba(29,158,117,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', bottom: -190, left: -110, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(127,119,221,0.11) 0%, rgba(127,119,221,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
         @keyframes tbPageIn{from{opacity:0;transform:translateY(9px) scale(.996)}to{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes tbCardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes tbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
-        @keyframes tbFloatAlt{0%,100%{transform:translateY(0)}50%{transform:translateY(8px)}}
         @keyframes tbModalIn{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes tbShimmer{0%{transform:translateX(-140%)}100%{transform:translateX(180%)}}
-        @keyframes tbGlowPulse{0%,100%{box-shadow:0 0 0 0 rgba(29,158,117,0)}50%{box-shadow:0 0 0 10px rgba(29,158,117,0.08)}}
-        @keyframes tbStaggerIn{from{transform:translateY(14px) scale(.985)}to{transform:translateY(0) scale(1)}}
+        @keyframes tbStaggerIn{from{transform:translateY(6px)}to{transform:translateY(0)}}
         *{box-sizing:border-box;margin:0;padding:0}
         a{color:inherit;text-decoration:none}
         ::selection{background:#c7eedf;color:#053f31}
         .tb-app > * { position: relative; z-index: 1; }
-        .tb-noise{
-          position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.18;
-          background-image: radial-gradient(rgba(0,0,0,.08) .5px, transparent .5px);
-          background-size: 3px 3px;
-          mask-image: linear-gradient(to bottom, rgba(0,0,0,.4), rgba(0,0,0,.12));
-        }
-        .tb-orb{animation:tbFloat 12s ease-in-out infinite}
-        .tb-orb-alt{animation:tbFloatAlt 14s ease-in-out infinite}
         .tb-app button:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(0,0,0,0.11)}
         .tb-app button:active{transform:translateY(0) scale(.985)}
         .tb-topbar{position:sticky;top:0}
-        .tb-logo-badge{animation:tbGlowPulse 4.5s ease-in-out infinite}
         .tb-profile-btn{transition:transform .2s ease, box-shadow .2s ease}
         .tb-profile-btn:hover{transform:translateY(-1px) scale(1.04);box-shadow:0 10px 24px rgba(0,0,0,0.15)}
         .tb-trip-pill{transition:transform .22s ease, box-shadow .22s ease}
@@ -5485,16 +5470,9 @@ export default function App() {
         .tb-nav-tab-btn{position:relative;overflow:hidden}
         .tb-nav-tab-btn::after{content:'';position:absolute;inset:auto -10% 0 -10%;height:2px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);opacity:0;transform:translateX(-100%);transition:opacity .2s ease}
         .tb-nav-tab-btn:hover::after{opacity:1;transform:translateX(100%);transition:transform .65s ease,opacity .2s ease}
-        .tb-hero-panel{isolation:isolate}
-        .tb-hero-panel::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 20%,rgba(255,255,255,.2) 45%,transparent 70%);transform:translateX(-130%);animation:tbShimmer 7.5s ease-in-out infinite;pointer-events:none;z-index:0}
-        .tb-cta-main,.tb-cta-ghost{position:relative;overflow:hidden}
-        .tb-cta-main::before,.tb-cta-ghost::before{content:'';position:absolute;top:-20%;bottom:-20%;left:-120%;width:36%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.45),transparent);transform:skewX(-18deg)}
-        .tb-cta-main:hover::before,.tb-cta-ghost:hover::before{animation:tbShimmer .95s ease}
-        .tb-trip-card{position:relative;transition:transform .25s cubic-bezier(.2,.7,.2,1), box-shadow .25s ease, border-color .25s ease; transform-origin:center top}
-        .tb-trip-card::before{content:'';position:absolute;inset:0;border-radius:16px;padding:1px;background:linear-gradient(130deg,rgba(255,255,255,.9),rgba(29,158,117,.35),rgba(127,119,221,.35));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:0;transition:opacity .25s ease}
-        .tb-trip-card:hover{transform:translateY(-4px) scale(1.006);box-shadow:0 20px 38px rgba(0,0,0,0.12)}
-        .tb-trip-card:hover::before{opacity:1}
-        .tb-stagger-item{opacity:1;animation:tbStaggerIn .5s cubic-bezier(.2,.7,.2,1) both}
+        .tb-trip-card{position:relative;transition:transform .2s ease, box-shadow .2s ease}
+        .tb-trip-card:hover{transform:translateY(-2px);box-shadow:0 14px 28px rgba(0,0,0,0.1)}
+        .tb-stagger-item{opacity:1;animation:none}
         .tb-app input:hover,.tb-app select:hover,.tb-app textarea:hover{border-color:rgba(0,0,0,0.22)}
         input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#E1F5EE;outline:none}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1D9E75;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
