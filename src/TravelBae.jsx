@@ -5883,7 +5883,10 @@ export default function App() {
         .tb-trip-card::before{content:'';position:absolute;inset:0;border-radius:16px;padding:1px;background:linear-gradient(130deg,rgba(255,255,255,.9),rgba(29,158,117,.35),rgba(127,119,221,.35));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;opacity:0;transition:opacity .25s ease}
         .tb-trip-card:hover{transform:translateY(-4px) scale(1.006);box-shadow:0 20px 38px rgba(0,0,0,0.12)}
         .tb-trip-card:hover::before{opacity:1}
-        .tb-stagger-item{opacity:0;animation:tbStaggerIn .5s cubic-bezier(.2,.7,.2,1) both}
+        .tb-stagger-item{opacity:1}
+        @media (prefers-reduced-motion: no-preference){
+          .tb-stagger-item{opacity:0;animation:tbStaggerIn .5s cubic-bezier(.2,.7,.2,1) both}
+        }
         .tb-app input:hover,.tb-app select:hover,.tb-app textarea:hover{border-color:rgba(0,0,0,0.22)}
         input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#E1F5EE;outline:none}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1D9E75;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
