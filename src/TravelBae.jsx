@@ -5154,13 +5154,7 @@ export default function App() {
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
- //  const [trips, setTrips] = useState([])
-  const [trips, setTrips] = useState(() => {
-    try {
-      const cached = localStorage.getItem('travelbae_trips_cache');
-      return cached ? JSON.parse(cached) : [];
-    } catch { return []; }
-  });
+  const [trips, setTrips] = useState([]);
   const [tripsLoading, setTripsLoading] = useState(false);
   const [activeTrip, setActiveTrip] = useState(null);
   const [activeTripData, setActiveTripData] = useState(null);
@@ -5186,15 +5180,9 @@ export default function App() {
     if (!authToken) return;
     setTripsLoading(true);
     getTrips()
-      .then(d => {
-        setTrips(d.trips || []);
-        localStorage.setItem('travelbae_trips_cache', JSON.stringify(d.trips || []));
-      })
-      .catch((e) => console.error('getTrips error:', e))
-      .finally(() => {
-        console.log('setting tripsLoading false');
-        setTripsLoading(false);
-      });
+      .then(d => setTrips(d.trips || []))
+      .catch(() => setTrips([]))
+      .finally(() => setTripsLoading(false));
   }, [authToken]);
 
   useEffect(() => {
@@ -5657,7 +5645,7 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
   const [confirmComplete, setConfirmComplete] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const isSolo = trip?.isSolo;
-  console.log('TRIPS:', trips.length, trips);
+
   const today = new Date().toISOString().split('T')[0];
   const maxDate = (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; })();
   const EMOJI_OPTIONS = isSolo
