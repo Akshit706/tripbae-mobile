@@ -397,6 +397,7 @@ import {
   createTrip,
   joinTrip,
   addExpense,
+  updateExpense,
   deleteExpense,
   addContact,
   deleteContact,
@@ -573,23 +574,23 @@ function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, 
 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
-  root: { fontFamily: "'DM Sans',sans-serif", background: '#f7f6f2', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased' },
-  topBar: { background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.09)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 1px 8px rgba(0,0,0,0.04)' },
-  logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 600, letterSpacing: '-0.4px' },
+  root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(circle at 12% 8%, #ffffff 0%, #f8f7f3 35%, #f3f2ed 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased' },
+  topBar: { background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(12px)', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 8px 24px rgba(0,0,0,0.05)' },
+  logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 700, letterSpacing: '-0.45px' },
   tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#085041', fontWeight: 500, cursor: 'pointer' },
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#EEEDFE,#E6F1FB)', border: '0.5px solid #AFA9EC', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#534AB7', fontWeight: 500, cursor: 'pointer' },
-  navTabs: { background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.09)', display: 'flex', padding: '0 1rem', overflowX: 'auto' },
+  navTabs: { background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(10px)', borderBottom: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', padding: '0 1rem', overflowX: 'auto' },
   navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '12px 12px', fontSize: 12, fontWeight: 400, color: '#6b6b68', borderBottom: '2px solid transparent', cursor: 'pointer', background: 'none', border: 'none', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' },
   navTabActive: { color: '#0F6E56', borderBottom: '2px solid #1D9E75', fontWeight: 600 },
   soloNavTabActive: { color: '#534AB7', borderBottom: '2px solid #7F77DD', fontWeight: 600 },
   page: { padding: '1.25rem', flex: 1, paddingBottom: '6rem' },
-  btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 13px', borderRadius: 10, fontSize: 13, fontWeight: 500, border: '0.5px solid rgba(0,0,0,0.17)', background: '#fff', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .15s' },
+  btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 11, fontSize: 13, fontWeight: 500, border: '0.5px solid rgba(0,0,0,0.15)', background: '#fff', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .15s', boxShadow: '0 1px 2px rgba(0,0,0,0.04)' },
   btnP: { background: '#1D9E75', color: '#fff', border: '0.5px solid #1D9E75' },
   btnSolo: { background: 'linear-gradient(135deg,#7F77DD,#534AB7)', color: '#fff', border: 'none' },
   btnOrange: { background: '#FF6B35', color: '#fff', border: '0.5px solid #FF6B35' },
   btnDanger: { background: '#fff', color: '#993C1D', border: '0.5px solid #F5C4B3' },
-  card: { background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '1rem 1.1rem', marginBottom: 10 },
-  input: { fontFamily: "'DM Sans',sans-serif", padding: '9px 12px', border: '0.5px solid rgba(0,0,0,0.17)', borderRadius: 10, fontSize: 14, background: '#fff', color: '#1a1a18', width: '100%', outline: 'none', boxSizing: 'border-box' },
+  card: { background: 'rgba(255,255,255,0.96)', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: '1rem 1.1rem', marginBottom: 10, boxShadow: '0 6px 20px rgba(0,0,0,0.04)' },
+  input: { fontFamily: "'DM Sans',sans-serif", padding: '10px 12px', border: '0.5px solid rgba(0,0,0,0.16)', borderRadius: 11, fontSize: 14, background: '#fff', color: '#1a1a18', width: '100%', outline: 'none', boxSizing: 'border-box', boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.02)' },
   label: { fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', display: 'block', marginBottom: 5, marginTop: 10 },
   spinner: { width: 36, height: 36, border: '3px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
   soloSpinner: { width: 36, height: 36, border: '3px solid #EEEDFE', borderTopColor: '#7F77DD', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
@@ -841,10 +842,15 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         />
       )}
 
-      <div style={{ background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 18, padding: '1.75rem 1.5rem', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 90, opacity: 0.12 }}>✈️</div>
+      <div style={{ background: 'linear-gradient(135deg,#0C5E49,#0F6E56 55%,#1D9E75)', borderRadius: 20, padding: '1.8rem 1.55rem', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden', boxShadow: '0 18px 36px rgba(15,110,86,0.26)' }}>
+        <div style={{ position: 'absolute', top: -18, right: -18, fontSize: 92, opacity: 0.1 }}>✈️</div>
+        <div style={{ position: 'absolute', left: -36, bottom: -58, width: 130, height: 130, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 24, fontWeight: 700, color: '#fff', marginBottom: 6, lineHeight: 1.2 }}>Your Trips</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.78)', marginBottom: 20, lineHeight: 1.5 }}>Plan, split, explore — together.</div>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+          <div style={{ background: 'rgba(255,255,255,0.15)', border: '0.5px solid rgba(255,255,255,0.24)', borderRadius: 11, padding: '5px 10px', fontSize: 11, color: '#fff' }}>{activeTrips.length} active</div>
+          <div style={{ background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.2)', borderRadius: 11, padding: '5px 10px', fontSize: 11, color: '#fff' }}>{pastTrips.length} archived</div>
+        </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
           <button style={{ ...S.btn, background: '#fff', color: '#0F6E56', border: 'none', fontWeight: 600, fontSize: 13, padding: '9px 16px', borderRadius: 12 }}
             onClick={() => { setShowCreate(true); setShowJoin(false); }}>
@@ -1122,9 +1128,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         const isMenuOpen = menuOpen === trip.id;
 
         return (
-          <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'visible', marginBottom: 14, position: 'relative' }}>
+          <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'visible', marginBottom: 14, position: 'relative', border: '0.5px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 24px rgba(0,0,0,0.06)' }}>
             <div style={{ overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
-              <div style={{ position: 'relative', height: 110, background: trip.coverUrl ? 'transparent' : (trip.isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'), overflow: 'hidden' }}>
+              <div style={{ position: 'relative', height: 116, background: trip.coverUrl ? 'transparent' : (trip.isSolo ? 'linear-gradient(135deg,#6E67C8,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'), overflow: 'hidden' }}>
                 {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => e.target.style.display = 'none'} />}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.06) 0%,rgba(0,0,0,0.45) 100%)' }} />
                 <div style={{ position: 'absolute', top: 12, left: 14, fontSize: 28 }}>{trip.emoji}</div>
@@ -1139,7 +1145,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               </div>
             </div>
 
-            <div style={{ padding: '12px 14px', display: 'flex', gap: 16, flexWrap: 'wrap', borderBottom: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
+            <div style={{ padding: '12px 14px', display: 'flex', gap: 16, flexWrap: 'wrap', borderBottom: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,247,0.98))' }} onClick={() => onOpenTrip(trip.id)}>
               {[
                 ['📅', formatDateRange(trip.arrival, trip.departure)],
                 ['🌙', `${days} nights`],
@@ -1166,7 +1172,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               </div>
             )}
 
-            <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, borderRadius: '0 0 14px 14px' }}>
+            <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, borderRadius: '0 0 14px 14px', background: '#fff' }}>
               {trip.isSolo ? (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1 }} onClick={() => onOpenTrip(trip.id)}>
                   <SoloAvatar initials={(memberNames[0] || 'ME').slice(0, 2)} size={28} />
@@ -1281,6 +1287,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [expenses, setExpenses] = useState(trip.expenses || []);
   const [budget, setBudget] = useState(trip.budget || null);
   const [showForm, setShowForm] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState(null);
   const [showBudgetEdit, setShowBudgetEdit] = useState(false);
   const [editBudget, setEditBudget] = useState(String(budget || ''));
   const [filterCat, setFilterCat] = useState('all');
@@ -1362,7 +1369,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     if (!form.desc || !form.amount) return;
     setSaving(true);
     try {
-      const data = await addExpense(trip.id, {
+      const payload = {
         desc: form.desc,
         amount: parseFloat(form.amount),
         paidBy: myNickname || 'Me',
@@ -1370,14 +1377,33 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         split: [myNickname || 'Me'],
         note: form.note,
         date: form.date,
-      });
-      setExpenses(es => [data.expense, ...es]);
+      };
+      if (editingExpenseId) {
+        const data = await updateExpense(trip.id, editingExpenseId, payload);
+        setExpenses(es => es.map(x => x.id === editingExpenseId ? data.expense : x));
+      } else {
+        const data = await addExpense(trip.id, payload);
+        setExpenses(es => [data.expense, ...es]);
+      }
       setForm({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' });
+      setEditingExpenseId(null);
       setShowForm(false);
     } catch (err) {
-      alert('Could not save expense: ' + err.message);
+      alert(`Could not ${editingExpenseId ? 'update' : 'save'} expense: ` + err.message);
     }
     setSaving(false);
+  };
+
+  const handleEdit = (exp) => {
+    setForm({
+      desc: exp.desc || '',
+      amount: String(exp.amount || ''),
+      cat: exp.cat || 'food',
+      date: exp.date ? new Date(exp.date).toISOString().split('T')[0] : todayStr,
+      note: exp.note || '',
+    });
+    setEditingExpenseId(exp.id);
+    setShowForm(true);
   };
 
   const handleDelete = async (expId) => {
@@ -1485,6 +1511,68 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     }
   }
 
+  if (showForm) return (
+    <div style={{ position: 'fixed', inset: 0, background: '#f7f6f2', zIndex: 400, display: 'flex', flexDirection: 'column', animation: 'slideUp .25s ease-out' }}>
+      <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}`}</style>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
+        <button onClick={() => { setShowForm(false); setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' }); }} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>{editingExpenseId ? 'Edit Expense' : 'Add Expense'}</div>
+        <button onClick={handleAdd} disabled={saving || !form.desc || !form.amount}
+          style={{ ...S.btn, ...S.btnP, padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !form.desc || !form.amount) ? 0.4 : 1 }}>
+          {saving ? (editingExpenseId ? 'Updating…' : 'Saving…') : (editingExpenseId ? 'Update' : 'Save')}
+        </button>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <div style={{ background: 'linear-gradient(135deg,#0F6E56,#1D9E75)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .6, textTransform: 'uppercase', marginBottom: 12 }}>How much?</div>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>₹</span>
+            <input
+              type="number" placeholder="0" value={form.amount}
+              onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
+              autoFocus
+              style={{ fontFamily: "'Sora',sans-serif", fontSize: 56, fontWeight: 700, color: '#fff', border: 'none', background: 'transparent', outline: 'none', width: '65%', textAlign: 'center', padding: 0, caretColor: 'rgba(255,255,255,0.8)' }}
+            />
+          </div>
+        </div>
+
+        <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', marginTop: -16, padding: '1.5rem 1.25rem 2rem', minHeight: '100%' }}>
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={S.label}>What was it?</label>
+            <input style={{ ...S.input, fontSize: 15, padding: '12px 14px', marginTop: 6 }}
+              placeholder="e.g. Hotel checkout, dinner, cab…"
+              value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} />
+          </div>
+
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={S.label}>Category</label>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
+              {CATS.map(c => (
+                <button key={c.id} onClick={() => setForm(f => ({ ...f, cat: c.id }))}
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: `1.5px solid ${form.cat === c.id ? '#1D9E75' : 'rgba(0,0,0,0.09)'}`, background: form.cat === c.id ? '#E1F5EE' : '#fafafa', color: form.cat === c.id ? '#0F6E56' : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: form.cat === c.id ? 600 : 400, transition: 'all .12s' }}>
+                  <span style={{ fontSize: 13 }}>{c.icon}</span>
+                  <span>{c.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={S.label}>Date</label>
+            <input style={{ ...S.input, marginTop: 6 }} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+          </div>
+
+          <div style={{ marginBottom: '1.25rem' }}>
+            <label style={S.label}>Note (optional)</label>
+            <input style={{ ...S.input, marginTop: 6 }} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="e.g. Amazing views!" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div>
       <style>{`
@@ -1571,43 +1659,6 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         </div>
       </div>
 
-      {section === 'expenses' && showForm && (
-        <div style={{ ...S.card, border: `0.5px solid ${SOLO_ACCENT_BORDER}`, background: '#f9fffe', marginBottom: '1rem' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: SOLO_ACCENT, marginBottom: 12 }}>Add expense</div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 10, marginBottom: 10 }}>
-            <div>
-              <label style={S.label}>What was it?</label>
-              <input style={S.input} value={form.desc} onChange={e => setForm(f => ({ ...f, desc: e.target.value }))} placeholder="e.g. Amber Fort ticket" />
-            </div>
-            <div>
-              <label style={S.label}>Amount ₹</label>
-              <input style={S.input} type="number" value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="0" />
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-            <div>
-              <label style={S.label}>Category</label>
-              <select style={S.input} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
-                {CATS.map(c => <option key={c.id} value={c.id}>{c.icon} {c.label}</option>)}
-              </select>
-            </div>
-            <div>
-              <label style={S.label}>Date</label>
-              <input style={S.input} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
-            </div>
-          </div>
-          <label style={S.label}>Note (optional)</label>
-          <input style={S.input} value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="e.g. Amazing views!" />
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button style={{ ...S.btn, ...S.btnP, flex: 1, justifyContent: 'center', padding: '10px', opacity: saving ? 0.6 : 1 }}
-              onClick={handleAdd} disabled={!form.desc || !form.amount || saving}>
-              {saving ? 'Saving…' : '✓ Add expense'}
-            </button>
-            <button style={S.btn} onClick={() => setShowForm(false)}>✕</button>
-          </div>
-        </div>
-      )}
-
       {section === 'expenses' && (
         <div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: '1rem' }}>
@@ -1634,7 +1685,10 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700 }}>₹{exp.amount.toLocaleString('en-IN')}</div>
-                  <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#a8a8a5', borderColor: 'transparent', background: 'transparent' }}>✕</button>
+                  <div style={{ display: 'flex', gap: 2 }}>
+                    <button onClick={() => handleEdit(exp)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#6b6b68', borderColor: 'transparent', background: 'transparent' }}>✎</button>
+                    <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#a8a8a5', borderColor: 'transparent', background: 'transparent' }}>✕</button>
+                  </div>
                 </div>
               </div>
             );
@@ -1760,7 +1814,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
 
       {section === 'expenses' && (
         <button
-          onClick={() => setShowForm(v => !v)}
+          onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' }); setShowForm(true); }}
           style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', border: 'none', boxShadow: '0 4px 20px rgba(15,110,86,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
@@ -2211,6 +2265,7 @@ function SplitPage({ trip, myNickname }) {
   const memberNames = normalizeMembers(trip.members);
   const [expenses, setExpenses] = useState(trip.expenses || []);
   const [showForm, setShowForm] = useState(false);
+  const [editingExpenseId, setEditingExpenseId] = useState(null);
   const [section, setSection] = useState('expenses');
   const [saving, setSaving] = useState(false);
   const [filterCat, setFilterCat] = useState('all');
@@ -2377,16 +2432,42 @@ function SplitPage({ trip, myNickname }) {
     if (splitWith.length === 0) { alert('Select at least one person to split with.'); return; }
     setSaving(true);
     try {
-      const data = await addExpense(trip.id, {
+      const payload = {
         desc: form.desc, amount: parseFloat(form.amount),
         paidBy: form.paidBy, cat: form.cat,
         split: splitWith, date: form.date,
-      });
-      setExpenses(es => [data.expense, ...es]);
-      setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: todayStr, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false });
+      };
+      if (editingExpenseId) {
+        const data = await updateExpense(trip.id, editingExpenseId, payload);
+        setExpenses(es => es.map(x => x.id === editingExpenseId ? data.expense : x));
+      } else {
+        const data = await addExpense(trip.id, payload);
+        setExpenses(es => [data.expense, ...es]);
+      }
+      setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: todayStr, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false });
+      setEditingExpenseId(null);
       setShowForm(false);
-    } catch (err) { alert('Could not save: ' + err.message); }
+    } catch (err) { alert(`Could not ${editingExpenseId ? 'update' : 'save'}: ` + err.message); }
     setSaving(false);
+  };
+
+  const handleEditExpense = (exp) => {
+    const splitArr = Array.isArray(exp.split) && exp.split.length > 0 ? exp.split : memberNames;
+    const normalizedDate = exp.date ? new Date(exp.date).toISOString().split('T')[0] : todayStr;
+    const isAll = splitArr.length === memberNames.length && memberNames.every(m => splitArr.includes(m));
+    setForm({
+      desc: exp.desc || '',
+      amount: String(exp.amount || ''),
+      paidBy: exp.paidBy || myNickname || memberNames[0] || '',
+      cat: exp.cat || 'food',
+      date: normalizedDate,
+      splitMode: isAll ? 'all' : 'select',
+      splitWith: [...splitArr],
+      _splitOpen: false,
+      _paidByOpen: false,
+    });
+    setEditingExpenseId(exp.id);
+    setShowForm(true);
   };
 
   const handleDelete = async (expId) => {
@@ -2411,11 +2492,11 @@ function SplitPage({ trip, myNickname }) {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
-        <button onClick={() => setShowForm(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
-        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>Add Expense</div>
+        <button onClick={() => { setShowForm(false); setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: todayStr, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); }} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>{editingExpenseId ? 'Edit Expense' : 'Add Expense'}</div>
         <button onClick={handleAdd} disabled={saving || !form.desc || !form.amount}
           style={{ ...S.btn, ...S.btnP, padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !form.desc || !form.amount) ? 0.4 : 1 }}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? (editingExpenseId ? 'Updating…' : 'Saving…') : (editingExpenseId ? 'Update' : 'Save')}
         </button>
       </div>
 
@@ -2712,7 +2793,10 @@ function SplitPage({ trip, myNickname }) {
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700 }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
                   <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>₹{Math.round(exp.amount / splitArr.length).toLocaleString('en-IN')} each</div>
-                  <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 6px', fontSize: 11, color: '#ccc', border: 'none', background: 'transparent', marginTop: 2 }}>✕</button>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 2, marginTop: 2 }}>
+                    <button onClick={() => handleEditExpense(exp)} style={{ ...S.btn, padding: '2px 6px', fontSize: 11, color: '#6b6b68', border: 'none', background: 'transparent' }}>✎</button>
+                    <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 6px', fontSize: 11, color: '#ccc', border: 'none', background: 'transparent' }}>✕</button>
+                  </div>
                 </div>
               </div>
             );
@@ -2935,7 +3019,7 @@ function SplitPage({ trip, myNickname }) {
       {/* ── Floating Add button — only on expenses tab ── */}
       {section === 'expenses' && (
         <button
-          onClick={() => setShowForm(true)}
+          onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: todayStr, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); setShowForm(true); }}
           style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', border: 'none', boxShadow: '0 4px 20px rgba(15,110,86,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
@@ -4463,7 +4547,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const goBack = () => (view === 'hub' ? onClose() : setView('hub'));
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: '#f7f6f2', zIndex: 500, overflowY: 'auto', fontFamily: "'DM Sans',sans-serif" }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #f8f7f2 34%, #f3f2ed 100%)', zIndex: 500, overflowY: 'auto', fontFamily: "'DM Sans',sans-serif" }}>
       <style>{`
         @keyframes pfFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pfBadgePop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
@@ -4476,7 +4560,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       `}</style>
 
       {/* Header */}
-      <div style={{ background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.09)', padding: '13px 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 1px 8px rgba(0,0,0,0.04)' }}>
+      <div style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '13px 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 10px 24px rgba(0,0,0,0.05)' }}>
         <button style={{ ...S.btn, padding: '5px 8px', fontSize: 16 }} onClick={goBack}>←</button>
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700 }}>{headerTitle}</div>
         {saved && <div style={{ marginLeft: 'auto', fontSize: 11, color: '#0F6E56', background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 10, padding: '4px 10px', fontWeight: 600, animation: 'pfFadeIn .2s' }}>✓ Saved</div>}
@@ -4622,7 +4706,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               { label: 'Photos', val: stats.photoCount },
               { label: 'Badges', val: earned.length },
             ].map(s => (
-              <div key={s.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 12, padding: '10px 6px', textAlign: 'center' }}>
+              <div key={s.label} style={{ background: 'linear-gradient(180deg,#ffffff,#fafaf7)', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 13, padding: '10px 6px', textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,0.035)' }}>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#1a1a18' }}>{s.val}</div>
                 <div style={{ fontSize: 10, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: 0.4, fontWeight: 600, marginTop: 2 }}>{s.label}</div>
               </div>
@@ -4635,7 +4719,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
                 {section.title}
               </div>
-              <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, overflow: 'hidden' }}>
+              <div style={{ background: 'linear-gradient(180deg,#ffffff,#fbfbf8)', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 20px rgba(0,0,0,0.045)' }}>
                 {section.items.map((m, idx) => (
                   <button
                     key={m.id}
@@ -5709,14 +5793,17 @@ export default function App() {
 
   // ── AUTH SCREEN ──
   if (!authToken) return (
-    <div style={{ ...S.root, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1.5rem' }}>
+    <div style={{ ...S.root, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ position: 'absolute', top: -120, right: -90, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.18) 0%, rgba(29,158,117,0) 70%)' }} />
+      <div style={{ position: 'absolute', bottom: -140, left: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(55,138,221,0.14) 0%, rgba(55,138,221,0) 70%)' }} />
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ width: 64, height: 64, background: '#1D9E75', borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, margin: '0 auto 12px' }}>✈️</div>
+          <div style={{ width: 68, height: 68, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 33, margin: '0 auto 12px', boxShadow: '0 14px 30px rgba(15,110,86,0.28)' }}>✈️</div>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 700 }}>Travel<span style={{ color: '#1D9E75' }}>Bae</span></div>
           <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4 }}>Plan, split, explore — together.</div>
+          <div style={{ fontSize: 11.5, color: '#8d8c87', marginTop: 7 }}>A calmer way to travel with friends.</div>
         </div>
-        <div style={{ background: '#fff', borderRadius: 20, padding: '1.75rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', border: '0.5px solid rgba(0,0,0,0.09)' }}>
+        <div style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)', borderRadius: 22, padding: '1.75rem', boxShadow: '0 20px 45px rgba(0,0,0,0.1)', border: '0.5px solid rgba(0,0,0,0.08)' }}>
           <div style={{ display: 'flex', gap: 0, background: '#F1EFE8', borderRadius: 12, padding: 3, marginBottom: '1.5rem' }}>
             {['login', 'signup'].map(s => (
               <button key={s} onClick={() => { setAuthScreen(s); setAuthError(''); }}
@@ -5748,7 +5835,16 @@ export default function App() {
   return (
     <div style={S.root}>
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}} @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}} *{box-sizing:border-box;margin:0;padding:0} a{color:inherit;text-decoration:none} input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#E1F5EE;outline:none} input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1D9E75;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}`}</style>
+      <style>{`
+        @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+        *{box-sizing:border-box;margin:0;padding:0}
+        a{color:inherit;text-decoration:none}
+        ::selection{background:#c7eedf;color:#053f31}
+        input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#E1F5EE;outline:none}
+        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1D9E75;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
+        input:focus, select:focus, textarea:focus { border-color:#1D9E75 !important; box-shadow:0 0 0 3px rgba(29,158,117,0.14) !important; }
+      `}</style>
 
       {newTripModal && <ShareCodeModal trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
 

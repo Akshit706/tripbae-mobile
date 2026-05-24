@@ -49,6 +49,7 @@ export const updateTrip = (id, data) => apiFetch(`/trips/${id}`, { method: 'PATC
 
 // Expenses
 export const addExpense    = (tripId, data)   => apiFetch(`/trips/${tripId}/expenses`, { method: 'POST', body: data });
+export const updateExpense = (tripId, expId, data) => apiFetch(`/trips/${tripId}/expenses/${expId}`, { method: 'PATCH', body: data });
 export const deleteExpense = (tripId, expId)  => apiFetch(`/trips/${tripId}/expenses/${expId}`, { method: 'DELETE' });
 
 // Contacts
