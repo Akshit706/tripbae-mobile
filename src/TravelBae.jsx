@@ -5154,8 +5154,7 @@ export default function App() {
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
- //  const [trips, setTrips] = useState([])
-  ;
+  const [trips, setTrips] = useState([]);
   const [tripsLoading, setTripsLoading] = useState(false);
   const [activeTrip, setActiveTrip] = useState(null);
   const [activeTripData, setActiveTripData] = useState(null);
