@@ -1309,6 +1309,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                   <div style={{ fontSize: 14, fontWeight: 500 }}>{exp.desc}</div>
                   <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>
                     {cat.label} · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                    {exp.time && <span> · {exp.time}</span>}
                     {exp.note && <span style={{ fontStyle: 'italic' }}> · {exp.note}</span>}
                   </div>
                 </div>
@@ -2425,7 +2426,7 @@ function SplitPage({ trip, myNickname }) {
                       {splitArr.length > 4 && <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#D3D1C7', border: '1.5px solid #fff', marginLeft: -5, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#6b6b68', fontWeight: 700 }}>+{splitArr.length - 4}</div>}
                     </div>
                     <span style={{ fontSize: 11, color: '#D3D1C7' }}>·</span>
-                    <span style={{ fontSize: 11, color: '#a8a8a5' }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</span>
+                    <span style={{ fontSize: 11, color: '#a8a8a5' }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}{exp.time ? ` · ${exp.time}` : ''}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
