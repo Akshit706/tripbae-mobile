@@ -3895,6 +3895,7 @@ function computeProfileStats(trips) {
 
 function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trips }) {
   const [view, setView] = useState('hub'); // 'hub' | 'badges' | 'stats' | 'history' | 'notifications' | 'currency' | 'privacy' | 'help' | 'about'
+  const [spanFilter, setSpanFilter] = useState('all'); 
   const [name, setName] = useState(profile.name || '');
   const [avatar, setAvatar] = useState(profile.avatar || null);
   const [editingName, setEditingName] = useState(false);
@@ -4053,6 +4054,37 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const companionCount = companionSet.size;
 
   const fmtMoney = (n) => `${currencyMeta.symbol}${Math.round(n).toLocaleString('en-IN')}`;
+
+  // ── Span-filtered trip list for Travel Stats ──
+  const spanFilteredTrips = (() => {
+    if (spanFilter === 'all') return tripList;
+    const now = new Date();
+    const cutoff = new Date(now);
+    if (spanFilter === 'month')   cutoff.setMonth(now.getMonth() - 1);
+    if (spanFilter === '6months') cutoff.setMonth(now.getMonth() - 6);
+    if (spanFilter === 'year')    cutoff.setFullYear(now.getFullYear() - 1);
+    return tripList.filter(t => {
+      const d = t.arrival || t.departure || t.createdAt;
+      if (!d) return false;
+      return new Date(d) >= cutoff;
+    });
+  })();
+
+  const spanStats       = computeProfileStats(spanFilteredTrips);
+  const spanTotalSpend  = spanFilteredTrips.reduce((s, t) =>
+    s + (t.expenses || []).reduce((a, e) => a + (e.amount || 0), 0), 0);
+  const spanTravelDays  = spanFilteredTrips.reduce((sum, t) => {
+    if (!t.arrival || !t.departure) return sum;
+    try { return sum + tripDuration(t.arrival, t.departure); } catch { return sum; }
+  }, 0);
+  const spanDestFreq    = {};
+  spanFilteredTrips.forEach(t => {
+    if (t.destination) {
+      const k = t.destination.trim();
+      spanDestFreq[k] = (spanDestFreq[k] || 0) + 1;
+    }
+  });
+  const spanTopDests = Object.entries(spanDestFreq).sort((a, b) => b[1] - a[1]).slice(0, 5);
 
   const handleShare = async () => {
     const shareData = {
@@ -4461,6 +4493,108 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       {/* ════════ TRAVEL STATS VIEW ════════ */}
       {view === 'stats' && (
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
+
+          {/* ── Span filter pills ── */}
+          <div style={{
+            display: 'flex', gap: 8, marginBottom: '1.25rem',
+            background: 'rgba(0,0,0,0.04)', borderRadius: 14, padding: 4,
+          }}>
+            {[
+              { id: 'month',   label: '1 Month' },
+              { id: '6months', label: '6 Months' },
+              { id: 'year',    label: '1 Year' },
+              { id: 'all',     label: 'All Time' },
+            ].map(opt => {
+              const active = spanFilter === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  onClick={() => setSpanFilter(opt.id)}
+                  style={{
+                    flex: 1, padding: '8px 4px', borderRadius: 10, border: 'none',
+                    background: active ? '#1D9E75' : 'transparent',
+                    color: active ? '#fff' : '#6b6b68',
+                    fontSize: 12, fontWeight: active ? 700 : 500,
+                    cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
+                    transition: 'all .18s',
+                    boxShadow: active ? '0 3px 10px rgba(29,158,117,0.25)' : 'none',
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* ── Summary cards ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+            {[
+              { emoji: '🧳', label: 'Trips',        val: spanStats.tripCount },
+              { emoji: '📍', label: 'Destinations', val: spanStats.uniqueDests },
+              { emoji: '📅', label: 'Travel Days',  val: spanTravelDays },
+              { emoji: '💰', label: 'Total Spent',  val: fmtMoney(spanTotalSpend) },
+              { emoji: '🤝', label: 'Group Trips',  val: spanStats.groupCount },
+              { emoji: '🎒', label: 'Solo Trips',   val: spanStats.soloCount },
+            ].map(s => (
+              <div key={s.label} style={{
+                background: 'linear-gradient(160deg,#ffffff,#fafaf7)',
+                border: '0.5px solid rgba(0,0,0,0.08)',
+                borderRadius: 14, padding: '14px 16px',
+                boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
+              }}>
+                <div style={{ fontSize: 22, marginBottom: 6 }}>{s.emoji}</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#1a1a18' }}>{s.val}</div>
+                <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 600, marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* ── Top destinations ── */}
+          {spanTopDests.length > 0 && (
+            <div style={{
+              background: 'linear-gradient(160deg,#ffffff,#fafaf7)',
+              border: '0.5px solid rgba(0,0,0,0.08)',
+              borderRadius: 14, padding: '14px 16px',
+              boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
+            }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#1a1a18', marginBottom: 12 }}>
+                📍 Top Destinations
+              </div>
+              {spanTopDests.map(([dest, count], i) => {
+                const pct = Math.round((count / spanFilteredTrips.length) * 100);
+                return (
+                  <div key={dest} style={{ marginBottom: i < spanTopDests.length - 1 ? 10 : 0 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>{dest}</div>
+                      <div style={{ fontSize: 12, color: '#6b6b68' }}>{count} trip{count > 1 ? 's' : ''}</div>
+                    </div>
+                    <div style={{ height: 5, borderRadius: 99, background: 'rgba(0,0,0,0.07)', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: 99,
+                        width: `${pct}%`,
+                        background: 'linear-gradient(90deg,#1D9E75,#0F6E56)',
+                        transition: 'width .4s ease',
+                      }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {spanFilteredTrips.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#9a9a96' }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>🗺️</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 600, color: '#1a1a18', marginBottom: 6 }}>
+                No trips in this period
+              </div>
+              <div style={{ fontSize: 13, lineHeight: 1.5 }}>
+                Try a wider time range or start planning your next adventure!
+              </div>
+            </div>
+          )}
+        
           {/* Hero metrics — 4 key numbers */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 14 }}>
             {[
