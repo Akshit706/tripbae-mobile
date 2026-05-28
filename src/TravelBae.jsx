@@ -905,7 +905,14 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [saving, setSaving] = useState(false);
   const [chartReady, setChartReady] = useState(false);
   const todayStr = new Date().toISOString().split('T')[0];
-  const [form, setForm] = useState({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' });
+  const getNow = () => {
+    const now = new Date();
+    return {
+      date: now.toISOString().split('T')[0],
+      time: now.toTimeString().slice(0, 5),
+    };
+  };
+  const [form, setForm] = useState({ desc: '', amount: '', cat: 'food', date: getNow().date, time: getNow().time, note: '' });
   const donutRef = useRef(null);
   const barRef = useRef(null);
   const chartInstances = useRef({});
@@ -995,7 +1002,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         const data = await addExpense(trip.id, payload);
         setExpenses(es => [data.expense, ...es]);
       }
-      setForm({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' });
+      setForm({ desc: '', amount: '', cat: 'food', date: getNow().date, time: getNow().time, note: '' });
       setEditingExpenseId(null);
       setShowForm(false);
     } catch (err) {
@@ -1009,7 +1016,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       desc: exp.desc || '',
       amount: String(exp.amount || ''),
       cat: exp.cat || 'food',
-      date: exp.date ? new Date(exp.date).toISOString().split('T')[0] : todayStr,
+      date: exp.date ? new Date(exp.date).toISOString().split('T')[0] : getNow().date,
+      time: exp.time || getNow().time,
       note: exp.note || '',
     });
     setEditingExpenseId(exp.id);
@@ -1126,7 +1134,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
-        <button onClick={() => { setShowForm(false); setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' }); }} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
+        <button onClick={() => { setShowForm(false); setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: getNow().date, time: getNow().time, note: '' }); }} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>{editingExpenseId ? 'Edit Expense' : 'Add Expense'}</div>
         <button onClick={handleAdd} disabled={saving || !form.desc || !form.amount}
           style={{ ...S.btn, ...S.btnSolo, padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !form.desc || !form.amount) ? 0.4 : 1 }}>
@@ -1170,8 +1178,11 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           </div>
 
           <div style={{ marginBottom: '1.25rem' }}>
-            <label style={S.label}>Date</label>
-            <input style={{ ...S.input, marginTop: 6 }} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+            <label style={S.label}>Date & Time <span style={{ color: '#a8a8a5', fontWeight: 400, fontSize: 10, textTransform: 'none', letterSpacing: 0 }}>(auto-captured)</span></label>
+            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              <input style={{ ...S.input, flex: 1 }} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+              <input style={{ ...S.input, width: 110 }} type="time" value={form.time || ''} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} />
+            </div>
           </div>
 
           <div style={{ marginBottom: '1.25rem' }}>
@@ -1210,16 +1221,24 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             </div>
           )}
         </div>
-        {budget && (
-          <div>
-            <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? '#FFD3C4' : '#DAD7FF', transition: 'width .6s' }} />
+        {budget && (() => {
+          const budgetEmoji = budgetPct <= 25 ? '😎' : budgetPct <= 50 ? '🙂' : budgetPct <= 70 ? '😐' : budgetPct <= 85 ? '😬' : budgetPct <= 95 ? '😰' : '🤯';
+          const budgetMsg = budgetPct <= 25 ? 'Crushing it!' : budgetPct <= 50 ? 'Looking good' : budgetPct <= 70 ? 'Keep an eye' : budgetPct <= 85 ? 'Getting close' : budgetPct <= 95 ? 'Almost gone!' : 'Budget blown!';
+          return (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 22, lineHeight: 1, transition: 'all .4s', filter: budgetPct > 85 ? 'drop-shadow(0 0 4px rgba(255,150,80,0.6))' : 'none' }}>{budgetEmoji}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{budgetMsg}</span>
+              </div>
+              <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? '#FFD3C4' : '#DAD7FF', transition: 'width .6s' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+                <span>{budgetPct}% used</span><span>{100 - budgetPct}% remaining</span>
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
-              <span>{budgetPct}% used</span><span>{100 - budgetPct}% remaining</span>
-            </div>
-          </div>
-        )}
+          );
+        })()}
         {!budget && (
           <button onClick={() => setShowBudgetEdit(true)} style={{ ...S.btn, background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.88)', border: '0.5px solid rgba(255,255,255,0.26)', fontSize: 12, marginTop: 8 }}>
             + Set a budget
@@ -1884,9 +1903,13 @@ function SplitPage({ trip, myNickname }) {
   const [localBudget, setLocalBudget] = useState(trip.budget || null);
   const [budgetInput, setBudgetInput] = useState('');
   const todayStr = new Date().toISOString().split('T')[0];
+  const getNow = () => {
+    const now = new Date();
+    return { date: now.toISOString().split('T')[0], time: now.toTimeString().slice(0, 5) };
+  };
   const [form, setForm] = useState({
     desc: '', amount: '', paidBy: myNickname || memberNames[0] || '',
-    cat: 'food', date: todayStr,
+    cat: 'food', date: getNow().date, time: getNow().time,
     splitMode: 'all',
     splitWith: [...memberNames],
     _splitOpen: false,
@@ -2054,7 +2077,7 @@ function SplitPage({ trip, myNickname }) {
         const data = await addExpense(trip.id, payload);
         setExpenses(es => [data.expense, ...es]);
       }
-      setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: todayStr, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false });
+      setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: getNow().date, time: getNow().time, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false });
       setEditingExpenseId(null);
       setShowForm(false);
     } catch (err) { alert(`Could not ${editingExpenseId ? 'update' : 'save'}: ` + err.message); }
@@ -2071,6 +2094,7 @@ function SplitPage({ trip, myNickname }) {
       paidBy: exp.paidBy || myNickname || memberNames[0] || '',
       cat: exp.cat || 'food',
       date: normalizedDate,
+      time: exp.time || getNow().time,
       splitMode: isAll ? 'all' : 'select',
       splitWith: [...splitArr],
       _splitOpen: false,
@@ -2102,7 +2126,7 @@ function SplitPage({ trip, myNickname }) {
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
-        <button onClick={() => { setShowForm(false); setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: todayStr, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); }} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
+        <button onClick={() => { setShowForm(false); setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: getNow().date, time: getNow().time, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); }} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>{editingExpenseId ? 'Edit Expense' : 'Add Expense'}</div>
         <button onClick={handleAdd} disabled={saving || !form.desc || !form.amount}
           style={{ ...S.btn, ...S.btnP, padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !form.desc || !form.amount) ? 0.4 : 1 }}>
@@ -2157,9 +2181,13 @@ function SplitPage({ trip, myNickname }) {
           </div>
 
           {/* Date */}
+          {/* Date */}
           <div style={{ marginBottom: '1.5rem' }}>
-            <label style={S.label}>Date</label>
-            <input style={{ ...S.input, marginTop: 6 }} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+            <label style={S.label}>Date & Time <span style={{ color: '#a8a8a5', fontWeight: 400, fontSize: 10, textTransform: 'none', letterSpacing: 0 }}>(auto-captured)</span></label>
+            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+              <input style={{ ...S.input, flex: 1 }} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} />
+              <input style={{ ...S.input, width: 110 }} type="time" value={form.time || ''} onChange={e => setForm(f => ({ ...f, time: e.target.value }))} />
+            </div>
           </div>
 
           {/* Paid by + Split — Splitwise style */}
@@ -2629,7 +2657,7 @@ function SplitPage({ trip, myNickname }) {
       {/* ── Floating Add button — only on expenses tab ── */}
       {section === 'expenses' && (
         <button
-          onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: todayStr, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); setShowForm(true); }}
+          onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: getNow().date, time: getNow().time, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); setShowForm(true); }}
           style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', border: 'none', boxShadow: '0 4px 20px rgba(15,110,86,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
@@ -5529,7 +5557,6 @@ export default function App() {
   ];
   const soloTabs = [
     { id: 'main', label: '💰 Expenses' },
-    { id: 'contacts', label: '📒 Contacts' },
     { id: 'itinerary', label: '🗺️ Itinerary' },
     { id: 'club', label: '🧭 Club' },
   ];
@@ -5683,7 +5710,6 @@ export default function App() {
                 {isSolo ? (
                   <>
                     {tab === 'main' && <SoloExpensesPage trip={activeTripData} myNickname={myNickname} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
-                    {tab === 'contacts' && <ContactsPage trip={activeTripData} myNickname={myNickname} isSolo={true} />}
                     {tab === 'itinerary' && <ItineraryPage trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
                     {tab === 'club' && <ClubPage trip={activeTripData} />}
                   </>
