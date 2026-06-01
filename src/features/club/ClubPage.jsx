@@ -32,9 +32,6 @@ const initialFilters = {
   memberBand: 'any',
   vibe: 'any',
   genderMix: 'any',
-  hideRequested: false,
-  withPhoto: false,
-  activeOnly: false,
 };
 
 function moodGradient(vibe) {
@@ -65,6 +62,37 @@ function genderMixLabel(value) {
 function isRecentlyActive(updatedAt) {
   if (!updatedAt) return false;
   return Date.now() - new Date(updatedAt).getTime() <= 3 * 24 * 60 * 60 * 1000;
+}
+
+function MatchRing({ score }) {
+  const value = Math.max(0, Math.min(100, score || 0));
+  return (
+    <div
+      style={{
+        width: 72,
+        height: 72,
+        borderRadius: '50%',
+        background: `conic-gradient(#12B981 0 ${value}%, #E7ECF4 ${value}% 100%)`,
+        display: 'grid',
+        placeItems: 'center',
+        animation: 'clubRingIn .7s cubic-bezier(.2,.7,.2,1) both',
+        boxShadow: '0 10px 24px rgba(18,185,129,0.18)',
+      }}>
+      <div style={{ width: 54, height: 54, borderRadius: '50%', background: '#fff', display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 800, color: '#111827' }}>
+        {value}%
+      </div>
+    </div>
+  );
+}
+
+function getGroupMoodLine(item) {
+  const vibe = item?.vibe || 'mixed';
+  if (vibe === 'party') return 'Late plans, loud laughs, zero boring energy.';
+  if (vibe === 'foodie') return 'Built around plates, cafes, and the next great bite.';
+  if (vibe === 'adventure') return 'Fast-moving crew chasing views and stories.';
+  if (vibe === 'culture') return 'Museums, old streets, and meaningful detours.';
+  if (vibe === 'chill') return 'Easy pace, soft plans, good conversations.';
+  return 'Balanced crew open to a fun, easy connection.';
 }
 
 function toTokenSet(value) {
@@ -173,16 +201,24 @@ function buildCompatibility(myProfile, myTrip, item) {
   };
 }
 
-function ClubDiscoveryCard({ item, compatibility, alreadySent, onStartRequest, requestFor, requestMessage, setRequestMessage, onSendRequest, onCancelRequest, busy }) {
+function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen, onStartRequest, busy }) {
   const tags = Array.isArray(item.coverTags) ? item.coverTags : [];
   const members = item.trip?.members?.length || 0;
   const activeNow = isRecentlyActive(item.updatedAt);
   const avatar = item.photoUrl || item.trip?.coverUrl || null;
+  const moodLine = getGroupMoodLine(item);
 
   return (
-    <div style={{ borderRadius: 18, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', marginBottom: 14, background: '#fff', boxShadow: '0 12px 32px rgba(24,24,24,0.08)' }}>
+    <button
+      onClick={onOpen}
+      style={{ width: '100%', textAlign: 'left', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', marginBottom: 14, background: '#fff', boxShadow: '0 14px 34px rgba(24,24,24,0.09)', padding: 0, cursor: 'pointer', animation: 'clubCardIn .45s cubic-bezier(.2,.7,.2,1) both', transition: 'transform .2s ease, box-shadow .2s ease' }}>
       <div style={{ background: moodGradient(item.vibe || 'mixed'), padding: 14, color: '#fff', position: 'relative' }}>
-        <div style={{ position: 'absolute', right: -24, top: -24, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.15)' }} />
+        <div style={{ position: 'absolute', right: -24, top: -24, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', animation: 'clubFloat 4.8s ease-in-out infinite' }} />
+        <div style={{ position: 'absolute', right: 12, top: 12 }}>
+          <span style={{ fontSize: 10, fontWeight: 800, padding: '5px 10px', borderRadius: 999, background: activeNow ? 'rgba(103,255,186,0.26)' : 'rgba(255,255,255,0.22)', color: '#fff', backdropFilter: 'blur(8px)', animation: activeNow ? 'clubPulse 1.9s ease-in-out infinite' : 'none' }}>
+            {activeNow ? 'Active Today' : 'Quiet Today'}
+          </span>
+        </div>
         <div style={{ display: 'flex', gap: 10 }}>
           {avatar ? (
             <img src={avatar} alt="group" style={{ width: 76, height: 76, borderRadius: 14, objectFit: 'cover', border: '2px solid rgba(255,255,255,0.38)' }} />
@@ -199,9 +235,6 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onStartRequest, r
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
               <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>{distanceLabel(item.distance)}</span>
               <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>{(item.vibe || 'mixed').toUpperCase()} vibe</span>
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: activeNow ? 'rgba(103,255,186,0.25)' : 'rgba(255,255,255,0.22)' }}>
-                {activeNow ? 'Active now' : 'Recently seen'}
-              </span>
               {compatibility && (
                 <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.26)' }}>
                   {compatibility.score}% match
@@ -213,7 +246,7 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onStartRequest, r
       </div>
 
       <div style={{ padding: 14 }}>
-        <div style={{ fontSize: 13, color: '#242424', lineHeight: 1.5 }}>{item.about}</div>
+        <div style={{ fontSize: 13, color: '#242424', lineHeight: 1.5 }}>{moodLine}</div>
 
         {compatibility?.reasons?.length > 0 && (
           <div style={{ marginTop: 9, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -225,23 +258,9 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onStartRequest, r
           </div>
         )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 8, marginTop: 10 }}>
-          <div style={{ background: '#F6F7FA', borderRadius: 10, padding: '8px 10px' }}>
-            <div style={{ fontSize: 10, color: '#70727A', textTransform: 'uppercase', fontWeight: 700 }}>Gender Mix</div>
-            <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2 }}>{genderMixLabel(item.genderMix)}</div>
-            {(item.boysCount != null || item.girlsCount != null) && (
-              <div style={{ fontSize: 11, color: '#575B66', marginTop: 2 }}>Boys {item.boysCount ?? 0} • Girls {item.girlsCount ?? 0}</div>
-            )}
-          </div>
-          <div style={{ background: '#F6F7FA', borderRadius: 10, padding: '8px 10px' }}>
-            <div style={{ fontSize: 10, color: '#70727A', textTransform: 'uppercase', fontWeight: 700 }}>Looking For</div>
-            <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, lineHeight: 1.35 }}>{item.lookingFor || 'Open to meeting great people'}</div>
-          </div>
-        </div>
-
         {tags.length > 0 && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-            {tags.slice(0, 8).map(tag => (
+            {tags.slice(0, 4).map(tag => (
               <span key={`${item.id}-${tag}`} style={{ fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 999, background: '#EEF1FF', color: '#3946C6' }}>
                 #{tag}
               </span>
@@ -249,30 +268,19 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onStartRequest, r
           </div>
         )}
 
-        {requestFor === item.tripId ? (
-          <div style={{ marginTop: 12 }}>
-            <textarea
-              style={{ ...S.input, resize: 'vertical', minHeight: 70, fontSize: 12 }}
-              value={requestMessage}
-              onChange={e => setRequestMessage(e.target.value)}
-              placeholder="Say hi and tell them what you want to do together..."
-            />
-            <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
-              <button style={{ ...S.btn, ...S.btnOrange, flex: 1, marginTop: 0 }} disabled={busy || !requestMessage.trim()} onClick={onSendRequest}>Send Request</button>
-              <button style={{ ...S.btn, marginTop: 0 }} onClick={onCancelRequest}>Cancel</button>
-            </div>
-          </div>
-        ) : (
-          <button
-            style={{ ...S.btn, ...S.btnOrange, width: '100%', marginTop: 12, opacity: alreadySent ? 0.55 : 1 }}
-            disabled={alreadySent || busy}
-            onClick={onStartRequest}
-          >
-            {alreadySent ? 'Request sent' : 'Connect with this group'}
-          </button>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, gap: 10 }}>
+          <div style={{ fontSize: 11, color: '#6a6d76', fontWeight: 700 }}>Tap to open full card</div>
+          <span
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!alreadySent && !busy) onStartRequest();
+            }}
+            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, padding: '8px 12px', borderRadius: 999, background: alreadySent ? '#F3F0E8' : '#111827', color: alreadySent ? '#6b6b68' : '#fff', opacity: alreadySent ? 1 : 1 }}>
+            {alreadySent ? 'Request Sent' : 'Quick Connect'}
+          </span>
+        </div>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -282,6 +290,9 @@ function ClubPage({ trip }) {
   const [hub, setHub] = useState({ myProfile: null, discover: [], incomingRequests: [], outgoingRequests: [] });
   const [clubView, setClubView] = useState('discover');
   const [filters, setFilters] = useState(initialFilters);
+  const [filterDraft, setFilterDraft] = useState(initialFilters);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
 
   const [requestFor, setRequestFor] = useState(null);
   const [requestMessage, setRequestMessage] = useState('');
@@ -321,6 +332,7 @@ function ClubPage({ trip }) {
         setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
         setLocationError('');
         setLocationEnabled(true);
+        setFiltersOpen(true);
       },
       () => {
         setLocationError('Location permission denied. You can still use manual filters.');
@@ -334,7 +346,6 @@ function ClubPage({ trip }) {
     try {
       const params = {
         vibe: filters.vibe,
-        activeOnly: filters.activeOnly,
       };
       if (locationEnabled && userLocation) {
         params.latitude = userLocation.latitude;
@@ -358,7 +369,7 @@ function ClubPage({ trip }) {
       alert('Could not load club: ' + err.message);
     }
     setClubLoading(false);
-  }, [trip.id, trip.groupName, locationEnabled, userLocation, debouncedRadius, filters.vibe, filters.activeOnly]);
+  }, [trip.id, trip.groupName, locationEnabled, userLocation, debouncedRadius, filters.vibe]);
 
   useEffect(() => { loadHub(); }, [loadHub]);
 
@@ -369,17 +380,12 @@ function ClubPage({ trip }) {
     return (hub.discover || []).filter(item => {
       if (item.status !== 'listed') return false;
 
-      const alreadySent = hub.outgoingRequests.some(r => r.targetTripId === item.tripId && r.status === 'pending');
-      if (filters.hideRequested && alreadySent) return false;
-
       const members = item.trip?.members?.length || 0;
       if (filters.memberBand === '2plus' && members < 2) return false;
       if (filters.memberBand === '4plus' && members < 4) return false;
       if (filters.memberBand === '6plus' && members < 6) return false;
 
       if (filters.genderMix !== 'any' && (item.genderMix || 'mixed') !== filters.genderMix) return false;
-      if (filters.withPhoto && !item.photoUrl) return false;
-      if (filters.activeOnly && !isRecentlyActive(item.updatedAt)) return false;
 
       if (q) {
         const hay = [
@@ -395,7 +401,7 @@ function ClubPage({ trip }) {
 
       return true;
     });
-  }, [hub.discover, hub.outgoingRequests, filters]);
+  }, [hub.discover, filters]);
 
   const handleToggle = async () => {
     setClubBusy(true);
@@ -491,6 +497,15 @@ function ClubPage({ trip }) {
     setClubBusy(false);
   };
 
+  const applyFilters = () => {
+    setFilters(filterDraft);
+    setFiltersOpen(false);
+  };
+
+  const selectedAlreadySent = selectedCard
+    ? hub.outgoingRequests.some(r => r.targetTripId === selectedCard.tripId && r.status === 'pending')
+    : false;
+
   if (clubLoading) return <Spinner text="Loading Club..." solo={trip.isSolo} />;
 
   return (
@@ -499,6 +514,32 @@ function ClubPage({ trip }) {
         @keyframes clubPop {
           from { opacity: 0; transform: translateY(6px) scale(.98); }
           to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes clubCardIn {
+          from { opacity: 0; transform: translateY(14px) scale(.985); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes clubSheetIn {
+          from { opacity: 0; transform: translateY(28px) scale(.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes clubFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes clubFloat {
+          0% { transform: translate3d(0,0,0); }
+          50% { transform: translate3d(-6px,8px,0); }
+          100% { transform: translate3d(0,0,0); }
+        }
+        @keyframes clubPulse {
+          0% { box-shadow: 0 0 0 0 rgba(103,255,186,0.25); }
+          70% { box-shadow: 0 0 0 10px rgba(103,255,186,0); }
+          100% { box-shadow: 0 0 0 0 rgba(103,255,186,0); }
+        }
+        @keyframes clubRingIn {
+          from { opacity: 0; transform: scale(.82) rotate(-90deg); }
+          to { opacity: 1; transform: scale(1) rotate(0deg); }
         }
       `}</style>
 
@@ -575,17 +616,6 @@ function ClubPage({ trip }) {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div>
-              <label style={S.label}>No. of boys</label>
-              <input type="number" min="0" max="99" style={S.input} value={profileForm.boysCount} onChange={e => setProfileForm(f => ({ ...f, boysCount: e.target.value }))} placeholder="0" />
-            </div>
-            <div>
-              <label style={S.label}>No. of girls</label>
-              <input type="number" min="0" max="99" style={S.input} value={profileForm.girlsCount} onChange={e => setProfileForm(f => ({ ...f, girlsCount: e.target.value }))} placeholder="0" />
-            </div>
-          </div>
-
           <label style={S.label}>Tags (comma separated)</label>
           <input
             style={S.input}
@@ -621,7 +651,13 @@ function ClubPage({ trip }) {
       {clubView === 'discover' && (
         <>
           <div style={{ ...S.card, animation: 'clubPop .25s ease-out both' }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Find Your Crowd</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
+              <div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16 }}>Find Your Crowd</div>
+                <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>Clean filters, premium cards, one-tap deep dive.</div>
+              </div>
+              <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={() => { setFilterDraft(filters); setFiltersOpen(true); }}>Filters</button>
+            </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
               <input
@@ -633,40 +669,14 @@ function ClubPage({ trip }) {
               <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setFilters(initialFilters)}>Reset</button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
-              <select style={S.input} value={filters.memberBand} onChange={e => setFilters(f => ({ ...f, memberBand: e.target.value }))}>
-                {MEMBER_BAND_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-              </select>
-              <select style={S.input} value={filters.vibe} onChange={e => setFilters(f => ({ ...f, vibe: e.target.value }))}>
-                {VIBE_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-              </select>
-              <select style={S.input} value={filters.genderMix} onChange={e => setFilters(f => ({ ...f, genderMix: e.target.value }))}>
-                {GENDER_MIX_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
-              </select>
-              <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setFilters(f => ({ ...f, hideRequested: !f.hideRequested }))}>
-                {filters.hideRequested ? 'Hide requested: ON' : 'Hide requested: OFF'}
-              </button>
-            </div>
-
             <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-              <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setFilters(f => ({ ...f, withPhoto: !f.withPhoto }))}>{filters.withPhoto ? 'Photo only: ON' : 'Photo only: OFF'}</button>
-              <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setFilters(f => ({ ...f, activeOnly: !f.activeOnly }))}>{filters.activeOnly ? 'Active only: ON' : 'Active only: OFF'}</button>
-              {!locationEnabled && <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={requestLocation}>Use my location</button>}
-              {locationEnabled && <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setLocationEnabled(false)}>Disable location</button>}
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 999, background: '#F4F6FA', color: '#525866' }}>Vibe: {VIBE_OPTIONS.find(v => v.value === filters.vibe)?.label || 'Any vibe'}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 999, background: '#F4F6FA', color: '#525866' }}>Mix: {GENDER_MIX_OPTIONS.find(v => v.value === filters.genderMix)?.label || 'Any mix'}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 999, background: '#F4F6FA', color: '#525866' }}>Size: {MEMBER_BAND_OPTIONS.find(v => v.value === filters.memberBand)?.label || 'Any size'}</span>
+              {locationEnabled && <span style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 999, background: '#E8FFF6', color: '#0F6E56' }}>Distance: {radius} km</span>}
             </div>
 
             {locationError && <div style={{ marginTop: 8, fontSize: 12, color: '#C3582D' }}>{locationError}</div>}
-
-            {locationEnabled && (
-              <div style={{ marginTop: 10, background: '#EEF9F6', borderRadius: 12, padding: 10, border: '1px solid #CBEADF' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 6, color: '#0F6E56', fontWeight: 700 }}>
-                  <span>Radius</span>
-                  <span>{radius <= 150 ? `${radius} km` : '150+ km'}</span>
-                </div>
-                <input type="range" min="2" max="150" value={radius} onChange={(e) => setRadius(Number(e.target.value))} style={{ width: '100%' }} />
-                <div style={{ fontSize: 11, color: '#518A7C', marginTop: 4 }}>2 km to 150 km+</div>
-              </div>
-            )}
           </div>
 
           <div style={{ ...S.card, animation: 'clubPop .25s ease-out both' }}>
@@ -690,17 +700,167 @@ function ClubPage({ trip }) {
                   item={item}
                   compatibility={compatibility}
                   alreadySent={alreadySent}
+                  onOpen={() => setSelectedCard(item)}
                   onStartRequest={() => setRequestFor(item.tripId)}
-                  requestFor={requestFor}
-                  requestMessage={requestMessage}
-                  setRequestMessage={setRequestMessage}
-                  onSendRequest={handleSendRequest}
-                  onCancelRequest={() => { setRequestFor(null); setRequestMessage(''); }}
                   busy={clubBusy}
                 />
               ))}
           </div>
         </>
+      )}
+
+      {filtersOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.45)', zIndex: 500, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '1rem', animation: 'clubFadeIn .2s ease-out both' }}>
+          <div style={{ width: '100%', maxWidth: 560, background: '#fff', borderRadius: 24, padding: '1rem 1rem 1.1rem', boxShadow: '0 30px 80px rgba(0,0,0,0.22)', animation: 'clubSheetIn .28s cubic-bezier(.2,.7,.2,1) both' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800 }}>Tune Your Match Feed</div>
+                <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>Pick the energy you want, then save and jump back in.</div>
+              </div>
+              <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setFiltersOpen(false)}>Close</button>
+            </div>
+
+            <label style={S.label}>Vibe</label>
+            <select style={S.input} value={filterDraft.vibe} onChange={e => setFilterDraft(f => ({ ...f, vibe: e.target.value }))}>
+              {VIBE_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
+
+            <label style={S.label}>Group Mix</label>
+            <select style={S.input} value={filterDraft.genderMix} onChange={e => setFilterDraft(f => ({ ...f, genderMix: e.target.value }))}>
+              {GENDER_MIX_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
+
+            <label style={S.label}>Group Size</label>
+            <select style={S.input} value={filterDraft.memberBand} onChange={e => setFilterDraft(f => ({ ...f, memberBand: e.target.value }))}>
+              {MEMBER_BAND_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+            </select>
+
+            <div style={{ marginTop: 10, background: '#F6FFFB', border: '1px solid #D9F5EA', borderRadius: 16, padding: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#0F6E56' }}>Distance Range</div>
+                <div style={{ fontSize: 12, color: '#0F6E56', fontWeight: 700 }}>{locationEnabled ? `${radius} km` : 'Location off'}</div>
+              </div>
+              <input type="range" min="2" max="150" value={radius} onChange={(e) => setRadius(Number(e.target.value))} style={{ width: '100%' }} />
+              <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 4 }}>2 km to 150 km+</div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                {!locationEnabled && <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={requestLocation}>Use my location</button>}
+                {locationEnabled && <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setLocationEnabled(false)}>Turn location off</button>}
+              </div>
+            </div>
+
+            {locationError && <div style={{ marginTop: 8, fontSize: 12, color: '#C3582D' }}>{locationError}</div>}
+
+            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              <button style={{ ...S.btn, flex: 1, marginTop: 0 }} onClick={() => { setFilterDraft(initialFilters); setRadius(25); }}>Reset</button>
+              <button style={{ ...S.btn, ...S.btnOrange, flex: 1, marginTop: 0 }} onClick={applyFilters}>Save and Go</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedCard && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,12,18,0.55)', zIndex: 520, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'clubFadeIn .22s ease-out both' }}>
+          <div style={{ width: '100%', maxWidth: 620, maxHeight: '88vh', overflowY: 'auto', background: '#fff', borderRadius: 26, boxShadow: '0 34px 90px rgba(0,0,0,0.26)', overflow: 'hidden', animation: 'clubSheetIn .3s cubic-bezier(.2,.7,.2,1) both' }}>
+            <div style={{ background: moodGradient(selectedCard.vibe || 'mixed'), padding: 18, color: '#fff', position: 'relative' }}>
+              <div style={{ position: 'absolute', right: -20, top: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', animation: 'clubFloat 5.5s ease-in-out infinite' }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 12, minWidth: 0 }}>
+                  {selectedCard.photoUrl ? (
+                    <img src={selectedCard.photoUrl} alt="group" style={{ width: 96, height: 96, borderRadius: 18, objectFit: 'cover', border: '2px solid rgba(255,255,255,0.4)' }} />
+                  ) : (
+                    <div style={{ width: 96, height: 96, borderRadius: 18, background: 'rgba(255,255,255,0.22)', display: 'grid', placeItems: 'center', fontSize: 34 }}>{selectedCard.trip?.emoji || '🧭'}</div>
+                  )}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>{selectedCard.trip?.groupName}</div>
+                    <div style={{ fontSize: 13, opacity: 0.92, marginTop: 4 }}>{selectedCard.trip?.destination}</div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.2)' }}>{distanceLabel(selectedCard.distance)}</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.2)' }}>{(selectedCard.vibe || 'mixed').toUpperCase()} vibe</span>
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, background: isRecentlyActive(selectedCard.updatedAt) ? 'rgba(103,255,186,0.25)' : 'rgba(255,255,255,0.2)' }}>{isRecentlyActive(selectedCard.updatedAt) ? 'Active Today' : 'Quiet Today'}</span>
+                    </div>
+                  </div>
+                </div>
+                <button style={{ ...S.btn, marginTop: 0, alignSelf: 'flex-start', background: 'rgba(255,255,255,0.16)', color: '#fff', border: '1px solid rgba(255,255,255,0.24)' }} onClick={() => setSelectedCard(null)}>Close</button>
+              </div>
+            </div>
+
+            <div style={{ padding: 18 }}>
+              {(() => {
+                const compatibility = buildCompatibility(hub.myProfile, trip, selectedCard);
+                return (
+                  <div style={{ background: '#F7F8FC', borderRadius: 16, padding: 14, marginBottom: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <MatchRing score={compatibility.score} />
+                        <div>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase', letterSpacing: '.04em' }}>Compatibility</div>
+                        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 24, fontWeight: 800, color: '#111827' }}>{compatibility.score}% match</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        {compatibility.reasons.map((reason, idx) => (
+                          <span key={`modal-reason-${idx}`} style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: '#E8FFF6', color: '#0B7A5A' }}>{reason}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 10, marginBottom: 12 }}>
+                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>About</div>
+                  <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{selectedCard.about || getGroupMoodLine(selectedCard)}</div>
+                </div>
+                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>Looking For</div>
+                  <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{selectedCard.lookingFor || 'Open to great plans and a smooth connection.'}</div>
+                </div>
+                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>Group Mix</div>
+                  <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{genderMixLabel(selectedCard.genderMix)}</div>
+                </div>
+                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>Group Size</div>
+                  <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{selectedCard.trip?.members?.length || 0} travelers</div>
+                </div>
+              </div>
+
+              {Array.isArray(selectedCard.coverTags) && selectedCard.coverTags.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase', marginBottom: 8 }}>Interests</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {selectedCard.coverTags.map(tag => (
+                      <span key={`modal-tag-${tag}`} style={{ fontSize: 11, fontWeight: 800, padding: '7px 10px', borderRadius: 999, background: '#EEF1FF', color: '#3946C6' }}>#{tag}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {requestFor === selectedCard.tripId ? (
+                <div style={{ marginTop: 12 }}>
+                  <textarea
+                    style={{ ...S.input, resize: 'vertical', minHeight: 88, fontSize: 13 }}
+                    value={requestMessage}
+                    onChange={e => setRequestMessage(e.target.value)}
+                    placeholder="Say hi, mention your vibe, and suggest a plan..."
+                  />
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <button style={{ ...S.btn, ...S.btnOrange, flex: 1, marginTop: 0 }} disabled={clubBusy || !requestMessage.trim()} onClick={async () => { await handleSendRequest(); setSelectedCard(null); }}>Send Request</button>
+                    <button style={{ ...S.btn, marginTop: 0 }} onClick={() => { setRequestFor(null); setRequestMessage(''); }}>Cancel</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button style={{ ...S.btn, ...S.btnOrange, flex: 1, marginTop: 0, opacity: selectedAlreadySent ? 0.6 : 1 }} disabled={selectedAlreadySent || clubBusy} onClick={() => setRequestFor(selectedCard.tripId)}>
+                    {selectedAlreadySent ? 'Request Sent' : 'Send Connection Request'}
+                  </button>
+                  <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setSelectedCard(null)}>Back</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
