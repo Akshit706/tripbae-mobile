@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense } from '../../api';
+import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense, deleteClubChat } from '../../api';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 
@@ -372,7 +372,13 @@ function ClubPage({ trip, onTripRefresh }) {
 
   const [userLocation, setUserLocation] = useState(null);
   const [locationError, setLocationError] = useState('');
-  const [locationEnabled, setLocationEnabled] = useState(false);
+  const [locationEnabled, setLocationEnabled] = useState(() => {
+    try {
+      return localStorage.getItem('travelbae_club_location_enabled') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [radius, setRadius] = useState(25);
   const [debouncedRadius, setDebouncedRadius] = useState(radius);
 
@@ -406,6 +412,9 @@ function ClubPage({ trip, onTripRefresh }) {
         setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
         setLocationError('');
         setLocationEnabled(true);
+        try {
+          localStorage.setItem('travelbae_club_location_enabled', 'true');
+        } catch {}
         if (openFilters) setFiltersOpen(true);
       },
       () => {
@@ -418,8 +427,12 @@ function ClubPage({ trip, onTripRefresh }) {
   }, []);
 
   useEffect(() => {
-    requestLocation({ silent: true, openFilters: false });
-  }, [requestLocation]);
+    if (locationEnabled) {
+      requestLocation({ silent: true, openFilters: false });
+    }
+  }, []);
+
+
 
   const loadHub = useCallback(async () => {
     setClubLoading(true);
@@ -427,11 +440,9 @@ function ClubPage({ trip, onTripRefresh }) {
       const params = {
         vibe: filters.vibe,
       };
-      if (userLocation) {
+      if (locationEnabled && userLocation) {
         params.latitude = userLocation.latitude;
         params.longitude = userLocation.longitude;
-      }
-      if (locationEnabled && userLocation) {
         params.radius = debouncedRadius;
       }
       const data = await getClubHub(trip.id, params);
@@ -603,6 +614,20 @@ function ClubPage({ trip, onTripRefresh }) {
       event.preventDefault();
       if (!clubBusy && chatDraft.trim()) handleSendChat();
     }
+  };
+
+  const handleDeleteChat = async () => {
+    if (!activeChat) return;
+    if (!confirm('Delete this chat and all associated messages?')) return;
+    setClubBusy(true);
+    try {
+      await deleteClubChat(trip.id, activeChat.id);
+      setSelectedChatId(null);
+      await loadHub();
+    } catch (err) {
+      alert('Could not delete chat: ' + err.message);
+    }
+    setClubBusy(false);
   };
 
   const handleToggleSplitMember = (memberId) => {
@@ -1016,7 +1041,10 @@ function ClubPage({ trip, onTripRefresh }) {
                 <div style={{ fontSize: 11, color: '#627089', marginTop: 2 }}>Last seen {formatChatMetaTime(activeChat.latestMessage?.createdAt)}</div>
               </div>
             </div>
-            <button style={{ ...S.btn, marginTop: 0, padding: '8px 12px', borderRadius: 12 }} onClick={() => setSelectedChatId(null)}>Close</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0, padding: '8px 12px', borderRadius: 12, fontSize: 12 }} onClick={handleDeleteChat} disabled={clubBusy}>Delete</button>
+              <button style={{ ...S.btn, marginTop: 0, padding: '8px 12px', borderRadius: 12 }} onClick={() => setSelectedChatId(null)}>Close</button>
+            </div>
           </div>
 
           <div ref={chatThreadRef} style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -1439,8 +1467,8 @@ function ClubPage({ trip, onTripRefresh }) {
               <input type="range" min="2" max="150" value={radius} onChange={(e) => setRadius(Number(e.target.value))} style={{ width: '100%' }} />
               <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 4 }}>2 km to 150 km+</div>
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                {!locationEnabled && <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={requestLocation}>Use my location</button>}
-                {locationEnabled && <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setLocationEnabled(false)}>Turn location off</button>}
+                {!locationEnabled && <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={() => requestLocation({ silent: false, openFilters: true })}>Use my location</button>}
+                {locationEnabled && <button style={{ ...S.btn, marginTop: 0 }} onClick={() => { setLocationEnabled(false); try { localStorage.setItem('travelbae_club_location_enabled', 'false'); } catch {} }}>Turn location off</button>}
               </div>
             </div>
 

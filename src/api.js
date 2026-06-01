@@ -112,3 +112,6 @@ export const sendClubChatMessage = (tripId, chatId, text) =>
 
 export const createClubChatSplitExpense = (tripId, chatId, data) =>
   apiFetch(`/trips/${tripId}/club/chats/${chatId}/splits`, { method: 'POST', body: data });
+
+export const deleteClubChat = (tripId, chatId) =>
+  apiFetch(`/trips/${tripId}/club/chats/${chatId}`, { method: 'DELETE' });
