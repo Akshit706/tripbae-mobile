@@ -69,7 +69,14 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const days = tripDuration(trip.arrival, trip.departure);
-  const dailyAvg = total / Math.max(1, days);
+  const tripStart = new Date(trip.arrival);
+  const tripEnd = new Date(trip.departure);
+  const now = new Date();
+  const clampedNow = now > tripEnd ? tripEnd : now;
+  const rawElapsed = clampedNow < tripStart ? 0 : Math.floor((clampedNow - tripStart) / 86400000) + 1;
+  const daysElapsed = Math.min(days, Math.max(1, rawElapsed));
+  const daysLeft = Math.max(0, days - daysElapsed);
+  const tsr = total / daysElapsed;
   const budgetLeft = budget ? budget - total : null;
   const budgetPct = budget ? Math.min(100, Math.round(total / budget * 100)) : null;
 
@@ -78,17 +85,22 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   expenses.forEach(e => { catTotals[e.cat] = (catTotals[e.cat] || 0) + e.amount; });
   const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
   const top3 = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 3);
-  const projected = Math.round(dailyAvg * days);
+  const projected = Math.round(tsr * days);
   const activeCats = expenseCats.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id]);
   const topCatMeta = expenseCats.find(c => c.id === topCat?.[0]) || null;
   const overBy = budget ? Math.max(0, projected - budget) : 0;
   const underBy = budget ? Math.max(0, budget - projected) : 0;
   const uniqueSpendDays = new Set(expenses.map(e => e.date)).size;
+  const plannedDailyBudget = budget ? budget / Math.max(1, days) : null;
+  const pacePct = plannedDailyBudget ? Math.round((tsr / plannedDailyBudget) * 100) : null;
 
   const soloFunLines = [];
   if (expenses.length === 0) {
     soloFunLines.push('No expenses yet. Your wallet currently thinks this is a spiritual retreat.');
   } else {
+    if (daysElapsed >= 2) {
+      soloFunLines.push(`Current TSR is ₹${Math.round(tsr).toLocaleString('en-IN')}/day across ${daysElapsed} day${daysElapsed > 1 ? 's' : ''}.`);
+    }
     if (budget && budgetPct <= 60 && uniqueSpendDays >= Math.max(2, Math.round(days * 0.4))) {
       soloFunLines.push('You are spending like a pro traveler, not a panic buyer at airport shops.');
     }
@@ -101,6 +113,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     }
     if (top3[0]) {
       soloFunLines.push(`Biggest spend was ${top3[0].desc}. Iconic decision, no notes.`);
+    }
+    if (budget && projected > budget) {
+      soloFunLines.push(`If this pace continues, you may overshoot by ₹${Math.round(projected - budget).toLocaleString('en-IN')}.`);
     }
   }
   if (soloFunLines.length === 0) {
@@ -497,7 +512,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
             {[
-              { label: 'Avg/day', value: `₹${Math.round(dailyAvg).toLocaleString('en-IN')}`, sub: `${uniqueSpendDays || 0} spend days` },
+              { label: 'TSR/day', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: `${daysElapsed}/${days} days elapsed` },
               { label: 'Projected', value: `₹${projected.toLocaleString('en-IN')}`, sub: budget && projected > budget ? 'above budget pace' : 'on current pace', warn: budget && projected > budget },
               { label: 'Top cat', value: topCatMeta?.label || '—', sub: `₹${Math.round(topCat?.[1] || 0).toLocaleString('en-IN')}` },
             ].map((s, idx) => (
@@ -514,6 +529,18 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             <div style={{ fontSize: 11, color: SOLO_ACCENT_TEXT, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Solo money mood</div>
             <div style={{ fontSize: 14, color: SOLO_ACCENT_TEXT, lineHeight: 1.55, paddingRight: 20 }}>{soloInsightLine}</div>
           </div>
+
+          {budget && pacePct !== null && (
+            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#F8FFF9,#F1FFFA)' }}>
+              <div style={{ fontSize: 11, color: '#0F6E56', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Pace Meter</div>
+              <div style={{ fontSize: 14, color: '#1a1a18', lineHeight: 1.5 }}>
+                {pacePct <= 95 && `🧘 Nice control. You're at ${pacePct}% of planned daily budget pace.`}
+                {pacePct > 95 && pacePct <= 115 && `⚖️ Balanced pace. You're running at ${pacePct}% of planned daily budget pace.`}
+                {pacePct > 115 && `🔥 High-burn mode. You're at ${pacePct}% of planned daily budget pace.`}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 12, color: '#6b6b68' }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day now vs ₹{Math.round(plannedDailyBudget).toLocaleString('en-IN')}/day planned</div>
+            </div>
+          )}
 
           {budget && (
             <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FEFEFF,#F7F6FF)', animation: 'soloFadeUp .42s ease-out both', animationDelay: '170ms' }}>

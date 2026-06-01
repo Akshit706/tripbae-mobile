@@ -81,10 +81,14 @@ function SplitPage({ trip, myNickname }) {
   }, [section, chartReady, expenses]);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
-  const days = Math.max(1, Math.round((new Date(trip.departure) - new Date(trip.arrival)) / 86400000));
-  const today = new Date();
-  const daysElapsed = Math.max(1, Math.min(days, Math.round((today - new Date(trip.arrival)) / 86400000)));
-  const daysLeft = Math.max(0, Math.round((new Date(trip.departure) - today) / 86400000));
+  const days = tripDuration(trip.arrival, trip.departure);
+  const tripStart = new Date(trip.arrival);
+  const tripEnd = new Date(trip.departure);
+  const now = new Date();
+  const clampedNow = now > tripEnd ? tripEnd : now;
+  const rawElapsed = clampedNow < tripStart ? 0 : Math.floor((clampedNow - tripStart) / 86400000) + 1;
+  const daysElapsed = Math.min(days, Math.max(1, rawElapsed));
+  const daysLeft = Math.max(0, days - daysElapsed);
   const tsr = total / daysElapsed;
   const projected = Math.round(tsr * days);
   const budgetLeft = budget ? budget - total : null;
@@ -139,11 +143,16 @@ function SplitPage({ trip, myNickname }) {
 
   const topGetsBack = positiveBalances[0] || null;
   const topOwes = negativeBalances[0] || null;
+  const plannedDailyBudget = budget ? budget / Math.max(1, days) : null;
+  const pacePct = plannedDailyBudget ? Math.round((tsr / plannedDailyBudget) * 100) : null;
 
   const funInsightLines = [];
   if (expenses.length === 0) {
     funInsightLines.push('No spends yet. Wallets are meditating and UPI is on standby.');
   } else {
+    if (daysElapsed >= 2) {
+      funInsightLines.push(`Group TSR is ₹${Math.round(tsr).toLocaleString('en-IN')}/day over ${daysElapsed} day${daysElapsed > 1 ? 's' : ''}.`);
+    }
     if (budget && budgetPct <= 60 && daysElapsed >= Math.max(2, Math.round(days * 0.4))) {
       funInsightLines.push('The crew is low-key saving money. This trip has strong middle-class superhero energy.');
     }
@@ -161,6 +170,9 @@ function SplitPage({ trip, myNickname }) {
     }
     if (settlements.length === 0) {
       funInsightLines.push('Plot twist: everyone is settled. This is rarer than finding a clean public washroom on a road trip.');
+    }
+    if (budget && projected > budget) {
+      funInsightLines.push(`At this pace, the trip may end around ₹${Math.round(projected).toLocaleString('en-IN')} (about ₹${Math.round(projected - budget).toLocaleString('en-IN')} over budget).`);
     }
   }
   if (funInsightLines.length === 0) {
@@ -692,7 +704,7 @@ function SplitPage({ trip, myNickname }) {
         <div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
             {[
-              { label: 'Avg/day', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: 'burn rate' },
+              { label: 'TSR/day', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: `${daysElapsed}/${days} days elapsed` },
               { label: 'Projected', value: `₹${projected.toLocaleString('en-IN')}`, sub: 'at current rate', warn: budget && projected > budget },
               { label: 'Days left', value: daysLeft, sub: `${daysElapsed}d elapsed` },
             ].map(s => (
@@ -708,6 +720,17 @@ function SplitPage({ trip, myNickname }) {
             <div style={{ fontSize: 11, color: '#9A6400', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 600 }}>Finance gossip</div>
             <div style={{ fontSize: 14, color: '#6B4600', lineHeight: 1.5, paddingRight: 20 }}>{funInsightLine}</div>
           </div>
+          {budget && pacePct !== null && (
+            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#F8FFF9,#F1FFFA)' }}>
+              <div style={{ fontSize: 11, color: '#0F6E56', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Crew Pace Meter</div>
+              <div style={{ fontSize: 14, color: '#1a1a18', lineHeight: 1.5 }}>
+                {pacePct <= 95 && `🧘 Smooth pace. Team is at ${pacePct}% of planned daily budget.`}
+                {pacePct > 95 && pacePct <= 115 && `⚖️ Balanced burn. Team is at ${pacePct}% of planned daily budget.`}
+                {pacePct > 115 && `🔥 Sprint mode. Team is at ${pacePct}% of planned daily budget.`}
+              </div>
+              <div style={{ marginTop: 8, fontSize: 12, color: '#6b6b68' }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day now vs ₹{Math.round(plannedDailyBudget).toLocaleString('en-IN')}/day planned</div>
+            </div>
+          )}
           <div style={{ display: 'grid', gridTemplateColumns: budget ? '1fr 1fr' : '1fr', gap: 10, marginBottom: 10 }}>
             {budget && (
               <div style={{ ...S.card, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1.25rem 1rem' }}>
