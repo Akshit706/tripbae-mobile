@@ -153,6 +153,27 @@ function tripStatusInfo(arrival, departure, completed) {
   return { label: 'Past', color: '#6b6b68', bg: '#F1EFE8', border: '#D3D1C7', isPast: false };
 }
 
+const AI_CACHE_KEY = 'travelbae_trip_ai_cache_v1';
+
+function readAiCache() {
+  try {
+    const raw = localStorage.getItem(AI_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeAiCache(map) {
+  try {
+    localStorage.setItem(AI_CACHE_KEY, JSON.stringify(map || {}));
+  } catch {
+    // ignore cache write failures
+  }
+}
+
 async function callClaude(prompt) {
   const { reply } = await aiChat(null, [{ role: 'user', content: prompt }]);
   return reply;
@@ -248,7 +269,18 @@ export default function App() {
     if (!authToken) return;
     setTripsLoading(true);
     getTrips()
-      .then(d => setTrips(d.trips || []))
+      .then(d => {
+        const cache = readAiCache();
+        const merged = (d.trips || []).map(t => {
+          const c = cache[t.id] || {};
+          return {
+            ...t,
+            _cachedItin: c._cachedItin ?? t._cachedItin ?? null,
+            _cachedTaste: c._cachedTaste ?? t._cachedTaste ?? null,
+          };
+        });
+        setTrips(merged);
+      })
       .catch(() => setTrips([]))
       .finally(() => setTripsLoading(false));
   }, [authToken]);
@@ -321,7 +353,13 @@ export default function App() {
     setAuthLoading(false);
   };
 
-  const handleLogout = () => { localStorage.removeItem('travelbae_token'); setAuthToken(null); setTrips([]); setActiveTrip(null); };
+  const handleLogout = () => {
+    localStorage.removeItem('travelbae_token');
+    localStorage.removeItem(AI_CACHE_KEY);
+    setAuthToken(null);
+    setTrips([]);
+    setActiveTrip(null);
+  };
 
   const handleDeleteAccount = async () => {
     const first = window.confirm('Delete your TravelBae account?\n\nThis permanently removes your profile, trip memberships, and any trips where you were the only member (along with their expenses, contacts, photos and itinerary).\n\nThis cannot be undone.');
@@ -333,6 +371,7 @@ export default function App() {
       localStorage.removeItem('travelbae_token');
       localStorage.removeItem('travelbae_profile');
       localStorage.removeItem('travelbae_prefs');
+      localStorage.removeItem(AI_CACHE_KEY);
       setAuthToken(null);
       setTrips([]);
       setActiveTrip(null);
@@ -379,6 +418,13 @@ export default function App() {
             ? { ...t, _cachedItin: itinResult, _cachedTaste: tasteResult }
             : t
           ));
+          const cache = readAiCache();
+          cache[trip.id] = {
+            ...(cache[trip.id] || {}),
+            _cachedItin: itinResult,
+            _cachedTaste: tasteResult,
+          };
+          writeAiCache(cache);
         } catch (e) {
           console.warn('Background itinerary generation failed:', e);
         }
@@ -449,6 +495,21 @@ export default function App() {
   const handleItineraryCache = useCallback((tripId, update) => {
     setTrips(ts => ts.map(t => t.id === tripId ? { ...t, ...update } : t));
     setActiveTripData(d => d ? { ...d, ...update } : d);
+
+    const cache = readAiCache();
+    const prev = cache[tripId] || {};
+    const next = {
+      ...prev,
+      ...(Object.prototype.hasOwnProperty.call(update, '_cachedItin') ? { _cachedItin: update._cachedItin } : {}),
+      ...(Object.prototype.hasOwnProperty.call(update, '_cachedTaste') ? { _cachedTaste: update._cachedTaste } : {}),
+    };
+
+    if (!next._cachedItin && !next._cachedTaste) {
+      delete cache[tripId];
+    } else {
+      cache[tripId] = next;
+    }
+    writeAiCache(cache);
   }, []);
 
 
