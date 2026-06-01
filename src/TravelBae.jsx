@@ -790,19 +790,19 @@ export default function App() {
                 ) : (
                   <>
                     {tab === 'main' && (
-                      <div style={{ margin: '-1.25rem', marginBottom: '-6rem' }}>
+                      <div className="tb-section-flow" style={{ marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
                         <SplitPageFeature trip={activeTripData} myNickname={myNickname} />
                       </div>
                     )}
-                    {tab === 'contacts' && <ContactsPageFeature trip={activeTripData} myNickname={myNickname} isSolo={false} />}
-                    {tab === 'itinerary' && <ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
+                    {tab === 'contacts' && <div className="tb-section-flow"><ContactsPageFeature trip={activeTripData} myNickname={myNickname} isSolo={false} /></div>}
+                    {tab === 'itinerary' && <div className="tb-section-flow"><ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} /></div>}
                     {tab === 'photos' && (
-                      <div style={{ margin: '-1.25rem', marginBottom: '-6rem' }}>
+                      <div className="tb-section-flow" style={{ marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
                         <PhotosPageFeature trip={activeTripData} myNickname={myNickname} />
                       </div>
                     )}
                     {tab === 'club' && (
-                      <ClubPageFeature
+                      <div className="tb-section-flow"><ClubPageFeature
                         trip={activeTripData}
                         onTripRefresh={async () => {
                           try {
@@ -825,7 +825,7 @@ export default function App() {
                             console.warn('Could not refresh trip after club update:', err.message);
                           }
                         }}
-                      />
+                      /></div>
                     )}
                   </>
                 )}
