@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage } from '../../api';
+import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense } from '../../api';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 
@@ -46,7 +46,7 @@ function moodGradient(vibe) {
 }
 
 function distanceLabel(km) {
-  if (km == null) return 'Distance unknown';
+  if (km == null) return 'Location unavailable';
   if (km < 1) return `${Math.round(km * 1000)} m away`;
   if (km > 150) return '150+ km away';
   return `${Math.round(km)} km away`;
@@ -92,6 +92,54 @@ function buildCardGallery(item) {
 function formatChatTime(value) {
   if (!value) return '';
   return new Date(value).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
+
+function buildCombinedMembers(chat) {
+  if (!chat) return [];
+  const groupA = (chat.tripA?.members || []).map(member => ({
+    id: `${chat.tripA?.id || 'x'}:${member.id}`,
+    nickname: member.nickname,
+    groupName: chat.tripA?.groupName || 'Group A',
+  }));
+  const groupB = (chat.tripB?.members || []).map(member => ({
+    id: `${chat.tripB?.id || 'y'}:${member.id}`,
+    nickname: member.nickname,
+    groupName: chat.tripB?.groupName || 'Group B',
+  }));
+  return [...groupA, ...groupB];
+}
+
+function buildCombinedPhotos(chat) {
+  const photosA = (chat?.tripA?.photos || []).map(photo => ({ ...photo, source: chat?.tripA?.groupName || 'Group A' }));
+  const photosB = (chat?.tripB?.photos || []).map(photo => ({ ...photo, source: chat?.tripB?.groupName || 'Group B' }));
+  return [...photosA, ...photosB].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+function computeSplitBalances(members, entries) {
+  const balances = {};
+  members.forEach(member => {
+    balances[member.id] = 0;
+  });
+
+  entries.forEach(entry => {
+    const amount = Number(entry.amount) || 0;
+    const participants = Array.isArray(entry.splitWithKeys)
+      ? entry.splitWithKeys
+      : Array.isArray(entry.splitWith)
+        ? entry.splitWith
+        : [];
+    const paidBy = entry.paidByKey || entry.paidBy;
+    if (!amount || participants.length === 0) return;
+    const perHead = amount / participants.length;
+    participants.forEach(memberId => {
+      if (balances[memberId] == null) balances[memberId] = 0;
+      balances[memberId] -= perHead;
+    });
+    if (balances[paidBy] == null) balances[paidBy] = 0;
+    balances[paidBy] += amount;
+  });
+
+  return balances;
 }
 
 function getGroupMoodLine(item) {
@@ -254,16 +302,7 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
 
       <div style={{ padding: 14 }}>
         <div style={{ fontSize: 14, color: '#242424', lineHeight: 1.55, fontWeight: 600 }}>{moodLine}</div>
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, gap: 10 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: '#8A90A2', textTransform: 'uppercase', letterSpacing: '.08em' }}>
-            {alreadySent ? 'Request Sent' : 'Profile Ready'}
-          </div>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 800, color: alreadySent ? '#8C6B28' : '#111827' }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: alreadySent ? '#F0B100' : '#111827', boxShadow: alreadySent ? '0 0 0 6px rgba(240,177,0,0.12)' : '0 0 0 6px rgba(17,24,39,0.06)' }} />
-            {alreadySent ? 'Pending' : 'Open'}
-          </div>
-        </div>
+        {alreadySent && <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: '#8C6B28' }}>Request already sent</div>}
       </div>
     </button>
   );
@@ -281,6 +320,8 @@ function ClubPage({ trip }) {
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [chatDraft, setChatDraft] = useState('');
+  const [chatTool, setChatTool] = useState('split');
+  const [splitDraft, setSplitDraft] = useState({ desc: '', amount: '', paidBy: '', splitWith: [] });
 
   const [requestFor, setRequestFor] = useState(null);
   const [requestMessage, setRequestMessage] = useState('');
@@ -504,6 +545,47 @@ function ClubPage({ trip }) {
     setClubBusy(false);
   };
 
+  const handleToggleSplitMember = (memberId) => {
+    setSplitDraft((draft) => {
+      const exists = draft.splitWith.includes(memberId);
+      return {
+        ...draft,
+        splitWith: exists ? draft.splitWith.filter(id => id !== memberId) : [...draft.splitWith, memberId],
+      };
+    });
+  };
+
+  const handleAddSplitEntry = () => {
+    if (!activeChat) return;
+    const amount = Number(splitDraft.amount);
+    if (!splitDraft.desc.trim() || !Number.isFinite(amount) || amount <= 0 || splitDraft.splitWith.length === 0 || !splitDraft.paidBy) {
+      alert('Add a valid split with description, amount, payer, and at least one participant.');
+      return;
+    }
+    setClubBusy(true);
+    createClubChatSplitExpense(trip.id, activeChat.id, {
+      desc: splitDraft.desc.trim(),
+      amount,
+      paidByKey: splitDraft.paidBy,
+      splitWithKeys: splitDraft.splitWith,
+    })
+      .then(async () => {
+        await loadHub();
+        setSplitDraft((draft) => ({
+          ...draft,
+          desc: '',
+          amount: '',
+          splitWith: combinedMembers.map(member => member.id),
+        }));
+      })
+      .catch((err) => {
+        alert('Could not add split expense: ' + err.message);
+      })
+      .finally(() => {
+        setClubBusy(false);
+      });
+  };
+
   const applyFilters = () => {
     setFilters(filterDraft);
     setFiltersOpen(false);
@@ -516,6 +598,14 @@ function ClubPage({ trip }) {
   const activeChat = useMemo(
     () => (hub.chats || []).find(chat => chat.id === selectedChatId) || (hub.chats || [])[0] || null,
     [hub.chats, selectedChatId]
+  );
+
+  const combinedMembers = useMemo(() => buildCombinedMembers(activeChat), [activeChat]);
+  const combinedPhotos = useMemo(() => buildCombinedPhotos(activeChat), [activeChat]);
+  const splitEntries = useMemo(() => activeChat?.splitExpenses || [], [activeChat]);
+  const splitBalances = useMemo(
+    () => computeSplitBalances(combinedMembers, splitEntries),
+    [combinedMembers, splitEntries]
   );
 
   const selectedGallery = useMemo(() => buildCardGallery(selectedCard), [selectedCard]);
@@ -533,6 +623,19 @@ function ClubPage({ trip }) {
       setSelectedChatId(hub.chats[0].id);
     }
   }, [hub.chats, selectedChatId]);
+
+  useEffect(() => {
+    if (!combinedMembers.length) {
+      setSplitDraft({ desc: '', amount: '', paidBy: '', splitWith: [] });
+      return;
+    }
+    setSplitDraft((draft) => ({
+      desc: draft.desc,
+      amount: draft.amount,
+      paidBy: draft.paidBy || combinedMembers[0].id,
+      splitWith: draft.splitWith.length ? draft.splitWith : combinedMembers.map(member => member.id),
+    }));
+  }, [combinedMembers]);
 
   useEffect(() => {
     if (!selectedCard || selectedGallery.length <= 1) return undefined;
@@ -711,8 +814,8 @@ function ClubPage({ trip }) {
           )}
 
           {hub.chats?.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: '220px minmax(0,1fr)', gap: 12 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div style={{ display: 'grid', gap: 12 }}>
+              <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
                 {hub.chats.map(chat => {
                   const preview = chat.latestMessage?.text || `Start the ${chat.title} chat.`;
                   const avatar = chat.otherTrip?.clubProfile?.photoUrl || chat.otherTrip?.coverUrl || null;
@@ -721,6 +824,7 @@ function ClubPage({ trip }) {
                       key={chat.id}
                       onClick={() => setSelectedChatId(chat.id)}
                       style={{
+                        minWidth: 240,
                         textAlign: 'left',
                         border: selectedChatId === chat.id ? '1px solid rgba(11,122,90,0.28)' : '1px solid rgba(10,18,35,0.08)',
                         background: selectedChatId === chat.id ? '#F2FFF9' : '#fff',
@@ -751,10 +855,10 @@ function ClubPage({ trip }) {
                 <div style={{ border: '1px solid rgba(10,18,35,0.08)', borderRadius: 18, overflow: 'hidden', background: '#FCFDFE' }}>
                   <div style={{ padding: 14, borderBottom: '1px solid rgba(10,18,35,0.06)', background: 'linear-gradient(135deg,#F7FFF9,#F7FAFF)' }}>
                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: '#111827' }}>{activeChat.title}</div>
-                    <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>Talk after the match. Make plans, share vibe, lock the meetup.</div>
+                    <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>Talk, plan, then use tools for this combined group.</div>
                   </div>
 
-                  <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 360, overflowY: 'auto', background: 'linear-gradient(180deg,#FFFFFF,#F7FAFD)' }}>
+                  <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 340, overflowY: 'auto', background: 'linear-gradient(180deg,#FFFFFF,#F7FAFD)' }}>
                     {activeChat.messages?.length ? activeChat.messages.map(message => {
                       const mine = message.senderTripId === trip.id;
                       return (
@@ -783,6 +887,90 @@ function ClubPage({ trip }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
                       <div style={{ fontSize: 11, color: '#6B7280', alignSelf: 'center' }}>Chat opens when a request is accepted.</div>
                       <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} disabled={clubBusy || !chatDraft.trim()} onClick={handleSendChat}>Send</button>
+                    </div>
+
+                    <div style={{ marginTop: 12, borderTop: '1px dashed rgba(10,18,35,0.14)', paddingTop: 10 }}>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button style={{ ...S.btn, marginTop: 0, background: chatTool === 'split' ? '#0F172A' : '#F3F6FA', color: chatTool === 'split' ? '#fff' : '#253048' }} onClick={() => setChatTool('split')}>Tools: Split</button>
+                        <button style={{ ...S.btn, marginTop: 0, background: chatTool === 'photos' ? '#0F172A' : '#F3F6FA', color: chatTool === 'photos' ? '#fff' : '#253048' }} onClick={() => setChatTool('photos')}>Tools: Photos</button>
+                      </div>
+
+                      {chatTool === 'split' && (
+                        <div style={{ marginTop: 10, background: '#F8FAFC', border: '1px solid rgba(10,18,35,0.08)', borderRadius: 14, padding: 12 }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#121926' }}>Combined Group Split</div>
+                          <div style={{ fontSize: 11, color: '#667085', marginTop: 2 }}>{combinedMembers.length} members across both groups</div>
+
+                          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr .8fr', gap: 8, marginTop: 10 }}>
+                            <input style={{ ...S.input, marginBottom: 0 }} placeholder="Expense title" value={splitDraft.desc} onChange={(e) => setSplitDraft((draft) => ({ ...draft, desc: e.target.value }))} />
+                            <input style={{ ...S.input, marginBottom: 0 }} placeholder="Amount" type="number" min="0" value={splitDraft.amount} onChange={(e) => setSplitDraft((draft) => ({ ...draft, amount: e.target.value }))} />
+                          </div>
+
+                          <div style={{ marginTop: 8 }}>
+                            <label style={S.label}>Paid by</label>
+                            <select style={{ ...S.input, marginBottom: 0 }} value={splitDraft.paidBy} onChange={(e) => setSplitDraft((draft) => ({ ...draft, paidBy: e.target.value }))}>
+                              {combinedMembers.map(member => (
+                                <option key={member.id} value={member.id}>{member.nickname} ({member.groupName})</option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div style={{ marginTop: 8 }}>
+                            <label style={S.label}>Split with</label>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                              {combinedMembers.map(member => {
+                                const selected = splitDraft.splitWith.includes(member.id);
+                                return (
+                                  <button key={member.id} style={{ ...S.btn, marginTop: 0, background: selected ? '#0D7A5A' : '#EEF2F7', color: selected ? '#fff' : '#324155' }} onClick={() => handleToggleSplitMember(member.id)}>
+                                    {member.nickname}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
+                            <div style={{ fontSize: 11, color: '#667085' }}>Per head: {splitDraft.splitWith.length ? `₹${((Number(splitDraft.amount) || 0) / splitDraft.splitWith.length).toFixed(2)}` : '₹0.00'}</div>
+                            <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={handleAddSplitEntry}>Add Split</button>
+                          </div>
+
+                          {splitEntries.length > 0 && (
+                            <div style={{ marginTop: 10 }}>
+                              <div style={{ fontSize: 12, fontWeight: 800, color: '#273043', marginBottom: 6 }}>Balances</div>
+                              <div style={{ display: 'grid', gap: 6 }}>
+                                {combinedMembers.map(member => {
+                                  const balance = splitBalances[member.id] || 0;
+                                  return (
+                                    <div key={`bal-${member.id}`} style={{ display: 'flex', justifyContent: 'space-between', background: '#fff', borderRadius: 10, border: '1px solid rgba(10,18,35,0.08)', padding: '8px 10px' }}>
+                                      <span style={{ fontSize: 12, color: '#344054' }}>{member.nickname} ({member.groupName})</span>
+                                      <span style={{ fontSize: 12, fontWeight: 800, color: balance >= 0 ? '#0B7A5A' : '#B42318' }}>{balance >= 0 ? `gets ₹${balance.toFixed(2)}` : `owes ₹${Math.abs(balance).toFixed(2)}`}</span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {chatTool === 'photos' && (
+                        <div style={{ marginTop: 10, background: '#F8FAFC', border: '1px solid rgba(10,18,35,0.08)', borderRadius: 14, padding: 12 }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#121926' }}>Combined Group Photos</div>
+                          <div style={{ fontSize: 11, color: '#667085', marginTop: 2 }}>{combinedPhotos.length} photos from both trips</div>
+                          {combinedPhotos.length === 0 && (
+                            <div style={{ fontSize: 12, color: '#667085', marginTop: 8 }}>No photos shared yet in the two trips.</div>
+                          )}
+                          {combinedPhotos.length > 0 && (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(88px,1fr))', gap: 8, marginTop: 10 }}>
+                              {combinedPhotos.slice(0, 24).map(photo => (
+                                <div key={`cp-${photo.id}`} style={{ position: 'relative' }}>
+                                  <img src={photo.url} alt="combined trip" style={{ width: '100%', height: 88, borderRadius: 10, objectFit: 'cover' }} />
+                                  <div style={{ position: 'absolute', left: 4, bottom: 4, fontSize: 9, fontWeight: 700, color: '#fff', background: 'rgba(3,10,24,0.55)', padding: '2px 6px', borderRadius: 999 }}>{photo.source}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -813,11 +1001,8 @@ function ClubPage({ trip }) {
               <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setFilters(initialFilters)}>Reset</button>
             </div>
 
-            <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 999, background: '#F4F6FA', color: '#525866' }}>Vibe: {VIBE_OPTIONS.find(v => v.value === filters.vibe)?.label || 'Any vibe'}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 999, background: '#F4F6FA', color: '#525866' }}>Mix: {GENDER_MIX_OPTIONS.find(v => v.value === filters.genderMix)?.label || 'Any mix'}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 999, background: '#F4F6FA', color: '#525866' }}>Size: {MEMBER_BAND_OPTIONS.find(v => v.value === filters.memberBand)?.label || 'Any size'}</span>
-              {locationEnabled && <span style={{ fontSize: 11, fontWeight: 700, padding: '6px 10px', borderRadius: 999, background: '#E8FFF6', color: '#0F6E56' }}>Distance: {radius} km</span>}
+            <div style={{ marginTop: 9, fontSize: 12, color: '#5B6370' }}>
+              {`Filters: ${VIBE_OPTIONS.find(v => v.value === filters.vibe)?.label || 'Any vibe'} • ${GENDER_MIX_OPTIONS.find(v => v.value === filters.genderMix)?.label || 'Any mix'} • ${MEMBER_BAND_OPTIONS.find(v => v.value === filters.memberBand)?.label || 'Any size'}${locationEnabled ? ` • ${radius} km` : ''}`}
             </div>
 
             {locationError && <div style={{ marginTop: 8, fontSize: 12, color: '#C3582D' }}>{locationError}</div>}

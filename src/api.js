@@ -110,3 +110,6 @@ export const respondClubRequest = (tripId, requestId, action) =>
 
 export const sendClubChatMessage = (tripId, chatId, text) =>
   apiFetch(`/trips/${tripId}/club/chats/${chatId}/messages`, { method: 'POST', body: { text } });
+
+export const createClubChatSplitExpense = (tripId, chatId, data) =>
+  apiFetch(`/trips/${tripId}/club/chats/${chatId}/splits`, { method: 'POST', body: data });
