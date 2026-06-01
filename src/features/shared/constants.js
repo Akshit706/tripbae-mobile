@@ -6,6 +6,7 @@ export const CATS = [
   {id:'stay',icon:'🏠',label:'Stay',bg:'#E6F1FB'},
   {id:'activity',icon:'🎟️',label:'Activity',bg:'#EEEDFE'},
   {id:'shopping',icon:'🛍️',label:'Shopping',bg:'#FAECE7'},
+  {id:'other',icon:'🏷️',label:'Other',bg:'#F1EFE8'},
 ];
 
 export const CONTACT_CATS = [

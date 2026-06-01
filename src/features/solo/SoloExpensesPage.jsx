@@ -85,6 +85,17 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const filtered = filterCat === 'all' ? expenses : expenses.filter(e => e.cat === filterCat);
   const sortedFiltered = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
 
+  const getExpenseTimeLabel = (exp) => {
+    if (exp.time) return exp.time;
+    if (exp.createdAt) {
+      const d = new Date(exp.createdAt);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+      }
+    }
+    return null;
+  };
+
   useEffect(() => {
     if (section !== 'insights' || !chartReady) return;
     const t = setTimeout(renderCharts, 80);
@@ -103,6 +114,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         split: [myNickname || 'Me'],
         note: form.note,
         date: form.date,
+        time: form.time,
       };
       if (editingExpenseId) {
         const data = await updateExpense(trip.id, editingExpenseId, payload);
@@ -142,7 +154,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     }
   };
 
-  const CAT_COLORS = { food: '#BA7517', transport: '#0F6E56', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E'};
+  const CAT_COLORS = { food: '#BA7517', transport: '#0F6E56', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E', other: '#6b6b68' };
   const SOLO_ACCENT = '#534AB7';
   const SOLO_ACCENT_2 = '#7F77DD';
   const SOLO_ACCENT_BG = '#EEEDFE';
@@ -411,6 +423,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           {sortedFiltered.length === 0 && <div style={{ textAlign: 'center', padding: '2.5rem', color: '#6b6b68', fontSize: 14 }}><div style={{ fontSize: 40, marginBottom: 10 }}>📝</div><p>No expenses yet. Add your first one!</p></div>}
           {sortedFiltered.map(exp => {
             const cat = CATS.find(c => c.id === exp.cat) || CATS[5];
+            const timeLabel = getExpenseTimeLabel(exp);
             return (
               <div key={exp.id} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                 <div style={{ width: 40, height: 40, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 18 }}>{cat.icon}</div>
@@ -418,7 +431,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                   <div style={{ fontSize: 14, fontWeight: 500 }}>{exp.desc}</div>
                   <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>
                     {cat.label} · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                    {exp.time && <span> · {exp.time}</span>}
+                    {timeLabel && <span> · {timeLabel}</span>}
                     {exp.note && <span style={{ fontStyle: 'italic' }}> · {exp.note}</span>}
                   </div>
                 </div>
@@ -553,7 +566,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
 
       {section === 'expenses' && (
         <button
-          onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: todayStr, note: '' }); setShowForm(true); }}
+          onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: todayStr, time: getNow().time, note: '' }); setShowForm(true); }}
           style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', border: 'none', boxShadow: '0 4px 20px rgba(127,119,221,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>

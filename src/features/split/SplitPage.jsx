@@ -37,7 +37,7 @@ function SplitPage({ trip, myNickname }) {
     const code = Math.abs(Array.from(name || '').reduce((a, c) => a + c.charCodeAt(0), 0));
     return MCOLORS_LIST[code % MCOLORS_LIST.length];
   };
-  const CAT_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E'};
+  const CAT_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
 
   const budget = localBudget;
 
@@ -181,7 +181,7 @@ function SplitPage({ trip, myNickname }) {
       const payload = {
         desc: form.desc, amount: parseFloat(form.amount),
         paidBy: form.paidBy, cat: form.cat,
-        split: splitWith, date: form.date,
+        split: splitWith, date: form.date, time: form.time,
       };
       if (editingExpenseId) {
         const data = await updateExpense(trip.id, editingExpenseId, payload);
@@ -224,6 +224,17 @@ function SplitPage({ trip, myNickname }) {
 
   const filteredExpenses = filterCat === 'all' ? expenses : expenses.filter(e => e.cat === filterCat);
   const sortedExpenses = [...filteredExpenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const getExpenseTimeLabel = (exp) => {
+    if (exp.time) return exp.time;
+    if (exp.createdAt) {
+      const d = new Date(exp.createdAt);
+      if (!Number.isNaN(d.getTime())) {
+        return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+      }
+    }
+    return null;
+  };
 
   const SECTION_TABS = [
     { id: 'expenses', label: 'Expenses' },
@@ -520,6 +531,7 @@ function SplitPage({ trip, myNickname }) {
           {sortedExpenses.map(exp => {
             const cat = CATS.find(c => c.id === exp.cat) || CATS[5];
             const splitArr = Array.isArray(exp.split) && exp.split.length > 0 ? exp.split : memberNames;
+            const timeLabel = getExpenseTimeLabel(exp);
             return (
               <div key={exp.id} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, borderLeft: `3px solid ${CAT_COLORS[exp.cat] || '#ccc'}`, borderRadius: '0 14px 14px 0', padding: '12px 14px 12px 12px' }}>
                 <div style={{ width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 20 }}>{cat.icon}</div>
@@ -538,7 +550,7 @@ function SplitPage({ trip, myNickname }) {
                       {splitArr.length > 4 && <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#D3D1C7', border: '1.5px solid #fff', marginLeft: -5, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#6b6b68', fontWeight: 700 }}>+{splitArr.length - 4}</div>}
                     </div>
                     <span style={{ fontSize: 11, color: '#D3D1C7' }}>·</span>
-                    <span style={{ fontSize: 11, color: '#a8a8a5' }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}{exp.time ? ` · ${exp.time}` : ''}</span>
+                    <span style={{ fontSize: 11, color: '#a8a8a5' }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}{timeLabel ? ` · ${timeLabel}` : ''}</span>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
