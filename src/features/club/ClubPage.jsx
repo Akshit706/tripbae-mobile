@@ -151,6 +151,37 @@ function computeSplitBalances(members, entries) {
   return balances;
 }
 
+function buildSettlementsFromBalances(balances) {
+  const memberIds = Object.keys(balances || {});
+  const debtors = memberIds.filter(id => balances[id] < -0.01).sort((a, b) => balances[a] - balances[b]);
+  const creditors = memberIds.filter(id => balances[id] > 0.01).sort((a, b) => balances[b] - balances[a]);
+  const working = { ...balances };
+  const settlements = [];
+  let di = 0;
+  let ci = 0;
+  while (di < debtors.length && ci < creditors.length) {
+    const from = debtors[di];
+    const to = creditors[ci];
+    const amount = Math.min(-working[from], working[to]);
+    settlements.push({ from, to, amount });
+    working[from] += amount;
+    working[to] -= amount;
+    if (Math.abs(working[from]) < 0.01) di += 1;
+    if (Math.abs(working[to]) < 0.01) ci += 1;
+  }
+  return settlements;
+}
+
+function formatSplitDate(value) {
+  if (!value) return '';
+  return new Date(value).toLocaleString([], {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 function getGroupMoodLine(item) {
   const vibe = item?.vibe || 'mixed';
   if (vibe === 'party') return 'Late plans, loud laughs, zero boring energy.';
@@ -317,7 +348,7 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
   );
 }
 
-function ClubPage({ trip }) {
+function ClubPage({ trip, onTripRefresh }) {
   const [clubLoading, setClubLoading] = useState(true);
   const [clubBusy, setClubBusy] = useState(false);
   const [hub, setHub] = useState({ myProfile: null, discover: [], incomingRequests: [], outgoingRequests: [], chats: [] });
@@ -332,6 +363,8 @@ function ClubPage({ trip }) {
   const [chatTool, setChatTool] = useState(null);
   const [toolsChooserOpen, setToolsChooserOpen] = useState(false);
   const [toolScreenOpen, setToolScreenOpen] = useState(false);
+  const [splitSection, setSplitSection] = useState('expenses');
+  const [splitFormOpen, setSplitFormOpen] = useState(false);
   const [splitDraft, setSplitDraft] = useState({ desc: '', amount: '', paidBy: '', splitWith: [] });
 
   const [requestFor, setRequestFor] = useState(null);
@@ -363,9 +396,9 @@ function ClubPage({ trip }) {
     return () => clearTimeout(t);
   }, [radius]);
 
-  const requestLocation = () => {
+  const requestLocation = useCallback(({ silent = false, openFilters = true } = {}) => {
     if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported on this browser.');
+      if (!silent) setLocationError('Geolocation is not supported on this browser.');
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -373,14 +406,20 @@ function ClubPage({ trip }) {
         setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
         setLocationError('');
         setLocationEnabled(true);
-        setFiltersOpen(true);
+        if (openFilters) setFiltersOpen(true);
       },
       () => {
-        setLocationError('Location permission denied. You can still use manual filters.');
+        if (!silent) {
+          setLocationError('Location permission denied. You can still use manual filters.');
+        }
       },
       { enableHighAccuracy: false, timeout: 10000 }
     );
-  };
+  }, []);
+
+  useEffect(() => {
+    requestLocation({ silent: true, openFilters: false });
+  }, [requestLocation]);
 
   const loadHub = useCallback(async () => {
     setClubLoading(true);
@@ -388,9 +427,11 @@ function ClubPage({ trip }) {
       const params = {
         vibe: filters.vibe,
       };
-      if (locationEnabled && userLocation) {
+      if (userLocation) {
         params.latitude = userLocation.latitude;
         params.longitude = userLocation.longitude;
+      }
+      if (locationEnabled && userLocation) {
         params.radius = debouncedRadius;
       }
       const data = await getClubHub(trip.id, params);
@@ -574,7 +615,7 @@ function ClubPage({ trip }) {
     });
   };
 
-  const handleAddSplitEntry = () => {
+  const handleAddSplitEntry = async () => {
     if (!activeChat) return;
     const amount = Number(splitDraft.amount);
     if (!splitDraft.desc.trim() || !Number.isFinite(amount) || amount <= 0 || splitDraft.splitWith.length === 0 || !splitDraft.paidBy) {
@@ -582,28 +623,30 @@ function ClubPage({ trip }) {
       return;
     }
     setClubBusy(true);
-    createClubChatSplitExpense(trip.id, activeChat.id, {
-      desc: splitDraft.desc.trim(),
-      amount,
-      paidByKey: splitDraft.paidBy,
-      splitWithKeys: splitDraft.splitWith,
-    })
-      .then(async () => {
-        await loadHub();
-        setSplitDraft((draft) => ({
-          ...draft,
-          desc: '',
-          amount: '',
-          splitWith: combinedMembers.map(member => member.id),
-        }));
-        setToolScreenOpen(false);
-      })
-      .catch((err) => {
-        alert('Could not add split expense: ' + err.message);
-      })
-      .finally(() => {
-        setClubBusy(false);
+    try {
+      await createClubChatSplitExpense(trip.id, activeChat.id, {
+        desc: splitDraft.desc.trim(),
+        amount,
+        paidByKey: splitDraft.paidBy,
+        splitWithKeys: splitDraft.splitWith,
       });
+      await loadHub();
+      if (onTripRefresh) {
+        await onTripRefresh();
+      }
+      setSplitDraft((draft) => ({
+        ...draft,
+        desc: '',
+        amount: '',
+        splitWith: combinedMembers.map(member => member.id),
+      }));
+      setSplitFormOpen(false);
+      setSplitSection('expenses');
+    } catch (err) {
+      alert('Could not add split expense: ' + err.message);
+    } finally {
+      setClubBusy(false);
+    }
   };
 
   const openToolsChooser = () => {
@@ -645,6 +688,23 @@ function ClubPage({ trip }) {
     () => computeSplitBalances(combinedMembers, splitEntries),
     [combinedMembers, splitEntries]
   );
+  const splitMemberById = useMemo(
+    () => Object.fromEntries(combinedMembers.map(member => [member.id, member])),
+    [combinedMembers]
+  );
+  const splitSettlements = useMemo(() => buildSettlementsFromBalances(splitBalances), [splitBalances]);
+  const splitPayTotals = useMemo(() => {
+    const totals = {};
+    combinedMembers.forEach((member) => {
+      totals[member.id] = 0;
+    });
+    splitEntries.forEach((entry) => {
+      const payerKey = entry.paidByKey || entry.paidBy;
+      if (!payerKey) return;
+      totals[payerKey] = (totals[payerKey] || 0) + (Number(entry.amount) || 0);
+    });
+    return totals;
+  }, [combinedMembers, splitEntries]);
 
   const selectedGallery = useMemo(() => buildCardGallery(selectedCard), [selectedCard]);
 
@@ -1047,74 +1107,218 @@ function ClubPage({ trip }) {
             <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.18)' }} onClick={() => setToolScreenOpen(false)}>Close</button>
           </div>
 
-          <div style={{ padding: 18, display: 'grid', gap: 16, maxWidth: 1020, margin: '0 auto' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr .8fr', gap: 10 }}>
-              <input style={{ ...S.input, marginBottom: 0 }} placeholder="Expense title" value={splitDraft.desc} onChange={(e) => setSplitDraft((draft) => ({ ...draft, desc: e.target.value }))} />
-              <input style={{ ...S.input, marginBottom: 0 }} placeholder="Amount" type="number" min="0" value={splitDraft.amount} onChange={(e) => setSplitDraft((draft) => ({ ...draft, amount: e.target.value }))} />
-            </div>
-
-            <div>
-              <label style={S.label}>Paid by</label>
-              <select style={{ ...S.input, marginBottom: 0 }} value={splitDraft.paidBy} onChange={(e) => setSplitDraft((draft) => ({ ...draft, paidBy: e.target.value }))}>
-                {combinedMembers.map(member => (
-                  <option key={member.id} value={member.id}>{member.nickname} ({member.groupName})</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label style={S.label}>Split with</label>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                {combinedMembers.map(member => {
-                  const selected = splitDraft.splitWith.includes(member.id);
-                  return (
-                    <button key={member.id} style={{ ...S.btn, marginTop: 0, background: selected ? '#0D7A5A' : '#EEF2F7', color: selected ? '#fff' : '#324155' }} onClick={() => handleToggleSplitMember(member.id)}>
-                      {member.nickname}
-                    </button>
-                  );
-                })}
+          <div style={{ padding: 16, maxWidth: 1020, margin: '0 auto' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
+              <div style={{ background: '#F4FBF8', border: '1px solid #DAF2E8', borderRadius: 14, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#0F6E56' }}>Total spent</div>
+                <div style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0C3B31' }}>
+                  ₹{Math.round(splitEntries.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0)).toLocaleString('en-IN')}
+                </div>
+              </div>
+              <div style={{ background: '#F8FAFC', border: '1px solid #E3E8EF', borderRadius: 14, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#475467' }}>Per member</div>
+                <div style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0F172A' }}>
+                  ₹{combinedMembers.length ? Math.round(splitEntries.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0) / combinedMembers.length).toLocaleString('en-IN') : '0'}
+                </div>
+              </div>
+              <div style={{ background: '#F8F8FF', border: '1px solid #E7E5FF', borderRadius: 14, padding: '10px 12px' }}>
+                <div style={{ fontSize: 11, color: '#4C3D9A' }}>Entries</div>
+                <div style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#281D72' }}>{splitEntries.length}</div>
               </div>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-              <div style={{ fontSize: 12, color: '#667085' }}>Per head: {splitDraft.splitWith.length ? `₹${((Number(splitDraft.amount) || 0) / splitDraft.splitWith.length).toFixed(2)}` : '₹0.00'}</div>
-              <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={handleAddSplitEntry}>Save Split</button>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
+              {combinedMembers.map(member => (
+                <div key={`pill-${member.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid rgba(15,23,42,0.1)', borderRadius: 999, padding: '4px 9px 4px 5px', fontSize: 12 }}>
+                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#0F6E56', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800 }}>
+                    {member.nickname.slice(0, 2).toUpperCase()}
+                  </div>
+                  <span>{member.nickname}</span>
+                </div>
+              ))}
             </div>
 
-            <div style={{ borderTop: '1px solid rgba(10,18,35,0.08)', paddingTop: 16 }}>
-              <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>Balances</div>
-              <div style={{ display: 'grid', gap: 8 }}>
-                {combinedMembers.map(member => {
-                  const balance = splitBalances[member.id] || 0;
+            <div style={{ display: 'flex', gap: 0, background: '#fff', border: '1px solid rgba(10,18,35,0.1)', borderRadius: 12, padding: 3, marginBottom: 12 }}>
+              {[
+                { id: 'expenses', label: 'Expenses' },
+                { id: 'shares', label: 'Shares' },
+                { id: 'balances', label: 'Balances' },
+              ].map(section => (
+                <button
+                  key={`split-section-${section.id}`}
+                  onClick={() => setSplitSection(section.id)}
+                  style={{ flex: 1, border: 'none', background: splitSection === section.id ? '#1D9E75' : 'transparent', color: splitSection === section.id ? '#fff' : '#475467', borderRadius: 9, padding: '8px 6px', fontSize: 12, fontWeight: splitSection === section.id ? 700 : 600, cursor: 'pointer' }}
+                >
+                  {section.label}
+                </button>
+              ))}
+            </div>
+
+            {splitSection === 'expenses' && (
+              <div style={{ display: 'grid', gap: 8, paddingBottom: 86 }}>
+                {splitEntries.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0', color: '#667085' }}>
+                    <div style={{ fontSize: 42 }}>🧾</div>
+                    <div style={{ marginTop: 8, fontSize: 14 }}>No split entries yet</div>
+                  </div>
+                ) : splitEntries.slice().reverse().map(entry => {
+                  const payer = splitMemberById[entry.paidByKey || entry.paidBy];
+                  const splitWith = Array.isArray(entry.splitWithKeys) ? entry.splitWithKeys : [];
+                  const perHead = splitWith.length ? (Number(entry.amount) || 0) / splitWith.length : 0;
                   return (
-                    <div key={`bal-${member.id}`} style={{ display: 'flex', justifyContent: 'space-between', background: '#F8FAFC', borderRadius: 12, border: '1px solid rgba(10,18,35,0.08)', padding: '10px 12px' }}>
-                      <span style={{ fontSize: 12, color: '#344054' }}>{member.nickname} ({member.groupName})</span>
-                      <span style={{ fontSize: 12, fontWeight: 800, color: balance >= 0 ? '#0B7A5A' : '#B42318' }}>{balance >= 0 ? `gets ₹${balance.toFixed(2)}` : `owes ₹${Math.abs(balance).toFixed(2)}`}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {splitEntries.length > 0 && (
-              <div style={{ borderTop: '1px solid rgba(10,18,35,0.08)', paddingTop: 16 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>Shared entries</div>
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {splitEntries.slice().reverse().map(entry => (
                     <div key={entry.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(10,18,35,0.08)', padding: 12 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                         <div>
                           <div style={{ fontWeight: 800, color: '#101828' }}>{entry.desc}</div>
-                          <div style={{ fontSize: 11, color: '#667085', marginTop: 2 }}>Paid by {entry.paidByKey || entry.paidBy}</div>
+                          <div style={{ marginTop: 4, fontSize: 11, color: '#667085' }}>
+                            Paid by {payer ? `${payer.nickname} (${payer.groupName})` : (entry.paidByKey || entry.paidBy)}
+                          </div>
+                          <div style={{ marginTop: 2, fontSize: 11, color: '#98A2B3' }}>{formatSplitDate(entry.createdAt)}</div>
                         </div>
-                        <div style={{ fontWeight: 800 }}>₹{Number(entry.amount).toFixed(2)}</div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontWeight: 800 }}>₹{Math.round(Number(entry.amount) || 0).toLocaleString('en-IN')}</div>
+                          <div style={{ marginTop: 3, fontSize: 11, color: '#667085' }}>₹{Math.round(perHead).toLocaleString('en-IN')} each</div>
+                        </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                })}
+              </div>
+            )}
+
+            {splitSection === 'shares' && (
+              <div style={{ display: 'grid', gap: 8 }}>
+                {combinedMembers.map(member => {
+                  const paid = splitPayTotals[member.id] || 0;
+                  const owed = splitEntries.reduce((sum, entry) => {
+                    const splitWith = Array.isArray(entry.splitWithKeys) ? entry.splitWithKeys : [];
+                    if (!splitWith.includes(member.id) || !splitWith.length) return sum;
+                    return sum + (Number(entry.amount) || 0) / splitWith.length;
+                  }, 0);
+                  const net = paid - owed;
+                  return (
+                    <div key={`share-${member.id}`} style={{ background: '#fff', border: '1px solid rgba(10,18,35,0.08)', borderRadius: 14, padding: 12, display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+                      <div>
+                        <div style={{ fontWeight: 700, color: '#101828' }}>{member.nickname}</div>
+                        <div style={{ fontSize: 11, color: '#667085', marginTop: 3 }}>Paid ₹{Math.round(paid).toLocaleString('en-IN')} • Share ₹{Math.round(owed).toLocaleString('en-IN')}</div>
+                      </div>
+                      <div style={{ textAlign: 'right', fontWeight: 800, color: net >= 0 ? '#0F6E56' : '#B42318' }}>
+                        {net >= 0 ? '+' : '-'}₹{Math.round(Math.abs(net)).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div style={{ marginTop: 2 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#667085', marginBottom: 7, textTransform: 'uppercase', letterSpacing: '.04em' }}>Who pays whom</div>
+                  {splitSettlements.length === 0 ? (
+                    <div style={{ background: '#E1F5EE', border: '1px solid #9FE1CB', borderRadius: 12, padding: 12, color: '#085041', fontSize: 13, fontWeight: 600 }}>Everyone is settled.</div>
+                  ) : (
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {splitSettlements.map((settlement, index) => {
+                        const fromMember = splitMemberById[settlement.from];
+                        const toMember = splitMemberById[settlement.to];
+                        return (
+                          <div key={`settlement-${index}`} style={{ background: '#fff', border: '1px solid rgba(10,18,35,0.08)', borderRadius: 12, padding: 10, display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                            <div style={{ fontSize: 12, color: '#344054' }}>{fromMember?.nickname || settlement.from} → {toMember?.nickname || settlement.to}</div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: '#0F6E56' }}>₹{Math.round(settlement.amount).toLocaleString('en-IN')}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
+
+            {splitSection === 'balances' && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(170px,1fr))', gap: 10 }}>
+                {combinedMembers.map(member => {
+                  const balance = splitBalances[member.id] || 0;
+                  const positive = balance > 0.5;
+                  const negative = balance < -0.5;
+                  return (
+                    <div key={`balance-card-${member.id}`} style={{ background: '#fff', border: '1px solid rgba(10,18,35,0.08)', borderTop: `3px solid ${positive ? '#1D9E75' : negative ? '#D85A30' : '#D0D5DD'}`, borderRadius: '0 0 14px 14px', padding: 12 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{member.nickname}</div>
+                      <div style={{ marginTop: 8, fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 20, color: positive ? '#0F6E56' : negative ? '#B42318' : '#475467' }}>
+                        {positive ? '+' : ''}₹{Math.round(Math.abs(balance)).toLocaleString('en-IN')}
+                      </div>
+                      <div style={{ marginTop: 3, fontSize: 11, color: '#667085' }}>{positive ? 'gets back' : negative ? 'owes' : 'settled'}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
+
+          {splitSection === 'expenses' && (
+            <button
+              onClick={() => setSplitFormOpen(true)}
+              style={{ position: 'fixed', right: 18, bottom: 18, width: 58, height: 58, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', color: '#fff', fontSize: 29, cursor: 'pointer', boxShadow: '0 10px 28px rgba(15,110,86,0.45)', zIndex: 575 }}
+            >
+              +
+            </button>
+          )}
+
+          {splitFormOpen && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 580, background: '#F7F6F2', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '1rem 1.15rem', borderBottom: '1px solid rgba(0,0,0,0.08)', background: '#fff' }}>
+                <button onClick={() => setSplitFormOpen(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(0,0,0,0.12)', background: '#F7F6F2', cursor: 'pointer' }}>←</button>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>Add Expense</div>
+                <button style={{ ...S.btn, ...S.btnP, marginTop: 0, borderRadius: 12, padding: '8px 18px', opacity: clubBusy ? 0.65 : 1 }} disabled={clubBusy} onClick={handleAddSplitEntry}>Save</button>
+              </div>
+
+              <div style={{ flex: 1, overflowY: 'auto' }}>
+                <div style={{ background: 'linear-gradient(135deg,#0F6E56,#1D9E75)', padding: '2rem 1.2rem 2.4rem', textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.68)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 12 }}>How much?</div>
+                  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 7 }}>
+                    <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, color: 'rgba(255,255,255,0.62)' }}>₹</span>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={splitDraft.amount}
+                      onChange={(e) => setSplitDraft((draft) => ({ ...draft, amount: e.target.value }))}
+                      autoFocus
+                      style={{ fontFamily: "'Sora',sans-serif", fontSize: 52, fontWeight: 700, color: '#fff', border: 'none', background: 'transparent', outline: 'none', width: '64%', textAlign: 'center' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: '22px 22px 0 0', marginTop: -16, padding: '1.4rem 1.1rem 2rem' }}>
+                  <label style={S.label}>What was it?</label>
+                  <input
+                    style={{ ...S.input, marginTop: 6 }}
+                    placeholder="e.g. Dinner, cab, activity tickets"
+                    value={splitDraft.desc}
+                    onChange={(e) => setSplitDraft((draft) => ({ ...draft, desc: e.target.value }))}
+                  />
+
+                  <label style={S.label}>Paid by</label>
+                  <select style={S.input} value={splitDraft.paidBy} onChange={(e) => setSplitDraft((draft) => ({ ...draft, paidBy: e.target.value }))}>
+                    {combinedMembers.map(member => (
+                      <option key={`payer-${member.id}`} value={member.id}>{member.nickname} ({member.groupName})</option>
+                    ))}
+                  </select>
+
+                  <label style={S.label}>Split with</label>
+                  <div style={{ marginTop: 8, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {combinedMembers.map(member => {
+                      const selected = splitDraft.splitWith.includes(member.id);
+                      return (
+                        <button key={`split-with-${member.id}`} onClick={() => handleToggleSplitMember(member.id)} style={{ ...S.btn, marginTop: 0, padding: '6px 11px', background: selected ? '#E1F5EE' : '#fff', color: selected ? '#0F6E56' : '#475467', border: selected ? '1px solid #9FE1CB' : '1px solid rgba(0,0,0,0.11)' }}>
+                          {member.nickname}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{ marginTop: 10, fontSize: 12, color: '#667085' }}>
+                    Per head: {splitDraft.splitWith.length ? `₹${((Number(splitDraft.amount) || 0) / splitDraft.splitWith.length).toFixed(2)}` : '₹0.00'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

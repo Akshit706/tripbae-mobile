@@ -683,7 +683,32 @@ export default function App() {
                   <>
                     {tab === 'main' && <SoloExpensesPageFeature trip={activeTripData} myNickname={myNickname} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
                     {tab === 'itinerary' && <ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
-                    {tab === 'club' && <ClubPageFeature trip={activeTripData} />}
+                    {tab === 'club' && (
+                      <ClubPageFeature
+                        trip={activeTripData}
+                        onTripRefresh={async () => {
+                          try {
+                            const { getTrip } = await import('./api');
+                            const data = await getTrip(activeTripData.id);
+                            setMyNickname(data.myNickname);
+                            setActiveTripData(prev => ({
+                              ...data.trip,
+                              _cachedItin: prev?._cachedItin ?? data.trip._cachedItin ?? null,
+                              _cachedTaste: prev?._cachedTaste ?? data.trip._cachedTaste ?? null,
+                            }));
+                            setTrips(ts => ts.map(t => (t.id === data.trip.id
+                              ? {
+                                  ...data.trip,
+                                  _cachedItin: t._cachedItin ?? null,
+                                  _cachedTaste: t._cachedTaste ?? null,
+                                }
+                              : t)));
+                          } catch (err) {
+                            console.warn('Could not refresh trip after club update:', err.message);
+                          }
+                        }}
+                      />
+                    )}
                   </>
                 ) : (
                   <>
@@ -699,7 +724,32 @@ export default function App() {
                         <PhotosPageFeature trip={activeTripData} myNickname={myNickname} />
                       </div>
                     )}
-                    {tab === 'club' && <ClubPageFeature trip={activeTripData} />}
+                    {tab === 'club' && (
+                      <ClubPageFeature
+                        trip={activeTripData}
+                        onTripRefresh={async () => {
+                          try {
+                            const { getTrip } = await import('./api');
+                            const data = await getTrip(activeTripData.id);
+                            setMyNickname(data.myNickname);
+                            setActiveTripData(prev => ({
+                              ...data.trip,
+                              _cachedItin: prev?._cachedItin ?? data.trip._cachedItin ?? null,
+                              _cachedTaste: prev?._cachedTaste ?? data.trip._cachedTaste ?? null,
+                            }));
+                            setTrips(ts => ts.map(t => (t.id === data.trip.id
+                              ? {
+                                  ...data.trip,
+                                  _cachedItin: t._cachedItin ?? null,
+                                  _cachedTaste: t._cachedTaste ?? null,
+                                }
+                              : t)));
+                          } catch (err) {
+                            console.warn('Could not refresh trip after club update:', err.message);
+                          }
+                        }}
+                      />
+                    )}
                   </>
                 )}
               </div>
