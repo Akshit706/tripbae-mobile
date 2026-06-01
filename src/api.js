@@ -79,7 +79,8 @@ export const generateLocalTaste = (data) =>
 
 // Club
 export const getClubHub = (tripId, { latitude, longitude, radius, vibe, activeOnly } = {}) => {
-  let path = `/trips/${tripId}/club`;
+  // let path = `/trips/${tripId}/club`;
+  let path = `/trips/${tripId}/club/hub`; 
   const params = new URLSearchParams();
   if (latitude !== undefined && longitude !== undefined) {
     params.set('lat', String(latitude));
