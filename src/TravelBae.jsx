@@ -37,7 +37,7 @@ import ClubPageFeature from './features/club/ClubPage';
 
 /* ─── CONSTANTS ─────────────────────────────────────── */
 const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+const API_BASE = 'https://travelbae-backend.onrender.com';
 const CATS = [
   {id:'food',icon:'🍽️',label:'Food',bg:'#FAEEDA'},
   {id:'transport',icon:'🚗',label:'Transport',bg:'#E1F5EE'},

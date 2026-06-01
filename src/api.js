@@ -1,6 +1,5 @@
 // src/api.js
-const BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
-
+const BASE = 'https://travelbae-backend.onrender.com';
 function getToken() {
   return localStorage.getItem('travelbae_token');
 }
