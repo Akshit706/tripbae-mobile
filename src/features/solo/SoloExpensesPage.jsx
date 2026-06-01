@@ -390,7 +390,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           <div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 4 }}>Total Spent</div>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 700, color: '#fff' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>₹{Math.round(dailyAvg).toLocaleString('en-IN')}/day avg · {expenses.length} entries</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day TSR · {expenses.length} entries</div>
           </div>
           {budget && (
             <div style={{ textAlign: 'right' }}>
