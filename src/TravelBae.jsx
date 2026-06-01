@@ -683,7 +683,11 @@ export default function App() {
                   </>
                 ) : (
                   <>
-                    {tab === 'main' && <SplitPageFeature trip={activeTripData} myNickname={myNickname} />}
+                    {tab === 'main' && (
+                      <div style={{ margin: '-1.25rem', marginBottom: '-6rem' }}>
+                        <SplitPageFeature trip={activeTripData} myNickname={myNickname} />
+                      </div>
+                    )}
                     {tab === 'contacts' && <ContactsPageFeature trip={activeTripData} myNickname={myNickname} isSolo={false} />}
                     {tab === 'itinerary' && <ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
                     {tab === 'photos' && (
