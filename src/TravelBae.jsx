@@ -529,6 +529,7 @@ export default function App() {
     { id: 'club', label: '🧭 Club' },
   ];
   const tabs = isSolo ? soloTabs : groupTabs;
+  const viewKey = activeTrip ? `${activeTrip}-${tab}` : 'home';
 
   // ── AUTH SCREEN ──
   if (!authToken) return (
@@ -572,9 +573,10 @@ export default function App() {
   );
 
   return (
-    <div style={S.root}>
+    <div className="tb-app-shell" style={S.root}>
       <div style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.13) 0%, rgba(29,158,117,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: -190, left: -110, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(127,119,221,0.11) 0%, rgba(127,119,221,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div className="tb-noise-layer" />
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -594,7 +596,7 @@ export default function App() {
       {newTripModal && <ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
 
       {/* Top Bar */}
-      <div style={S.topBar}>
+      <div className="tb-topbar-glass" style={S.topBar}>
         {/* Profile button — always top-left */}
         <button
           onClick={() => setProfileOpen(true)}
@@ -648,9 +650,10 @@ export default function App() {
 
       {/* Nav Tabs */}
       {activeTrip && activeTripData && (
-        <div style={{ ...S.navTabs, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
+        <div className="tb-nav-ribbon" style={{ ...S.navTabs, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
+              className="tb-nav-pill"
               style={{ ...S.navTab, ...(tab === t.id ? (isSolo ? S.soloNavTabActive : S.navTabActive) : {}) }}>
               {t.label}
             </button>
@@ -658,11 +661,11 @@ export default function App() {
         </div>
       )}
 
-      <div style={S.page}>
+      <div className="tb-page-shell" style={S.page}>
         {!activeTrip && (
           tripsLoading
             ? <Spinner text="Loading your trips…" />
-            : <HomePageFeature
+            : <div key={viewKey} className="tb-view-enter"><HomePageFeature
                 trips={trips}
                 onOpenTrip={handleOpenTrip}
                 onCreateTrip={handleCreateTrip}
@@ -671,14 +674,14 @@ export default function App() {
                 onMarkComplete={handleMarkComplete}
                 onMarkActive={handleMarkActive}
                 profileName={profile.name}
-              />
+              /></div>
         )}
 
         {activeTrip && (
           tripLoading || !activeTripData
             ? <Spinner text="Loading trip…" />
             : (
-              <div style={{ animation: 'tbPageIn .35s cubic-bezier(.2,.7,.2,1)' }}>
+              <div key={viewKey} className="tb-view-enter" style={{ animation: 'tbPageIn .35s cubic-bezier(.2,.7,.2,1)' }}>
                 {isSolo ? (
                   <>
                     {tab === 'main' && <SoloExpensesPageFeature trip={activeTripData} myNickname={myNickname} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense, deleteClubChat } from '../../api';
+import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense, deleteClubChatSplitExpense, deleteClubChat } from '../../api';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 
@@ -366,6 +366,8 @@ function ClubPage({ trip, onTripRefresh }) {
   const [splitSection, setSplitSection] = useState('expenses');
   const [splitFormOpen, setSplitFormOpen] = useState(false);
   const [splitDraft, setSplitDraft] = useState({ desc: '', amount: '', paidBy: '', splitWith: [] });
+  const [splitTouch, setSplitTouch] = useState({ entryId: null, startX: 0, deltaX: 0 });
+  const [splitSwipeOpenId, setSplitSwipeOpenId] = useState(null);
 
   const [requestFor, setRequestFor] = useState(null);
   const [requestMessage, setRequestMessage] = useState('');
@@ -675,6 +677,47 @@ function ClubPage({ trip, onTripRefresh }) {
     } finally {
       setClubBusy(false);
     }
+  };
+
+  const handleDeleteSplitEntry = async (entryId) => {
+    if (!activeChat) return;
+    if (!confirm('Delete this split expense?')) return;
+    setClubBusy(true);
+    try {
+      await deleteClubChatSplitExpense(trip.id, activeChat.id, entryId);
+      await loadHub();
+      if (onTripRefresh) {
+        await onTripRefresh();
+      }
+    } catch (err) {
+      alert('Could not delete split expense: ' + err.message);
+    } finally {
+      setClubBusy(false);
+    }
+  };
+
+  const handleSplitTouchStart = (entryId, event) => {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    setSplitTouch({ entryId, startX: touch.clientX, deltaX: 0 });
+  };
+
+  const handleSplitTouchMove = (entryId, event) => {
+    if (splitTouch.entryId !== entryId) return;
+    const touch = event.touches?.[0];
+    if (!touch) return;
+    const delta = Math.max(-86, Math.min(0, touch.clientX - splitTouch.startX));
+    setSplitTouch((prev) => ({ ...prev, deltaX: delta }));
+  };
+
+  const handleSplitTouchEnd = (entryId) => {
+    if (splitTouch.entryId !== entryId) return;
+    if (splitTouch.deltaX <= -52) {
+      setSplitSwipeOpenId(entryId);
+    } else {
+      setSplitSwipeOpenId(null);
+    }
+    setSplitTouch({ entryId: null, startX: 0, deltaX: 0 });
   };
 
   const openToolsChooser = () => {
@@ -1142,7 +1185,7 @@ function ClubPage({ trip, onTripRefresh }) {
       )}
 
       {toolScreenOpen && activeChat && chatTool === 'split' && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 570, background: '#fff', overflowY: 'auto' }}>
+        <div className="tb-animated-screen" style={{ position: 'fixed', inset: 0, zIndex: 570, background: '#fff', overflowY: 'auto' }}>
           <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: 18, background: 'linear-gradient(135deg,#0F172A,#134E4A)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
             <div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>Split</div>
@@ -1153,19 +1196,19 @@ function ClubPage({ trip, onTripRefresh }) {
 
           <div style={{ padding: 16, maxWidth: 1020, margin: '0 auto' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
-              <div style={{ background: '#F4FBF8', border: '1px solid #DAF2E8', borderRadius: 14, padding: '10px 12px' }}>
+              <div className="tb-float-card tb-pop-in" style={{ background: '#F4FBF8', border: '1px solid #DAF2E8', borderRadius: 14, padding: '10px 12px' }}>
                 <div style={{ fontSize: 11, color: '#0F6E56' }}>Total spent</div>
                 <div style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0C3B31' }}>
                   ₹{Math.round(splitEntries.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0)).toLocaleString('en-IN')}
                 </div>
               </div>
-              <div style={{ background: '#F8FAFC', border: '1px solid #E3E8EF', borderRadius: 14, padding: '10px 12px' }}>
+              <div className="tb-float-card tb-pop-in" style={{ background: '#F8FAFC', border: '1px solid #E3E8EF', borderRadius: 14, padding: '10px 12px' }}>
                 <div style={{ fontSize: 11, color: '#475467' }}>Per member</div>
                 <div style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0F172A' }}>
                   ₹{combinedMembers.length ? Math.round(splitEntries.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0) / combinedMembers.length).toLocaleString('en-IN') : '0'}
                 </div>
               </div>
-              <div style={{ background: '#F8F8FF', border: '1px solid #E7E5FF', borderRadius: 14, padding: '10px 12px' }}>
+              <div className="tb-float-card tb-pop-in" style={{ background: '#F8F8FF', border: '1px solid #E7E5FF', borderRadius: 14, padding: '10px 12px' }}>
                 <div style={{ fontSize: 11, color: '#4C3D9A' }}>Entries</div>
                 <div style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#281D72' }}>{splitEntries.length}</div>
               </div>
@@ -1173,7 +1216,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 10 }}>
               {combinedMembers.map(member => (
-                <div key={`pill-${member.id}`} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid rgba(15,23,42,0.1)', borderRadius: 999, padding: '4px 9px 4px 5px', fontSize: 12 }}>
+                <div key={`pill-${member.id}`} className="tb-soft-fade" style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid rgba(15,23,42,0.1)', borderRadius: 999, padding: '4px 9px 4px 5px', fontSize: 12 }}>
                   <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#0F6E56', color: '#fff', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800 }}>
                     {member.nickname.slice(0, 2).toUpperCase()}
                   </div>
@@ -1200,6 +1243,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
             {splitSection === 'expenses' && (
               <div style={{ display: 'grid', gap: 8, paddingBottom: 86 }}>
+                {!!splitEntries.length && <div style={{ fontSize: 11, color: '#667085', margin: '0 2px 2px' }}>Tip: swipe any expense card left to reveal quick delete.</div>}
                 {splitEntries.length === 0 ? (
                   <div style={{ textAlign: 'center', padding: '40px 0', color: '#667085' }}>
                     <div style={{ fontSize: 42 }}>🧾</div>
@@ -1209,19 +1253,52 @@ function ClubPage({ trip, onTripRefresh }) {
                   const payer = splitMemberById[entry.paidByKey || entry.paidBy];
                   const splitWith = Array.isArray(entry.splitWithKeys) ? entry.splitWithKeys : [];
                   const perHead = splitWith.length ? (Number(entry.amount) || 0) / splitWith.length : 0;
+                  const dragging = splitTouch.entryId === entry.id;
+                  const translateX = dragging ? splitTouch.deltaX : (splitSwipeOpenId === entry.id ? -82 : 0);
                   return (
-                    <div key={entry.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(10,18,35,0.08)', padding: 12 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                        <div>
-                          <div style={{ fontWeight: 800, color: '#101828' }}>{entry.desc}</div>
-                          <div style={{ marginTop: 4, fontSize: 11, color: '#667085' }}>
-                            Paid by {payer ? `${payer.nickname} (${payer.groupName})` : (entry.paidByKey || entry.paidBy)}
+                    <div key={entry.id} style={{ position: 'relative', borderRadius: 14, overflow: 'hidden' }}>
+                      <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: 82, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg,#F97316,#EA580C)' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteSplitEntry(entry.id)}
+                          disabled={clubBusy}
+                          style={{ border: 'none', background: 'rgba(255,255,255,0.15)', color: '#fff', borderRadius: 10, padding: '7px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                      <div
+                        className="tb-float-card tb-fade-up"
+                        onTouchStart={(event) => handleSplitTouchStart(entry.id, event)}
+                        onTouchMove={(event) => handleSplitTouchMove(entry.id, event)}
+                        onTouchEnd={() => handleSplitTouchEnd(entry.id)}
+                        onClick={() => {
+                          if (splitSwipeOpenId === entry.id) {
+                            setSplitSwipeOpenId(null);
+                          }
+                        }}
+                        style={{
+                          background: '#fff',
+                          borderRadius: 14,
+                          border: '1px solid rgba(10,18,35,0.08)',
+                          padding: 12,
+                          transform: `translateX(${translateX}px)`,
+                          transition: dragging ? 'none' : 'transform .22s ease',
+                          touchAction: 'pan-y',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                          <div>
+                            <div style={{ fontWeight: 800, color: '#101828' }}>{entry.desc}</div>
+                            <div style={{ marginTop: 4, fontSize: 11, color: '#667085' }}>
+                              Paid by {payer ? `${payer.nickname} (${payer.groupName})` : (entry.paidByKey || entry.paidBy)}
+                            </div>
+                            <div style={{ marginTop: 2, fontSize: 11, color: '#98A2B3' }}>{formatSplitDate(entry.createdAt)}</div>
                           </div>
-                          <div style={{ marginTop: 2, fontSize: 11, color: '#98A2B3' }}>{formatSplitDate(entry.createdAt)}</div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                          <div style={{ fontWeight: 800 }}>₹{Math.round(Number(entry.amount) || 0).toLocaleString('en-IN')}</div>
-                          <div style={{ marginTop: 3, fontSize: 11, color: '#667085' }}>₹{Math.round(perHead).toLocaleString('en-IN')} each</div>
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontWeight: 800 }}>₹{Math.round(Number(entry.amount) || 0).toLocaleString('en-IN')}</div>
+                            <div style={{ marginTop: 3, fontSize: 11, color: '#667085' }}>₹{Math.round(perHead).toLocaleString('en-IN')} each</div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1297,6 +1374,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
           {splitSection === 'expenses' && (
             <button
+              className="tb-fab-pop"
               onClick={() => setSplitFormOpen(true)}
               style={{ position: 'fixed', right: 18, bottom: 18, width: 58, height: 58, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', color: '#fff', fontSize: 29, cursor: 'pointer', boxShadow: '0 10px 28px rgba(15,110,86,0.45)', zIndex: 575 }}
             >

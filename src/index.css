@@ -52,6 +52,25 @@
 
 body {
   margin: 0;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  background:
+    radial-gradient(1400px 700px at -5% -10%, rgba(29, 158, 117, 0.10), transparent 42%),
+    radial-gradient(1200px 650px at 105% 0%, rgba(55, 138, 221, 0.10), transparent 40%),
+    #ffffff;
+  animation: tbAmbientShift 18s ease-in-out infinite alternate;
+}
+
+button {
+  transition: transform 160ms ease, box-shadow 220ms ease, filter 160ms ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
 }
 
 #root {
@@ -108,4 +127,162 @@ code {
   line-height: 135%;
   padding: 4px 8px;
   background: var(--code-bg);
+}
+
+.tb-animated-screen {
+  animation: tbFadeIn 320ms ease;
+}
+
+.tb-app-shell {
+  position: relative;
+  isolation: isolate;
+}
+
+.tb-noise-layer {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  opacity: 0.055;
+  background-image:
+    radial-gradient(circle at 1px 1px, rgba(2, 6, 23, 0.28) 1px, transparent 0),
+    radial-gradient(circle at 3px 3px, rgba(15, 23, 42, 0.18) 1px, transparent 0);
+  background-size: 22px 22px, 29px 29px;
+}
+
+.tb-topbar-glass {
+  position: sticky;
+}
+
+.tb-topbar-glass::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(29, 158, 117, 0.35), rgba(55, 138, 221, 0.35), transparent);
+}
+
+.tb-nav-ribbon {
+  position: sticky;
+  top: 63px;
+  z-index: 120;
+}
+
+.tb-nav-pill {
+  position: relative;
+}
+
+.tb-nav-pill:hover {
+  transform: translateY(-2px) scale(1.01);
+}
+
+.tb-nav-pill::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(29,158,117,0.22), rgba(55,138,221,0.22));
+  opacity: 0;
+  transition: opacity 180ms ease;
+  z-index: -1;
+}
+
+.tb-nav-pill:hover::before {
+  opacity: 1;
+}
+
+.tb-page-shell {
+  position: relative;
+  z-index: 2;
+}
+
+.tb-view-enter {
+  animation: tbViewLift 360ms cubic-bezier(.2,.7,.2,1);
+  transform-origin: 50% 0%;
+}
+
+.tb-float-card {
+  transition: transform 180ms ease, box-shadow 220ms ease, border-color 180ms ease;
+}
+
+.tb-float-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.10);
+}
+
+.tb-pop-in {
+  animation: tbPopIn 300ms cubic-bezier(.22,1,.36,1);
+}
+
+.tb-fade-up {
+  animation: tbFadeUp 280ms ease;
+}
+
+.tb-soft-fade {
+  animation: tbSoftFade 380ms ease;
+}
+
+.tb-fab-pop {
+  animation: tbFabPulse 1800ms ease-in-out infinite;
+}
+
+@keyframes tbFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tbFadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tbPopIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes tbSoftFade {
+  from { opacity: 0.35; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tbFabPulse {
+  0% { box-shadow: 0 10px 28px rgba(15,110,86,0.40); }
+  50% { box-shadow: 0 14px 34px rgba(15,110,86,0.55); }
+  100% { box-shadow: 0 10px 28px rgba(15,110,86,0.40); }
+}
+
+@keyframes tbAmbientShift {
+  from { background-position: 0% 0%, 100% 0%; }
+  to { background-position: 3% 2%, 98% 4%; }
+}
+
+@keyframes tbViewLift {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.992);
+    filter: saturate(0.93);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: saturate(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .tb-view-enter,
+  .tb-noise-layer,
+  .tb-animated-screen,
+  .tb-pop-in,
+  .tb-fade-up,
+  .tb-soft-fade,
+  .tb-fab-pop,
+  button {
+    animation: none !important;
+    transition: none !important;
+  }
 }
