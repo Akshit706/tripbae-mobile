@@ -741,65 +741,6 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
             </div>
           )}
         
-          {/* Hero metrics — 4 key numbers */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 14 }}>
-            {[
-              { label: 'Countries & cities explored', val: stats.uniqueDests,                                 icon: '🌍', tint: '#E1F5EE', accent: '#1D9E75' },
-              { label: 'Total travel days',           val: totalTravelDays,                                   icon: '📅', tint: '#EEEDFE', accent: '#7F77DD' },
-              { label: `Total spent (${currencyMeta.symbol})`, val: fmtMoney(totalSpend),                     icon: '💰', tint: '#FFF1E0', accent: '#FF6B35' },
-              { label: 'Travel companions',           val: companionCount,                                    icon: '👥', tint: '#E6F1FB', accent: '#534AB7' },
-            ].map(s => (
-              <div key={s.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, padding: '14px 14px 16px', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ width: 40, height: 40, borderRadius: 12, background: s.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, marginBottom: 8 }}>{s.icon}</div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: s.accent, lineHeight: 1 }}>{s.val}</div>
-                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 6, lineHeight: 1.35 }}>{s.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Breakdown */}
-          <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', margin: '8px 0 8px 4px' }}>Breakdown</div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginBottom: 14 }}>
-            {[
-              { label: 'Total trips',       val: stats.tripCount,         icon: '🧳', tint: '#E1F5EE' },
-              { label: 'Completed',         val: stats.completedCount,    icon: '✅', tint: '#E6F1FB' },
-              { label: 'Active',            val: Math.max(0, stats.tripCount - stats.completedCount), icon: '⚡', tint: '#FFF1E0' },
-              { label: 'Solo journeys',     val: stats.soloCount,         icon: '🎒', tint: '#EEEDFE' },
-              { label: 'Group trips',       val: stats.groupCount,        icon: '👥', tint: '#E1F5EE' },
-              { label: 'Photos uploaded',   val: stats.photoCount,        icon: '📸', tint: '#FAECE7' },
-              { label: 'Contacts saved',    val: stats.contactCount,      icon: '📒', tint: '#F1EFE8' },
-              { label: 'Itineraries built', val: stats.itineraryCount,    icon: '🗺️', tint: '#E6F1FB' },
-            ].map(s => (
-              <div key={s.label} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 10, background: s.tint, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>{s.icon}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#1a1a18' }}>{s.val}</div>
-                  <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>{s.label}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {topDests.length > 0 && (
-            <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '14px 16px', marginBottom: '2rem' }}>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, marginBottom: 10 }}>📍 Most visited</div>
-              {topDests.map(([dest, count]) => {
-                const max = topDests[0][1];
-                const pct = Math.round((count / max) * 100);
-                return (
-                  <div key={dest} style={{ marginBottom: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 4 }}>
-                      <span style={{ color: '#1a1a18', fontWeight: 500 }}>{dest}</span>
-                      <span style={{ color: '#6b6b68' }}>{count} trip{count === 1 ? '' : 's'}</span>
-                    </div>
-                    <div style={{ height: 5, background: '#F1EFE8', borderRadius: 5, overflow: 'hidden' }}>
-                      <div style={{ width: `${pct}%`, height: '100%', background: 'linear-gradient(90deg,#1D9E75,#0F6E56)', borderRadius: 5 }} />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
         </div>
       )}
 

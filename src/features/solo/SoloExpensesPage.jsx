@@ -22,9 +22,26 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     };
   };
   const [form, setForm] = useState({ desc: '', amount: '', cat: 'food', date: getNow().date, time: getNow().time, note: '' });
+  const customTagsKey = `travelbae_custom_expense_tags_${trip.id}`;
+  const [customCats, setCustomCats] = useState(() => {
+    try {
+      const raw = localStorage.getItem(customTagsKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
   const donutRef = useRef(null);
   const barRef = useRef(null);
   const chartInstances = useRef({});
+
+  const expenseCats = useMemo(() => {
+    const base = [...CATS];
+    const known = new Set(base.map(c => c.id));
+    const extra = customCats.filter(c => c?.id && c?.label && !known.has(c.id));
+    return [...base, ...extra];
+  }, [customCats]);
 
   useEffect(() => {
     setExpenses(trip.expenses || []);
@@ -33,6 +50,14 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   useEffect(() => {
     setBudget(trip.budget || null);
   }, [trip.budget]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(customTagsKey, JSON.stringify(customCats));
+    } catch {
+      // ignore
+    }
+  }, [customCats, customTagsKey]);
 
   useEffect(() => {
     if (window.Chart) { setChartReady(true); return; }
@@ -49,13 +74,13 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const budgetPct = budget ? Math.min(100, Math.round(total / budget * 100)) : null;
 
   const catTotals = {};
-  CATS.forEach(c => { catTotals[c.id] = 0; });
+  expenseCats.forEach(c => { catTotals[c.id] = 0; });
   expenses.forEach(e => { catTotals[e.cat] = (catTotals[e.cat] || 0) + e.amount; });
   const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
   const top3 = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 3);
   const projected = Math.round(dailyAvg * days);
-  const activeCats = CATS.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id]);
-  const topCatMeta = CATS.find(c => c.id === topCat?.[0]) || null;
+  const activeCats = expenseCats.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id]);
+  const topCatMeta = expenseCats.find(c => c.id === topCat?.[0]) || null;
   const overBy = budget ? Math.max(0, projected - budget) : 0;
   const underBy = budget ? Math.max(0, budget - projected) : 0;
   const uniqueSpendDays = new Set(expenses.map(e => e.date)).size;
@@ -87,13 +112,28 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
 
   const getExpenseTimeLabel = (exp) => {
     if (exp.time) return exp.time;
-    if (exp.createdAt) {
-      const d = new Date(exp.createdAt);
+    if (typeof exp.date === 'string' && !exp.date.includes('T00:00:00.000Z')) {
+      const d = new Date(exp.date);
       if (!Number.isNaN(d.getTime())) {
         return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
       }
     }
     return null;
+  };
+
+  const createCustomTag = () => {
+    const label = window.prompt('Create a new expense tag');
+    if (!label || !label.trim()) return;
+    const cleaned = label.trim();
+    const id = `custom_${cleaned.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`;
+    if (!id || id === 'custom_') return;
+    if (expenseCats.some(c => c.id === id)) {
+      setForm(f => ({ ...f, cat: id }));
+      return;
+    }
+    const next = { id, icon: '🏷️', label: cleaned, bg: '#F1EFE8' };
+    setCustomCats(prev => [...prev, next]);
+    setForm(f => ({ ...f, cat: id }));
   };
 
   useEffect(() => {
@@ -113,7 +153,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         cat: form.cat,
         split: [myNickname || 'Me'],
         note: form.note,
-        date: form.date,
+        date: form.time ? `${form.date}T${form.time}:00` : form.date,
         time: form.time,
       };
       if (editingExpenseId) {
@@ -138,7 +178,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       amount: String(exp.amount || ''),
       cat: exp.cat || 'food',
       date: exp.date ? new Date(exp.date).toISOString().split('T')[0] : getNow().date,
-      time: exp.time || getNow().time,
+      time: exp.time || getExpenseTimeLabel(exp) || getNow().time,
       note: exp.note || '',
     });
     setEditingExpenseId(exp.id);
@@ -288,13 +328,18 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           <div style={{ marginBottom: '1.25rem' }}>
             <label style={S.label}>Category</label>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-              {CATS.map(c => (
+              {expenseCats.map(c => (
                 <button key={c.id} onClick={() => setForm(f => ({ ...f, cat: c.id }))}
                   style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: `1.5px solid ${form.cat === c.id ? SOLO_ACCENT_2 : 'rgba(0,0,0,0.09)'}`, background: form.cat === c.id ? SOLO_ACCENT_BG : '#fafafa', color: form.cat === c.id ? SOLO_ACCENT : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: form.cat === c.id ? 600 : 400, transition: 'all .12s' }}>
                   <span style={{ fontSize: 13 }}>{c.icon}</span>
                   <span>{c.label}</span>
                 </button>
               ))}
+              <button
+                onClick={createCustomTag}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: '1.5px dashed rgba(0,0,0,0.15)', background: '#fafafa', color: '#a8a8a5', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
+                + Create tag
+              </button>
             </div>
           </div>
 
@@ -413,16 +458,16 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         <div>
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: '1rem' }}>
             <button onClick={() => setFilterCat('all')} style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, ...(filterCat === 'all' ? S.btnSolo : {}) }}>All</button>
-            {CATS.filter(c => catTotals[c.id] > 0).map(c => (
+            {expenseCats.filter(c => catTotals[c.id] > 0).map(c => (
               <button key={c.id} onClick={() => setFilterCat(filterCat === c.id ? 'all' : c.id)}
-                style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, background: filterCat === c.id ? c.bg : '#fff', color: filterCat === c.id ? CAT_COLORS[c.id] : '#6b6b68', border: `0.5px solid ${filterCat === c.id ? CAT_COLORS[c.id] + '44' : 'rgba(0,0,0,0.12)'}` }}>
+                style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, background: filterCat === c.id ? c.bg : '#fff', color: filterCat === c.id ? (CAT_COLORS[c.id] || '#6b6b68') : '#6b6b68', border: `0.5px solid ${filterCat === c.id ? (CAT_COLORS[c.id] || '#6b6b68') + '44' : 'rgba(0,0,0,0.12)'}` }}>
                 {c.icon} {c.label}
               </button>
             ))}
           </div>
           {sortedFiltered.length === 0 && <div style={{ textAlign: 'center', padding: '2.5rem', color: '#6b6b68', fontSize: 14 }}><div style={{ fontSize: 40, marginBottom: 10 }}>📝</div><p>No expenses yet. Add your first one!</p></div>}
           {sortedFiltered.map(exp => {
-            const cat = CATS.find(c => c.id === exp.cat) || CATS[5];
+            const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
             const timeLabel = getExpenseTimeLabel(exp);
             return (
               <div key={exp.id} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
@@ -539,7 +584,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             <div style={{ ...S.card, animation: 'soloFadeUp .46s ease-out both', animationDelay: '270ms' }}>
               <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Top expenses</div>
               {top3.map((exp, idx) => {
-                const cat = CATS.find(c => c.id === exp.cat) || CATS[0];
+                const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
                 const pct = total > 0 ? Math.round((exp.amount / total) * 100) : 0;
                 return (
                   <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: idx < top3.length - 1 ? '0 0 10px' : 0, borderBottom: idx < top3.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', marginBottom: idx < top3.length - 1 ? 10 : 0, animation: 'soloFadeUp .32s ease-out both', animationDelay: `${320 + idx * 45}ms` }}>

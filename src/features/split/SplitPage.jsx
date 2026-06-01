@@ -31,6 +31,23 @@ function SplitPage({ trip, myNickname }) {
   const donutRef = useRef(null);
   const barRef = useRef(null);
   const chartInstances = useRef({});
+  const customTagsKey = `travelbae_custom_expense_tags_${trip.id}`;
+  const [customCats, setCustomCats] = useState(() => {
+    try {
+      const raw = localStorage.getItem(customTagsKey);
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const expenseCats = useMemo(() => {
+    const base = [...CATS];
+    const known = new Set(base.map(c => c.id));
+    const extra = customCats.filter(c => c?.id && c?.label && !known.has(c.id));
+    return [...base, ...extra];
+  }, [customCats]);
 
   const MCOLORS_LIST = ['#1D9E75','#D85A30','#7F77DD','#BA7517','#378ADD','#D4537E','#0F6E56','#993C1D'];
   const mcolor = (name) => {
@@ -50,6 +67,14 @@ function SplitPage({ trip, myNickname }) {
   }, []);
 
   useEffect(() => {
+    try {
+      localStorage.setItem(customTagsKey, JSON.stringify(customCats));
+    } catch {
+      // ignore
+    }
+  }, [customCats, customTagsKey]);
+
+  useEffect(() => {
     if (section !== 'insights' || !chartReady) return;
     const t = setTimeout(renderCharts, 80);
     return () => clearTimeout(t);
@@ -67,7 +92,7 @@ function SplitPage({ trip, myNickname }) {
   const perPerson = memberNames.length > 0 ? total / memberNames.length : 0;
 
   const catTotals = {};
-  CATS.forEach(c => { catTotals[c.id] = 0; });
+  expenseCats.forEach(c => { catTotals[c.id] = 0; });
   expenses.forEach(e => { catTotals[e.cat] = (catTotals[e.cat] || 0) + e.amount; });
 
   const payTotal = {};
@@ -161,7 +186,7 @@ function SplitPage({ trip, myNickname }) {
     }
 
     if (barRef.current) {
-      const activeCats = CATS.filter(c => catTotals[c.id] > 0);
+      const activeCats = expenseCats.filter(c => catTotals[c.id] > 0);
       if (activeCats.length === 0) return;
       const BAR_COLORS = { food:'#BA7517', transport:'#1D9E75', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E'};
       chartInstances.current.bar = new window.Chart(barRef.current, {
@@ -181,7 +206,9 @@ function SplitPage({ trip, myNickname }) {
       const payload = {
         desc: form.desc, amount: parseFloat(form.amount),
         paidBy: form.paidBy, cat: form.cat,
-        split: splitWith, date: form.date, time: form.time,
+        split: splitWith,
+        date: form.time ? `${form.date}T${form.time}:00` : form.date,
+        time: form.time,
       };
       if (editingExpenseId) {
         const data = await updateExpense(trip.id, editingExpenseId, payload);
@@ -207,7 +234,9 @@ function SplitPage({ trip, myNickname }) {
       paidBy: exp.paidBy || myNickname || memberNames[0] || '',
       cat: exp.cat || 'food',
       date: normalizedDate,
-      time: exp.time || getNow().time,
+      time: exp.time || (typeof exp.date === 'string' && !exp.date.includes('T00:00:00.000Z')
+        ? new Date(exp.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })
+        : getNow().time),
       splitMode: isAll ? 'all' : 'select',
       splitWith: [...splitArr],
       _splitOpen: false,
@@ -227,13 +256,28 @@ function SplitPage({ trip, myNickname }) {
 
   const getExpenseTimeLabel = (exp) => {
     if (exp.time) return exp.time;
-    if (exp.createdAt) {
-      const d = new Date(exp.createdAt);
+    if (typeof exp.date === 'string' && !exp.date.includes('T00:00:00.000Z')) {
+      const d = new Date(exp.date);
       if (!Number.isNaN(d.getTime())) {
         return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
       }
     }
     return null;
+  };
+
+  const createCustomTag = () => {
+    const label = window.prompt('Create a new expense tag');
+    if (!label || !label.trim()) return;
+    const cleaned = label.trim();
+    const id = `custom_${cleaned.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}`;
+    if (!id || id === 'custom_') return;
+    if (expenseCats.some(c => c.id === id)) {
+      setForm(f => ({ ...f, cat: id }));
+      return;
+    }
+    const next = { id, icon: '🏷️', label: cleaned, bg: '#F1EFE8' };
+    setCustomCats(prev => [...prev, next]);
+    setForm(f => ({ ...f, cat: id }));
   };
 
   const SECTION_TABS = [
@@ -289,7 +333,7 @@ function SplitPage({ trip, myNickname }) {
           <div style={{ marginBottom: '1.25rem' }}>
             <label style={S.label}>Category</label>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-              {CATS.map(c => (
+              {expenseCats.map(c => (
                 <button key={c.id} onClick={() => setForm(f => ({ ...f, cat: c.id }))}
                   style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: `1.5px solid ${form.cat === c.id ? '#1D9E75' : 'rgba(0,0,0,0.09)'}`, background: form.cat === c.id ? '#E1F5EE' : '#fafafa', color: form.cat === c.id ? '#0F6E56' : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: form.cat === c.id ? 600 : 400, transition: 'all .12s' }}>
                   <span style={{ fontSize: 13 }}>{c.icon}</span>
@@ -297,9 +341,9 @@ function SplitPage({ trip, myNickname }) {
                 </button>
               ))}
               <button
-                onClick={() => { const tag = prompt('New tag name:'); if (tag?.trim()) { const id = 'custom_' + tag.trim().toLowerCase().replace(/\s+/g,'_'); if (!CATS.find(c => c.id === id)) CATS.push({ id, icon: '🏷️', label: tag.trim(), bg: '#F1EFE8' }); setForm(f => ({ ...f, cat: id })); } }}
+                onClick={createCustomTag}
                 style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: '1.5px dashed rgba(0,0,0,0.15)', background: '#fafafa', color: '#a8a8a5', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
-                + tag
+                + Create tag
               </button>
             </div>
           </div>
@@ -512,9 +556,9 @@ function SplitPage({ trip, myNickname }) {
         <div style={{ paddingBottom: '5rem' }}>
           {/* Category filter chips */}
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: '0.75rem' }}>
-            {[{ id: 'all', label: 'All', icon: '' }, ...CATS.filter(c => catTotals[c.id] > 0)].map(c => (
+            {[{ id: 'all', label: 'All', icon: '' }, ...expenseCats.filter(c => catTotals[c.id] > 0)].map(c => (
               <button key={c.id} onClick={() => setFilterCat(c.id)}
-                style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, background: filterCat === c.id ? (c.id === 'all' ? '#1D9E75' : CATS.find(x => x.id === c.id)?.bg || '#E1F5EE') : '#fff', color: filterCat === c.id ? (c.id === 'all' ? '#fff' : CAT_COLORS[c.id] || '#1D9E75') : '#6b6b68', border: `0.5px solid ${filterCat === c.id ? (c.id === 'all' ? '#1D9E75' : (CAT_COLORS[c.id] || '#1D9E75') + '44') : 'rgba(0,0,0,0.12)'}` }}>
+                style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, background: filterCat === c.id ? (c.id === 'all' ? '#1D9E75' : expenseCats.find(x => x.id === c.id)?.bg || '#E1F5EE') : '#fff', color: filterCat === c.id ? (c.id === 'all' ? '#fff' : CAT_COLORS[c.id] || '#1D9E75') : '#6b6b68', border: `0.5px solid ${filterCat === c.id ? (c.id === 'all' ? '#1D9E75' : (CAT_COLORS[c.id] || '#1D9E75') + '44') : 'rgba(0,0,0,0.12)'}` }}>
                 {c.icon} {c.label}
               </button>
             ))}
@@ -529,7 +573,7 @@ function SplitPage({ trip, myNickname }) {
           )}
 
           {sortedExpenses.map(exp => {
-            const cat = CATS.find(c => c.id === exp.cat) || CATS[5];
+            const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
             const splitArr = Array.isArray(exp.split) && exp.split.length > 0 ? exp.split : memberNames;
             const timeLabel = getExpenseTimeLabel(exp);
             return (
@@ -695,7 +739,7 @@ function SplitPage({ trip, myNickname }) {
             <div style={{ ...S.card, marginBottom: 10 }}>
               <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Top expenses</div>
               {top3.map((exp, idx) => {
-                const cat = CATS.find(c => c.id === exp.cat) || CATS[5];
+                const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
                 const pct = total > 0 ? Math.round(exp.amount / total * 100) : 0;
                 return (
                   <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: idx < top3.length - 1 ? '0 0 10px' : '0', borderBottom: idx < top3.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', marginBottom: idx < top3.length - 1 ? 10 : 0 }}>
@@ -747,7 +791,7 @@ function SplitPage({ trip, myNickname }) {
           )}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {memberNames.length > 0 && (() => {
-              const topCat = CATS.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id])[0];
+              const topCat = expenseCats.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id])[0];
               return (
                 <>
                   <div style={{ ...S.card }}>
