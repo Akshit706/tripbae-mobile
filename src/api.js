@@ -81,8 +81,13 @@ export const generateLocalTaste = (data) =>
   apiFetch('/ai/local-taste', { method: 'POST', body: data });
 
 // Club
-export const getClubHub = (tripId) =>
-  apiFetch(`/trips/${tripId}/club`);
+export const getClubHub = (tripId, { latitude, longitude, radius } = {}) => {
+  let path = `/trips/${tripId}/club`;
+  if (latitude !== undefined && longitude !== undefined && radius !== undefined) {
+    path += `?lat=${latitude}&lng=${longitude}&radius=${radius}`;
+  }
+  return apiFetch(path);
+};
 
 export const upsertClubProfile = (tripId, data) =>
   apiFetch(`/trips/${tripId}/club/profile`, { method: 'PUT', body: data });
