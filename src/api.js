@@ -107,3 +107,6 @@ export const sendClubRequest = (tripId, targetTripId, message) =>
 
 export const respondClubRequest = (tripId, requestId, action) =>
   apiFetch(`/trips/${tripId}/club/requests/${requestId}`, { method: 'PATCH', body: { action } });
+
+export const sendClubChatMessage = (tripId, chatId, text) =>
+  apiFetch(`/trips/${tripId}/club/chats/${chatId}/messages`, { method: 'POST', body: { text } });

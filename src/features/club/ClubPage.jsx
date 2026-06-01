@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest } from '../../api';
+import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage } from '../../api';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 
@@ -87,6 +87,11 @@ function MatchRing({ score }) {
 
 function buildCardGallery(item) {
   return [item?.photoUrl, item?.trip?.coverUrl].filter(Boolean);
+}
+
+function formatChatTime(value) {
+  if (!value) return '';
+  return new Date(value).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
 function getGroupMoodLine(item) {
@@ -206,7 +211,6 @@ function buildCompatibility(myProfile, myTrip, item) {
 }
 
 function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
-  const members = item.trip?.members?.length || 0;
   const activeNow = isRecentlyActive(item.updatedAt);
   const avatar = item.photoUrl || item.trip?.coverUrl || null;
   const moodLine = getGroupMoodLine(item);
@@ -234,16 +238,15 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.2 }}>{item.trip?.groupName}</div>
             <div style={{ fontSize: 12, opacity: 0.93, marginTop: 4 }}>
-              {item.trip?.destination} • {members} members
+              {item.trip?.destination}
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>{distanceLabel(item.distance)}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>{genderMixLabel(item.genderMix)}</span>
               {compatibility && (
                 <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.26)' }}>
                   {compatibility.score}% match
                 </span>
               )}
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>{distanceLabel(item.distance)}</span>
             </div>
           </div>
         </div>
@@ -253,13 +256,12 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
         <div style={{ fontSize: 14, color: '#242424', lineHeight: 1.55, fontWeight: 600 }}>{moodLine}</div>
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, gap: 10 }}>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 800, color: '#8A90A2', textTransform: 'uppercase', letterSpacing: '.08em' }}>Open profile</div>
-            <div style={{ fontSize: 12, color: '#4B5565', marginTop: 2 }}>View chemistry, interests, and send request</div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: '#8A90A2', textTransform: 'uppercase', letterSpacing: '.08em' }}>
+            {alreadySent ? 'Request Sent' : 'Profile Ready'}
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 800, color: alreadySent ? '#8C6B28' : '#111827' }}>
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: alreadySent ? '#F0B100' : '#111827', boxShadow: alreadySent ? '0 0 0 6px rgba(240,177,0,0.12)' : '0 0 0 6px rgba(17,24,39,0.06)' }} />
-            {alreadySent ? 'Request Sent' : 'Tap to Explore'}
+            {alreadySent ? 'Pending' : 'Open'}
           </div>
         </div>
       </div>
@@ -270,13 +272,15 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
 function ClubPage({ trip }) {
   const [clubLoading, setClubLoading] = useState(true);
   const [clubBusy, setClubBusy] = useState(false);
-  const [hub, setHub] = useState({ myProfile: null, discover: [], incomingRequests: [], outgoingRequests: [] });
+  const [hub, setHub] = useState({ myProfile: null, discover: [], incomingRequests: [], outgoingRequests: [], chats: [] });
   const [clubView, setClubView] = useState('discover');
   const [filters, setFilters] = useState(initialFilters);
   const [filterDraft, setFilterDraft] = useState(initialFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  const [selectedChatId, setSelectedChatId] = useState(null);
+  const [chatDraft, setChatDraft] = useState('');
 
   const [requestFor, setRequestFor] = useState(null);
   const [requestMessage, setRequestMessage] = useState('');
@@ -473,10 +477,29 @@ function ClubPage({ trip }) {
   const handleRequestAction = async (requestId, action) => {
     setClubBusy(true);
     try {
-      await respondClubRequest(trip.id, requestId, action);
+      const result = await respondClubRequest(trip.id, requestId, action);
       await loadHub();
+      if (action === 'accepted' && result.chat) {
+        setSelectedChatId(result.chat.id);
+        setClubView('chats');
+      }
     } catch (err) {
       alert('Could not update request: ' + err.message);
+    }
+    setClubBusy(false);
+  };
+
+  const handleSendChat = async () => {
+    if (!activeChat || !chatDraft.trim()) return;
+    setClubBusy(true);
+    try {
+      await sendClubChatMessage(trip.id, activeChat.id, chatDraft.trim());
+      setChatDraft('');
+      await loadHub();
+      setSelectedChatId(activeChat.id);
+      setClubView('chats');
+    } catch (err) {
+      alert('Could not send chat message: ' + err.message);
     }
     setClubBusy(false);
   };
@@ -490,11 +513,26 @@ function ClubPage({ trip }) {
     ? hub.outgoingRequests.some(r => r.targetTripId === selectedCard.tripId && r.status === 'pending')
     : false;
 
+  const activeChat = useMemo(
+    () => (hub.chats || []).find(chat => chat.id === selectedChatId) || (hub.chats || [])[0] || null,
+    [hub.chats, selectedChatId]
+  );
+
   const selectedGallery = useMemo(() => buildCardGallery(selectedCard), [selectedCard]);
 
   useEffect(() => {
     setSelectedMediaIndex(0);
   }, [selectedCard?.id]);
+
+  useEffect(() => {
+    if (!hub.chats?.length) {
+      setSelectedChatId(null);
+      return;
+    }
+    if (!selectedChatId || !hub.chats.some(chat => chat.id === selectedChatId)) {
+      setSelectedChatId(hub.chats[0].id);
+    }
+  }, [hub.chats, selectedChatId]);
 
   useEffect(() => {
     if (!selectedCard || selectedGallery.length <= 1) return undefined;
@@ -574,13 +612,13 @@ function ClubPage({ trip }) {
         </div>
 
         <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
-          {['discover', 'profile', 'requests'].map(tab => (
+          {['discover', 'profile', 'requests', 'chats'].map(tab => (
             <button
               key={tab}
               onClick={() => setClubView(tab)}
               style={{ ...S.btn, marginTop: 0, border: 'none', fontSize: 12, background: clubView === tab ? '#fff' : 'rgba(255,255,255,0.16)', color: clubView === tab ? '#0C5B47' : '#fff', fontWeight: 700 }}
             >
-              {tab === 'requests' ? `Requests (${hub.incomingRequests.length})` : tab === 'profile' ? 'Edit Profile' : 'Discover'}
+              {tab === 'requests' ? `Requests (${hub.incomingRequests.length})` : tab === 'profile' ? 'Edit Profile' : tab === 'chats' ? `Chats (${hub.chats?.length || 0})` : 'Discover'}
             </button>
           ))}
         </div>
@@ -659,6 +697,98 @@ function ClubPage({ trip }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {clubView === 'chats' && (
+        <div style={{ ...S.card, animation: 'clubPop .25s ease-out both' }}>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Club Chats</div>
+
+          {(!hub.chats || hub.chats.length === 0) && (
+            <div style={{ fontSize: 13, color: '#6b6b68', textAlign: 'center', padding: '18px 0' }}>
+              Accept a request to unlock a shared trip chat.
+            </div>
+          )}
+
+          {hub.chats?.length > 0 && (
+            <div style={{ display: 'grid', gridTemplateColumns: '220px minmax(0,1fr)', gap: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {hub.chats.map(chat => {
+                  const preview = chat.latestMessage?.text || `Start the ${chat.title} chat.`;
+                  const avatar = chat.otherTrip?.clubProfile?.photoUrl || chat.otherTrip?.coverUrl || null;
+                  return (
+                    <button
+                      key={chat.id}
+                      onClick={() => setSelectedChatId(chat.id)}
+                      style={{
+                        textAlign: 'left',
+                        border: selectedChatId === chat.id ? '1px solid rgba(11,122,90,0.28)' : '1px solid rgba(10,18,35,0.08)',
+                        background: selectedChatId === chat.id ? '#F2FFF9' : '#fff',
+                        borderRadius: 16,
+                        padding: 10,
+                        cursor: 'pointer',
+                        boxShadow: selectedChatId === chat.id ? '0 14px 24px rgba(11,122,90,0.09)' : 'none',
+                      }}>
+                      <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                        {avatar ? (
+                          <img src={avatar} alt="chat avatar" style={{ width: 44, height: 44, borderRadius: 12, objectFit: 'cover' }} />
+                        ) : (
+                          <div style={{ width: 44, height: 44, borderRadius: 12, display: 'grid', placeItems: 'center', background: '#EEF3FB', fontSize: 20 }}>
+                            {chat.otherTrip?.emoji || '💬'}
+                          </div>
+                        )}
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 800, color: '#101828' }}>{chat.title}</div>
+                          <div style={{ fontSize: 11, color: '#6B7280', marginTop: 3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{preview}</div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {activeChat && (
+                <div style={{ border: '1px solid rgba(10,18,35,0.08)', borderRadius: 18, overflow: 'hidden', background: '#FCFDFE' }}>
+                  <div style={{ padding: 14, borderBottom: '1px solid rgba(10,18,35,0.06)', background: 'linear-gradient(135deg,#F7FFF9,#F7FAFF)' }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: '#111827' }}>{activeChat.title}</div>
+                    <div style={{ fontSize: 12, color: '#6B7280', marginTop: 4 }}>Talk after the match. Make plans, share vibe, lock the meetup.</div>
+                  </div>
+
+                  <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 360, overflowY: 'auto', background: 'linear-gradient(180deg,#FFFFFF,#F7FAFD)' }}>
+                    {activeChat.messages?.length ? activeChat.messages.map(message => {
+                      const mine = message.senderTripId === trip.id;
+                      return (
+                        <div key={message.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                          <div style={{ maxWidth: '78%', background: mine ? '#0F172A' : '#EAF7F1', color: mine ? '#fff' : '#0B3B2E', borderRadius: 18, padding: '10px 12px', boxShadow: mine ? '0 10px 20px rgba(15,23,42,0.18)' : 'none' }}>
+                            <div style={{ fontSize: 10, fontWeight: 800, opacity: mine ? 0.72 : 0.7, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                              {mine ? 'Your group' : message.senderUser?.name || activeChat.otherTrip?.groupName}
+                            </div>
+                            <div style={{ fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>{message.text}</div>
+                            <div style={{ fontSize: 10, opacity: mine ? 0.7 : 0.55, marginTop: 6 }}>{formatChatTime(message.createdAt)}</div>
+                          </div>
+                        </div>
+                      );
+                    }) : (
+                      <div style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', padding: '18px 0' }}>No messages yet. Break the ice.</div>
+                    )}
+                  </div>
+
+                  <div style={{ padding: 14, borderTop: '1px solid rgba(10,18,35,0.06)', background: '#fff' }}>
+                    <textarea
+                      style={{ ...S.input, resize: 'vertical', minHeight: 76, marginBottom: 10 }}
+                      value={chatDraft}
+                      onChange={e => setChatDraft(e.target.value)}
+                      placeholder={`Message ${activeChat.otherTrip?.groupName || 'this group'}...`}
+                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                      <div style={{ fontSize: 11, color: '#6B7280', alignSelf: 'center' }}>Chat opens when a request is accepted.</div>
+                      <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} disabled={clubBusy || !chatDraft.trim()} onClick={handleSendChat}>Send</button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
