@@ -94,6 +94,15 @@ function formatChatTime(value) {
   return new Date(value).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 }
 
+function formatChatMetaTime(value) {
+  if (!value) return 'No activity yet';
+  const dt = new Date(value);
+  const now = new Date();
+  const isToday = dt.toDateString() === now.toDateString();
+  if (isToday) return `Today • ${formatChatTime(value)}`;
+  return dt.toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
+
 function buildCombinedMembers(chat) {
   if (!chat) return [];
   const groupA = (chat.tripA?.members || []).map(member => ({
@@ -347,6 +356,7 @@ function ClubPage({ trip }) {
   });
 
   const fileRef = useRef(null);
+  const chatThreadRef = useRef(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedRadius(radius), 260);
@@ -547,6 +557,13 @@ function ClubPage({ trip }) {
     setClubBusy(false);
   };
 
+  const handleChatKeyDown = (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      if (!clubBusy && chatDraft.trim()) handleSendChat();
+    }
+  };
+
   const handleToggleSplitMember = (memberId) => {
     setSplitDraft((draft) => {
       const exists = draft.splitWith.includes(memberId);
@@ -631,6 +648,20 @@ function ClubPage({ trip }) {
 
   const selectedGallery = useMemo(() => buildCardGallery(selectedCard), [selectedCard]);
 
+  const unreadCountByChat = useMemo(() => {
+    const map = {};
+    (hub.chats || []).forEach((chat) => {
+      const latest = chat.latestMessage;
+      map[chat.id] = latest && latest.senderTripId !== trip.id ? 1 : 0;
+    });
+    return map;
+  }, [hub.chats, trip.id]);
+
+  const hasUnreadChats = useMemo(
+    () => Object.values(unreadCountByChat).some(Boolean),
+    [unreadCountByChat]
+  );
+
   useEffect(() => {
     setSelectedMediaIndex(0);
   }, [selectedCard?.id]);
@@ -665,6 +696,21 @@ function ClubPage({ trip }) {
     }, 3200);
     return () => clearInterval(timer);
   }, [selectedCard, selectedGallery]);
+
+  useEffect(() => {
+    if (!activeChat || !chatThreadRef.current) return;
+    chatThreadRef.current.scrollTop = chatThreadRef.current.scrollHeight;
+  }, [activeChat?.id, activeChat?.messages?.length]);
+
+  const premiumPanel = {
+    background: 'linear-gradient(175deg,rgba(255,255,255,0.97),rgba(247,251,255,0.92))',
+    border: '1px solid rgba(18,35,60,0.08)',
+    borderRadius: 24,
+    padding: '1rem',
+    marginBottom: '0.9rem',
+    boxShadow: '0 18px 40px rgba(17,24,39,0.08)',
+    backdropFilter: 'blur(8px)',
+  };
 
   if (clubLoading) return <Spinner text="Loading Club..." solo={trip.isSolo} />;
 
@@ -719,11 +765,13 @@ function ClubPage({ trip }) {
         }
       `}</style>
 
-      <div style={{ background: trip.isSolo ? 'linear-gradient(130deg,#6D4DF5,#4430B7)' : 'linear-gradient(130deg,#0E8D6A,#0B5E48)', borderRadius: 16, padding: '1.1rem 1rem', marginBottom: '1rem', color: '#fff' }}>
+      <div style={{ position: 'relative', background: trip.isSolo ? 'linear-gradient(132deg,#5E46E7,#3F2CA1 52%,#281D72)' : 'linear-gradient(132deg,#0A7A61,#0A4F40 52%,#123D72)', borderRadius: 26, padding: '1.15rem 1rem 1rem', marginBottom: '1rem', color: '#fff', overflow: 'hidden', boxShadow: '0 24px 60px rgba(8,18,35,0.25)' }}>
+        <div style={{ position: 'absolute', top: -44, right: -50, width: 170, height: 170, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.22), rgba(255,255,255,0))' }} />
+        <div style={{ position: 'absolute', bottom: -60, left: -35, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.16), rgba(255,255,255,0))' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
           <div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 800 }}>TravelBae Club</div>
-            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 2 }}>{listed ? 'Your group is visible to nearby travelers.' : 'You are snoozed right now.'}</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em' }}>TravelBae Club</div>
+            <div style={{ fontSize: 12, opacity: 0.88, marginTop: 3 }}>{listed ? 'Your group is visible to nearby travelers.' : 'You are snoozed right now.'}</div>
           </div>
           <button
             onClick={handleToggle}
@@ -735,7 +783,7 @@ function ClubPage({ trip }) {
           </button>
         </div>
 
-        <div style={{ display: 'flex', gap: 6, marginTop: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 7, marginTop: 12, flexWrap: 'wrap' }}>
           {['discover', 'profile', 'requests', 'chats'].map(tab => (
             <button
               key={tab}
@@ -745,16 +793,19 @@ function ClubPage({ trip }) {
                   setSelectedChatId(null);
                 }
               }}
-              style={{ ...S.btn, marginTop: 0, border: 'none', fontSize: 12, background: clubView === tab ? '#fff' : 'rgba(255,255,255,0.16)', color: clubView === tab ? '#0C5B47' : '#fff', fontWeight: 700 }}
+              style={{ ...S.btn, marginTop: 0, border: 'none', fontSize: 12, background: clubView === tab ? '#fff' : 'rgba(255,255,255,0.14)', color: clubView === tab ? '#0B4D3D' : '#fff', fontWeight: 700, borderRadius: 999, padding: '8px 14px', boxShadow: clubView === tab ? '0 8px 24px rgba(12,22,45,0.2)' : 'none' }}
             >
               {tab === 'requests' ? `Requests (${hub.incomingRequests.length})` : tab === 'profile' ? 'Edit Profile' : tab === 'chats' ? `Chats (${hub.chats?.length || 0})` : 'Discover'}
+              {tab === 'chats' && hasUnreadChats ? (
+                <span style={{ marginLeft: 6, width: 8, height: 8, borderRadius: '50%', background: '#FFB020', display: 'inline-block' }} />
+              ) : null}
             </button>
           ))}
         </div>
       </div>
 
       {clubView === 'profile' && (
-        <div style={{ ...S.card, animation: 'clubPop .25s ease-out both' }}>
+        <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
           <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Build Your Discovery Card</div>
 
           <div style={{ marginBottom: 12 }}>
@@ -813,13 +864,14 @@ function ClubPage({ trip }) {
       )}
 
       {clubView === 'requests' && (
-        <div style={{ ...S.card, animation: 'clubPop .25s ease-out both' }}>
+        <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
           <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Incoming Requests</div>
           {hub.incomingRequests.length === 0 && <div style={{ fontSize: 12, color: '#6b6b68' }}>No pending requests right now.</div>}
           {hub.incomingRequests.map(req => (
-            <div key={req.id} style={{ border: '1px solid rgba(0,0,0,0.09)', borderRadius: 12, padding: 10, marginBottom: 8 }}>
+            <div key={req.id} style={{ border: '1px solid rgba(13,24,48,0.1)', borderRadius: 14, padding: 12, marginBottom: 8, background: 'linear-gradient(180deg,#FFFFFF,#F8FBFF)' }}>
               <div style={{ fontSize: 14, fontWeight: 700 }}>{req.requesterTrip.groupName}</div>
               <div style={{ fontSize: 12, color: '#60636D', marginTop: 2 }}>{req.message}</div>
+              <div style={{ fontSize: 11, color: '#77839A', marginTop: 4 }}>Received {formatChatMetaTime(req.createdAt)}</div>
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                 <button style={{ ...S.btn, ...S.btnP, marginTop: 0 }} onClick={() => handleRequestAction(req.id, 'accepted')} disabled={clubBusy}>Accept</button>
                 <button style={{ ...S.btn, marginTop: 0 }} onClick={() => handleRequestAction(req.id, 'declined')} disabled={clubBusy}>Decline</button>
@@ -830,10 +882,11 @@ function ClubPage({ trip }) {
       )}
 
       {clubView === 'chats' && (
-        <div style={{ ...S.card, animation: 'clubPop .25s ease-out both' }}>
+        <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
           <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 4 }}>Club Chats</div>
-          <div style={{ fontSize: 12, color: '#667085', marginBottom: 12 }}>
-            Open one conversation at a time for a cleaner, messenger-style flow.
+          <div style={{ fontSize: 12, color: '#667085', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
+            <span>Instagram-style single window chat.</span>
+            <span>{hasUnreadChats ? 'New messages waiting' : 'All caught up'}</span>
           </div>
 
           {(!hub.chats || hub.chats.length === 0) && (
@@ -849,6 +902,7 @@ function ClubPage({ trip }) {
                   {hub.chats.map(chat => {
                     const preview = chat.latestMessage?.text || `Start the ${chat.title} chat.`;
                     const avatar = chat.otherTrip?.clubProfile?.photoUrl || chat.otherTrip?.coverUrl || null;
+                    const unread = unreadCountByChat[chat.id] || 0;
                     return (
                       <button
                         key={chat.id}
@@ -856,11 +910,12 @@ function ClubPage({ trip }) {
                         style={{
                           width: '100%',
                           textAlign: 'left',
-                          border: '1px solid rgba(10,18,35,0.08)',
-                          background: '#fff',
-                          borderRadius: 16,
-                          padding: 11,
+                          border: unread ? '1px solid rgba(23,127,94,0.28)' : '1px solid rgba(10,18,35,0.07)',
+                          background: unread ? 'linear-gradient(180deg,#F2FFF8,#FFFFFF)' : 'linear-gradient(180deg,#FFFFFF,#F8FBFF)',
+                          borderRadius: 18,
+                          padding: 12,
                           cursor: 'pointer',
+                          boxShadow: unread ? '0 12px 24px rgba(23,127,94,0.12)' : '0 8px 20px rgba(15,23,42,0.05)',
                         }}>
                         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                           {avatar ? (
@@ -873,9 +928,12 @@ function ClubPage({ trip }) {
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                               <div style={{ fontSize: 13, fontWeight: 800, color: '#101828', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chat.title}</div>
-                              <div style={{ fontSize: 10, color: '#8A94A6', flexShrink: 0 }}>{formatChatTime(chat.latestMessage?.createdAt)}</div>
+                              <div style={{ fontSize: 10, color: '#8A94A6', flexShrink: 0 }}>{formatChatMetaTime(chat.latestMessage?.createdAt)}</div>
                             </div>
-                            <div style={{ fontSize: 11, color: '#6B7280', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{preview}</div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
+                              <div style={{ fontSize: 11, color: unread ? '#1E7B5E' : '#6B7280', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: unread ? 700 : 500 }}>{preview}</div>
+                              {unread ? <span style={{ minWidth: 18, height: 18, borderRadius: 9, background: '#1D9E75', color: '#fff', fontSize: 10, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>1</span> : null}
+                            </div>
                           </div>
                         </div>
                       </button>
@@ -883,69 +941,72 @@ function ClubPage({ trip }) {
                   })}
                 </div>
               )}
-
-              {activeChat && (
-                <div style={{ border: '1px solid rgba(10,18,35,0.08)', borderRadius: 18, overflow: 'hidden', background: '#FCFDFE' }}>
-                  <div style={{ padding: 12, borderBottom: '1px solid rgba(10,18,35,0.06)', background: 'linear-gradient(135deg,#F7FFF9,#F7FAFF)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                      <button style={{ ...S.btn, marginTop: 0, padding: '7px 10px' }} onClick={() => setSelectedChatId(null)}>←</button>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 800, color: '#111827', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeChat.title}</div>
-                        <div style={{ fontSize: 12, color: '#6B7280', marginTop: 2 }}>Talk, plan, and open tools for this chat.</div>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={openToolsChooser}
-                      disabled={!activeChat}
-                      aria-label="Open tools"
-                      title="Open tools"
-                      style={{ width: 42, height: 42, borderRadius: 13, border: '1px solid rgba(10,18,35,0.10)', background: '#F3F6FA', display: 'grid', placeItems: 'center', cursor: activeChat ? 'pointer' : 'not-allowed', flexShrink: 0 }}
-                    >
-                      🧰
-                    </button>
-                  </div>
-
-                  <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10, maxHeight: '52vh', overflowY: 'auto', background: 'linear-gradient(180deg,#FFFFFF,#F7FAFD)' }}>
-                    {activeChat.messages?.length ? activeChat.messages.map(message => {
-                      const mine = message.senderTripId === trip.id;
-                      return (
-                        <div key={message.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-                          <div style={{ maxWidth: '82%', background: mine ? '#0F172A' : '#EAF7F1', color: mine ? '#fff' : '#0B3B2E', borderRadius: 18, padding: '10px 12px', boxShadow: mine ? '0 10px 20px rgba(15,23,42,0.18)' : 'none' }}>
-                            <div style={{ fontSize: 10, fontWeight: 800, opacity: mine ? 0.72 : 0.7, textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                              {mine ? 'Your group' : message.senderUser?.name || activeChat.otherTrip?.groupName}
-                            </div>
-                            <div style={{ fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>{message.text}</div>
-                            <div style={{ fontSize: 10, opacity: mine ? 0.7 : 0.55, marginTop: 6 }}>{formatChatTime(message.createdAt)}</div>
-                          </div>
-                        </div>
-                      );
-                    }) : (
-                      <div style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', padding: '18px 0' }}>No messages yet. Break the ice.</div>
-                    )}
-                  </div>
-
-                  <div style={{ padding: 12, borderTop: '1px solid rgba(10,18,35,0.06)', background: '#fff' }}>
-                    <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                      <textarea
-                        style={{ ...S.input, resize: 'none', minHeight: 44, maxHeight: 120, marginBottom: 0, flex: 1 }}
-                        value={chatDraft}
-                        onChange={e => setChatDraft(e.target.value)}
-                        placeholder={`Message ${activeChat.otherTrip?.groupName || 'this group'}...`}
-                      />
-                      <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0, height: 44 }} disabled={clubBusy || !chatDraft.trim()} onClick={handleSendChat}>Send</button>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
       )}
 
+      {clubView === 'chats' && activeChat && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 545, background: 'linear-gradient(180deg,#ECF6F4,#F4F9FF 68%,#FFFFFF)', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: '10px 12px', borderBottom: '1px solid rgba(10,18,35,0.08)', background: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+              <button style={{ ...S.btn, marginTop: 0, padding: '8px 11px', borderRadius: 12 }} onClick={() => setSelectedChatId(null)}>←</button>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeChat.title}</div>
+                <div style={{ fontSize: 11, color: '#627089', marginTop: 2 }}>Last seen {formatChatMetaTime(activeChat.latestMessage?.createdAt)}</div>
+              </div>
+            </div>
+            <button style={{ ...S.btn, marginTop: 0, padding: '8px 12px', borderRadius: 12 }} onClick={() => setSelectedChatId(null)}>Close</button>
+          </div>
+
+          <div ref={chatThreadRef} style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {activeChat.messages?.length ? activeChat.messages.map(message => {
+              const mine = message.senderTripId === trip.id;
+              return (
+                <div key={message.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                  <div style={{ maxWidth: '82%', background: mine ? 'linear-gradient(150deg,#0F172A,#1E293B)' : 'linear-gradient(150deg,#FFFFFF,#EEF7F3)', color: mine ? '#fff' : '#0B3B2E', borderRadius: 20, padding: '10px 12px', boxShadow: mine ? '0 14px 24px rgba(15,23,42,0.2)' : '0 8px 18px rgba(11,59,46,0.08)' }}>
+                    <div style={{ fontSize: 10, fontWeight: 800, opacity: mine ? 0.76 : 0.7, textTransform: 'uppercase', letterSpacing: '.05em' }}>
+                      {mine ? 'Your group' : message.senderUser?.name || activeChat.otherTrip?.groupName}
+                    </div>
+                    <div style={{ fontSize: 13, lineHeight: 1.55, marginTop: 4, whiteSpace: 'pre-wrap' }}>{message.text}</div>
+                    <div style={{ fontSize: 10, opacity: mine ? 0.72 : 0.58, marginTop: 7 }}>{formatChatTime(message.createdAt)}</div>
+                  </div>
+                </div>
+              );
+            }) : (
+              <div style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', padding: '18px 0' }}>No messages yet. Break the ice.</div>
+            )}
+          </div>
+
+          <div style={{ padding: 12, borderTop: '1px solid rgba(10,18,35,0.08)', background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)' }}>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+              <textarea
+                style={{ ...S.input, resize: 'none', minHeight: 46, maxHeight: 122, marginBottom: 0, flex: 1, borderRadius: 15, border: '1px solid rgba(15,23,42,0.1)', boxShadow: '0 8px 18px rgba(15,23,42,0.06)' }}
+                value={chatDraft}
+                onChange={e => setChatDraft(e.target.value)}
+                onKeyDown={handleChatKeyDown}
+                placeholder={`Message ${activeChat.otherTrip?.groupName || 'this group'}...`}
+              />
+              <button
+                type="button"
+                onClick={openToolsChooser}
+                disabled={!activeChat}
+                aria-label="Open tools"
+                title="Open tools"
+                style={{ width: 46, height: 46, borderRadius: 14, border: '1px solid rgba(10,18,35,0.12)', background: 'linear-gradient(180deg,#FFFFFF,#EFF4FA)', display: 'grid', placeItems: 'center', cursor: activeChat ? 'pointer' : 'not-allowed', boxShadow: '0 8px 18px rgba(15,23,42,0.08)' }}
+              >
+                🧰
+              </button>
+              <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0, height: 46, borderRadius: 14, padding: '0 16px' }} disabled={clubBusy || !chatDraft.trim()} onClick={handleSendChat}>Send</button>
+            </div>
+            <div style={{ fontSize: 10, color: '#8A94A6', marginTop: 6 }}>Press Enter to send, Shift+Enter for next line.</div>
+          </div>
+        </div>
+      )}
+
       {toolsChooserOpen && activeChat && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 560, background: 'rgba(9,12,18,0.52)', display: 'grid', placeItems: 'center', padding: '1rem' }}>
-          <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 24, padding: 16, boxShadow: '0 28px 80px rgba(0,0,0,0.28)' }}>
+          <div style={{ width: '100%', maxWidth: 440, background: 'linear-gradient(180deg,#FFFFFF,#F5F9FF)', borderRadius: 26, padding: 16, boxShadow: '0 28px 80px rgba(0,0,0,0.28)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
               <div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800 }}>Tools</div>
@@ -1086,7 +1147,7 @@ function ClubPage({ trip }) {
 
       {clubView === 'discover' && (
         <>
-          <div style={{ ...S.card, animation: 'clubPop .25s ease-out both' }}>
+          <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
               <div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16 }}>Find Your Crowd</div>
@@ -1112,7 +1173,7 @@ function ClubPage({ trip }) {
             {locationError && <div style={{ marginTop: 8, fontSize: 12, color: '#C3582D' }}>{locationError}</div>}
           </div>
 
-          <div style={{ ...S.card, animation: 'clubPop .25s ease-out both' }}>
+          <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
             <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Discover ({filteredDiscover.length})</div>
             {filteredDiscover.length === 0 && (
               <div style={{ fontSize: 13, color: '#6b6b68', textAlign: 'center', padding: '18px 0' }}>
