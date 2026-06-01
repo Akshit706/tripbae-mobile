@@ -216,23 +216,23 @@ function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, 
 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
-  root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(140% 120% at 10% 6%, #ffffff 0%, #f8f7f3 42%, #efece4 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased', position: 'relative', overflowX: 'hidden' },
-  topBar: { background: 'rgba(255,255,255,0.74)', backdropFilter: 'blur(16px) saturate(1.15)', borderBottom: '0.5px solid rgba(0,0,0,0.09)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 14px 30px rgba(0,0,0,0.07)' },
+  root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(120% 85% at 0% 0%, #F9FDFF 0%, #EEF6F9 40%, #ECF1F7 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased', position: 'relative', overflowX: 'hidden' },
+  topBar: { background: 'rgba(255,255,255,0.62)', backdropFilter: 'blur(20px) saturate(1.2)', borderBottom: '1px solid rgba(255,255,255,0.46)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 12px 28px rgba(9,20,40,0.09)' },
   logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 700, letterSpacing: '-0.45px' },
-  tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#085041', fontWeight: 500, cursor: 'pointer' },
-  soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#EEEDFE,#E6F1FB)', border: '0.5px solid #AFA9EC', borderRadius: 20, padding: '5px 12px', fontSize: 12, color: '#534AB7', fontWeight: 500, cursor: 'pointer' },
-  navTabs: { background: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(12px) saturate(1.08)', borderBottom: '0.5px solid rgba(0,0,0,0.08)', display: 'flex', padding: '0 1rem', overflowX: 'auto', boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.6)' },
-  navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '12px 12px', fontSize: 12, fontWeight: 400, color: '#6b6b68', borderBottom: '2px solid transparent', cursor: 'pointer', background: 'none', border: 'none', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' },
-  navTabActive: { color: '#0F6E56', borderBottom: '2px solid #1D9E75', fontWeight: 600 },
-  soloNavTabActive: { color: '#534AB7', borderBottom: '2px solid #7F77DD', fontWeight: 600 },
-  page: { padding: '1.25rem', flex: 1, paddingBottom: '6rem', animation: 'tbPageIn .4s cubic-bezier(.2,.7,.2,1)' },
-  btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 11, fontSize: 13, fontWeight: 500, border: '0.5px solid rgba(0,0,0,0.13)', background: 'linear-gradient(180deg,#ffffff,#f6f6f3)', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s ease, border-color .22s ease, background .22s ease', boxShadow: '0 2px 8px rgba(0,0,0,0.05)', position: 'relative', overflow: 'hidden' },
+  tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(130deg,#E7FFF6,#E8F9F1)', border: '1px solid rgba(42,168,124,0.3)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#085041', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 20px rgba(23,127,94,0.12)' },
+  soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#F0EEFF,#EAF3FF)', border: '1px solid rgba(127,119,221,0.28)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#534AB7', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 20px rgba(91,81,194,0.12)' },
+  navTabs: { background: 'rgba(255,255,255,0.42)', backdropFilter: 'blur(16px) saturate(1.08)', borderBottom: 'none', display: 'flex', padding: '8px 1rem 10px', overflowX: 'auto', gap: 8 },
+  navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', fontSize: 12, fontWeight: 500, color: '#5D6A7B', cursor: 'pointer', background: 'rgba(255,255,255,0.56)', border: '1px solid rgba(23,37,84,0.08)', borderRadius: 999, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' },
+  navTabActive: { color: '#0F6E56', background: 'linear-gradient(135deg,#E6FFF4,#F2FFFA)', border: '1px solid rgba(29,158,117,0.32)', fontWeight: 700 },
+  soloNavTabActive: { color: '#534AB7', background: 'linear-gradient(135deg,#F0EDFF,#F7F3FF)', border: '1px solid rgba(127,119,221,0.3)', fontWeight: 700 },
+  page: { padding: '1rem 0.95rem', flex: 1, paddingBottom: '6.25rem', animation: 'tbPageIn .45s cubic-bezier(.2,.7,.2,1)' },
+  btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999, fontSize: 13, fontWeight: 600, border: '1px solid rgba(25,37,67,0.12)', background: 'linear-gradient(180deg,#ffffff,#f6fafe)', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s ease, border-color .22s ease, background .22s ease', boxShadow: '0 8px 18px rgba(0,0,0,0.06)', position: 'relative', overflow: 'hidden' },
   btnP: { background: 'linear-gradient(135deg,#28B88A,#0F6E56)', color: '#fff', border: '0.5px solid rgba(15,110,86,0.68)', boxShadow: '0 10px 22px rgba(15,110,86,0.24)' },
   btnSolo: { background: 'linear-gradient(135deg,#7F77DD,#534AB7)', color: '#fff', border: 'none' },
   btnOrange: { background: '#FF6B35', color: '#fff', border: '0.5px solid #FF6B35' },
   btnDanger: { background: '#fff', color: '#993C1D', border: '0.5px solid #F5C4B3' },
-  card: { background: 'linear-gradient(180deg,rgba(255,255,255,0.97),rgba(253,253,251,0.94))', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, padding: '1rem 1.1rem', marginBottom: 10, boxShadow: '0 14px 30px rgba(0,0,0,0.06)', backdropFilter: 'blur(2px)', animation: 'tbCardIn .45s cubic-bezier(.2,.7,.2,1)' },
-  input: { fontFamily: "'DM Sans',sans-serif", padding: '10px 12px', border: '0.5px solid rgba(0,0,0,0.16)', borderRadius: 11, fontSize: 14, background: '#fff', color: '#1a1a18', width: '100%', outline: 'none', boxSizing: 'border-box', boxShadow: 'inset 0 1px 1px rgba(0,0,0,0.02)', transition: 'border-color .2s ease, box-shadow .2s ease, transform .2s ease' },
+  card: { background: 'linear-gradient(145deg,rgba(255,255,255,0.78),rgba(243,249,255,0.54))', border: '1px solid rgba(255,255,255,0.72)', borderRadius: 30, padding: '1rem 1.05rem', marginBottom: 12, boxShadow: '0 20px 40px rgba(8,16,35,0.10)', backdropFilter: 'blur(14px)', animation: 'tbCardIn .45s cubic-bezier(.2,.7,.2,1)' },
+  input: { fontFamily: "'DM Sans',sans-serif", padding: '11px 13px', border: '1px solid rgba(11,27,50,0.13)', borderRadius: 16, fontSize: 14, background: 'rgba(255,255,255,0.92)', color: '#1a1a18', width: '100%', outline: 'none', boxSizing: 'border-box', boxShadow: '0 6px 16px rgba(15,23,42,0.05)', transition: 'border-color .2s ease, box-shadow .2s ease, transform .2s ease' },
   label: { fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', display: 'block', marginBottom: 5, marginTop: 10 },
   spinner: { width: 36, height: 36, border: '3px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
   soloSpinner: { width: 36, height: 36, border: '3px solid #EEEDFE', borderTopColor: '#7F77DD', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
@@ -579,6 +579,10 @@ export default function App() {
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
+        @keyframes tbPageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes tbCardIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes tbBlobDrift{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(-18px,14px,0)}100%{transform:translate3d(0,0,0)}}
+        @keyframes tbGlowPulse{0%{opacity:.65}50%{opacity:1}100%{opacity:.65}}
         *{box-sizing:border-box;margin:0;padding:0}
         a{color:inherit;text-decoration:none}
         ::selection{background:#c7eedf;color:#053f31}

@@ -703,13 +703,13 @@ function ClubPage({ trip }) {
   }, [activeChat?.id, activeChat?.messages?.length]);
 
   const premiumPanel = {
-    background: 'linear-gradient(175deg,rgba(255,255,255,0.97),rgba(247,251,255,0.92))',
-    border: '1px solid rgba(18,35,60,0.08)',
-    borderRadius: 24,
-    padding: '1rem',
+    background: 'linear-gradient(160deg,rgba(255,255,255,0.72),rgba(243,250,255,0.46))',
+    border: '1px solid rgba(255,255,255,0.7)',
+    borderRadius: 34,
+    padding: '1rem .95rem',
     marginBottom: '0.9rem',
-    boxShadow: '0 18px 40px rgba(17,24,39,0.08)',
-    backdropFilter: 'blur(8px)',
+    boxShadow: '0 24px 46px rgba(17,24,39,0.10)',
+    backdropFilter: 'blur(14px)',
   };
 
   if (clubLoading) return <Spinner text="Loading Club..." solo={trip.isSolo} />;
@@ -885,7 +885,7 @@ function ClubPage({ trip }) {
         <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
           <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 4 }}>Club Chats</div>
           <div style={{ fontSize: 12, color: '#667085', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
-            <span>Instagram-style single window chat.</span>
+            <span>Single-window chat experience.</span>
             <span>{hasUnreadChats ? 'New messages waiting' : 'All caught up'}</span>
           </div>
 
