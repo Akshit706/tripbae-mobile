@@ -74,8 +74,8 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
 
       {/* Edit Trip Modal */}
       {showEdit && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 600, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div style={{ background: '#f7f6f2', borderRadius: '20px 20px 0 0', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+          <div className="tb-sheet-panel" style={{ background: '#f7f6f2', borderRadius: '20px 20px 0 0', maxHeight: '90vh', overflowY: 'auto' }}>
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.08)', position: 'sticky', top: 0, zIndex: 1, borderRadius: '20px 20px 0 0' }}>
               <button onClick={() => setShowEdit(false)}
@@ -143,8 +143,8 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
         </button>
         {open && (
           <>
-            <div style={{ position: 'fixed', inset: 0, zIndex: 198 }} onClick={() => setOpen(false)} />
-            <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 199, minWidth: 190, overflow: 'hidden' }}>
+            <div style={{ position: 'fixed', inset: 0, zIndex: 420 }} onClick={() => setOpen(false)} />
+            <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 421, minWidth: 190, overflow: 'hidden' }}>
               <button
                 onClick={() => { setOpen(false); setShowEdit(true); }}
                 style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#378ADD', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)', textAlign: 'left' }}>

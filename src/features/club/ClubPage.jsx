@@ -1102,7 +1102,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
       {clubView === 'chats' && activeChat && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 545, background: 'linear-gradient(180deg,#ECF6F4,#F4F9FF 68%,#FFFFFF)', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: '10px 12px', borderBottom: '1px solid rgba(10,18,35,0.08)', background: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: '10px 12px', paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))', borderBottom: '1px solid rgba(10,18,35,0.08)', background: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
               <button style={{ ...S.btn, marginTop: 0, padding: '8px 11px', borderRadius: 12 }} onClick={() => setSelectedChatId(null)}>←</button>
               <div style={{ minWidth: 0 }}>
@@ -1135,7 +1135,7 @@ function ClubPage({ trip, onTripRefresh }) {
             )}
           </div>
 
-          <div style={{ padding: 12, borderTop: '1px solid rgba(10,18,35,0.08)', background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)' }}>
+          <div style={{ padding: 12, paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(10,18,35,0.08)', background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)' }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
               <textarea
                 style={{ ...S.input, resize: 'none', minHeight: 46, maxHeight: 122, marginBottom: 0, flex: 1, borderRadius: 15, border: '1px solid rgba(15,23,42,0.1)', boxShadow: '0 8px 18px rgba(15,23,42,0.06)' }}
@@ -1196,7 +1196,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
       {toolScreenOpen && activeChat && chatTool === 'split' && (
         <div className="tb-animated-screen" style={{ position: 'fixed', inset: 0, zIndex: 570, background: '#fff', overflowY: 'auto' }}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: 18, background: 'linear-gradient(135deg,#0F172A,#134E4A)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: 18, paddingTop: 'calc(18px + env(safe-area-inset-top, 0px))', background: 'linear-gradient(135deg,#0F172A,#134E4A)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
             <div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>Split</div>
               <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>{combinedMembers.length} combined members, one shared wallet view</div>
@@ -1386,7 +1386,7 @@ function ClubPage({ trip, onTripRefresh }) {
             <button
               className="tb-fab-pop"
               onClick={() => setSplitFormOpen(true)}
-              style={{ position: 'fixed', right: 18, bottom: 18, width: 58, height: 58, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', color: '#fff', fontSize: 29, cursor: 'pointer', boxShadow: '0 10px 28px rgba(15,110,86,0.45)', zIndex: 575 }}
+              style={{ position: 'fixed', right: 18, bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))', width: 58, height: 58, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', color: '#fff', fontSize: 29, cursor: 'pointer', boxShadow: '0 10px 28px rgba(15,110,86,0.45)', zIndex: 575 }}
             >
               +
             </button>
@@ -1394,7 +1394,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
           {splitFormOpen && (
             <div style={{ position: 'fixed', inset: 0, zIndex: 580, background: '#F7F6F2', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '1rem 1.15rem', borderBottom: '1px solid rgba(0,0,0,0.08)', background: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '1rem 1.15rem', paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))', borderBottom: '1px solid rgba(0,0,0,0.08)', background: '#fff' }}>
                 <button onClick={() => setSplitFormOpen(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid rgba(0,0,0,0.12)', background: '#F7F6F2', cursor: 'pointer' }}>←</button>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>Add Expense</div>
                 <button style={{ ...S.btn, ...S.btnP, marginTop: 0, borderRadius: 12, padding: '8px 18px', opacity: clubBusy ? 0.65 : 1 }} disabled={clubBusy} onClick={handleAddSplitEntry}>Save</button>
@@ -1456,7 +1456,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
       {toolScreenOpen && activeChat && chatTool === 'photos' && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 570, background: '#fff', overflowY: 'auto' }}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: 18, background: 'linear-gradient(135deg,#1D4ED8,#0F766E)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: 18, paddingTop: 'calc(18px + env(safe-area-inset-top, 0px))', background: 'linear-gradient(135deg,#1D4ED8,#0F766E)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
             <div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>Photos</div>
               <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>{combinedPhotos.length} combined group photos</div>

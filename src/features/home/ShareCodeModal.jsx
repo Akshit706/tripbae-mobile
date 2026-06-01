@@ -10,7 +10,7 @@ function ShareCodeModal({ trip, onDismiss }) {
   };
   const isSolo = trip.isSolo;
   return (
-    <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
+    <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
       <div className="tb-modal-pop" style={{ background: '#fff', borderRadius: 20, padding: '2rem 1.75rem', maxWidth: 360, width: '100%', textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.2)' }}>
         <div style={{ fontSize: 56, marginBottom: 12 }}>{trip.emoji}</div>
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, marginBottom: 6 }}>{isSolo ? 'Adventure Ready! 🎒' : 'Trip Created! 🎉'}</div>

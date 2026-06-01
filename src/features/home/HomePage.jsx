@@ -365,7 +365,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
               {/* Inline fullscreen picker overlay */}
               {showDestPicker && (
-                <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0, zIndex: 500 }}>
+                <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0 }}>
                   <div className="tb-sheet-panel" style={{ background: '#fff', display: 'flex', flexDirection: 'column', position: 'absolute', inset: 0 }}>
 
                   {/* Header */}
@@ -645,8 +645,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 </button>
                 {isMenuOpen && (
                   <>
-                    <div style={{ position: 'fixed', inset: 0, zIndex: 100 }} onClick={() => setMenuOpen(null)} />
-                    <div style={{ position: 'absolute', bottom: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 101, minWidth: 180, overflow: 'hidden' }}>
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 420 }} onClick={() => setMenuOpen(null)} />
+                    <div style={{ position: 'absolute', bottom: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 421, minWidth: 180, overflow: 'hidden' }}>
                       <button
                         onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmComplete(trip); }}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>

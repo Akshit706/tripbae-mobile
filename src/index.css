@@ -14,6 +14,15 @@
   --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
   --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
   --mono: ui-monospace, Consolas, monospace;
+  --tb-safe-top: env(safe-area-inset-top, 0px);
+  --tb-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tb-z-base: 1;
+  --tb-z-topbar: 300;
+  --tb-z-nav: 290;
+  --tb-z-menu: 420;
+  --tb-z-overlay: 620;
+  --tb-z-modal: 700;
+  --tb-z-toast: 760;
 
   font: 18px/145% var(--sans);
   letter-spacing: 0.18px;
@@ -152,6 +161,9 @@ code {
 
 .tb-topbar-glass {
   position: sticky;
+  top: 0;
+  z-index: var(--tb-z-topbar);
+  padding-top: var(--tb-safe-top);
 }
 
 .tb-topbar-glass::after {
@@ -167,7 +179,7 @@ code {
 .tb-nav-ribbon {
   position: relative;
   top: 0;
-  z-index: 20;
+  z-index: var(--tb-z-nav);
   background: rgba(255, 255, 255, 0.72);
   backdrop-filter: blur(8px) saturate(1.02);
 }
@@ -255,15 +267,21 @@ code {
 
 .tb-sheet-overlay {
   animation: tbOverlayIn 220ms ease;
+  z-index: var(--tb-z-overlay);
 }
 
 .tb-sheet-panel {
   animation: tbSheetSpring 420ms cubic-bezier(.16,.84,.24,1.04);
   transform-origin: 50% 100%;
+  padding-bottom: var(--tb-safe-bottom);
 }
 
 .tb-modal-pop {
   animation: tbModalPop 360ms cubic-bezier(.2,.8,.2,1);
+}
+
+.tb-safe-bottom {
+  padding-bottom: calc(8px + var(--tb-safe-bottom));
 }
 
 .tb-amount-pop {

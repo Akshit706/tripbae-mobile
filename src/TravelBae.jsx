@@ -217,7 +217,7 @@ function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
   root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(120% 85% at 0% 0%, #F9FDFF 0%, #EEF6F9 40%, #ECF1F7 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased', position: 'relative', overflowX: 'hidden' },
-  topBar: { background: 'rgba(255,255,255,0.62)', backdropFilter: 'blur(20px) saturate(1.2)', borderBottom: '1px solid rgba(255,255,255,0.46)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 200, boxShadow: '0 12px 28px rgba(9,20,40,0.09)' },
+  topBar: { background: 'rgba(255,255,255,0.62)', backdropFilter: 'blur(20px) saturate(1.2)', borderBottom: '1px solid rgba(255,255,255,0.46)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 300, boxShadow: '0 12px 28px rgba(9,20,40,0.09)' },
   logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 700, letterSpacing: '-0.45px' },
   tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(130deg,#E7FFF6,#E8F9F1)', border: '1px solid rgba(42,168,124,0.3)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#085041', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 20px rgba(23,127,94,0.12)' },
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#F0EEFF,#EAF3FF)', border: '1px solid rgba(127,119,221,0.28)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#534AB7', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 20px rgba(91,81,194,0.12)' },
@@ -581,6 +581,11 @@ export default function App() {
     }
     setTab(nextTab);
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [tab, activeTrip]);
 
   // ── AUTH SCREEN ──
   if (!authToken) return (
