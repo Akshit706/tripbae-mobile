@@ -480,6 +480,9 @@ function ClubPage({ trip, onTripRefresh }) {
 
       if (filters.genderMix !== 'any' && (item.genderMix || 'mixed') !== filters.genderMix) return false;
 
+      // Client-side distance guard (backend already filters, but double-check)
+      if (locationEnabled && item.distance != null && item.distance > debouncedRadius) return false;
+
       if (q) {
         const hay = [
           item.trip?.groupName || '',
@@ -494,7 +497,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
       return true;
     });
-  }, [hub.discover, filters]);
+  }, [hub.discover, filters, locationEnabled, debouncedRadius]);
 
   const handleToggle = async () => {
     setClubBusy(true);
@@ -940,6 +943,19 @@ function ClubPage({ trip, onTripRefresh }) {
             onChange={e => setProfileForm(f => ({ ...f, coverTagsInput: e.target.value }))}
             placeholder="late-night, photography, budget-friendly, bike-rides"
           />
+
+          {!locationEnabled && (
+            <div style={{ background: '#FFF8EC', border: '1px solid #F5C4B3', borderRadius: 12, padding: 10, marginTop: 12, marginBottom: 10, fontSize: 12, color: '#5D4037' }}>
+              <div style={{ marginBottom: 8 }}>📍 Enable location so other groups can see how far you are.</div>
+              <button 
+                type="button"
+                style={{ ...S.btn, ...S.btnOrange, marginTop: 0, width: '100%' }}
+                onClick={() => requestLocation({ silent: false, openFilters: false })}
+              >
+                Use my location
+              </button>
+            </div>
+          )}
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button style={{ ...S.btn, ...S.btnP }} disabled={clubBusy} onClick={handleSaveProfile}>Save Card</button>
