@@ -253,6 +253,8 @@ export default function App() {
   const [newTripModal, setNewTripModal] = useState(null);
   const [tab, setTab] = useState('main');
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sharedFlight, setSharedFlight] = useState(null);
+  const [sharedFlightActive, setSharedFlightActive] = useState(false);
   const [profile, setProfile] = useState(() => {
     try {
       const raw = localStorage.getItem('travelbae_profile');
@@ -439,7 +441,45 @@ export default function App() {
     return trip;
   };
 
-  const handleOpenTrip = (tripId) => { setActiveTrip(tripId); setTab('main'); };
+  const startSharedFlight = (tripId, originRect) => {
+    if (!originRect || typeof window === 'undefined') return;
+    const trip = trips.find((t) => t.id === tripId);
+    const target = {
+      left: window.innerWidth < 760 ? 64 : 110,
+      top: 10,
+      width: window.innerWidth < 760 ? 180 : 220,
+      height: 40,
+    };
+    const dx = (target.left + target.width / 2) - (originRect.left + originRect.width / 2);
+    const dy = (target.top + target.height / 2) - (originRect.top + originRect.height / 2);
+    const scaleX = target.width / Math.max(1, originRect.width);
+    const scaleY = target.height / Math.max(1, originRect.height);
+
+    setSharedFlight({
+      left: originRect.left,
+      top: originRect.top,
+      width: originRect.width,
+      height: originRect.height,
+      dx,
+      dy,
+      scaleX,
+      scaleY,
+      emoji: trip?.emoji || '✈️',
+      label: trip?.groupName || 'Trip',
+    });
+    setSharedFlightActive(false);
+    requestAnimationFrame(() => setSharedFlightActive(true));
+    setTimeout(() => {
+      setSharedFlightActive(false);
+      setTimeout(() => setSharedFlight(null), 240);
+    }, 520);
+  };
+
+  const handleOpenTrip = (tripId, originRect = null) => {
+    startSharedFlight(tripId, originRect);
+    setActiveTrip(tripId);
+    setTab('main');
+  };
 
   const handleShareCodeDismiss = () => {
     const id = newTripModal.id;
@@ -529,7 +569,18 @@ export default function App() {
     { id: 'club', label: '🧭 Club' },
   ];
   const tabs = isSolo ? soloTabs : groupTabs;
+  const [viewDirection, setViewDirection] = useState('forward');
   const viewKey = activeTrip ? `${activeTrip}-${tab}` : 'home';
+
+  const handleTabChange = (nextTab) => {
+    if (nextTab === tab) return;
+    const currentIndex = tabs.findIndex((t) => t.id === tab);
+    const nextIndex = tabs.findIndex((t) => t.id === nextTab);
+    if (currentIndex !== -1 && nextIndex !== -1) {
+      setViewDirection(nextIndex > currentIndex ? 'forward' : 'back');
+    }
+    setTab(nextTab);
+  };
 
   // ── AUTH SCREEN ──
   if (!authToken) return (
@@ -577,6 +628,24 @@ export default function App() {
       <div style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.13) 0%, rgba(29,158,117,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: -190, left: -110, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(127,119,221,0.11) 0%, rgba(127,119,221,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <div className="tb-noise-layer" />
+      {sharedFlight && (
+        <div
+          className={`tb-shared-flight ${sharedFlightActive ? 'is-active' : ''}`}
+          style={{
+            left: sharedFlight.left,
+            top: sharedFlight.top,
+            width: sharedFlight.width,
+            height: sharedFlight.height,
+            '--tb-flight-dx': `${sharedFlight.dx}px`,
+            '--tb-flight-dy': `${sharedFlight.dy}px`,
+            '--tb-flight-sx': String(sharedFlight.scaleX),
+            '--tb-flight-sy': String(sharedFlight.scaleY),
+          }}
+        >
+          <span style={{ fontSize: 20, lineHeight: 1 }}>{sharedFlight.emoji}</span>
+          <span style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sharedFlight.label}</span>
+        </div>
+      )}
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
@@ -652,7 +721,7 @@ export default function App() {
       {activeTrip && activeTripData && (
         <div className="tb-nav-ribbon" style={{ ...S.navTabs, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
           {tabs.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)}
+            <button key={t.id} onClick={() => handleTabChange(t.id)}
               className="tb-nav-pill"
               style={{ ...S.navTab, ...(tab === t.id ? (isSolo ? S.soloNavTabActive : S.navTabActive) : {}) }}>
               {t.label}
@@ -665,7 +734,7 @@ export default function App() {
         {!activeTrip && (
           tripsLoading
             ? <Spinner text="Loading your trips…" />
-            : <div key={viewKey} className="tb-view-enter"><HomePageFeature
+            : <div key={viewKey} className={`tb-view-enter tb-view-${viewDirection}`}><HomePageFeature
                 trips={trips}
                 onOpenTrip={handleOpenTrip}
                 onCreateTrip={handleCreateTrip}
@@ -681,7 +750,7 @@ export default function App() {
           tripLoading || !activeTripData
             ? <Spinner text="Loading trip…" />
             : (
-              <div key={viewKey} className="tb-view-enter" style={{ animation: 'tbPageIn .35s cubic-bezier(.2,.7,.2,1)' }}>
+              <div key={viewKey} className={`tb-view-enter tb-view-${viewDirection}`} style={{ animation: 'tbPageIn .35s cubic-bezier(.2,.7,.2,1)' }}>
                 {isSolo ? (
                   <>
                     {tab === 'main' && <SoloExpensesPageFeature trip={activeTripData} myNickname={myNickname} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}

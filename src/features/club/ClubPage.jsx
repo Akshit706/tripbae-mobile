@@ -366,7 +366,7 @@ function ClubPage({ trip, onTripRefresh }) {
   const [splitSection, setSplitSection] = useState('expenses');
   const [splitFormOpen, setSplitFormOpen] = useState(false);
   const [splitDraft, setSplitDraft] = useState({ desc: '', amount: '', paidBy: '', splitWith: [] });
-  const [splitTouch, setSplitTouch] = useState({ entryId: null, startX: 0, deltaX: 0 });
+  const [splitTouch, setSplitTouch] = useState({ entryId: null, startX: 0, deltaX: 0, startAt: 0 });
   const [splitSwipeOpenId, setSplitSwipeOpenId] = useState(null);
 
   const [requestFor, setRequestFor] = useState(null);
@@ -699,7 +699,7 @@ function ClubPage({ trip, onTripRefresh }) {
   const handleSplitTouchStart = (entryId, event) => {
     const touch = event.touches?.[0];
     if (!touch) return;
-    setSplitTouch({ entryId, startX: touch.clientX, deltaX: 0 });
+    setSplitTouch({ entryId, startX: touch.clientX, deltaX: 0, startAt: Date.now() });
   };
 
   const handleSplitTouchMove = (entryId, event) => {
@@ -712,12 +712,22 @@ function ClubPage({ trip, onTripRefresh }) {
 
   const handleSplitTouchEnd = (entryId) => {
     if (splitTouch.entryId !== entryId) return;
-    if (splitTouch.deltaX <= -52) {
+    const elapsed = Math.max(1, Date.now() - (splitTouch.startAt || Date.now()));
+    const velocity = splitTouch.deltaX / elapsed; // px/ms, negative when swiping left
+    const fastLeftFlick = velocity <= -0.7;
+    const hardDeleteFlick = velocity <= -1.1;
+
+    if ((splitSwipeOpenId === entryId && splitTouch.deltaX <= -70) || (splitSwipeOpenId === entryId && hardDeleteFlick)) {
+      if (navigator.vibrate) navigator.vibrate(12);
+      void handleDeleteSplitEntry(entryId);
+      setSplitSwipeOpenId(null);
+    } else if (splitTouch.deltaX <= -52 || fastLeftFlick) {
       setSplitSwipeOpenId(entryId);
+      if (navigator.vibrate) navigator.vibrate(8);
     } else {
       setSplitSwipeOpenId(null);
     }
-    setSplitTouch({ entryId: null, startX: 0, deltaX: 0 });
+    setSplitTouch({ entryId: null, startX: 0, deltaX: 0, startAt: 0 });
   };
 
   const openToolsChooser = () => {
@@ -1198,13 +1208,13 @@ function ClubPage({ trip, onTripRefresh }) {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
               <div className="tb-float-card tb-pop-in" style={{ background: '#F4FBF8', border: '1px solid #DAF2E8', borderRadius: 14, padding: '10px 12px' }}>
                 <div style={{ fontSize: 11, color: '#0F6E56' }}>Total spent</div>
-                <div style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0C3B31' }}>
+                <div className="tb-amount-pop" style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0C3B31' }}>
                   ₹{Math.round(splitEntries.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0)).toLocaleString('en-IN')}
                 </div>
               </div>
               <div className="tb-float-card tb-pop-in" style={{ background: '#F8FAFC', border: '1px solid #E3E8EF', borderRadius: 14, padding: '10px 12px' }}>
                 <div style={{ fontSize: 11, color: '#475467' }}>Per member</div>
-                <div style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0F172A' }}>
+                <div className="tb-amount-pop" style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0F172A' }}>
                   ₹{combinedMembers.length ? Math.round(splitEntries.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0) / combinedMembers.length).toLocaleString('en-IN') : '0'}
                 </div>
               </div>

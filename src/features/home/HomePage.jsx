@@ -89,6 +89,20 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     setForm(f => ({ ...f, createdBy: profileName || '' }));
   }, [profileName]);
 
+  const openTripWithMotion = (tripId, event) => {
+    const rect = event?.currentTarget?.getBoundingClientRect?.();
+    if (rect) {
+      onOpenTrip(tripId, {
+        left: rect.left,
+        top: rect.top,
+        width: rect.width,
+        height: rect.height,
+      });
+      return;
+    }
+    onOpenTrip(tripId);
+  };
+
   const EMOJI_OPTIONS_GROUP = ['✈️','🏖️','🏔️','🏰','🌴','🗺️','🎡','🛕','🌅','🌿','🎭','🏛️'];
   const EMOJI_OPTIONS_SOLO  = ['🎒','🧳','🛺','🚂','🏍️','🌏','🪂','🧗','🌄','☕','📖','🦋'];
 
@@ -171,9 +185,13 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           const days = tripDuration(trip.arrival, trip.departure);
           const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
           return (
-            <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
+            <div
+              key={trip.id}
+              className="tb-trip-card"
+              style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14, animationDelay: `${idx * 50}ms` }}
+            >
               <div style={{ position: 'relative', height: 90, overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }}
-                onClick={() => { setShowPast(false); onOpenTrip(trip.id); }}>
+                onClick={(event) => { setShowPast(false); openTripWithMotion(trip.id, event); }}>
                 {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(30%)' }} onError={e => e.target.style.display = 'none'} />}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.55) 100%)' }} />
                 <div style={{ position: 'absolute', top: 10, left: 12, fontSize: 24 }}>{trip.emoji}</div>
@@ -347,7 +365,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
               {/* Inline fullscreen picker overlay */}
               {showDestPicker && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: '#fff', display: 'flex', flexDirection: 'column' }}>
+                <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0, zIndex: 500 }}>
+                  <div className="tb-sheet-panel" style={{ background: '#fff', display: 'flex', flexDirection: 'column', position: 'absolute', inset: 0 }}>
 
                   {/* Header */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', borderBottom: '0.5px solid rgba(0,0,0,0.08)', background: '#fff', flexShrink: 0 }}>
@@ -432,6 +451,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                   {/* OSM attribution — required */}
                   <div style={{ padding: '10px', textAlign: 'center', borderTop: '0.5px solid #f0f0f0', fontSize: 11, color: '#bbb', flexShrink: 0 }}>
                     © OpenStreetMap contributors
+                  </div>
                   </div>
                 </div>
               )}
@@ -540,8 +560,12 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         const isMenuOpen = menuOpen === trip.id;
 
         return (
-          <div key={trip.id} style={{ ...S.card, padding: 0, overflow: 'visible', marginBottom: 14, position: 'relative', border: '0.5px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 24px rgba(0,0,0,0.06)' }}>
-            <div style={{ overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
+          <div
+            key={trip.id}
+            className="tb-trip-card"
+            style={{ ...S.card, padding: 0, overflow: 'visible', marginBottom: 14, position: 'relative', border: '0.5px solid rgba(0,0,0,0.08)', boxShadow: '0 10px 24px rgba(0,0,0,0.06)', animationDelay: `${idx * 50}ms` }}
+          >
+            <div style={{ overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }} onClick={(event) => openTripWithMotion(trip.id, event)}>
               <div style={{ position: 'relative', height: 116, background: trip.coverUrl ? 'transparent' : (trip.isSolo ? 'linear-gradient(135deg,#6E67C8,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'), overflow: 'hidden' }}>
                 {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} onError={e => e.target.style.display = 'none'} />}
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.06) 0%,rgba(0,0,0,0.45) 100%)' }} />
@@ -557,7 +581,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               </div>
             </div>
 
-            <div style={{ padding: '12px 14px', display: 'flex', gap: 16, flexWrap: 'wrap', borderBottom: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,247,0.98))' }} onClick={() => onOpenTrip(trip.id)}>
+            <div style={{ padding: '12px 14px', display: 'flex', gap: 16, flexWrap: 'wrap', borderBottom: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer', background: 'linear-gradient(180deg, rgba(255,255,255,0.98), rgba(250,250,247,0.98))' }} onClick={(event) => openTripWithMotion(trip.id, event)}>
               {[
                 ['📅', formatDateRange(trip.arrival, trip.departure)],
                 ['🌙', `${days} nights`],
@@ -565,16 +589,16 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 ...(totalSpend > 0 && !trip.isSolo ? [['💰', `₹${Math.round(totalSpend).toLocaleString('en-IN')}`]] : []),
               ].map(([icon, val]) => (
                 <div key={val} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#444' }}>
-                  <span>{icon}</span><span>{val}</span>
+                  <span>{icon}</span><span className={String(val).includes('₹') ? 'tb-amount-pop' : ''}>{val}</span>
                 </div>
               ))}
             </div>
 
             {trip.isSolo && trip.budget && (
-              <div style={{ padding: '8px 14px', borderBottom: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer' }} onClick={() => onOpenTrip(trip.id)}>
+              <div style={{ padding: '8px 14px', borderBottom: '0.5px solid rgba(0,0,0,0.06)', cursor: 'pointer' }} onClick={(event) => openTripWithMotion(trip.id, event)}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6b6b68', marginBottom: 5 }}>
                   <span>Budget used</span>
-                  <span style={{ fontWeight: 600, color: budgetPct > 85 ? '#993C1D' : '#0F6E56' }}>
+                  <span className="tb-amount-pop" style={{ fontWeight: 600, color: budgetPct > 85 ? '#993C1D' : '#0F6E56' }}>
                     {budgetPct}% · ₹{Math.round(trip.budget - totalSpend).toLocaleString('en-IN')} left
                   </span>
                 </div>
@@ -586,12 +610,12 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
             <div style={{ padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 8, borderRadius: '0 0 14px 14px', background: '#fff' }}>
               {trip.isSolo ? (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1 }} onClick={() => onOpenTrip(trip.id)}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', flex: 1 }} onClick={(event) => openTripWithMotion(trip.id, event)}>
                   <SoloAvatar initials={(memberNames[0] || 'ME').slice(0, 2)} size={28} />
                   <span style={{ fontSize: 12, color: '#534AB7', fontWeight: 500 }}>Solo adventure by {memberNames[0] || 'You'}</span>
                 </div>
               ) : (
-                <div style={{ display: 'flex', cursor: 'pointer', flex: 1 }} onClick={() => onOpenTrip(trip.id)}>
+                <div style={{ display: 'flex', cursor: 'pointer', flex: 1 }} onClick={(event) => openTripWithMotion(trip.id, event)}>
                   {memberNames.slice(0, 5).map((m, i) => (
                     <div key={m + i} style={{ marginLeft: i > 0 ? -8 : 0, border: '2px solid #fff', borderRadius: '50%', zIndex: 5 - i }}>
                       <Avatar name={m} size={28} />

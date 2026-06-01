@@ -203,6 +203,67 @@ code {
   transform-origin: 50% 0%;
 }
 
+.tb-view-forward {
+  animation-name: tbViewSlideForward;
+}
+
+.tb-view-back {
+  animation-name: tbViewSlideBack;
+}
+
+.tb-trip-card {
+  animation: tbTripCardStagger 480ms cubic-bezier(.2,.7,.2,1) both;
+}
+
+.tb-trip-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.12) !important;
+}
+
+.tb-shared-flight {
+  position: fixed;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(230,255,244,0.96), rgba(242,255,250,0.96));
+  border: 1px solid rgba(29,158,117,0.28);
+  box-shadow: 0 16px 36px rgba(15, 110, 86, 0.24);
+  color: #0F6E56;
+  font-size: 12px;
+  transform: translate3d(0,0,0) scale(1);
+  transform-origin: center center;
+  opacity: 0.92;
+  pointer-events: none;
+  transition: transform .5s cubic-bezier(.2,.7,.2,1), opacity .5s ease, filter .5s ease;
+}
+
+.tb-shared-flight.is-active {
+  transform: translate3d(var(--tb-flight-dx), var(--tb-flight-dy), 0) scale(var(--tb-flight-sx), var(--tb-flight-sy));
+  opacity: 0.12;
+  filter: blur(0.3px);
+}
+
+.tb-sheet-overlay {
+  animation: tbOverlayIn 220ms ease;
+}
+
+.tb-sheet-panel {
+  animation: tbSheetSpring 420ms cubic-bezier(.16,.84,.24,1.04);
+  transform-origin: 50% 100%;
+}
+
+.tb-modal-pop {
+  animation: tbModalPop 360ms cubic-bezier(.2,.8,.2,1);
+}
+
+.tb-amount-pop {
+  display: inline-block;
+  animation: tbAmountPop 520ms cubic-bezier(.2,.8,.2,1);
+}
+
 .tb-float-card {
   transition: transform 180ms ease, box-shadow 220ms ease, border-color 180ms ease;
 }
@@ -272,9 +333,74 @@ code {
   }
 }
 
+@keyframes tbViewSlideForward {
+  from {
+    opacity: 0;
+    transform: translate3d(22px, 8px, 0) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes tbViewSlideBack {
+  from {
+    opacity: 0;
+    transform: translate3d(-22px, 8px, 0) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes tbTripCardStagger {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.992);
+    filter: saturate(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: saturate(1);
+  }
+}
+
+@keyframes tbOverlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes tbSheetSpring {
+  0% { transform: translateY(22px) scale(.988); opacity: 0; }
+  70% { transform: translateY(-3px) scale(1.002); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+@keyframes tbModalPop {
+  from { opacity: 0; transform: translateY(18px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes tbAmountPop {
+  0% { transform: translateY(6px) scale(.95); opacity: .35; }
+  60% { transform: translateY(-1px) scale(1.03); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body,
   .tb-view-enter,
+  .tb-view-forward,
+  .tb-view-back,
+  .tb-trip-card,
+  .tb-shared-flight,
+  .tb-sheet-overlay,
+  .tb-sheet-panel,
+  .tb-modal-pop,
+  .tb-amount-pop,
   .tb-noise-layer,
   .tb-animated-screen,
   .tb-pop-in,
