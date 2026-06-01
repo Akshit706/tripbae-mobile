@@ -720,10 +720,10 @@ export default function App() {
       {/* Nav Tabs */}
       {activeTrip && activeTripData && (
         <div className="tb-nav-ribbon" style={{ ...S.navTabs, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
-          {tabs.map(t => (
+          {tabs.map((t, idx) => (
             <button key={t.id} onClick={() => handleTabChange(t.id)}
-              className="tb-nav-pill"
-              style={{ ...S.navTab, ...(tab === t.id ? (isSolo ? S.soloNavTabActive : S.navTabActive) : {}) }}>
+              className="tb-nav-pill tb-tab-entrance"
+              style={{ ...S.navTab, ...(tab === t.id ? (isSolo ? S.soloNavTabActive : S.navTabActive) : {}), animationDelay: `${idx * 35}ms` }}>
               {t.label}
             </button>
           ))}
