@@ -85,6 +85,10 @@ function MatchRing({ score }) {
   );
 }
 
+function buildCardGallery(item) {
+  return [item?.photoUrl, item?.trip?.coverUrl].filter(Boolean);
+}
+
 function getGroupMoodLine(item) {
   const vibe = item?.vibe || 'mixed';
   if (vibe === 'party') return 'Late plans, loud laughs, zero boring energy.';
@@ -201,8 +205,7 @@ function buildCompatibility(myProfile, myTrip, item) {
   };
 }
 
-function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen, onStartRequest, busy }) {
-  const tags = Array.isArray(item.coverTags) ? item.coverTags : [];
+function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
   const members = item.trip?.members?.length || 0;
   const activeNow = isRecentlyActive(item.updatedAt);
   const avatar = item.photoUrl || item.trip?.coverUrl || null;
@@ -210,8 +213,9 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen, onStartRe
 
   return (
     <button
+      data-club-card="true"
       onClick={onOpen}
-      style={{ width: '100%', textAlign: 'left', borderRadius: 20, overflow: 'hidden', border: '1px solid rgba(0,0,0,0.08)', marginBottom: 14, background: '#fff', boxShadow: '0 14px 34px rgba(24,24,24,0.09)', padding: 0, cursor: 'pointer', animation: 'clubCardIn .45s cubic-bezier(.2,.7,.2,1) both', transition: 'transform .2s ease, box-shadow .2s ease' }}>
+      style={{ width: '100%', textAlign: 'left', borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(10,18,35,0.07)', marginBottom: 16, background: '#fff', boxShadow: '0 18px 44px rgba(16,24,40,0.10)', padding: 0, cursor: 'pointer', animation: 'clubCardIn .45s cubic-bezier(.2,.7,.2,1) both', transition: 'transform .25s ease, box-shadow .25s ease' }}>
       <div style={{ background: moodGradient(item.vibe || 'mixed'), padding: 14, color: '#fff', position: 'relative' }}>
         <div style={{ position: 'absolute', right: -24, top: -24, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', animation: 'clubFloat 4.8s ease-in-out infinite' }} />
         <div style={{ position: 'absolute', right: 12, top: 12 }}>
@@ -234,7 +238,7 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen, onStartRe
             </div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
               <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>{distanceLabel(item.distance)}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>{(item.vibe || 'mixed').toUpperCase()} vibe</span>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>{genderMixLabel(item.genderMix)}</span>
               {compatibility && (
                 <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.26)' }}>
                   {compatibility.score}% match
@@ -246,38 +250,17 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen, onStartRe
       </div>
 
       <div style={{ padding: 14 }}>
-        <div style={{ fontSize: 13, color: '#242424', lineHeight: 1.5 }}>{moodLine}</div>
+        <div style={{ fontSize: 14, color: '#242424', lineHeight: 1.55, fontWeight: 600 }}>{moodLine}</div>
 
-        {compatibility?.reasons?.length > 0 && (
-          <div style={{ marginTop: 9, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            {compatibility.reasons.map((reason, idx) => (
-              <span key={`${item.id}-reason-${idx}`} style={{ fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 999, background: '#E9FFF6', color: '#0B7A5A' }}>
-                {reason}
-              </span>
-            ))}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14, gap: 10 }}>
+          <div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: '#8A90A2', textTransform: 'uppercase', letterSpacing: '.08em' }}>Open profile</div>
+            <div style={{ fontSize: 12, color: '#4B5565', marginTop: 2 }}>View chemistry, interests, and send request</div>
           </div>
-        )}
-
-        {tags.length > 0 && (
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 10 }}>
-            {tags.slice(0, 4).map(tag => (
-              <span key={`${item.id}-${tag}`} style={{ fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 999, background: '#EEF1FF', color: '#3946C6' }}>
-                #{tag}
-              </span>
-            ))}
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 11, fontWeight: 800, color: alreadySent ? '#8C6B28' : '#111827' }}>
+            <span style={{ width: 8, height: 8, borderRadius: '50%', background: alreadySent ? '#F0B100' : '#111827', boxShadow: alreadySent ? '0 0 0 6px rgba(240,177,0,0.12)' : '0 0 0 6px rgba(17,24,39,0.06)' }} />
+            {alreadySent ? 'Request Sent' : 'Tap to Explore'}
           </div>
-        )}
-
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, gap: 10 }}>
-          <div style={{ fontSize: 11, color: '#6a6d76', fontWeight: 700 }}>Tap to open full card</div>
-          <span
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!alreadySent && !busy) onStartRequest();
-            }}
-            style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, padding: '8px 12px', borderRadius: 999, background: alreadySent ? '#F3F0E8' : '#111827', color: alreadySent ? '#6b6b68' : '#fff', opacity: alreadySent ? 1 : 1 }}>
-            {alreadySent ? 'Request Sent' : 'Quick Connect'}
-          </span>
         </div>
       </div>
     </button>
@@ -293,6 +276,7 @@ function ClubPage({ trip }) {
   const [filterDraft, setFilterDraft] = useState(initialFilters);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
 
   const [requestFor, setRequestFor] = useState(null);
   const [requestMessage, setRequestMessage] = useState('');
@@ -506,6 +490,20 @@ function ClubPage({ trip }) {
     ? hub.outgoingRequests.some(r => r.targetTripId === selectedCard.tripId && r.status === 'pending')
     : false;
 
+  const selectedGallery = useMemo(() => buildCardGallery(selectedCard), [selectedCard]);
+
+  useEffect(() => {
+    setSelectedMediaIndex(0);
+  }, [selectedCard?.id]);
+
+  useEffect(() => {
+    if (!selectedCard || selectedGallery.length <= 1) return undefined;
+    const timer = setInterval(() => {
+      setSelectedMediaIndex((current) => (current + 1) % selectedGallery.length);
+    }, 3200);
+    return () => clearInterval(timer);
+  }, [selectedCard, selectedGallery]);
+
   if (clubLoading) return <Spinner text="Loading Club..." solo={trip.isSolo} />;
 
   return (
@@ -540,6 +538,22 @@ function ClubPage({ trip }) {
         @keyframes clubRingIn {
           from { opacity: 0; transform: scale(.82) rotate(-90deg); }
           to { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        @keyframes clubSectionIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes clubShine {
+          0% { transform: translateX(-120%) skewX(-18deg); opacity: 0; }
+          20% { opacity: .35; }
+          60% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+          100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
+        }
+        @media (hover: hover) {
+          button[data-club-card='true']:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 24px 54px rgba(16,24,40,0.14);
+          }
         }
       `}</style>
 
@@ -701,8 +715,6 @@ function ClubPage({ trip }) {
                   compatibility={compatibility}
                   alreadySent={alreadySent}
                   onOpen={() => setSelectedCard(item)}
-                  onStartRequest={() => setRequestFor(item.tripId)}
-                  busy={clubBusy}
                 />
               ))}
           </div>
@@ -761,26 +773,50 @@ function ClubPage({ trip }) {
       {selectedCard && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,12,18,0.55)', zIndex: 520, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'clubFadeIn .22s ease-out both' }}>
           <div style={{ width: '100%', maxWidth: 620, maxHeight: '88vh', overflowY: 'auto', background: '#fff', borderRadius: 26, boxShadow: '0 34px 90px rgba(0,0,0,0.26)', overflow: 'hidden', animation: 'clubSheetIn .3s cubic-bezier(.2,.7,.2,1) both' }}>
-            <div style={{ background: moodGradient(selectedCard.vibe || 'mixed'), padding: 18, color: '#fff', position: 'relative' }}>
+            <div style={{ background: moodGradient(selectedCard.vibe || 'mixed'), color: '#fff', position: 'relative', minHeight: 280, overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', inset: 0, background: selectedGallery[selectedMediaIndex] ? `linear-gradient(180deg, rgba(10,16,28,0.18), rgba(10,16,28,0.6)), url(${selectedGallery[selectedMediaIndex]}) center/cover` : moodGradient(selectedCard.vibe || 'mixed') }} />
               <div style={{ position: 'absolute', right: -20, top: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', animation: 'clubFloat 5.5s ease-in-out infinite' }} />
-              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ display: 'flex', gap: 12, minWidth: 0 }}>
-                  {selectedCard.photoUrl ? (
-                    <img src={selectedCard.photoUrl} alt="group" style={{ width: 96, height: 96, borderRadius: 18, objectFit: 'cover', border: '2px solid rgba(255,255,255,0.4)' }} />
-                  ) : (
-                    <div style={{ width: 96, height: 96, borderRadius: 18, background: 'rgba(255,255,255,0.22)', display: 'grid', placeItems: 'center', fontSize: 34 }}>{selectedCard.trip?.emoji || '🧭'}</div>
-                  )}
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>{selectedCard.trip?.groupName}</div>
-                    <div style={{ fontSize: 13, opacity: 0.92, marginTop: 4 }}>{selectedCard.trip?.destination}</div>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 10 }}>
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.2)' }}>{distanceLabel(selectedCard.distance)}</span>
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,0.2)' }}>{(selectedCard.vibe || 'mixed').toUpperCase()} vibe</span>
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: '5px 9px', borderRadius: 999, background: isRecentlyActive(selectedCard.updatedAt) ? 'rgba(103,255,186,0.25)' : 'rgba(255,255,255,0.2)' }}>{isRecentlyActive(selectedCard.updatedAt) ? 'Active Today' : 'Quiet Today'}</span>
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(4,7,16,0.68))' }} />
+              <div style={{ position: 'relative', padding: 18, minHeight: 280, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', maxWidth: '75%' }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>{distanceLabel(selectedCard.distance)}</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>{(selectedCard.vibe || 'mixed').toUpperCase()} vibe</span>
+                    <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: isRecentlyActive(selectedCard.updatedAt) ? 'rgba(103,255,186,0.25)' : 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>{isRecentlyActive(selectedCard.updatedAt) ? 'Active Today' : 'Quiet Today'}</span>
+                  </div>
+                  <button style={{ ...S.btn, marginTop: 0, alignSelf: 'flex-start', background: 'rgba(255,255,255,0.16)', color: '#fff', border: '1px solid rgba(255,255,255,0.24)', backdropFilter: 'blur(10px)' }} onClick={() => setSelectedCard(null)}>Close</button>
+                </div>
+
+                <div>
+                  <div style={{ position: 'relative', display: 'inline-flex', overflow: 'hidden', borderRadius: 999, marginBottom: 10 }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, padding: '7px 11px', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
+                      travelbae club profile
+                    </span>
+                    <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.36) 45%, transparent 80%)', animation: 'clubShine 3.4s ease-in-out infinite' }} />
+                  </div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.08 }}>{selectedCard.trip?.groupName}</div>
+                  <div style={{ fontSize: 14, opacity: 0.95, marginTop: 6 }}>{selectedCard.trip?.destination} • {selectedCard.trip?.members?.length || 0} travelers • {genderMixLabel(selectedCard.genderMix)}</div>
+                  <div style={{ fontSize: 14, lineHeight: 1.6, maxWidth: 420, marginTop: 10, color: 'rgba(255,255,255,0.92)' }}>{selectedCard.about || getGroupMoodLine(selectedCard)}</div>
+                </div>
+
+                {selectedGallery.length > 1 && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 14 }}>
+                    <div style={{ display: 'flex', gap: 7 }}>
+                      {selectedGallery.map((_, index) => (
+                        <button
+                          key={`gallery-dot-${index}`}
+                          onClick={() => setSelectedMediaIndex(index)}
+                          style={{ width: index === selectedMediaIndex ? 24 : 8, height: 8, borderRadius: 999, border: 'none', background: index === selectedMediaIndex ? '#fff' : 'rgba(255,255,255,0.42)', padding: 0, transition: 'all .22s ease', cursor: 'pointer' }}
+                          aria-label={`Show image ${index + 1}`}
+                        />
+                      ))}
+                    </div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }} onClick={() => setSelectedMediaIndex((current) => (current - 1 + selectedGallery.length) % selectedGallery.length)}>Prev</button>
+                      <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }} onClick={() => setSelectedMediaIndex((current) => (current + 1) % selectedGallery.length)}>Next</button>
                     </div>
                   </div>
-                </div>
-                <button style={{ ...S.btn, marginTop: 0, alignSelf: 'flex-start', background: 'rgba(255,255,255,0.16)', color: '#fff', border: '1px solid rgba(255,255,255,0.24)' }} onClick={() => setSelectedCard(null)}>Close</button>
+                )}
               </div>
             </div>
 
@@ -788,7 +824,7 @@ function ClubPage({ trip }) {
               {(() => {
                 const compatibility = buildCompatibility(hub.myProfile, trip, selectedCard);
                 return (
-                  <div style={{ background: '#F7F8FC', borderRadius: 16, padding: 14, marginBottom: 14 }}>
+                  <div style={{ background: '#F7F8FC', borderRadius: 16, padding: 14, marginBottom: 14, animation: 'clubSectionIn .35s ease-out both' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <MatchRing score={compatibility.score} />
@@ -808,26 +844,26 @@ function ClubPage({ trip }) {
               })()}
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 10, marginBottom: 12 }}>
-                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12 }}>
+                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12, animation: 'clubSectionIn .4s ease-out both' }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>About</div>
                   <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{selectedCard.about || getGroupMoodLine(selectedCard)}</div>
                 </div>
-                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12 }}>
+                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12, animation: 'clubSectionIn .45s ease-out both' }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>Looking For</div>
                   <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{selectedCard.lookingFor || 'Open to great plans and a smooth connection.'}</div>
                 </div>
-                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12 }}>
+                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12, animation: 'clubSectionIn .5s ease-out both' }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>Group Mix</div>
                   <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{genderMixLabel(selectedCard.genderMix)}</div>
                 </div>
-                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12 }}>
+                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12, animation: 'clubSectionIn .55s ease-out both' }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>Group Size</div>
                   <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{selectedCard.trip?.members?.length || 0} travelers</div>
                 </div>
               </div>
 
               {Array.isArray(selectedCard.coverTags) && selectedCard.coverTags.length > 0 && (
-                <div style={{ marginBottom: 14 }}>
+                <div style={{ marginBottom: 14, animation: 'clubSectionIn .6s ease-out both' }}>
                   <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase', marginBottom: 8 }}>Interests</div>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     {selectedCard.coverTags.map(tag => (
@@ -838,7 +874,7 @@ function ClubPage({ trip }) {
               )}
 
               {requestFor === selectedCard.tripId ? (
-                <div style={{ marginTop: 12 }}>
+                <div style={{ marginTop: 12, animation: 'clubSectionIn .65s ease-out both' }}>
                   <textarea
                     style={{ ...S.input, resize: 'vertical', minHeight: 88, fontSize: 13 }}
                     value={requestMessage}
@@ -851,7 +887,7 @@ function ClubPage({ trip }) {
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, animation: 'clubSectionIn .65s ease-out both' }}>
                   <button style={{ ...S.btn, ...S.btnOrange, flex: 1, marginTop: 0, opacity: selectedAlreadySent ? 0.6 : 1 }} disabled={selectedAlreadySent || clubBusy} onClick={() => setRequestFor(selectedCard.tripId)}>
                     {selectedAlreadySent ? 'Request Sent' : 'Send Connection Request'}
                   </button>
