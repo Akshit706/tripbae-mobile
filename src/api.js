@@ -1,7 +1,5 @@
 // src/api.js
-const BASE = 'https://travelbae-backend.onrender.com'; // ← replace with your server's IP
-// e.g. 'http://192.168.1.10:4000' for local network
-// e.g. 'http://65.21.44.120:4000' for a VPS
+const BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 function getToken() {
   return localStorage.getItem('travelbae_token');

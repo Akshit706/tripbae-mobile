@@ -37,6 +37,7 @@ import ClubPageFeature from './features/club/ClubPage';
 
 /* ─── CONSTANTS ─────────────────────────────────────── */
 const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 const CATS = [
   {id:'food',icon:'🍽️',label:'Food',bg:'#FAEEDA'},
   {id:'transport',icon:'🚗',label:'Transport',bg:'#E1F5EE'},
@@ -334,7 +335,7 @@ export default function App() {
       const body = authScreen === 'signup'
         ? { name: authForm.name, email: authForm.email, password: authForm.password }
         : { email: authForm.email, password: authForm.password };
-      const res = await fetch(`https://travelbae-backend.onrender.com${endpoint}`, {
+      const res = await fetch(`${API_BASE}${endpoint}`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
       });
       const data = await res.json();

@@ -320,7 +320,9 @@ function ClubPage({ trip }) {
   const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
   const [selectedChatId, setSelectedChatId] = useState(null);
   const [chatDraft, setChatDraft] = useState('');
-  const [chatTool, setChatTool] = useState('split');
+  const [chatTool, setChatTool] = useState(null);
+  const [toolsChooserOpen, setToolsChooserOpen] = useState(false);
+  const [toolScreenOpen, setToolScreenOpen] = useState(false);
   const [splitDraft, setSplitDraft] = useState({ desc: '', amount: '', paidBy: '', splitWith: [] });
 
   const [requestFor, setRequestFor] = useState(null);
@@ -577,6 +579,7 @@ function ClubPage({ trip }) {
           amount: '',
           splitWith: combinedMembers.map(member => member.id),
         }));
+        setToolScreenOpen(false);
       })
       .catch((err) => {
         alert('Could not add split expense: ' + err.message);
@@ -584,6 +587,24 @@ function ClubPage({ trip }) {
       .finally(() => {
         setClubBusy(false);
       });
+  };
+
+  const openToolsChooser = () => {
+    if (!activeChat) return;
+    setToolsChooserOpen(true);
+  };
+
+  const openToolScreen = (tool) => {
+    setChatTool(tool);
+    setToolsChooserOpen(false);
+    setToolScreenOpen(true);
+    if (tool === 'split' && combinedMembers.length > 0) {
+      setSplitDraft((draft) => ({
+        ...draft,
+        paidBy: draft.paidBy || combinedMembers[0].id,
+        splitWith: draft.splitWith.length ? draft.splitWith : combinedMembers.map(member => member.id),
+      }));
+    }
   };
 
   const applyFilters = () => {
@@ -884,99 +905,173 @@ function ClubPage({ trip }) {
                       onChange={e => setChatDraft(e.target.value)}
                       placeholder={`Message ${activeChat.otherTrip?.groupName || 'this group'}...`}
                     />
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                      <div style={{ fontSize: 11, color: '#6B7280', alignSelf: 'center' }}>Chat opens when a request is accepted.</div>
-                      <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} disabled={clubBusy || !chatDraft.trim()} onClick={handleSendChat}>Send</button>
-                    </div>
-
-                    <div style={{ marginTop: 12, borderTop: '1px dashed rgba(10,18,35,0.14)', paddingTop: 10 }}>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button style={{ ...S.btn, marginTop: 0, background: chatTool === 'split' ? '#0F172A' : '#F3F6FA', color: chatTool === 'split' ? '#fff' : '#253048' }} onClick={() => setChatTool('split')}>Tools: Split</button>
-                        <button style={{ ...S.btn, marginTop: 0, background: chatTool === 'photos' ? '#0F172A' : '#F3F6FA', color: chatTool === 'photos' ? '#fff' : '#253048' }} onClick={() => setChatTool('photos')}>Tools: Photos</button>
-                      </div>
-
-                      {chatTool === 'split' && (
-                        <div style={{ marginTop: 10, background: '#F8FAFC', border: '1px solid rgba(10,18,35,0.08)', borderRadius: 14, padding: 12 }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: '#121926' }}>Combined Group Split</div>
-                          <div style={{ fontSize: 11, color: '#667085', marginTop: 2 }}>{combinedMembers.length} members across both groups</div>
-
-                          <div style={{ display: 'grid', gridTemplateColumns: '1.2fr .8fr', gap: 8, marginTop: 10 }}>
-                            <input style={{ ...S.input, marginBottom: 0 }} placeholder="Expense title" value={splitDraft.desc} onChange={(e) => setSplitDraft((draft) => ({ ...draft, desc: e.target.value }))} />
-                            <input style={{ ...S.input, marginBottom: 0 }} placeholder="Amount" type="number" min="0" value={splitDraft.amount} onChange={(e) => setSplitDraft((draft) => ({ ...draft, amount: e.target.value }))} />
-                          </div>
-
-                          <div style={{ marginTop: 8 }}>
-                            <label style={S.label}>Paid by</label>
-                            <select style={{ ...S.input, marginBottom: 0 }} value={splitDraft.paidBy} onChange={(e) => setSplitDraft((draft) => ({ ...draft, paidBy: e.target.value }))}>
-                              {combinedMembers.map(member => (
-                                <option key={member.id} value={member.id}>{member.nickname} ({member.groupName})</option>
-                              ))}
-                            </select>
-                          </div>
-
-                          <div style={{ marginTop: 8 }}>
-                            <label style={S.label}>Split with</label>
-                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                              {combinedMembers.map(member => {
-                                const selected = splitDraft.splitWith.includes(member.id);
-                                return (
-                                  <button key={member.id} style={{ ...S.btn, marginTop: 0, background: selected ? '#0D7A5A' : '#EEF2F7', color: selected ? '#fff' : '#324155' }} onClick={() => handleToggleSplitMember(member.id)}>
-                                    {member.nickname}
-                                  </button>
-                                );
-                              })}
-                            </div>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
-                            <div style={{ fontSize: 11, color: '#667085' }}>Per head: {splitDraft.splitWith.length ? `₹${((Number(splitDraft.amount) || 0) / splitDraft.splitWith.length).toFixed(2)}` : '₹0.00'}</div>
-                            <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={handleAddSplitEntry}>Add Split</button>
-                          </div>
-
-                          {splitEntries.length > 0 && (
-                            <div style={{ marginTop: 10 }}>
-                              <div style={{ fontSize: 12, fontWeight: 800, color: '#273043', marginBottom: 6 }}>Balances</div>
-                              <div style={{ display: 'grid', gap: 6 }}>
-                                {combinedMembers.map(member => {
-                                  const balance = splitBalances[member.id] || 0;
-                                  return (
-                                    <div key={`bal-${member.id}`} style={{ display: 'flex', justifyContent: 'space-between', background: '#fff', borderRadius: 10, border: '1px solid rgba(10,18,35,0.08)', padding: '8px 10px' }}>
-                                      <span style={{ fontSize: 12, color: '#344054' }}>{member.nickname} ({member.groupName})</span>
-                                      <span style={{ fontSize: 12, fontWeight: 800, color: balance >= 0 ? '#0B7A5A' : '#B42318' }}>{balance >= 0 ? `gets ₹${balance.toFixed(2)}` : `owes ₹${Math.abs(balance).toFixed(2)}`}</span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {chatTool === 'photos' && (
-                        <div style={{ marginTop: 10, background: '#F8FAFC', border: '1px solid rgba(10,18,35,0.08)', borderRadius: 14, padding: 12 }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: '#121926' }}>Combined Group Photos</div>
-                          <div style={{ fontSize: 11, color: '#667085', marginTop: 2 }}>{combinedPhotos.length} photos from both trips</div>
-                          {combinedPhotos.length === 0 && (
-                            <div style={{ fontSize: 12, color: '#667085', marginTop: 8 }}>No photos shared yet in the two trips.</div>
-                          )}
-                          {combinedPhotos.length > 0 && (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(88px,1fr))', gap: 8, marginTop: 10 }}>
-                              {combinedPhotos.slice(0, 24).map(photo => (
-                                <div key={`cp-${photo.id}`} style={{ position: 'relative' }}>
-                                  <img src={photo.url} alt="combined trip" style={{ width: '100%', height: 88, borderRadius: 10, objectFit: 'cover' }} />
-                                  <div style={{ position: 'absolute', left: 4, bottom: 4, fontSize: 9, fontWeight: 700, color: '#fff', background: 'rgba(3,10,24,0.55)', padding: '2px 6px', borderRadius: 999 }}>{photo.source}</div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={openToolsChooser}
+                        disabled={!activeChat}
+                        aria-label="Open tools"
+                        title="Open tools"
+                        style={{ width: 44, height: 44, borderRadius: 14, border: '1px solid rgba(10,18,35,0.10)', background: '#F3F6FA', display: 'grid', placeItems: 'center', cursor: activeChat ? 'pointer' : 'not-allowed' }}
+                      >
+                        🧰
+                      </button>
+                      <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0, flex: 1 }} disabled={clubBusy || !chatDraft.trim()} onClick={handleSendChat}>Send</button>
                     </div>
                   </div>
                 </div>
               )}
             </div>
           )}
+        </div>
+      )}
+
+      {toolsChooserOpen && activeChat && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 560, background: 'rgba(9,12,18,0.52)', display: 'grid', placeItems: 'center', padding: '1rem' }}>
+          <div style={{ width: '100%', maxWidth: 420, background: '#fff', borderRadius: 24, padding: 16, boxShadow: '0 28px 80px rgba(0,0,0,0.28)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800 }}>Tools</div>
+                <div style={{ fontSize: 12, color: '#667085', marginTop: 2 }}>Choose what you want to do for this group</div>
+              </div>
+              <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setToolsChooserOpen(false)}>Close</button>
+            </div>
+
+            <div style={{ display: 'grid', gap: 10 }}>
+              <button
+                onClick={() => openToolScreen('split')}
+                style={{ textAlign: 'left', border: '1px solid rgba(10,18,35,0.10)', borderRadius: 18, padding: 14, background: '#F8FAFC' }}
+              >
+                <div style={{ fontSize: 20 }}>🧾</div>
+                <div style={{ fontWeight: 800, marginTop: 6 }}>Split</div>
+                <div style={{ fontSize: 12, color: '#667085', marginTop: 2 }}>Add expenses and see balances for every member in both groups.</div>
+              </button>
+              <button
+                onClick={() => openToolScreen('photos')}
+                style={{ textAlign: 'left', border: '1px solid rgba(10,18,35,0.10)', borderRadius: 18, padding: 14, background: '#F8FAFC' }}
+              >
+                <div style={{ fontSize: 20 }}>🖼️</div>
+                <div style={{ fontWeight: 800, marginTop: 6 }}>Photos</div>
+                <div style={{ fontSize: 12, color: '#667085', marginTop: 2 }}>Open a full-screen gallery of the combined group photos.</div>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toolScreenOpen && activeChat && chatTool === 'split' && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 570, background: 'linear-gradient(180deg, rgba(7,10,18,0.58), rgba(7,10,18,0.76))', padding: '1rem', overflowY: 'auto' }}>
+          <div style={{ maxWidth: 920, margin: '0 auto', minHeight: '100%', display: 'flex', alignItems: 'center' }}>
+            <div style={{ width: '100%', background: '#fff', borderRadius: 28, overflow: 'hidden', boxShadow: '0 34px 100px rgba(0,0,0,0.32)' }}>
+              <div style={{ padding: 18, background: 'linear-gradient(135deg,#0F172A,#134E4A)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>Split</div>
+                  <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>{combinedMembers.length} combined members, one shared wallet view</div>
+                </div>
+                <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.18)' }} onClick={() => setToolScreenOpen(false)}>Close</button>
+              </div>
+
+              <div style={{ padding: 18, display: 'grid', gap: 16 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr .8fr', gap: 10 }}>
+                  <input style={{ ...S.input, marginBottom: 0 }} placeholder="Expense title" value={splitDraft.desc} onChange={(e) => setSplitDraft((draft) => ({ ...draft, desc: e.target.value }))} />
+                  <input style={{ ...S.input, marginBottom: 0 }} placeholder="Amount" type="number" min="0" value={splitDraft.amount} onChange={(e) => setSplitDraft((draft) => ({ ...draft, amount: e.target.value }))} />
+                </div>
+
+                <div>
+                  <label style={S.label}>Paid by</label>
+                  <select style={{ ...S.input, marginBottom: 0 }} value={splitDraft.paidBy} onChange={(e) => setSplitDraft((draft) => ({ ...draft, paidBy: e.target.value }))}>
+                    {combinedMembers.map(member => (
+                      <option key={member.id} value={member.id}>{member.nickname} ({member.groupName})</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={S.label}>Split with</label>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    {combinedMembers.map(member => {
+                      const selected = splitDraft.splitWith.includes(member.id);
+                      return (
+                        <button key={member.id} style={{ ...S.btn, marginTop: 0, background: selected ? '#0D7A5A' : '#EEF2F7', color: selected ? '#fff' : '#324155' }} onClick={() => handleToggleSplitMember(member.id)}>
+                          {member.nickname}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
+                  <div style={{ fontSize: 12, color: '#667085' }}>Per head: {splitDraft.splitWith.length ? `₹${((Number(splitDraft.amount) || 0) / splitDraft.splitWith.length).toFixed(2)}` : '₹0.00'}</div>
+                  <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={handleAddSplitEntry}>Save Split</button>
+                </div>
+
+                <div style={{ borderTop: '1px solid rgba(10,18,35,0.08)', paddingTop: 16 }}>
+                  <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>Balances</div>
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {combinedMembers.map(member => {
+                      const balance = splitBalances[member.id] || 0;
+                      return (
+                        <div key={`bal-${member.id}`} style={{ display: 'flex', justifyContent: 'space-between', background: '#F8FAFC', borderRadius: 12, border: '1px solid rgba(10,18,35,0.08)', padding: '10px 12px' }}>
+                          <span style={{ fontSize: 12, color: '#344054' }}>{member.nickname} ({member.groupName})</span>
+                          <span style={{ fontSize: 12, fontWeight: 800, color: balance >= 0 ? '#0B7A5A' : '#B42318' }}>{balance >= 0 ? `gets ₹${balance.toFixed(2)}` : `owes ₹${Math.abs(balance).toFixed(2)}`}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {splitEntries.length > 0 && (
+                  <div style={{ borderTop: '1px solid rgba(10,18,35,0.08)', paddingTop: 16 }}>
+                    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 8 }}>Shared entries</div>
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {splitEntries.slice().reverse().map(entry => (
+                        <div key={entry.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(10,18,35,0.08)', padding: 12 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                            <div>
+                              <div style={{ fontWeight: 800, color: '#101828' }}>{entry.desc}</div>
+                              <div style={{ fontSize: 11, color: '#667085', marginTop: 2 }}>Paid by {entry.paidByKey || entry.paidBy}</div>
+                            </div>
+                            <div style={{ fontWeight: 800 }}>₹{Number(entry.amount).toFixed(2)}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {toolScreenOpen && activeChat && chatTool === 'photos' && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 570, background: 'linear-gradient(180deg, rgba(7,10,18,0.58), rgba(7,10,18,0.76))', padding: '1rem', overflowY: 'auto' }}>
+          <div style={{ maxWidth: 1120, margin: '0 auto', minHeight: '100%', display: 'flex', alignItems: 'center' }}>
+            <div style={{ width: '100%', background: '#fff', borderRadius: 28, overflow: 'hidden', boxShadow: '0 34px 100px rgba(0,0,0,0.32)' }}>
+              <div style={{ padding: 18, background: 'linear-gradient(135deg,#1D4ED8,#0F766E)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>Photos</div>
+                  <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>{combinedPhotos.length} combined group photos</div>
+                </div>
+                <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.18)' }} onClick={() => setToolScreenOpen(false)}>Close</button>
+              </div>
+
+              <div style={{ padding: 18 }}>
+                {combinedPhotos.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '32px 0', color: '#667085' }}>No photos shared yet in the two trips.</div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 12 }}>
+                    {combinedPhotos.map(photo => (
+                      <div key={`cp-${photo.id}`} style={{ position: 'relative' }}>
+                        <img src={photo.url} alt="combined trip" style={{ width: '100%', height: 160, borderRadius: 16, objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', left: 8, bottom: 8, fontSize: 10, fontWeight: 800, color: '#fff', background: 'rgba(3,10,24,0.55)', padding: '3px 7px', borderRadius: 999 }}>{photo.source}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
