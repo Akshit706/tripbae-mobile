@@ -276,8 +276,8 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
     <button
       data-club-card="true"
       onClick={onOpen}
-      style={{ width: '100%', textAlign: 'left', borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(10,18,35,0.07)', marginBottom: 16, background: '#fff', boxShadow: '0 18px 44px rgba(16,24,40,0.10)', padding: 0, cursor: 'pointer', animation: 'clubCardIn .45s cubic-bezier(.2,.7,.2,1) both', transition: 'transform .25s ease, box-shadow .25s ease' }}>
-      <div style={{ background: moodGradient(item.vibe || 'mixed'), padding: 14, color: '#fff', position: 'relative' }}>
+      style={{ width: '100%', textAlign: 'left', border: 'none', borderBottom: '1px solid rgba(15,23,42,0.10)', marginBottom: 0, background: 'transparent', padding: '0 0 14px', cursor: 'pointer', animation: 'clubCardIn .45s cubic-bezier(.2,.7,.2,1) both', transition: 'transform .2s ease' }}>
+      <div style={{ background: moodGradient(item.vibe || 'mixed'), padding: 14, color: '#fff', position: 'relative', borderRadius: 0 }}>
         <div style={{ position: 'absolute', right: -24, top: -24, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', animation: 'clubFloat 4.8s ease-in-out infinite' }} />
         <div style={{ position: 'absolute', right: 12, top: 12 }}>
           <span style={{ fontSize: 10, fontWeight: 800, padding: '5px 10px', borderRadius: 999, background: activeNow ? 'rgba(103,255,186,0.26)' : 'rgba(255,255,255,0.22)', color: '#fff', backdropFilter: 'blur(8px)', animation: activeNow ? 'clubPulse 1.9s ease-in-out infinite' : 'none' }}>
@@ -309,7 +309,7 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
         </div>
       </div>
 
-      <div style={{ padding: 14 }}>
+      <div style={{ padding: '12px 4px 0' }}>
         <div style={{ fontSize: 14, color: '#242424', lineHeight: 1.55, fontWeight: 600 }}>{moodLine}</div>
         {alreadySent && <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: '#8C6B28' }}>Request already sent</div>}
       </div>
@@ -703,13 +703,13 @@ function ClubPage({ trip }) {
   }, [activeChat?.id, activeChat?.messages?.length]);
 
   const premiumPanel = {
-    background: 'linear-gradient(160deg,rgba(255,255,255,0.72),rgba(243,250,255,0.46))',
-    border: '1px solid rgba(255,255,255,0.7)',
-    borderRadius: 34,
-    padding: '1rem .95rem',
+    background: 'transparent',
+    border: 'none',
+    borderRadius: 0,
+    padding: '0.2rem 0',
     marginBottom: '0.9rem',
-    boxShadow: '0 24px 46px rgba(17,24,39,0.10)',
-    backdropFilter: 'blur(14px)',
+    boxShadow: 'none',
+    backdropFilter: 'none',
   };
 
   if (clubLoading) return <Spinner text="Loading Club..." solo={trip.isSolo} />;
@@ -868,7 +868,7 @@ function ClubPage({ trip }) {
           <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Incoming Requests</div>
           {hub.incomingRequests.length === 0 && <div style={{ fontSize: 12, color: '#6b6b68' }}>No pending requests right now.</div>}
           {hub.incomingRequests.map(req => (
-            <div key={req.id} style={{ border: '1px solid rgba(13,24,48,0.1)', borderRadius: 14, padding: 12, marginBottom: 8, background: 'linear-gradient(180deg,#FFFFFF,#F8FBFF)' }}>
+            <div key={req.id} style={{ borderBottom: '1px solid rgba(13,24,48,0.12)', padding: '10px 0 12px', marginBottom: 2, background: 'transparent' }}>
               <div style={{ fontSize: 14, fontWeight: 700 }}>{req.requesterTrip.groupName}</div>
               <div style={{ fontSize: 12, color: '#60636D', marginTop: 2 }}>{req.message}</div>
               <div style={{ fontSize: 11, color: '#77839A', marginTop: 4 }}>Received {formatChatMetaTime(req.createdAt)}</div>
@@ -910,12 +910,13 @@ function ClubPage({ trip }) {
                         style={{
                           width: '100%',
                           textAlign: 'left',
-                          border: unread ? '1px solid rgba(23,127,94,0.28)' : '1px solid rgba(10,18,35,0.07)',
-                          background: unread ? 'linear-gradient(180deg,#F2FFF8,#FFFFFF)' : 'linear-gradient(180deg,#FFFFFF,#F8FBFF)',
-                          borderRadius: 18,
-                          padding: 12,
+                          border: 'none',
+                          borderBottom: '1px solid rgba(10,18,35,0.10)',
+                          background: 'transparent',
+                          borderRadius: 0,
+                          padding: '0 0 12px',
                           cursor: 'pointer',
-                          boxShadow: unread ? '0 12px 24px rgba(23,127,94,0.12)' : '0 8px 20px rgba(15,23,42,0.05)',
+                          boxShadow: 'none',
                         }}>
                         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                           {avatar ? (
