@@ -309,23 +309,23 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Hero Section */}
-      <div style={{ background: 'linear-gradient(135deg,#0D2B2E,#134E4A)', padding: '1.7rem 1.35rem 1.5rem', position: 'relative', overflow: 'hidden', marginBottom: '1.5rem' }}>
+      <div style={{ background: 'linear-gradient(135deg,#0D2B2E,#134E4A)', padding: '1.7rem 1.35rem 1.5rem', position: 'relative', overflow: 'hidden', marginBottom: '1.5rem', textAlign: 'left' }}>
         <div style={{ position: 'absolute', top: -20, right: -14, fontSize: 94, opacity: 0.12, transform: 'rotate(12deg)' }}>✈️</div>
         <div style={{ position: 'absolute', left: -42, bottom: -62, width: 150, height: 150, borderRadius: '50%', background: 'rgba(246,201,122,0.12)' }} />
-        <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10 }}>
+        <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'left' }}>
           Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
         </div>
-        <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 800, color: '#fff', marginBottom: 8, lineHeight: 1.15 }}>Where to next?</div>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', marginBottom: 20, lineHeight: 1.5, fontStyle: 'italic' }}>Plan less. Experience more.</div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+        <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 800, color: '#fff', marginBottom: 8, lineHeight: 1.15, textAlign: 'left' }}>Where to next?</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', marginBottom: 20, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'left' }}>Plan less. Experience more.</div>
+        <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
           <button
             className="tb-new-btn"
-            style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, padding: '10px 18px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)' }}
+            style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, padding: '13px 24px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)', width: 'auto' }}
             onClick={() => { setShowCreate(true); setShowJoin(false); }}>
             + New Trip
           </button>
           <button
-            style={{ ...S.btn, background: 'transparent', color: '#F2F4F5', border: 'none', boxShadow: 'none', fontSize: 13, padding: '10px 2px', borderRadius: 0, textDecoration: 'underline', textUnderlineOffset: 4 }}
+            style={{ ...S.btn, background: 'transparent', color: '#F2F4F5', border: 'none', boxShadow: 'none', fontSize: 13, padding: '13px 2px', borderRadius: 0, textDecoration: 'underline', textUnderlineOffset: 4, width: 'auto' }}
             onClick={() => { setShowJoin(true); setShowCreate(false); }}>
             Join with Code
           </button>
