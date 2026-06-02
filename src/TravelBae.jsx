@@ -730,15 +730,15 @@ export default function App() {
             gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
             gap: 0,
             width: '100%',
-            borderTop: isSolo ? '1px solid rgba(127,119,221,0.14)' : '1px solid rgba(15,110,86,0.12)',
-            borderBottom: isSolo ? '1px solid rgba(127,119,221,0.14)' : '1px solid rgba(15,110,86,0.12)',
-            background: isSolo ? 'rgba(247,245,255,0.62)' : 'rgba(244,251,248,0.62)',
+            borderTop: '1px solid rgba(15,23,42,0.08)',
+            borderBottom: '1px solid rgba(15,23,42,0.08)',
+            background: 'rgba(255,255,255,0.78)',
             backdropFilter: 'blur(8px)',
           }}>
             {tabs.map((t, idx) => {
               const isActive = tab === t.id;
               const activeStyle = isSolo ? S.soloNavTabActive : S.navTabActive;
-              const accentColor = isSolo ? '#534AB7' : '#0F6E56';
+              const accentColor = '#111827';
               return (
                 <button
                   key={t.id}
@@ -750,12 +750,12 @@ export default function App() {
                     animationDelay: `${idx * 35}ms`,
                     position: 'relative',
                     borderRadius: 0,
-                    borderLeft: idx > 0 ? (isSolo ? '1px solid rgba(127,119,221,0.12)' : '1px solid rgba(15,110,86,0.1)') : 'none',
-                    boxShadow: isActive ? `0 8px 16px ${isSolo ? 'rgba(79,70,183,0.16)' : 'rgba(10,122,90,0.14)'}` : 'none',
+                    borderLeft: idx > 0 ? '1px solid rgba(15,23,42,0.06)' : 'none',
+                    boxShadow: isActive ? 'inset 0 1px 0 rgba(255,255,255,0.92)' : 'none',
                   }}
                 >
-                  <span style={{ fontSize: 15, lineHeight: 1, filter: isActive ? 'none' : 'grayscale(20%) opacity(0.72)' }}>{t.icon}</span>
-                  <span style={{ fontSize: tabs.length > 4 ? 8.6 : 9.5, maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'visible', textOverflow: 'clip', padding: '0 1px', letterSpacing: 0.15 }}>{t.label}</span>
+                  <span style={{ fontSize: 15, lineHeight: 1, filter: isActive ? 'none' : 'grayscale(100%) opacity(0.68)' }}>{t.icon}</span>
+                  <span style={{ fontSize: tabs.length > 4 ? 8.6 : 9.5, maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'visible', textOverflow: 'clip', padding: '0 1px', letterSpacing: 0.12 }}>{t.label}</span>
                   {isActive && <span style={{ position: 'absolute', bottom: 1, left: '20%', right: '20%', height: 1.8, borderRadius: 99, background: accentColor, opacity: 0.8 }} />}
                 </button>
               );

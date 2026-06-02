@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense, deleteClubChatSplitExpense, deleteClubChat } from '../../api';
+import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense, deleteClubChatSplitExpense, deleteClubChat, addPhoto } from '../../api';
+import { supabase } from '../../supabase';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 
@@ -369,6 +370,8 @@ function ClubPage({ trip, onTripRefresh }) {
   const [toolScreenOpen, setToolScreenOpen] = useState(false);
   const [chatPhotoFolder, setChatPhotoFolder] = useState('all');
   const [chatPhotoLightbox, setChatPhotoLightbox] = useState(null);
+  const [chatPhotoUploading, setChatPhotoUploading] = useState(false);
+  const [chatPhotoProgress, setChatPhotoProgress] = useState(0);
   const [splitSection, setSplitSection] = useState('expenses');
   const [splitFormOpen, setSplitFormOpen] = useState(false);
   const [splitDraft, setSplitDraft] = useState({ desc: '', amount: '', paidBy: '', splitWith: [] });
@@ -442,6 +445,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
   const fileRef = useRef(null);
   const chatThreadRef = useRef(null);
+  const chatPhotoInputRef = useRef(null);
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedRadius(radius), 260);
@@ -826,6 +830,47 @@ function ClubPage({ trip, onTripRefresh }) {
         splitWith: draft.splitWith.length ? draft.splitWith : combinedMembers.map(member => member.id),
       }));
     }
+  };
+
+  const processChatToolPhotoFiles = async (files) => {
+    const imageFiles = (files || []).filter((file) => file.type?.startsWith('image/'));
+    if (!imageFiles.length) return;
+    setChatPhotoUploading(true);
+    setChatPhotoProgress(0);
+    try {
+      for (let i = 0; i < imageFiles.length; i += 1) {
+        const file = imageFiles[i];
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileName = `${trip.id}/club-chat/${Date.now()}-${i}-${safeName}`;
+
+        const { error } = await supabase.storage.from('trip-photos').upload(fileName, file);
+        if (error) {
+          console.error('Club chat upload error:', error.message);
+          continue;
+        }
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('trip-photos').getPublicUrl(fileName);
+
+        await addPhoto(trip.id, publicUrl);
+        setChatPhotoProgress(Math.round(((i + 1) / imageFiles.length) * 100));
+      }
+
+      await loadHub();
+      if (onTripRefresh) await onTripRefresh();
+    } catch (err) {
+      alert('Could not upload photo(s): ' + err.message);
+    } finally {
+      setChatPhotoUploading(false);
+      setChatPhotoProgress(0);
+      if (chatPhotoInputRef.current) chatPhotoInputRef.current.value = '';
+    }
+  };
+
+  const handleChatToolPhotoUpload = (event) => {
+    const files = Array.from(event.target.files || []);
+    void processChatToolPhotoFiles(files);
   };
 
   const applyFilters = () => {
@@ -1616,6 +1661,28 @@ function ClubPage({ trip, onTripRefresh }) {
               <div style={{ textAlign: 'center', padding: '32px 0', color: '#667085' }}>No photos shared yet in the two trips.</div>
             ) : (
               <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, color: '#667085' }}>Use the same upload flow as Photos tab.</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {chatPhotoUploading && <div style={{ fontSize: 11, color: '#0F6E56', fontWeight: 700 }}>Uploading {chatPhotoProgress}%</div>}
+                    <button
+                      onClick={() => chatPhotoInputRef.current?.click()}
+                      disabled={chatPhotoUploading}
+                      style={{ ...S.btn, ...S.btnP, marginTop: 0, borderRadius: 12, padding: '7px 12px', opacity: chatPhotoUploading ? 0.7 : 1 }}
+                    >
+                      {chatPhotoUploading ? 'Uploading…' : 'Upload photos'}
+                    </button>
+                    <input
+                      ref={chatPhotoInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      style={{ display: 'none' }}
+                      onChange={handleChatToolPhotoUpload}
+                    />
+                  </div>
+                </div>
+
                 <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 10 }}>
                   {Object.keys(chatPhotoFolders).map((folderKey) => {
                     const count = (chatPhotoFolders[folderKey] || []).length;
