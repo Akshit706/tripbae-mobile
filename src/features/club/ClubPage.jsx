@@ -133,6 +133,14 @@ function extractStoragePathFromPublicUrl(url) {
   return decodeURIComponent(url.slice(idx + marker.length));
 }
 
+function getErrorMessage(err, fallback) {
+  if (err && typeof err === 'object' && 'message' in err && err.message) {
+    return String(err.message);
+  }
+  if (typeof err === 'string' && err.trim()) return err;
+  return fallback;
+}
+
 function computeSplitBalances(members, entries) {
   const balances = {};
   members.forEach(member => {
@@ -849,32 +857,52 @@ function ClubPage({ trip, onTripRefresh }) {
     setChatPhotoProgress(0);
     try {
       for (let i = 0; i < imageFiles.length; i += 1) {
-        const file = imageFiles[i];
-        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-        const fileName = `${trip.id}/club-chat/${Date.now()}-${i}-${safeName}`;
+        try {
+          const file = imageFiles[i];
+          const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+          const fileName = `${trip.id}/club-chat/${Date.now()}-${i}-${safeName}`;
 
-        const { error } = await supabase.storage.from('trip-photos').upload(fileName, file);
-        if (error) {
-          console.error('Club chat upload error:', error.message);
-          continue;
+          const { error } = await supabase.storage.from('trip-photos').upload(fileName, file);
+          if (error) {
+            console.error('Club chat upload error:', error.message || error);
+            continue;
+          }
+
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from('trip-photos').getPublicUrl(fileName);
+
+          if (!publicUrl) {
+            console.error('Club chat upload error: missing public URL for', fileName);
+            continue;
+          }
+
+          await addPhoto(trip.id, publicUrl);
+          setChatPhotoProgress(Math.round(((i + 1) / imageFiles.length) * 100));
+        } catch (fileErr) {
+          console.error('Club chat per-file upload error:', fileErr);
         }
-
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('trip-photos').getPublicUrl(fileName);
-
-        await addPhoto(trip.id, publicUrl);
-        setChatPhotoProgress(Math.round(((i + 1) / imageFiles.length) * 100));
       }
 
-      await loadHub();
-      if (onTripRefresh) await onTripRefresh();
+      try {
+        await loadHub();
+      } catch (refreshErr) {
+        console.warn('Could not refresh club hub after upload:', refreshErr);
+      }
+      if (onTripRefresh) {
+        try {
+          await onTripRefresh();
+        } catch (tripRefreshErr) {
+          console.warn('Could not refresh trip after upload:', tripRefreshErr);
+        }
+      }
     } catch (err) {
-      alert('Could not upload photo(s): ' + err.message);
+      alert('Could not upload photo(s): ' + getErrorMessage(err, 'Unknown upload error'));
     } finally {
       setChatPhotoUploading(false);
       setChatPhotoProgress(0);
       if (chatPhotoInputRef.current) chatPhotoInputRef.current.value = '';
+      setChatPhotoDragging(false);
     }
   };
 
@@ -931,11 +959,21 @@ function ClubPage({ trip, onTripRefresh }) {
         if (storagePath) await supabase.storage.from('trip-photos').remove([storagePath]);
         await deletePhoto(trip.id, photo.id);
       }
-      await loadHub();
-      if (onTripRefresh) await onTripRefresh();
+      try {
+        await loadHub();
+      } catch (refreshErr) {
+        console.warn('Could not refresh club hub after delete:', refreshErr);
+      }
+      if (onTripRefresh) {
+        try {
+          await onTripRefresh();
+        } catch (tripRefreshErr) {
+          console.warn('Could not refresh trip after delete:', tripRefreshErr);
+        }
+      }
       clearChatPhotoSelection();
     } catch (err) {
-      alert('Could not delete selected photos: ' + err.message);
+      alert('Could not delete selected photos: ' + getErrorMessage(err, 'Unknown delete error'));
     } finally {
       setClubBusy(false);
     }
