@@ -728,18 +728,18 @@ export default function App() {
           <div style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
-            gap: 5,
-            padding: 5,
-            borderRadius: 16,
+            gap: 4,
+            padding: 4,
+            borderRadius: 14,
             background: isSolo
-              ? 'linear-gradient(145deg, rgba(247,244,255,0.96), rgba(241,247,255,0.92))'
-              : 'linear-gradient(145deg, rgba(239,255,250,0.96), rgba(244,250,255,0.92))',
+              ? 'linear-gradient(180deg, rgba(248,246,255,0.97), rgba(243,247,255,0.95))'
+              : 'linear-gradient(180deg, rgba(243,255,251,0.97), rgba(246,251,255,0.95))',
             border: isSolo
-              ? '1px solid rgba(127,119,221,0.19)'
-              : '1px solid rgba(15,110,86,0.16)',
+              ? '1px solid rgba(127,119,221,0.16)'
+              : '1px solid rgba(15,110,86,0.14)',
             boxShadow: isSolo
-              ? '0 10px 24px rgba(83,74,183,0.12), inset 0 1px 0 rgba(255,255,255,0.82)'
-              : '0 10px 24px rgba(15,110,86,0.11), inset 0 1px 0 rgba(255,255,255,0.82)',
+              ? '0 8px 20px rgba(83,74,183,0.1), inset 0 1px 0 rgba(255,255,255,0.85)'
+              : '0 8px 20px rgba(15,110,86,0.1), inset 0 1px 0 rgba(255,255,255,0.85)',
           }}>
             {tabs.map((t, idx) => {
               const isActive = tab === t.id;
@@ -755,12 +755,12 @@ export default function App() {
                     ...(isActive ? activeStyle : {}),
                     animationDelay: `${idx * 35}ms`,
                     position: 'relative',
-                    boxShadow: isActive ? `0 8px 16px ${isSolo ? 'rgba(83,74,183,0.2)' : 'rgba(15,110,86,0.18)'}` : 'none',
+                    boxShadow: isActive ? `0 8px 16px ${isSolo ? 'rgba(79,70,183,0.16)' : 'rgba(10,122,90,0.14)'}` : 'none',
                   }}
                 >
-                  <span style={{ fontSize: 16, lineHeight: 1, filter: isActive ? 'none' : 'grayscale(20%) opacity(0.75)' }}>{t.icon}</span>
-                  <span style={{ fontSize: tabs.length > 4 ? 9.2 : 10.5, maxWidth: '100%', whiteSpace: 'normal', wordBreak: 'break-word', padding: '0 1px' }}>{t.label}</span>
-                  {isActive && <span style={{ position: 'absolute', bottom: 1, left: '20%', right: '20%', height: 2, borderRadius: 99, background: accentColor }} />}
+                  <span style={{ fontSize: 15, lineHeight: 1, filter: isActive ? 'none' : 'grayscale(20%) opacity(0.72)' }}>{t.icon}</span>
+                  <span style={{ fontSize: tabs.length > 4 ? 8.6 : 9.5, maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'visible', textOverflow: 'clip', padding: '0 1px', letterSpacing: 0.15 }}>{t.label}</span>
+                  {isActive && <span style={{ position: 'absolute', bottom: 1, left: '20%', right: '20%', height: 1.8, borderRadius: 99, background: accentColor, opacity: 0.8 }} />}
                 </button>
               );
             })}
