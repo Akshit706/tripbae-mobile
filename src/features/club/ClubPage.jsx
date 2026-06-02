@@ -376,16 +376,51 @@ function ClubPage({ trip, onTripRefresh }) {
   const [requestFor, setRequestFor] = useState(null);
   const [requestMessage, setRequestMessage] = useState('');
 
+  const clubLocKey = (suffix) => `travelbae_club_${trip.id}_${suffix}`;
+
   // ── Location (Nominatim search + optional GPS reverse-geocode) ──
-  const [locQuery, setLocQuery] = useState(() => { try { return localStorage.getItem('travelbae_club_loc_label') || ''; } catch { return ''; } });
+  const [locQuery, setLocQuery] = useState(() => {
+    try {
+      return localStorage.getItem(clubLocKey('loc_label')) || '';
+    } catch {
+      return '';
+    }
+  });
   const [locSuggestions, setLocSuggestions] = useState([]);
   const [locSearching, setLocSearching] = useState(false);
-  const [locLabel, setLocLabel] = useState(() => { try { return localStorage.getItem('travelbae_club_loc_label') || ''; } catch { return ''; } });
-  const [myLat, setMyLat] = useState(() => { try { const v = localStorage.getItem('travelbae_club_loc_lat'); return v ? parseFloat(v) : null; } catch { return null; } });
-  const [myLng, setMyLng] = useState(() => { try { const v = localStorage.getItem('travelbae_club_loc_lng'); return v ? parseFloat(v) : null; } catch { return null; } });
+  const [locLabel, setLocLabel] = useState(() => {
+    try {
+      return localStorage.getItem(clubLocKey('loc_label')) || '';
+    } catch {
+      return '';
+    }
+  });
+  const [myLat, setMyLat] = useState(() => {
+    try {
+      const v = localStorage.getItem(clubLocKey('loc_lat'));
+      return v ? parseFloat(v) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [myLng, setMyLng] = useState(() => {
+    try {
+      const v = localStorage.getItem(clubLocKey('loc_lng'));
+      return v ? parseFloat(v) : null;
+    } catch {
+      return null;
+    }
+  });
   const [locError, setLocError] = useState('');
   const [locDetecting, setLocDetecting] = useState(false);
-  const [radius, setRadius] = useState(() => { try { return parseInt(localStorage.getItem('travelbae_club_radius') || '25', 10); } catch { return 25; } });
+  const [radius, setRadius] = useState(() => {
+    try {
+      const stored = localStorage.getItem(clubLocKey('radius')) || '25';
+      return parseInt(stored, 10);
+    } catch {
+      return 25;
+    }
+  });
   const [debouncedRadius, setDebouncedRadius] = useState(radius);
   const locDebounce = useRef(null);
 
@@ -432,9 +467,13 @@ function ClubPage({ trip, onTripRefresh }) {
     const a = item.address || {};
     const label = a.city || a.town || a.village || a.county || a.state_district || a.state || item.display_name.split(',')[0];
     setMyLat(lat); setMyLng(lng); setLocLabel(label); setLocQuery(label); setLocSuggestions([]);
-    try { localStorage.setItem('travelbae_club_loc_lat', String(lat)); localStorage.setItem('travelbae_club_loc_lng', String(lng)); localStorage.setItem('travelbae_club_loc_label', label); } catch {}
+    try {
+      localStorage.setItem(clubLocKey('loc_lat'), String(lat));
+      localStorage.setItem(clubLocKey('loc_lng'), String(lng));
+      localStorage.setItem(clubLocKey('loc_label'), label);
+    } catch {}
     setLocError('');
-  }, []);
+  }, [trip.id]);
 
   const detectGPS = useCallback(() => {
     if (!navigator.geolocation) { setLocError('Geolocation not supported.'); return; }
@@ -451,7 +490,11 @@ function ClubPage({ trip, onTripRefresh }) {
           const a = data.address || {};
           const label = a.city || a.town || a.village || a.county || a.state_district || a.state || 'Your location';
           setMyLat(latitude); setMyLng(longitude); setLocLabel(label); setLocQuery(label); setLocSuggestions([]);
-          try { localStorage.setItem('travelbae_club_loc_lat', String(latitude)); localStorage.setItem('travelbae_club_loc_lng', String(longitude)); localStorage.setItem('travelbae_club_loc_label', label); } catch {}
+          try {
+            localStorage.setItem(clubLocKey('loc_lat'), String(latitude));
+            localStorage.setItem(clubLocKey('loc_lng'), String(longitude));
+            localStorage.setItem(clubLocKey('loc_label'), label);
+          } catch {}
           setLocError('');
         } catch { setLocError('Could not reverse-geocode your location.'); }
         setLocDetecting(false);
@@ -459,7 +502,7 @@ function ClubPage({ trip, onTripRefresh }) {
       () => { setLocError('Permission denied. Search a locality manually.'); setLocDetecting(false); },
       { enableHighAccuracy: false, timeout: 10000 }
     );
-  }, []);
+  }, [trip.id]);
 
   // Haversine distance in km
   const haversine = useCallback((lat1, lon1, lat2, lon2) => {
@@ -1038,7 +1081,7 @@ function ClubPage({ trip, onTripRefresh }) {
             {locLabel ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                 <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#0F172A' }}>📍 {locLabel}</div>
-                <button type="button" onClick={() => { setLocLabel(''); setLocQuery(''); setMyLat(null); setMyLng(null); try { localStorage.removeItem('travelbae_club_loc_lat'); localStorage.removeItem('travelbae_club_loc_lng'); localStorage.removeItem('travelbae_club_loc_label'); } catch {} }} style={{ ...S.btn, padding: '4px 10px', fontSize: 11, color: '#6b6b68' }}>Change</button>
+                <button type="button" onClick={() => { setLocLabel(''); setLocQuery(''); setMyLat(null); setMyLng(null); try { localStorage.removeItem(clubLocKey('loc_lat')); localStorage.removeItem(clubLocKey('loc_lng')); localStorage.removeItem(clubLocKey('loc_label')); } catch {} }} style={{ ...S.btn, padding: '4px 10px', fontSize: 11, color: '#6b6b68' }}>Change</button>
               </div>
             ) : (
               <>
@@ -1652,12 +1695,12 @@ function ClubPage({ trip, onTripRefresh }) {
               {locationEnabled ? (
                 <>
                   <input type="range" min="2" max="150" value={radius}
-                    onChange={e => { const v = Number(e.target.value); setRadius(v); try { localStorage.setItem('travelbae_club_radius', String(v)); } catch {} }}
+                    onChange={e => { const v = Number(e.target.value); setRadius(v); try { localStorage.setItem(clubLocKey('radius'), String(v)); } catch {} }}
                     style={{ width: '100%' }} />
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6b6b68', marginTop: 4 }}>
                     <span>2 km</span><span>{radius} km selected</span><span>150 km</span>
                   </div>
-                  <button style={{ ...S.btn, marginTop: 8, fontSize: 11, color: '#6b6b68' }} onClick={() => { setMyLat(null); setMyLng(null); setLocLabel(''); setLocQuery(''); try { localStorage.removeItem('travelbae_club_loc_lat'); localStorage.removeItem('travelbae_club_loc_lng'); localStorage.removeItem('travelbae_club_loc_label'); } catch {}; }}>Clear location</button>
+                  <button style={{ ...S.btn, marginTop: 8, fontSize: 11, color: '#6b6b68' }} onClick={() => { setMyLat(null); setMyLng(null); setLocLabel(''); setLocQuery(''); try { localStorage.removeItem(clubLocKey('loc_lat')); localStorage.removeItem(clubLocKey('loc_lng')); localStorage.removeItem(clubLocKey('loc_label')); } catch {}; }}>Clear location</button>
                 </>
               ) : (
                 <div style={{ fontSize: 12, color: '#6b6b68' }}>Go to <strong>Edit Profile</strong> and set your locality to unlock radius filtering.</div>
@@ -1665,7 +1708,7 @@ function ClubPage({ trip, onTripRefresh }) {
             </div>
 
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button style={{ ...S.btn, flex: 1, marginTop: 0 }} onClick={() => { setFilterDraft(initialFilters); setRadius(25); }}>Reset</button>
+              <button style={{ ...S.btn, flex: 1, marginTop: 0 }} onClick={() => { setFilterDraft(initialFilters); setRadius(25); try { localStorage.setItem(clubLocKey('radius'), '25'); } catch {} }}>Reset</button>
               <button style={{ ...S.btn, ...S.btnOrange, flex: 1, marginTop: 0 }} onClick={applyFilters}>Save and Go</button>
             </div>
           </div>

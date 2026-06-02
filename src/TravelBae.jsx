@@ -724,29 +724,71 @@ export default function App() {
 
       {/* Nav Tabs */}
       {activeTrip && activeTripData && (
-        <div className="tb-nav-ribbon" style={{
-          ...S.navTabs,
-          gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
-          borderTop: isSolo ? '0.5px solid rgba(127,119,221,0.15)' : '0.5px solid rgba(0,0,0,0.07)',
-          borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.15)' : '0.5px solid rgba(0,0,0,0.07)',
-          boxShadow: '0 2px 10px rgba(15,23,42,0.05)',
-        }}>
-          {tabs.map((t, idx) => {
-            const isActive = tab === t.id;
-            const activeStyle = isSolo ? S.soloNavTabActive : S.navTabActive;
-            const accentColor = isSolo ? '#534AB7' : '#0F6E56';
-            return (
-              <button key={t.id} onClick={() => handleTabChange(t.id)}
-                className="tb-nav-pill tb-tab-entrance"
-                style={{ ...S.navTab, ...(isActive ? activeStyle : {}), animationDelay: `${idx * 35}ms`, position: 'relative' }}>
-                <span style={{ fontSize: 20, lineHeight: 1, filter: isActive ? 'none' : 'grayscale(40%) opacity(0.7)' }}>{t.icon}</span>
-                <span style={{ fontSize: 9, letterSpacing: 0.1, maxWidth: '100%' }}>{t.label}</span>
-                {isActive && (
-                  <span style={{ position: 'absolute', bottom: -1, left: '25%', right: '25%', height: 2, borderRadius: 99, background: accentColor }} />
-                )}
-              </button>
-            );
-          })}
+        <div className="tb-nav-ribbon" style={{ ...S.navTabs }}>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
+            gap: 6,
+            padding: 6,
+            borderRadius: 18,
+            background: isSolo
+              ? 'linear-gradient(140deg, rgba(245,243,255,0.95), rgba(239,246,255,0.9))'
+              : 'linear-gradient(140deg, rgba(238,255,249,0.95), rgba(242,248,255,0.9))',
+            border: isSolo
+              ? '1px solid rgba(127,119,221,0.22)'
+              : '1px solid rgba(15,110,86,0.18)',
+            boxShadow: isSolo
+              ? '0 14px 30px rgba(83,74,183,0.12), inset 0 1px 0 rgba(255,255,255,0.75)'
+              : '0 14px 30px rgba(15,110,86,0.12), inset 0 1px 0 rgba(255,255,255,0.75)',
+          }}>
+            {tabs.map((t, idx) => {
+              const isActive = tab === t.id;
+              const activeStyle = isSolo ? S.soloNavTabActive : S.navTabActive;
+              const accentColor = isSolo ? '#534AB7' : '#0F6E56';
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => handleTabChange(t.id)}
+                  className="tb-nav-pill tb-tab-entrance"
+                  style={{
+                    ...S.navTab,
+                    ...(isActive ? activeStyle : {}),
+                    animationDelay: `${idx * 35}ms`,
+                    position: 'relative',
+                    boxShadow: isActive ? `0 10px 18px ${isSolo ? 'rgba(83,74,183,0.25)' : 'rgba(15,110,86,0.22)'}` : 'none',
+                    background: isActive
+                      ? (isSolo ? 'linear-gradient(145deg,#FFFFFF,#F1EEFF)' : 'linear-gradient(145deg,#FFFFFF,#EAFFF7)')
+                      : 'transparent',
+                  }}
+                >
+                  <span style={{
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: 12,
+                    background: isActive
+                      ? (isSolo ? 'radial-gradient(circle at 50% 0%, rgba(127,119,221,0.22), transparent 65%)' : 'radial-gradient(circle at 50% 0%, rgba(29,158,117,0.2), transparent 65%)')
+                      : 'transparent',
+                    pointerEvents: 'none',
+                  }} />
+                  <span style={{
+                    position: 'relative',
+                    width: 28,
+                    height: 28,
+                    borderRadius: '50%',
+                    display: 'grid',
+                    placeItems: 'center',
+                    fontSize: 17,
+                    background: isActive
+                      ? (isSolo ? 'rgba(127,119,221,0.16)' : 'rgba(29,158,117,0.14)')
+                      : 'rgba(255,255,255,0.7)',
+                    filter: isActive ? 'none' : 'grayscale(25%)',
+                  }}>{t.icon}</span>
+                  <span style={{ position: 'relative', fontSize: 10, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.label}</span>
+                  {isActive && <span style={{ position: 'absolute', bottom: 2, left: '22%', right: '22%', height: 2.5, borderRadius: 99, background: accentColor }} />}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
