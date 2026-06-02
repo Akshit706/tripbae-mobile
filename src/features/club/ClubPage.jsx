@@ -367,6 +367,8 @@ function ClubPage({ trip, onTripRefresh }) {
   const [chatTool, setChatTool] = useState(null);
   const [toolsChooserOpen, setToolsChooserOpen] = useState(false);
   const [toolScreenOpen, setToolScreenOpen] = useState(false);
+  const [chatPhotoFolder, setChatPhotoFolder] = useState('all');
+  const [chatPhotoLightbox, setChatPhotoLightbox] = useState(null);
   const [splitSection, setSplitSection] = useState('expenses');
   const [splitFormOpen, setSplitFormOpen] = useState(false);
   const [splitDraft, setSplitDraft] = useState({ desc: '', amount: '', paidBy: '', splitWith: [] });
@@ -842,6 +844,19 @@ function ClubPage({ trip, onTripRefresh }) {
 
   const combinedMembers = useMemo(() => buildCombinedMembers(activeChat), [activeChat]);
   const combinedPhotos = useMemo(() => buildCombinedPhotos(activeChat), [activeChat]);
+  const chatPhotoFolders = useMemo(() => {
+    const folderMap = { all: combinedPhotos };
+    combinedPhotos.forEach((photo) => {
+      const source = photo.source || 'Shared';
+      if (!folderMap[source]) folderMap[source] = [];
+      folderMap[source].push(photo);
+    });
+    return folderMap;
+  }, [combinedPhotos]);
+  const chatFolderPhotos = useMemo(() => {
+    if (chatPhotoFolder === 'all') return combinedPhotos;
+    return chatPhotoFolders[chatPhotoFolder] || [];
+  }, [chatPhotoFolder, chatPhotoFolders, combinedPhotos]);
   const splitEntries = useMemo(() => activeChat?.splitExpenses || [], [activeChat]);
   const splitBalances = useMemo(
     () => computeSplitBalances(combinedMembers, splitEntries),
@@ -894,6 +909,11 @@ function ClubPage({ trip, onTripRefresh }) {
       setSelectedChatId(null);
     }
   }, [hub.chats, selectedChatId]);
+
+  useEffect(() => {
+    setChatPhotoFolder('all');
+    setChatPhotoLightbox(null);
+  }, [activeChat?.id]);
 
   useEffect(() => {
     if (!combinedMembers.length) {
@@ -1328,6 +1348,10 @@ function ClubPage({ trip, onTripRefresh }) {
           </div>
 
           <div style={{ padding: 16, maxWidth: 1020, margin: '0 auto' }}>
+            <div style={{ background: '#FFF8E6', border: '1px solid #F4D79B', color: '#7A4B00', borderRadius: 12, padding: '10px 12px', fontSize: 12, lineHeight: 1.45, marginBottom: 12 }}>
+              Note: expenses of your original group members added here will be reflected and adjusted automatically in the main Split tab.
+              Keep adding expenses normally, and do not worry about settling twice.
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
               <div className="tb-float-card tb-pop-in" style={{ background: '#F4FBF8', border: '1px solid #DAF2E8', borderRadius: 14, padding: '10px 12px' }}>
                 <div style={{ fontSize: 11, color: '#0F6E56' }}>Total spent</div>
@@ -1591,16 +1615,68 @@ function ClubPage({ trip, onTripRefresh }) {
             {combinedPhotos.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '32px 0', color: '#667085' }}>No photos shared yet in the two trips.</div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(170px,1fr))', gap: 12 }}>
-                {combinedPhotos.map(photo => (
-                  <div key={`cp-${photo.id}`} style={{ position: 'relative' }}>
-                    <img src={photo.url} alt="combined trip" style={{ width: '100%', height: 190, borderRadius: 16, objectFit: 'cover' }} />
-                    <div style={{ position: 'absolute', left: 8, bottom: 8, fontSize: 10, fontWeight: 800, color: '#fff', background: 'rgba(3,10,24,0.55)', padding: '3px 7px', borderRadius: 999 }}>{photo.source}</div>
-                  </div>
-                ))}
-              </div>
+              <>
+                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 10 }}>
+                  {Object.keys(chatPhotoFolders).map((folderKey) => {
+                    const count = (chatPhotoFolders[folderKey] || []).length;
+                    const isActive = chatPhotoFolder === folderKey;
+                    return (
+                      <button
+                        key={`folder-${folderKey}`}
+                        onClick={() => setChatPhotoFolder(folderKey)}
+                        style={{
+                          ...S.btn,
+                          marginTop: 0,
+                          borderRadius: 999,
+                          padding: '7px 12px',
+                          whiteSpace: 'nowrap',
+                          background: isActive ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : '#fff',
+                          color: isActive ? '#fff' : '#475467',
+                          border: isActive ? '1px solid rgba(15,110,86,0.68)' : '1px solid rgba(10,18,35,0.12)',
+                        }}
+                      >
+                        {folderKey === 'all' ? 'All photos' : folderKey} ({count})
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
+                  {chatFolderPhotos.map((photo, index) => (
+                    <button
+                      key={`cp-${photo.id}-${index}`}
+                      onClick={() => setChatPhotoLightbox({ photos: chatFolderPhotos, index })}
+                      style={{ position: 'relative', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }}
+                    >
+                      <img src={photo.url} alt="combined trip" style={{ width: '100%', height: 170, borderRadius: 14, objectFit: 'cover', display: 'block' }} />
+                      <div style={{ position: 'absolute', left: 8, bottom: 8, fontSize: 10, fontWeight: 800, color: '#fff', background: 'rgba(3,10,24,0.58)', padding: '3px 7px', borderRadius: 999 }}>{photo.source}</div>
+                    </button>
+                  ))}
+                </div>
+              </>
             )}
           </div>
+
+          {chatPhotoLightbox && (
+            <div style={{ position: 'fixed', inset: 0, zIndex: 590, background: 'rgba(6,10,18,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+              <button onClick={() => setChatPhotoLightbox(null)} style={{ position: 'absolute', top: 14, right: 14, ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)' }}>Close</button>
+              <button
+                onClick={() => setChatPhotoLightbox((curr) => ({ ...curr, index: Math.max(0, curr.index - 1) }))}
+                disabled={chatPhotoLightbox.index === 0}
+                style={{ position: 'absolute', left: 14, ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)', opacity: chatPhotoLightbox.index === 0 ? 0.4 : 1 }}
+              >Prev</button>
+              <img
+                src={chatPhotoLightbox.photos[chatPhotoLightbox.index]?.url}
+                alt="lightbox"
+                style={{ maxWidth: '92vw', maxHeight: '82vh', borderRadius: 14, objectFit: 'contain', boxShadow: '0 20px 50px rgba(0,0,0,0.35)' }}
+              />
+              <button
+                onClick={() => setChatPhotoLightbox((curr) => ({ ...curr, index: Math.min(curr.photos.length - 1, curr.index + 1) }))}
+                disabled={chatPhotoLightbox.index >= chatPhotoLightbox.photos.length - 1}
+                style={{ position: 'absolute', right: 14, ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)', opacity: chatPhotoLightbox.index >= chatPhotoLightbox.photos.length - 1 ? 0.4 : 1 }}
+              >Next</button>
+            </div>
+          )}
         </div>
       )}
 

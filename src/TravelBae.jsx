@@ -728,18 +728,12 @@ export default function App() {
           <div style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
-            gap: 4,
-            padding: 4,
-            borderRadius: 14,
-            background: isSolo
-              ? 'linear-gradient(180deg, rgba(248,246,255,0.97), rgba(243,247,255,0.95))'
-              : 'linear-gradient(180deg, rgba(243,255,251,0.97), rgba(246,251,255,0.95))',
-            border: isSolo
-              ? '1px solid rgba(127,119,221,0.16)'
-              : '1px solid rgba(15,110,86,0.14)',
-            boxShadow: isSolo
-              ? '0 8px 20px rgba(83,74,183,0.1), inset 0 1px 0 rgba(255,255,255,0.85)'
-              : '0 8px 20px rgba(15,110,86,0.1), inset 0 1px 0 rgba(255,255,255,0.85)',
+            gap: 0,
+            width: '100%',
+            borderTop: isSolo ? '1px solid rgba(127,119,221,0.14)' : '1px solid rgba(15,110,86,0.12)',
+            borderBottom: isSolo ? '1px solid rgba(127,119,221,0.14)' : '1px solid rgba(15,110,86,0.12)',
+            background: isSolo ? 'rgba(247,245,255,0.62)' : 'rgba(244,251,248,0.62)',
+            backdropFilter: 'blur(8px)',
           }}>
             {tabs.map((t, idx) => {
               const isActive = tab === t.id;
@@ -755,6 +749,8 @@ export default function App() {
                     ...(isActive ? activeStyle : {}),
                     animationDelay: `${idx * 35}ms`,
                     position: 'relative',
+                    borderRadius: 0,
+                    borderLeft: idx > 0 ? (isSolo ? '1px solid rgba(127,119,221,0.12)' : '1px solid rgba(15,110,86,0.1)') : 'none',
                     boxShadow: isActive ? `0 8px 16px ${isSolo ? 'rgba(79,70,183,0.16)' : 'rgba(10,122,90,0.14)'}` : 'none',
                   }}
                 >
