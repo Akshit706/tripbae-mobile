@@ -217,10 +217,10 @@ function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
   root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(120% 85% at 0% 0%, #F9FDFF 0%, #EEF6F9 40%, #ECF1F7 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased', position: 'relative', overflowX: 'hidden' },
-  topBar: { background: 'rgba(255,255,255,0.62)', backdropFilter: 'blur(20px) saturate(1.2)', borderBottom: '1px solid rgba(255,255,255,0.46)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 1, boxShadow: '0 12px 28px rgba(9,20,40,0.09)' },
-  logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 700, letterSpacing: '-0.45px' },
-  tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(130deg,#E7FFF6,#E8F9F1)', border: '1px solid rgba(42,168,124,0.3)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#085041', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 20px rgba(23,127,94,0.12)' },
-  soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#F0EEFF,#EAF3FF)', border: '1px solid rgba(127,119,221,0.28)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#534AB7', fontWeight: 600, cursor: 'pointer', boxShadow: '0 8px 20px rgba(91,81,194,0.12)' },
+  topBar: { background: '#0D2B2E', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 1, boxShadow: '0 12px 28px rgba(6,16,23,0.35)' },
+  logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, letterSpacing: '-0.45px', color: '#fff' },
+  tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
+  soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
   navTabs: { background: 'rgba(255,255,255,0.42)', backdropFilter: 'blur(16px) saturate(1.08)', borderBottom: 'none', display: 'flex', padding: '8px 1rem 10px', overflowX: 'auto', gap: 8 },
   navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', fontSize: 12, fontWeight: 500, color: '#5D6A7B', cursor: 'pointer', background: 'rgba(255,255,255,0.56)', border: '1px solid rgba(23,37,84,0.08)', borderRadius: 999, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' },
   navTabActive: { color: '#0F6E56', background: 'linear-gradient(135deg,#E6FFF4,#F2FFFA)', border: '1px solid rgba(29,158,117,0.32)', fontWeight: 700 },
@@ -365,7 +365,7 @@ export default function App() {
   };
 
   const handleDeleteAccount = async () => {
-    const first = window.confirm('Delete your TravelBae account?\n\nThis permanently removes your profile, trip memberships, and any trips where you were the only member (along with their expenses, contacts, photos and itinerary).\n\nThis cannot be undone.');
+    const first = window.confirm('Delete your TripBae account?\n\nThis permanently removes your profile, trip memberships, and any trips where you were the only member (along with their expenses, contacts, photos and itinerary).\n\nThis cannot be undone.');
     if (!first) return;
     const typed = window.prompt('Type DELETE to confirm permanent account deletion.');
     if (typed !== 'DELETE') return;
@@ -595,8 +595,8 @@ export default function App() {
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{ width: 68, height: 68, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 33, margin: '0 auto 12px', boxShadow: '0 14px 30px rgba(15,110,86,0.28)' }}>✈️</div>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 700 }}>Travel<span style={{ color: '#1D9E75' }}>Bae</span></div>
-          <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4 }}>Plan, split, explore — together.</div>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 800 }}>Trip<span style={{ color: '#FF6B35' }}>bae</span></div>
+          <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4 }}>Plan less. Experience more.</div>
           <div style={{ fontSize: 11.5, color: '#8d8c87', marginTop: 7 }}>A calmer way to travel with friends.</div>
         </div>
         <div style={{ background: 'linear-gradient(180deg,rgba(255,255,255,0.97),rgba(255,255,255,0.91))', backdropFilter: 'blur(12px)', borderRadius: 22, padding: '1.75rem', boxShadow: '0 26px 60px rgba(0,0,0,0.14)', border: '0.5px solid rgba(0,0,0,0.08)', animation: 'tbModalIn .5s cubic-bezier(.2,.7,.2,1)' }}>
@@ -688,10 +688,10 @@ export default function App() {
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0' }}>
           {activeTrip && <button style={{ ...S.btn, padding: '5px 8px', marginRight: 2, fontSize: 16 }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>←</button>}
-          <div style={{ width: 34, height: 34, background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
+          <div style={{ width: 34, height: 34, background: isSolo ? 'linear-gradient(135deg,#4A2C8A,#2D1B69)' : 'linear-gradient(135deg,#0D2B2E,#134E4A)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
             {isSolo ? '🎒' : '✈️'}
           </div>
-          <div style={S.logoText}>Travel<span style={{ color: isSolo ? '#7F77DD' : '#1D9E75' }}>Bae</span></div>
+          <div style={S.logoText}>Trip<span style={{ color: '#FF6B35' }}>bae</span></div>
         </div>
         {activeTrip && activeTripData ? (
           /* Top-bar pill with trip name + inline Mark Complete / Delete actions */
@@ -716,8 +716,8 @@ export default function App() {
           </div>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
-            <div style={S.tripPill}>🏠 My Trips</div>
-            <button style={{ ...S.btn, fontSize: 12, padding: '5px 10px', color: '#993C1D', borderColor: '#F5C4B3' }} onClick={handleLogout}>Log out</button>
+            <div style={{ ...S.tripPill, color: '#fff', borderColor: 'rgba(246,201,122,0.55)', background: 'rgba(246,201,122,0.09)' }}>🏠 My Trips</div>
+            <button style={{ ...S.btn, fontSize: 12, padding: '5px 10px', color: '#F2F4F5', borderColor: 'rgba(255,255,255,0.35)', background: 'transparent', boxShadow: 'none' }} onClick={handleLogout}>Log out</button>
           </div>
         )}
       </div>
