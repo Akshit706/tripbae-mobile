@@ -263,8 +263,23 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes progressFill { from{width:0} to{width:var(--w)} }
+        @keyframes tbPlaneArc {
+          0% { transform: translate(-14%, 86%) rotate(-20deg); }
+          45% { transform: translate(46%, 12%) rotate(4deg); }
+          100% { transform: translate(115%, -34%) rotate(16deg); }
+        }
+        @keyframes tbTrailPulse { 0%,100%{opacity:.08} 50%{opacity:.2} }
+        @keyframes tbPinPulse { 0%,100%{transform:scale(1);opacity:.11} 50%{transform:scale(1.16);opacity:.18} }
         .tb-hero-title { animation: fadeUp 0.5s ease both; animation-delay: 0.05s; }
         .tb-hero-greet { animation: fadeUp 0.4s ease both; }
+        .tb-hero-ambient { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
+        .tb-hero-trails { position:absolute; inset:0; width:100%; height:100%; animation: tbTrailPulse 6.2s ease-in-out infinite; }
+        .tb-hero-trails path { stroke:#0F6E56; stroke-width:1.25; fill:none; stroke-linecap:round; stroke-dasharray:4 6; opacity:.18; }
+        .tb-hero-plane { position:absolute; left:-26px; bottom:-20px; width:21px; height:21px; opacity:.18; animation: tbPlaneArc 14s linear infinite; }
+        .tb-hero-pin { position:absolute; width:12px; height:12px; opacity:.14; animation: tbPinPulse 5.4s ease-in-out infinite; }
+        .tb-hero-pin.pin-1 { left:16%; top:20%; }
+        .tb-hero-pin.pin-2 { left:62%; top:10%; animation-delay:1.4s; }
+        .tb-hero-pin.pin-3 { left:78%; top:34%; animation-delay:2.1s; }
         .tb-trip-card-new {
           border-radius: 26px; margin-bottom: 16px; overflow: hidden; position: relative;
           cursor: pointer; will-change: transform; transform: translateZ(0);
@@ -309,27 +324,50 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Hero Section */}
-      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'center' }}>
-        <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
-          Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
+      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'center', overflow: 'hidden' }}>
+        <div className="tb-hero-ambient" aria-hidden="true">
+          <svg className="tb-hero-trails" viewBox="0 0 420 210" preserveAspectRatio="none">
+            <path d="M8 192 Q86 134 188 118 T404 14" />
+            <path d="M18 198 Q98 146 202 126 T408 26" style={{ opacity: 0.12 }} />
+            <path d="M28 204 Q112 160 222 142 T414 42" style={{ opacity: 0.1 }} />
+            <path d="M36 186 Q124 124 236 104 T418 6" style={{ opacity: 0.09 }} />
+          </svg>
+          <svg className="tb-hero-plane" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M3 11.7L20.7 3.2C21.3 2.9 22 3.5 21.7 4.1L13.2 21.8C12.9 22.4 12 22.3 11.9 21.6L10.6 14.8L3.8 13.5C3.1 13.4 3 12 3.7 11.7Z" fill="#FF6B35"/>
+            <path d="M10.6 14.8L14.9 10.5" stroke="#FFFFFF" strokeWidth="1.3" strokeLinecap="round"/>
+          </svg>
+          <svg className="tb-hero-pin pin-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#0F6E56" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/>
+          </svg>
+          <svg className="tb-hero-pin pin-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#0F6E56" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/>
+          </svg>
+          <svg className="tb-hero-pin pin-3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#0F6E56" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/>
+          </svg>
         </div>
-        <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 39, fontWeight: 800, lineHeight: 1.06, marginBottom: 8, textAlign: 'center' }}>
-          <div style={{ color: '#0D2B2E' }}>Where to</div>
-          <div style={{ color: '#1D9E75' }}>next?</div>
-        </div>
-        <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 14, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'center' }}>Plan less. Experience more.</div>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
-          <button
-            className="tb-new-btn"
-            style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 14, padding: '13px 24px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)', flex: 1, justifyContent: 'center' }}
-            onClick={() => { setShowCreate(true); setShowJoin(false); }}>
-            + New Trip
-          </button>
-          <button
-            style={{ ...S.btn, background: 'rgba(255,255,255,0.96)', color: '#1f2937', border: '1px solid rgba(15,23,42,0.15)', boxShadow: '0 4px 14px rgba(15,23,42,0.06)', fontSize: 14, fontWeight: 700, padding: '13px 24px', borderRadius: 999, flex: 1, justifyContent: 'center' }}
-            onClick={() => { setShowJoin(true); setShowCreate(false); }}>
-            Join with Code
-          </button>
+        <div style={{ position: 'relative', zIndex: 2 }}>
+          <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
+            Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
+          </div>
+          <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 39, fontWeight: 800, lineHeight: 1.06, marginBottom: 8, textAlign: 'center' }}>
+            <div style={{ color: '#0D2B2E' }}>Where to</div>
+            <div style={{ color: '#1D9E75' }}>next?</div>
+          </div>
+          <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 14, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'center' }}>Plan less. Experience more.</div>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
+            <button
+              className="tb-new-btn"
+              style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 14, padding: '13px 24px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)', flex: 1, justifyContent: 'center' }}
+              onClick={() => { setShowCreate(true); setShowJoin(false); }}>
+              + New Trip
+            </button>
+            <button
+              style={{ ...S.btn, background: 'rgba(255,255,255,0.96)', color: '#1f2937', border: '1px solid rgba(15,23,42,0.15)', boxShadow: '0 4px 14px rgba(15,23,42,0.06)', fontSize: 14, fontWeight: 700, padding: '13px 24px', borderRadius: 999, flex: 1, justifyContent: 'center' }}
+              onClick={() => { setShowJoin(true); setShowCreate(false); }}>
+              Join with Code
+            </button>
+          </div>
         </div>
       </div>
 
