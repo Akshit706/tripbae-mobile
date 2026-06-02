@@ -660,6 +660,20 @@ export default function App() {
         @keyframes tbCardIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes tbBlobDrift{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(-18px,14px,0)}100%{transform:translate3d(0,0,0)}}
         @keyframes tbGlowPulse{0%{opacity:.65}50%{opacity:1}100%{opacity:.65}}
+        @keyframes tbBgPlaneFlyA{0%{transform:translate(0,0) rotate(-18deg)}50%{transform:translate(42vw,-20vh) rotate(4deg)}100%{transform:translate(85vw,-38vh) rotate(15deg)}}
+        @keyframes tbBgPlaneFlyB{0%{transform:translate(0,0) rotate(-12deg)}55%{transform:translate(38vw,-22vh) rotate(6deg)}100%{transform:translate(78vw,-42vh) rotate(13deg)}}
+        @keyframes tbBgTrailPulse{0%,100%{opacity:.1}50%{opacity:.26}}
+        @keyframes tbBgPinPulse{0%,100%{transform:scale(1);opacity:.08}50%{transform:scale(1.12);opacity:.16}}
+        .tb-bg-ambient{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+        .tb-bg-trails{position:absolute;inset:0;width:100%;height:100%;animation:tbBgTrailPulse 7s ease-in-out infinite}
+        .tb-bg-trails path{stroke:#98A2B3;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-dasharray:5 7;opacity:.24}
+        .tb-bg-plane{position:absolute;width:22px;height:22px;opacity:.22;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}
+        .tb-bg-plane.a{left:-6vw;bottom:18vh;animation:tbBgPlaneFlyA 18s linear infinite}
+        .tb-bg-plane.b{left:-10vw;bottom:52vh;animation:tbBgPlaneFlyB 22s linear infinite;animation-delay:5s}
+        .tb-bg-pin{position:absolute;width:12px;height:12px;opacity:.1;animation:tbBgPinPulse 6s ease-in-out infinite}
+        .tb-bg-pin.p1{left:18%;top:20%}
+        .tb-bg-pin.p2{left:72%;top:28%;animation-delay:1.6s}
+        .tb-bg-pin.p3{left:44%;top:66%;animation-delay:2.4s}
         *{box-sizing:border-box;margin:0;padding:0}
         a{color:inherit;text-decoration:none}
         ::selection{background:#c7eedf;color:#053f31}
@@ -667,6 +681,26 @@ export default function App() {
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1D9E75;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
         input:focus, select:focus, textarea:focus { border-color:#1D9E75 !important; box-shadow:0 0 0 3px rgba(29,158,117,0.14) !important; }
       `}</style>
+
+      <div className="tb-bg-ambient" aria-hidden="true">
+        <svg className="tb-bg-trails" viewBox="0 0 1200 900" preserveAspectRatio="none">
+          <path d="M-40 760 Q220 600 470 540 T1240 220" />
+          <path d="M-120 520 Q180 360 460 300 T1220 10" style={{ opacity: 0.17 }} />
+          <path d="M-30 880 Q260 700 540 620 T1280 300" style={{ opacity: 0.14 }} />
+          <path d="M-80 680 Q180 500 440 420 T1180 160" style={{ opacity: 0.12 }} />
+        </svg>
+        <svg className="tb-bg-plane a" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#FF6B35" d="M3 11.7L20.7 3.2C21.3 2.9 22 3.5 21.7 4.1L13.2 21.8C12.9 22.4 12 22.3 11.9 21.6L10.6 14.8L3.8 13.5C3.1 13.4 3 12 3.7 11.7Z"/>
+          <path d="M10.6 14.8L14.9 10.5" stroke="#fff" strokeWidth="1.3" strokeLinecap="round"/>
+        </svg>
+        <svg className="tb-bg-plane b" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#FF6B35" d="M3 11.7L20.7 3.2C21.3 2.9 22 3.5 21.7 4.1L13.2 21.8C12.9 22.4 12 22.3 11.9 21.6L10.6 14.8L3.8 13.5C3.1 13.4 3 12 3.7 11.7Z"/>
+          <path d="M10.6 14.8L14.9 10.5" stroke="#fff" strokeWidth="1.3" strokeLinecap="round"/>
+        </svg>
+        <svg className="tb-bg-pin p1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#667085" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/></svg>
+        <svg className="tb-bg-pin p2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#667085" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/></svg>
+        <svg className="tb-bg-pin p3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#667085" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/></svg>
+      </div>
 
       {newTripModal && <ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
 

@@ -263,23 +263,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes progressFill { from{width:0} to{width:var(--w)} }
-        @keyframes tbPlaneArc {
-          0% { transform: translate(0px, 0px) rotate(-16deg); }
-          50% { transform: translate(170px, -88px) rotate(2deg); }
-          100% { transform: translate(320px, -152px) rotate(14deg); }
-        }
-        @keyframes tbTrailPulse { 0%,100%{opacity:.16} 50%{opacity:.3} }
-        @keyframes tbPinPulse { 0%,100%{transform:scale(1);opacity:.14} 50%{transform:scale(1.14);opacity:.24} }
         .tb-hero-title { animation: fadeUp 0.5s ease both; animation-delay: 0.05s; }
         .tb-hero-greet { animation: fadeUp 0.4s ease both; }
-        .tb-hero-ambient { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
-        .tb-hero-trails { position:absolute; inset:0; width:100%; height:100%; animation: tbTrailPulse 6.2s ease-in-out infinite; }
-        .tb-hero-trails path { stroke:#98A2B3; stroke-width:1.6; fill:none; stroke-linecap:round; stroke-dasharray:4 6; opacity:.34; }
-        .tb-hero-plane { position:absolute; left:6%; bottom:20px; font-size:22px; line-height:1; opacity:.5; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12)); animation: tbPlaneArc 10s linear infinite; }
-        .tb-hero-pin { position:absolute; width:12px; height:12px; opacity:.18; animation: tbPinPulse 5.4s ease-in-out infinite; }
-        .tb-hero-pin.pin-1 { left:16%; top:20%; }
-        .tb-hero-pin.pin-2 { left:62%; top:10%; animation-delay:1.4s; }
-        .tb-hero-pin.pin-3 { left:78%; top:34%; animation-delay:2.1s; }
         .tb-trip-card-new {
           border-radius: 26px; margin-bottom: 16px; overflow: hidden; position: relative;
           cursor: pointer; will-change: transform; transform: translateZ(0);
@@ -324,25 +309,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Hero Section */}
-      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'center', overflow: 'hidden' }}>
-        <div className="tb-hero-ambient" aria-hidden="true">
-          <svg className="tb-hero-trails" viewBox="0 0 420 210" preserveAspectRatio="none">
-            <path d="M8 192 Q86 134 188 118 T404 14" />
-            <path d="M18 198 Q98 146 202 126 T408 26" style={{ opacity: 0.2 }} />
-            <path d="M28 204 Q112 160 222 142 T414 42" style={{ opacity: 0.16 }} />
-            <path d="M36 186 Q124 124 236 104 T418 6" style={{ opacity: 0.14 }} />
-          </svg>
-          <div className="tb-hero-plane">✈️</div>
-          <svg className="tb-hero-pin pin-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#667085" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/>
-          </svg>
-          <svg className="tb-hero-pin pin-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#667085" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/>
-          </svg>
-          <svg className="tb-hero-pin pin-3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path fill="#667085" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/>
-          </svg>
-        </div>
+      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'center' }}>
         <div style={{ position: 'relative', zIndex: 2 }}>
           <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
             Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
