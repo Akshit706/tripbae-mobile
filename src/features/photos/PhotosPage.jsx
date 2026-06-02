@@ -189,18 +189,18 @@ function PhotosPage({ trip, myNickname }) {
     }
     .ft:hover .fi { border-color:rgba(255,255,255,0.14); transform:translateY(-2px); }
     .ft.active .fi {
-      background:linear-gradient(135deg,#1D9E75,#0f6e56);
-      border-color:rgba(29,158,117,0.5);
+      background:linear-gradient(135deg,#0F6E56,#0F6E56);
+      border-color:rgba(15,110,86,0.5);
       color:#fff;
-      box-shadow:0 6px 24px rgba(29,158,117,0.3);
+      box-shadow:0 6px 24px rgba(15,110,86,0.3);
       transform:translateY(-2px);
     }
     .ft.mine .fi { background:linear-gradient(135deg,#1e1e23,#161619); }
-    .ft.mine.active .fi { background:linear-gradient(135deg,#1D9E75,#0f6e56); }
+    .ft.mine.active .fi { background:linear-gradient(135deg,#0F6E56,#0F6E56); }
 
     .fc {
       position:absolute; top:-6px; right:-6px;
-      background:#1D9E75; color:#fff; font-size:9px; font-weight:700;
+      background:#0F6E56; color:#fff; font-size:9px; font-weight:700;
       min-width:18px; height:18px; border-radius:9px;
       display:flex; align-items:center; justify-content:center;
       padding:0 4px; border:2px solid #0c0c0f;
@@ -215,20 +215,20 @@ function PhotosPage({ trip, myNickname }) {
     /* ── section header ── */
     .sh { display:flex; align-items:baseline; gap:10px; padding:1.25rem 1.25rem 1rem; }
     .st { font-family:'DM Serif Display',serif; font-size:24px; color:#e2e0da; margin:0; line-height:1; }
-    .st em { font-style:italic; color:#1D9E75; }
+    .st em { font-style:italic; color:#0F6E56; }
     .ss { font-size:11px; color:#4a4845; letter-spacing:.3px; }
 
     /* ── privacy notice ── */
     .pn {
       display:flex; align-items:center; gap:10px;
       margin:0 1.25rem 1rem; padding:10px 14px;
-      background:linear-gradient(135deg,rgba(29,158,117,0.08),rgba(29,158,117,0.03));
-      border:1px solid rgba(29,158,117,0.18);
+      background:linear-gradient(135deg,rgba(15,110,86,0.08),rgba(15,110,86,0.03));
+      border:1px solid rgba(15,110,86,0.18);
       border-radius:12px;
-      font-size:11.5px; color:#9ec9b9; letter-spacing:.2px; line-height:1.45;
+      font-size:11.5px; color:#0F6E56; letter-spacing:.2px; line-height:1.45;
     }
     .pn-ic { font-size:15px; flex-shrink:0; }
-    .pn strong { color:#1D9E75; font-weight:600; }
+    .pn strong { color:#0F6E56; font-weight:600; }
 
     /* ── upload zone ── */
     .uz {
@@ -240,8 +240,8 @@ function PhotosPage({ trip, myNickname }) {
       background:#141418;
       border:1.5px dashed rgba(255,255,255,0.1);
     }
-    .uz:hover { border-color:rgba(29,158,117,0.5); background:#161a18; }
-    .uz.drag { border-color:#1D9E75; background:#0f1a16; box-shadow:0 0 40px rgba(29,158,117,0.1); }
+    .uz:hover { border-color:rgba(15,110,86,0.5); background:#161a18; }
+    .uz.drag { border-color:#0F6E56; background:#0f1a16; box-shadow:0 0 40px rgba(15,110,86,0.1); }
 
     .ui { font-size:40px; margin-bottom:12px; display:block; animation:bob 3s ease-in-out infinite; }
     @keyframes bob { 0%,100%{transform:translateY(0) rotate(-3deg)} 50%{transform:translateY(-6px) rotate(3deg)} }
@@ -251,8 +251,8 @@ function PhotosPage({ trip, myNickname }) {
 
     .ubadge {
       display:inline-flex; align-items:center; gap:6px;
-      background:rgba(29,158,117,0.1); border:1px solid rgba(29,158,117,0.2);
-      color:#1D9E75; font-size:11px; font-weight:600;
+      background:rgba(15,110,86,0.1); border:1px solid rgba(15,110,86,0.2);
+      color:#0F6E56; font-size:11px; font-weight:600;
       padding:4px 12px; border-radius:99px; margin-top:12px; letter-spacing:.2px;
     }
 
@@ -264,12 +264,12 @@ function PhotosPage({ trip, myNickname }) {
       z-index:10;
     }
     .upl-spin {
-      width:32px; height:32px; border:3px solid rgba(29,158,117,0.2);
-      border-top-color:#1D9E75; border-radius:50%;
+      width:32px; height:32px; border:3px solid rgba(15,110,86,0.2);
+      border-top-color:#0F6E56; border-radius:50%;
       animation:spin .7s linear infinite;
     }
     @keyframes spin { to{transform:rotate(360deg)} }
-    .upl-text { font-size:12px; color:#1D9E75; font-weight:600; }
+    .upl-text { font-size:12px; color:#0F6E56; font-weight:600; }
 
     /* ── view banner ── */
     .vb {
@@ -303,7 +303,7 @@ function PhotosPage({ trip, myNickname }) {
       background:#1c1c20;
     }
     .pc:hover { transform:scale(1.02); box-shadow:0 10px 30px rgba(0,0,0,0.6); }
-    .pc.sel { border-color:#1D9E75; box-shadow:0 0 0 2px rgba(29,158,117,0.3); }
+    .pc.sel { border-color:#0F6E56; box-shadow:0 0 0 2px rgba(15,110,86,0.3); }
 
     .pc img { width:100%; height:100%; object-fit:cover; display:block; transition:filter .2s; }
     .pc:hover img { filter:brightness(.8); }
@@ -317,7 +317,7 @@ function PhotosPage({ trip, myNickname }) {
       font-size:11px; color:#fff; transition:all .15s; z-index:3;
       backdrop-filter:blur(4px);
     }
-    .pc.sel .pck { background:#1D9E75; border-color:#1D9E75; }
+    .pc.sel .pck { background:#0F6E56; border-color:#0F6E56; }
 
     /* expand — hover only */
     .pex {
@@ -381,13 +381,13 @@ function PhotosPage({ trip, myNickname }) {
     .bgh:hover { background:rgba(255,255,255,0.1); color:#e2e0da; }
 
     .bpr {
-      background:linear-gradient(135deg,#1D9E75,#0f6e56); border:none;
+      background:linear-gradient(135deg,#0F6E56,#0F6E56); border:none;
       color:#fff; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:600;
       padding:9px 18px; border-radius:10px; cursor:pointer;
-      transition:all .15s; box-shadow:0 4px 16px rgba(29,158,117,0.35);
+      transition:all .15s; box-shadow:0 4px 16px rgba(15,110,86,0.35);
       display:flex; align-items:center; gap:7px;
     }
-    .bpr:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(29,158,117,0.45); }
+    .bpr:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(15,110,86,0.45); }
 
     /* NEW: red delete button in action bar */
     .bdel {
@@ -546,7 +546,7 @@ function PhotosPage({ trip, myNickname }) {
               <div className="upl-spin" />
               <div className="upl-text">Uploading… {uploadProgress}%</div>
               <div style={{ width: '60%', height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${uploadProgress}%`, background: '#1D9E75', borderRadius: 4, transition: 'width .3s' }} />
+                <div style={{ height: '100%', width: `${uploadProgress}%`, background: '#0F6E56', borderRadius: 4, transition: 'width .3s' }} />
               </div>
             </div>
           )}

@@ -38,11 +38,11 @@ const initialFilters = {
 function moodGradient(vibe) {
   switch (vibe) {
     case 'party': return 'linear-gradient(135deg,#FF6A3D,#FF2F6E 55%,#7D2AE8)';
-    case 'adventure': return 'linear-gradient(135deg,#0DAA8B,#0C7D6A 55%,#0F4B86)';
+    case 'adventure': return 'linear-gradient(135deg,#0F6E56,#0F6E56 55%,#0F4B86)';
     case 'foodie': return 'linear-gradient(135deg,#FF7B33,#F04D2F 55%,#A42D3C)';
     case 'culture': return 'linear-gradient(135deg,#7A5AF8,#5E3CE6 55%,#2D2A78)';
     case 'chill': return 'linear-gradient(135deg,#4FB5FF,#2E8DE0 55%,#3762E2)';
-    default: return 'linear-gradient(135deg,#2D7C6D,#1E5F53 55%,#234B9B)';
+    default: return 'linear-gradient(135deg,#0F6E56,#0F6E56 55%,#234B9B)';
   }
 }
 
@@ -1155,7 +1155,7 @@ function ClubPage({ trip, onTripRefresh }) {
         }
       `}</style>
 
-      <div style={{ position: 'relative', background: trip.isSolo ? 'linear-gradient(132deg,#5E46E7,#3F2CA1 52%,#281D72)' : 'linear-gradient(132deg,#0A7A61,#0A4F40 52%,#123D72)', borderRadius: 26, padding: '1.15rem 1rem 1rem', marginBottom: '1rem', color: '#fff', overflow: 'hidden', boxShadow: '0 24px 60px rgba(8,18,35,0.25)' }}>
+      <div style={{ position: 'relative', background: trip.isSolo ? 'linear-gradient(132deg,#5E46E7,#3F2CA1 52%,#281D72)' : 'linear-gradient(132deg,#0A7A61,#0F6E56 52%,#123D72)', borderRadius: 26, padding: '1.15rem 1rem 1rem', marginBottom: '1rem', color: '#fff', overflow: 'hidden', boxShadow: '0 24px 60px rgba(8,18,35,0.25)' }}>
         <div style={{ position: 'absolute', top: -44, right: -50, width: 170, height: 170, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.22), rgba(255,255,255,0))' }} />
         <div style={{ position: 'absolute', bottom: -60, left: -35, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.16), rgba(255,255,255,0))' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
@@ -1183,7 +1183,7 @@ function ClubPage({ trip, onTripRefresh }) {
                   setSelectedChatId(null);
                 }
               }}
-              style={{ ...S.btn, marginTop: 0, border: 'none', fontSize: 12, background: clubView === tab ? '#fff' : 'rgba(255,255,255,0.14)', color: clubView === tab ? '#0B4D3D' : '#fff', fontWeight: 700, borderRadius: 999, padding: '8px 14px', boxShadow: clubView === tab ? '0 8px 24px rgba(12,22,45,0.2)' : 'none' }}
+              style={{ ...S.btn, marginTop: 0, border: 'none', fontSize: 12, background: clubView === tab ? '#fff' : 'rgba(255,255,255,0.14)', color: clubView === tab ? '#0F6E56' : '#fff', fontWeight: 700, borderRadius: 999, padding: '8px 14px', boxShadow: clubView === tab ? '0 8px 24px rgba(12,22,45,0.2)' : 'none' }}
             >
               {tab === 'requests' ? `Requests (${hub.incomingRequests.length})` : tab === 'profile' ? 'Edit Profile' : tab === 'chats' ? `Chats (${hub.chats?.length || 0})` : 'Discover'}
               {tab === 'chats' && hasUnreadChats ? (
@@ -1269,7 +1269,7 @@ function ClubPage({ trip, onTripRefresh }) {
                         locDebounce.current = setTimeout(() => searchLocality(e.target.value), 340);
                       }}
                     />
-                    {locSearching && <div style={{ width: 16, height: 16, border: '2px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', flexShrink: 0 }} />}
+                    {locSearching && <div style={{ width: 16, height: 16, border: '2px solid #0F6E56', borderTopColor: '#0F6E56', borderRadius: '50%', animation: 'spin .75s linear infinite', flexShrink: 0 }} />}
                   </div>
                   {locSuggestions.length > 0 && (
                     <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', background: '#fff', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 50, overflow: 'hidden', marginTop: 4 }}>
@@ -1358,12 +1358,12 @@ function ClubPage({ trip, onTripRefresh }) {
                         style={{
                           width: '100%',
                           textAlign: 'left',
-                          border: unread ? '1px solid rgba(23,127,94,0.28)' : '1px solid rgba(10,18,35,0.07)',
-                          background: unread ? 'linear-gradient(180deg,#F2FFF8,#FFFFFF)' : 'linear-gradient(180deg,#FFFFFF,#F8FBFF)',
+                          border: unread ? '1px solid rgba(15,110,86,0.28)' : '1px solid rgba(10,18,35,0.07)',
+                          background: unread ? 'linear-gradient(180deg,#0F6E56,#FFFFFF)' : 'linear-gradient(180deg,#FFFFFF,#F8FBFF)',
                           borderRadius: 18,
                           padding: 12,
                           cursor: 'pointer',
-                          boxShadow: unread ? '0 12px 24px rgba(23,127,94,0.12)' : '0 8px 20px rgba(15,23,42,0.05)',
+                          boxShadow: unread ? '0 12px 24px rgba(15,110,86,0.12)' : '0 8px 20px rgba(15,23,42,0.05)',
                         }}>
                         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                           {avatar ? (
@@ -1379,8 +1379,8 @@ function ClubPage({ trip, onTripRefresh }) {
                               <div style={{ fontSize: 10, color: '#8A94A6', flexShrink: 0 }}>{formatChatMetaTime(chat.latestMessage?.createdAt)}</div>
                             </div>
                             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
-                              <div style={{ fontSize: 11, color: unread ? '#1E7B5E' : '#6B7280', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: unread ? 700 : 500 }}>{preview}</div>
-                              {unread ? <span style={{ minWidth: 18, height: 18, borderRadius: 9, background: '#1D9E75', color: '#fff', fontSize: 10, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>1</span> : null}
+                              <div style={{ fontSize: 11, color: unread ? '#0F6E56' : '#6B7280', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: unread ? 700 : 500 }}>{preview}</div>
+                              {unread ? <span style={{ minWidth: 18, height: 18, borderRadius: 9, background: '#0F6E56', color: '#fff', fontSize: 10, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>1</span> : null}
                             </div>
                           </div>
                         </div>
@@ -1395,7 +1395,7 @@ function ClubPage({ trip, onTripRefresh }) {
       )}
 
       {clubView === 'chats' && activeChat && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 545, background: 'linear-gradient(180deg,#ECF6F4,#F4F9FF 68%,#FFFFFF)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 545, background: 'linear-gradient(180deg,#0F6E56,#F4F9FF 68%,#FFFFFF)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: '10px 12px', paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))', borderBottom: '1px solid rgba(10,18,35,0.08)', background: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
               <button style={{ ...S.btn, marginTop: 0, padding: '8px 11px', borderRadius: 12 }} onClick={() => setSelectedChatId(null)}>←</button>
@@ -1415,7 +1415,7 @@ function ClubPage({ trip, onTripRefresh }) {
               const mine = message.senderTripId === trip.id;
               return (
                 <div key={message.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-                  <div style={{ maxWidth: '82%', background: mine ? 'linear-gradient(150deg,#0F172A,#1E293B)' : 'linear-gradient(150deg,#FFFFFF,#EEF7F3)', color: mine ? '#fff' : '#0B3B2E', borderRadius: 20, padding: '10px 12px', boxShadow: mine ? '0 14px 24px rgba(15,23,42,0.2)' : '0 8px 18px rgba(11,59,46,0.08)' }}>
+                  <div style={{ maxWidth: '82%', background: mine ? 'linear-gradient(150deg,#0F172A,#1E293B)' : 'linear-gradient(150deg,#FFFFFF,#0F6E56)', color: mine ? '#fff' : '#0F6E56', borderRadius: 20, padding: '10px 12px', boxShadow: mine ? '0 14px 24px rgba(15,23,42,0.2)' : '0 8px 18px rgba(15,110,86,0.08)' }}>
                     <div style={{ fontSize: 10, fontWeight: 800, opacity: mine ? 0.76 : 0.7, textTransform: 'uppercase', letterSpacing: '.05em' }}>
                       {mine ? 'Your group' : message.senderUser?.name || activeChat.otherTrip?.groupName}
                     </div>
@@ -1490,7 +1490,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
       {toolScreenOpen && activeChat && chatTool === 'split' && (
         <div className="tb-animated-screen" style={{ position: 'fixed', inset: 0, zIndex: 570, background: '#fff', overflowY: 'auto' }}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: 18, paddingTop: 'calc(18px + env(safe-area-inset-top, 0px))', background: 'linear-gradient(135deg,#0F172A,#134E4A)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: 18, paddingTop: 'calc(18px + env(safe-area-inset-top, 0px))', background: 'linear-gradient(135deg,#0F172A,#0F6E56)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
             <div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>Split</div>
               <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>{combinedMembers.length} combined members, one shared wallet view</div>
@@ -1504,9 +1504,9 @@ function ClubPage({ trip, onTripRefresh }) {
               Keep adding expenses normally, and do not worry about settling twice.
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 12 }}>
-              <div className="tb-float-card tb-pop-in" style={{ background: '#F4FBF8', border: '1px solid #DAF2E8', borderRadius: 14, padding: '10px 12px' }}>
+              <div className="tb-float-card tb-pop-in" style={{ background: '#0F6E56', border: '1px solid #0F6E56', borderRadius: 14, padding: '10px 12px' }}>
                 <div style={{ fontSize: 11, color: '#0F6E56' }}>Total spent</div>
-                <div className="tb-amount-pop" style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0C3B31' }}>
+                <div className="tb-amount-pop" style={{ marginTop: 4, fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0F6E56' }}>
                   ₹{Math.round(splitEntries.reduce((sum, entry) => sum + (Number(entry.amount) || 0), 0)).toLocaleString('en-IN')}
                 </div>
               </div>
@@ -1542,7 +1542,7 @@ function ClubPage({ trip, onTripRefresh }) {
                 <button
                   key={`split-section-${section.id}`}
                   onClick={() => setSplitSection(section.id)}
-                  style={{ flex: 1, border: 'none', background: splitSection === section.id ? '#1D9E75' : 'transparent', color: splitSection === section.id ? '#fff' : '#475467', borderRadius: 9, padding: '8px 6px', fontSize: 12, fontWeight: splitSection === section.id ? 700 : 600, cursor: 'pointer' }}
+                  style={{ flex: 1, border: 'none', background: splitSection === section.id ? '#0F6E56' : 'transparent', color: splitSection === section.id ? '#fff' : '#475467', borderRadius: 9, padding: '8px 6px', fontSize: 12, fontWeight: splitSection === section.id ? 700 : 600, cursor: 'pointer' }}
                 >
                   {section.label}
                 </button>
@@ -1641,7 +1641,7 @@ function ClubPage({ trip, onTripRefresh }) {
                 <div style={{ marginTop: 2 }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: '#667085', marginBottom: 7, textTransform: 'uppercase', letterSpacing: '.04em' }}>Who pays whom</div>
                   {splitSettlements.length === 0 ? (
-                    <div style={{ background: '#E1F5EE', border: '1px solid #9FE1CB', borderRadius: 12, padding: 12, color: '#085041', fontSize: 13, fontWeight: 600 }}>Everyone is settled.</div>
+                    <div style={{ background: '#0F6E56', border: '1px solid #0F6E56', borderRadius: 12, padding: 12, color: '#0F6E56', fontSize: 13, fontWeight: 600 }}>Everyone is settled.</div>
                   ) : (
                     <div style={{ display: 'grid', gap: 8 }}>
                       {splitSettlements.map((settlement, index) => {
@@ -1667,7 +1667,7 @@ function ClubPage({ trip, onTripRefresh }) {
                   const positive = balance > 0.5;
                   const negative = balance < -0.5;
                   return (
-                    <div key={`balance-card-${member.id}`} style={{ background: '#fff', border: '1px solid rgba(10,18,35,0.08)', borderTop: `3px solid ${positive ? '#1D9E75' : negative ? '#D85A30' : '#D0D5DD'}`, borderRadius: '0 0 14px 14px', padding: 12 }}>
+                    <div key={`balance-card-${member.id}`} style={{ background: '#fff', border: '1px solid rgba(10,18,35,0.08)', borderTop: `3px solid ${positive ? '#0F6E56' : negative ? '#D85A30' : '#D0D5DD'}`, borderRadius: '0 0 14px 14px', padding: 12 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#111827' }}>{member.nickname}</div>
                       <div style={{ marginTop: 8, fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 20, color: positive ? '#0F6E56' : negative ? '#B42318' : '#475467' }}>
                         {positive ? '+' : ''}₹{Math.round(Math.abs(balance)).toLocaleString('en-IN')}
@@ -1684,7 +1684,7 @@ function ClubPage({ trip, onTripRefresh }) {
             <button
               className="tb-fab-pop"
               onClick={() => setSplitFormOpen(true)}
-              style={{ position: 'fixed', right: 18, bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))', width: 58, height: 58, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', color: '#fff', fontSize: 29, cursor: 'pointer', boxShadow: '0 10px 28px rgba(15,110,86,0.45)', zIndex: 575 }}
+              style={{ position: 'fixed', right: 18, bottom: 'calc(18px + env(safe-area-inset-bottom, 0px))', width: 58, height: 58, borderRadius: '50%', border: 'none', background: 'linear-gradient(135deg,#0F6E56,#0F6E56)', color: '#fff', fontSize: 29, cursor: 'pointer', boxShadow: '0 10px 28px rgba(15,110,86,0.45)', zIndex: 575 }}
             >
               +
             </button>
@@ -1699,7 +1699,7 @@ function ClubPage({ trip, onTripRefresh }) {
               </div>
 
               <div style={{ flex: 1, overflowY: 'auto' }}>
-                <div style={{ background: 'linear-gradient(135deg,#0F6E56,#1D9E75)', padding: '2rem 1.2rem 2.4rem', textAlign: 'center' }}>
+                <div style={{ background: 'linear-gradient(135deg,#0F6E56,#0F6E56)', padding: '2rem 1.2rem 2.4rem', textAlign: 'center' }}>
                   <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.68)', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 12 }}>How much?</div>
                   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 7 }}>
                     <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, color: 'rgba(255,255,255,0.62)' }}>₹</span>
@@ -1735,7 +1735,7 @@ function ClubPage({ trip, onTripRefresh }) {
                     {combinedMembers.map(member => {
                       const selected = splitDraft.splitWith.includes(member.id);
                       return (
-                        <button key={`split-with-${member.id}`} onClick={() => handleToggleSplitMember(member.id)} style={{ ...S.btn, marginTop: 0, padding: '6px 11px', background: selected ? '#E1F5EE' : '#fff', color: selected ? '#0F6E56' : '#475467', border: selected ? '1px solid #9FE1CB' : '1px solid rgba(0,0,0,0.11)' }}>
+                        <button key={`split-with-${member.id}`} onClick={() => handleToggleSplitMember(member.id)} style={{ ...S.btn, marginTop: 0, padding: '6px 11px', background: selected ? '#0F6E56' : '#fff', color: selected ? '#0F6E56' : '#475467', border: selected ? '1px solid #0F6E56' : '1px solid rgba(0,0,0,0.11)' }}>
                           {member.nickname}
                         </button>
                       );
@@ -1754,7 +1754,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
       {toolScreenOpen && activeChat && chatTool === 'photos' && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 570, background: '#fff', overflowY: 'auto' }}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: 18, paddingTop: 'calc(18px + env(safe-area-inset-top, 0px))', background: 'linear-gradient(135deg,#1D4ED8,#0F766E)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: 18, paddingTop: 'calc(18px + env(safe-area-inset-top, 0px))', background: 'linear-gradient(135deg,#1D4ED8,#0F6E56)', color: '#fff', display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center' }}>
             <div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>Photos</div>
               <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>{combinedPhotos.length} combined group photos</div>
@@ -1772,7 +1772,7 @@ function ClubPage({ trip, onTripRefresh }) {
               onDrop={handleChatToolPhotoDrop}
               onClick={() => chatPhotoInputRef.current?.click()}
               style={{
-                border: chatPhotoDragging ? '2px dashed #0F766E' : '2px dashed rgba(15,118,110,0.35)',
+                border: chatPhotoDragging ? '2px dashed #0F6E56' : '2px dashed rgba(15,118,110,0.35)',
                 background: chatPhotoDragging ? 'rgba(15,118,110,0.08)' : 'linear-gradient(160deg,rgba(255,255,255,0.92),rgba(245,251,255,0.72))',
                 borderRadius: 18,
                 padding: '18px 14px',
@@ -1825,7 +1825,7 @@ function ClubPage({ trip, onTripRefresh }) {
                       borderRadius: 999,
                       padding: '7px 12px',
                       whiteSpace: 'nowrap',
-                      background: isActive ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : '#fff',
+                      background: isActive ? 'linear-gradient(135deg,#0F6E56,#0F6E56)' : '#fff',
                       color: isActive ? '#fff' : '#475467',
                       border: isActive ? '1px solid rgba(15,110,86,0.68)' : '1px solid rgba(10,18,35,0.12)',
                     }}
@@ -1865,7 +1865,7 @@ function ClubPage({ trip, onTripRefresh }) {
                         height: 24,
                         borderRadius: 999,
                         border: '1px solid rgba(255,255,255,0.95)',
-                        background: chatPhotoSelected.has(photo.id) ? '#0F766E' : 'rgba(3,10,24,0.52)',
+                        background: chatPhotoSelected.has(photo.id) ? '#0F6E56' : 'rgba(3,10,24,0.52)',
                         color: '#fff',
                         fontSize: 12,
                         fontWeight: 800,
@@ -1991,7 +1991,7 @@ function ClubPage({ trip, onTripRefresh }) {
               {MEMBER_BAND_OPTIONS.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
             </select>
 
-            <div style={{ marginTop: 10, background: '#F6FFFB', border: '1px solid #D9F5EA', borderRadius: 16, padding: 12 }}>
+            <div style={{ marginTop: 10, background: '#0F6E56', border: '1px solid #0F6E56', borderRadius: 16, padding: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                 <div style={{ fontSize: 12, fontWeight: 800, color: '#0F6E56' }}>📍 Radius Filter</div>
                 <div style={{ fontSize: 12, color: '#0F6E56', fontWeight: 700 }}>{locationEnabled ? `within ${radius} km of ${locLabel}` : 'Set location in profile first'}</div>
@@ -2088,7 +2088,7 @@ function ClubPage({ trip, onTripRefresh }) {
                       </div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                         {compatibility.reasons.map((reason, idx) => (
-                          <span key={`modal-reason-${idx}`} style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: '#E8FFF6', color: '#0B7A5A' }}>{reason}</span>
+                          <span key={`modal-reason-${idx}`} style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: '#0F6E56', color: '#0B7A5A' }}>{reason}</span>
                         ))}
                       </div>
                     </div>

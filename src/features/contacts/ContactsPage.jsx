@@ -111,7 +111,7 @@ function ContactsPage({ trip, myNickname, isSolo }) {
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {/* Category header band */}
-        <div style={{ background: isSolo ? 'linear-gradient(135deg,#26215C,#534AB7)' : 'linear-gradient(135deg,#0F6E56,#1D9E75)', padding: '1.5rem 1.25rem 2rem' }}>
+        <div style={{ background: isSolo ? 'linear-gradient(135deg,#26215C,#534AB7)' : 'linear-gradient(135deg,#0F6E56,#0F6E56)', padding: '1.5rem 1.25rem 2rem' }}>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 12 }}>Category</div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {CONTACT_CATS.map(c => (
@@ -198,7 +198,7 @@ function ContactsPage({ trip, myNickname, isSolo }) {
     <div style={{ paddingBottom: '5rem' }}>
 
       {/* Header summary */}
-      <div style={{ background: isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : 'linear-gradient(135deg,#E1F5EE,#E6F1FB)', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 16, padding: '1rem 1.25rem', marginBottom: '1.1rem', display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div style={{ background: isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : 'linear-gradient(135deg,#0F6E56,#E6F1FB)', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#0F6E56'}`, borderRadius: 16, padding: '1rem 1.25rem', marginBottom: '1.1rem', display: 'flex', alignItems: 'center', gap: 14 }}>
         <div style={{ fontSize: 34 }}>📒</div>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, marginBottom: 2 }}>
@@ -331,7 +331,7 @@ function ContactsPage({ trip, myNickname, isSolo }) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <span style={{ fontSize: 11, fontWeight: 600, color: '#a8a8a5', textTransform: 'uppercase', letterSpacing: .4, width: 52, flexShrink: 0 }}>Contact</span>
                   <a href={`tel:${c.phone}`}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: isSolo ? '#534AB7' : '#0F6E56', textDecoration: 'none' }}>
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: isSolo ? '#EEEDFE' : '#0F6E56', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#0F6E56'}`, borderRadius: 8, padding: '5px 12px', fontSize: 13, fontWeight: 600, color: isSolo ? '#534AB7' : '#0F6E56', textDecoration: 'none' }}>
                     📞 {c.phone}
                   </a>
                 </div>
@@ -377,7 +377,7 @@ function ContactsPage({ trip, myNickname, isSolo }) {
       {/* Floating add button */}
       <button
         onClick={() => setShowForm(true)}
-        style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)', border: 'none', boxShadow: `0 4px 20px ${isSolo ? 'rgba(127,119,221,0.45)' : 'rgba(15,110,86,0.45)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s' }}
+        style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#0F6E56,#0F6E56)', border: 'none', boxShadow: `0 4px 20px ${isSolo ? 'rgba(127,119,221,0.45)' : 'rgba(15,110,86,0.45)'}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s' }}
         onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
         onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
         +

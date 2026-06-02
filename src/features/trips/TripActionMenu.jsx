@@ -94,8 +94,8 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
                 {EMOJI_OPTIONS.map(e => (
                   <div key={e} onClick={() => setEditForm(f => ({ ...f, emoji: e }))}
                     style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer',
-                      border: editForm.emoji === e ? `2px solid ${isSolo ? '#7F77DD' : '#1D9E75'}` : '0.5px solid rgba(0,0,0,0.12)',
-                      background: editForm.emoji === e ? (isSolo ? '#EEEDFE' : '#E1F5EE') : '#fff' }}>
+                      border: editForm.emoji === e ? `2px solid ${isSolo ? '#7F77DD' : '#0F6E56'}` : '0.5px solid rgba(0,0,0,0.12)',
+                      background: editForm.emoji === e ? (isSolo ? '#EEEDFE' : '#0F6E56') : '#fff' }}>
                     {e}
                   </div>
                 ))}

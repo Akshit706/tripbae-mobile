@@ -213,7 +213,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
                   <button
                     onClick={() => onMarkActive(trip.id)}
-                    style={{ ...S.btn, fontSize: 11, padding: '4px 10px', color: '#0F6E56', borderColor: '#9FE1CB', background: '#E1F5EE' }}>
+                    style={{ ...S.btn, fontSize: 11, padding: '4px 10px', color: '#0F6E56', borderColor: '#0F6E56', background: '#0F6E56' }}>
                     ↩ Restore
                   </button>
                   <button
@@ -315,7 +315,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
         <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 39, fontWeight: 800, lineHeight: 1.06, marginBottom: 8, textAlign: 'center' }}>
           <div style={{ color: '#0D2B2E' }}>Where to</div>
-          <div style={{ color: '#1D9E75' }}>next?</div>
+          <div style={{ color: '#0F6E56' }}>next?</div>
         </div>
         <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 14, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'center' }}>Plan less. Experience more.</div>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
@@ -336,7 +336,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       <div style={{ padding: '0 16px 80px' }}>
 
       {showJoin && (
-        <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '1.25rem' }}>
+        <div style={{ ...S.card, border: '0.5px solid #0F6E56', background: '#f9fffe', marginBottom: '1.25rem' }}>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: '#0F6E56', marginBottom: 12 }}>🔗 Join a Trip</div>
           <label style={S.label}>Share Code</label>
           <input style={{ ...S.input, letterSpacing: 2, fontFamily: "'Sora',sans-serif", fontWeight: 600, textTransform: 'uppercase' }}
@@ -356,7 +356,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {showCreate && (
-        <div style={{ ...S.card, border: `0.5px solid ${isSoloMode ? '#AFA9EC' : '#9FE1CB'}`, background: isSoloMode ? '#fdfcff' : '#f9fffe', marginBottom: '1.25rem' }}>
+        <div style={{ ...S.card, border: `0.5px solid ${isSoloMode ? '#AFA9EC' : '#0F6E56'}`, background: isSoloMode ? '#fdfcff' : '#f9fffe', marginBottom: '1.25rem' }}>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: isSoloMode ? '#534AB7' : '#0F6E56', marginBottom: 14 }}>
             {isSoloMode ? '🎒 New Solo Adventure' : '✈️ Create New Group Trip'}
           </div>
@@ -364,7 +364,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             {[{ val: false, label: '👥 Group', desc: 'Travel with friends' }, { val: true, label: '🎒 Solo', desc: 'Just me, myself & I' }].map(opt => (
               <button key={String(opt.val)} onClick={() => { setIsSoloMode(opt.val); setForm(f => ({ ...f, emoji: opt.val ? '🎒' : '✈️', people: opt.val ? 1 : 2 })); }}
                 style={{ flex: 1, padding: '9px 10px', borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
-                  background: isSoloMode === opt.val ? (opt.val ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75') : 'transparent',
+                  background: isSoloMode === opt.val ? (opt.val ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#0F6E56') : 'transparent',
                   color: isSoloMode === opt.val ? '#fff' : '#6b6b68', fontWeight: 500, fontSize: 13, transition: 'all .2s' }}>
                 {opt.label}
                 <div style={{ fontSize: 10, opacity: 0.75, marginTop: 1 }}>{opt.desc}</div>
@@ -376,8 +376,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             {emojiOptions.map(e => (
               <div key={e} onClick={() => setForm(f => ({ ...f, emoji: e }))}
                 style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer',
-                  border: form.emoji === e ? `2px solid ${isSoloMode ? '#7F77DD' : '#1D9E75'}` : '0.5px solid rgba(0,0,0,0.12)',
-                  background: form.emoji === e ? (isSoloMode ? '#EEEDFE' : '#E1F5EE') : '#fff', transition: 'all .12s' }}>
+                  border: form.emoji === e ? `2px solid ${isSoloMode ? '#7F77DD' : '#0F6E56'}` : '0.5px solid rgba(0,0,0,0.12)',
+                  background: form.emoji === e ? (isSoloMode ? '#EEEDFE' : '#0F6E56') : '#fff', transition: 'all .12s' }}>
                 {e}
               </div>
             ))}
@@ -435,7 +435,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                         }}
                         placeholder="Search city or place…"
                       />
-                      {destLoading && <div style={{ width: 18, height: 18, border: '2px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', flexShrink: 0 }} />}
+                      {destLoading && <div style={{ width: 18, height: 18, border: '2px solid #0F6E56', borderTopColor: '#0F6E56', borderRadius: '50%', animation: 'spin .75s linear infinite', flexShrink: 0 }} />}
                       {destQuery && !destLoading && (
                         <span onClick={() => { setDestQuery(''); setDestSuggestions([]); }} style={{ fontSize: 16, color: '#aaa', cursor: 'pointer', flexShrink: 0 }}>✕</span>
                       )}
@@ -525,7 +525,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 ].map(slot => (
                   <button key={slot.id} type="button"
                     onClick={() => setForm(f => ({ ...f, arrivalSlot: slot.id }))}
-                    style={{ flex: 1, padding: '5px 4px', borderRadius: 8, border: `1.5px solid ${form.arrivalSlot === slot.id ? (isSoloMode ? '#7F77DD' : '#1D9E75') : 'rgba(0,0,0,0.12)'}`, background: form.arrivalSlot === slot.id ? (isSoloMode ? '#EEEDFE' : '#E1F5EE') : '#fff', color: form.arrivalSlot === slot.id ? (isSoloMode ? '#534AB7' : '#0F6E56') : '#6b6b68', fontSize: 10, fontWeight: form.arrivalSlot === slot.id ? 600 : 400, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .12s', whiteSpace: 'nowrap' }}>
+                    style={{ flex: 1, padding: '5px 4px', borderRadius: 8, border: `1.5px solid ${form.arrivalSlot === slot.id ? (isSoloMode ? '#7F77DD' : '#0F6E56') : 'rgba(0,0,0,0.12)'}`, background: form.arrivalSlot === slot.id ? (isSoloMode ? '#EEEDFE' : '#0F6E56') : '#fff', color: form.arrivalSlot === slot.id ? (isSoloMode ? '#534AB7' : '#0F6E56') : '#6b6b68', fontSize: 10, fontWeight: form.arrivalSlot === slot.id ? 600 : 400, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .12s', whiteSpace: 'nowrap' }}>
                     {slot.label}
                   </button>
                 ))}
@@ -555,7 +555,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 ].map(slot => (
                   <button key={slot.id} type="button"
                     onClick={() => setForm(f => ({ ...f, departureSlot: slot.id }))}
-                    style={{ flex: 1, padding: '5px 4px', borderRadius: 8, border: `1.5px solid ${form.departureSlot === slot.id ? (isSoloMode ? '#7F77DD' : '#1D9E75') : 'rgba(0,0,0,0.12)'}`, background: form.departureSlot === slot.id ? (isSoloMode ? '#EEEDFE' : '#E1F5EE') : '#fff', color: form.departureSlot === slot.id ? (isSoloMode ? '#534AB7' : '#0F6E56') : '#6b6b68', fontSize: 10, fontWeight: form.departureSlot === slot.id ? 600 : 400, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .12s', whiteSpace: 'nowrap' }}>
+                    style={{ flex: 1, padding: '5px 4px', borderRadius: 8, border: `1.5px solid ${form.departureSlot === slot.id ? (isSoloMode ? '#7F77DD' : '#0F6E56') : 'rgba(0,0,0,0.12)'}`, background: form.departureSlot === slot.id ? (isSoloMode ? '#EEEDFE' : '#0F6E56') : '#fff', color: form.departureSlot === slot.id ? (isSoloMode ? '#534AB7' : '#0F6E56') : '#6b6b68', fontSize: 10, fontWeight: form.departureSlot === slot.id ? 600 : 400, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .12s', whiteSpace: 'nowrap' }}>
                     {slot.label}
                   </button>
                 ))}
@@ -608,21 +608,21 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         const isPast = status.label === 'Past' || status.label === 'Completed';
         const cardBg = trip.isSolo
           ? 'linear-gradient(145deg,#1c0e40 0%,#2e1a60 55%,#1c0e40 100%)'
-          : 'linear-gradient(145deg,#0a2a1f 0%,#0f3d2e 55%,#0a2a1f 100%)';
+          : 'linear-gradient(145deg,#0F6E56 0%,#0F6E56 55%,#0F6E56 100%)';
         const glowBg = trip.isSolo
           ? 'radial-gradient(circle,rgba(127,119,221,0.3) 0%,transparent 70%)'
-          : 'radial-gradient(circle,rgba(29,158,117,0.3) 0%,transparent 70%)';
+          : 'radial-gradient(circle,rgba(15,110,86,0.3) 0%,transparent 70%)';
         const barFill = trip.isSolo
           ? 'linear-gradient(90deg,#FF6B35,#FFAA80)'
-          : 'linear-gradient(90deg,#1D9E75,#5DCAA5)';
+          : 'linear-gradient(90deg,#0F6E56,#0F6E56)';
 
         let statusBadgeStyle;
         if (isPast) {
           statusBadgeStyle = { background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' };
         } else if (status.label === 'Ongoing') {
-          statusBadgeStyle = { background: 'rgba(29,158,117,0.18)', color: '#5DCAA5', border: '1px solid rgba(29,158,117,0.25)' };
+          statusBadgeStyle = { background: 'rgba(15,110,86,0.18)', color: '#0F6E56', border: '1px solid rgba(15,110,86,0.25)' };
         } else {
-          statusBadgeStyle = { background: 'rgba(29,158,117,0.18)', color: '#5DCAA5', border: '1px solid rgba(29,158,117,0.25)' };
+          statusBadgeStyle = { background: 'rgba(15,110,86,0.18)', color: '#0F6E56', border: '1px solid rgba(15,110,86,0.25)' };
         }
         const cardDelay = idx * 70;
 
@@ -648,7 +648,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                   {trip.isSolo && (
                     <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(127,119,221,0.18)', color: '#AFA9EC', border: '1px solid rgba(127,119,221,0.25)', boxShadow: '0 2px 8px rgba(127,119,221,0.2)' }}>Solo</span>
                   )}
-                  <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...((!isPast) ? { boxShadow: '0 2px 8px rgba(29,158,117,0.2)' } : {}) }}>
+                  <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...((!isPast) ? { boxShadow: '0 2px 8px rgba(15,110,86,0.2)' } : {}) }}>
                     {isPast ? 'Past' : status.label}
                   </span>
                 </div>
@@ -674,10 +674,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 <div style={{ marginBottom: 14 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 5 }}>
                     <span>Budget</span>
-                    <span style={{ color: trip.isSolo ? '#FFAA80' : '#5DCAA5' }}>{budgetPct}% · ₹{Math.round(budgetBase - totalSpend).toLocaleString('en-IN')} left</span>
+                    <span style={{ color: trip.isSolo ? '#FFAA80' : '#0F6E56' }}>{budgetPct}% · ₹{Math.round(budgetBase - totalSpend).toLocaleString('en-IN')} left</span>
                   </div>
                   <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 99, background: barFill, '--w': `${budgetPct}%`, animation: `progressFill 1s ease both`, animationDelay: `${cardDelay + 200}ms`, width: `${budgetPct}%`, boxShadow: trip.isSolo ? '0 0 8px rgba(255,107,53,0.5)' : '0 0 8px rgba(29,158,117,0.5)' }} />
+                    <div style={{ height: '100%', borderRadius: 99, background: barFill, '--w': `${budgetPct}%`, animation: `progressFill 1s ease both`, animationDelay: `${cardDelay + 200}ms`, width: `${budgetPct}%`, boxShadow: trip.isSolo ? '0 0 8px rgba(255,107,53,0.5)' : '0 0 8px rgba(15,110,86,0.5)' }} />
                   </div>
                 </div>
               )}
@@ -688,7 +688,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flex: 1 }} onClick={(event) => openTripWithMotion(trip.id, event)}>
                 {trip.isSolo
                   ? <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
-                  : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
+                  : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#0F6E56,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
                 }
                 <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginLeft: 0 }}>
                   {memberNames[0] || (trip.isSolo ? 'You' : 'Member')}{!trip.isSolo && memberNames.length > 1 ? ` +${memberNames.length - 1}` : ''}
