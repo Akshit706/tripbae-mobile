@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense, deleteClubChatSplitExpense, deleteClubChat, addPhoto } from '../../api';
+import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense, deleteClubChatSplitExpense, deleteClubChat, addPhoto, deletePhoto } from '../../api';
 import { supabase } from '../../supabase';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
@@ -123,6 +123,14 @@ function buildCombinedPhotos(chat) {
   const photosA = (chat?.tripA?.photos || []).map(photo => ({ ...photo, source: chat?.tripA?.groupName || 'Group A' }));
   const photosB = (chat?.tripB?.photos || []).map(photo => ({ ...photo, source: chat?.tripB?.groupName || 'Group B' }));
   return [...photosA, ...photosB].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+function extractStoragePathFromPublicUrl(url) {
+  if (!url) return null;
+  const marker = '/trip-photos/';
+  const idx = url.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(url.slice(idx + marker.length));
 }
 
 function computeSplitBalances(members, entries) {
@@ -372,6 +380,8 @@ function ClubPage({ trip, onTripRefresh }) {
   const [chatPhotoLightbox, setChatPhotoLightbox] = useState(null);
   const [chatPhotoUploading, setChatPhotoUploading] = useState(false);
   const [chatPhotoProgress, setChatPhotoProgress] = useState(0);
+  const [chatPhotoDragging, setChatPhotoDragging] = useState(false);
+  const [chatPhotoSelected, setChatPhotoSelected] = useState(new Set());
   const [splitSection, setSplitSection] = useState('expenses');
   const [splitFormOpen, setSplitFormOpen] = useState(false);
   const [splitDraft, setSplitDraft] = useState({ desc: '', amount: '', paidBy: '', splitWith: [] });
@@ -873,6 +883,64 @@ function ClubPage({ trip, onTripRefresh }) {
     void processChatToolPhotoFiles(files);
   };
 
+  const handleChatToolPhotoDrop = (event) => {
+    event.preventDefault();
+    setChatPhotoDragging(false);
+    const files = Array.from(event.dataTransfer?.files || []).filter((file) => file.type?.startsWith('image/'));
+    if (!files.length) return;
+    void processChatToolPhotoFiles(files);
+  };
+
+  const toggleChatPhotoSelection = (photoId) => {
+    setChatPhotoSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(photoId)) next.delete(photoId);
+      else next.add(photoId);
+      return next;
+    });
+  };
+
+  const clearChatPhotoSelection = () => setChatPhotoSelected(new Set());
+
+  const downloadSelectedChatPhotos = async () => {
+    for (const photo of selectedChatPhotos) {
+      try {
+        const res = await fetch(photo.url);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = photo.url.split('/').pop() || `photo-${photo.id}.jpg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      } catch {
+        window.open(photo.url, '_blank');
+      }
+    }
+  };
+
+  const deleteSelectedChatPhotos = async () => {
+    if (!canDeleteSelectedChatPhotos) return;
+    if (!confirm('Delete selected photos from your trip album?')) return;
+    setClubBusy(true);
+    try {
+      for (const photo of selectedChatPhotos) {
+        const storagePath = extractStoragePathFromPublicUrl(photo.url);
+        if (storagePath) await supabase.storage.from('trip-photos').remove([storagePath]);
+        await deletePhoto(trip.id, photo.id);
+      }
+      await loadHub();
+      if (onTripRefresh) await onTripRefresh();
+      clearChatPhotoSelection();
+    } catch (err) {
+      alert('Could not delete selected photos: ' + err.message);
+    } finally {
+      setClubBusy(false);
+    }
+  };
+
   const applyFilters = () => {
     setFilters(filterDraft);
     setFiltersOpen(false);
@@ -902,6 +970,17 @@ function ClubPage({ trip, onTripRefresh }) {
     if (chatPhotoFolder === 'all') return combinedPhotos;
     return chatPhotoFolders[chatPhotoFolder] || [];
   }, [chatPhotoFolder, chatPhotoFolders, combinedPhotos]);
+  const selectedChatPhotos = useMemo(
+    () => chatFolderPhotos.filter(photo => chatPhotoSelected.has(photo.id)),
+    [chatFolderPhotos, chatPhotoSelected]
+  );
+  const canDeleteSelectedChatPhotos = useMemo(
+    () => selectedChatPhotos.length > 0 && selectedChatPhotos.every((photo) => {
+      const path = extractStoragePathFromPublicUrl(photo.url);
+      return Boolean(path && path.startsWith(`${trip.id}/`));
+    }),
+    [selectedChatPhotos, trip.id]
+  );
   const splitEntries = useMemo(() => activeChat?.splitExpenses || [], [activeChat]);
   const splitBalances = useMemo(
     () => computeSplitBalances(combinedMembers, splitEntries),
@@ -958,6 +1037,7 @@ function ClubPage({ trip, onTripRefresh }) {
   useEffect(() => {
     setChatPhotoFolder('all');
     setChatPhotoLightbox(null);
+    setChatPhotoSelected(new Set());
   }, [activeChat?.id]);
 
   useEffect(() => {
@@ -1657,27 +1737,53 @@ function ClubPage({ trip, onTripRefresh }) {
           </div>
 
           <div style={{ padding: 18, maxWidth: 1240, margin: '0 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-              <div style={{ fontSize: 12, color: '#667085' }}>Use the same upload flow as Photos tab.</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {chatPhotoUploading && <div style={{ fontSize: 11, color: '#0F6E56', fontWeight: 700 }}>Uploading {chatPhotoProgress}%</div>}
-                <button
-                  onClick={() => chatPhotoInputRef.current?.click()}
-                  disabled={chatPhotoUploading}
-                  style={{ ...S.btn, ...S.btnP, marginTop: 0, borderRadius: 12, padding: '7px 12px', opacity: chatPhotoUploading ? 0.7 : 1 }}
-                >
-                  {chatPhotoUploading ? 'Uploading…' : 'Upload photos'}
-                </button>
-                <input
-                  ref={chatPhotoInputRef}
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  style={{ display: 'none' }}
-                  onChange={handleChatToolPhotoUpload}
-                />
-              </div>
+            <div
+              onDragOver={(e) => {
+                e.preventDefault();
+                setChatPhotoDragging(true);
+              }}
+              onDragLeave={() => setChatPhotoDragging(false)}
+              onDrop={handleChatToolPhotoDrop}
+              onClick={() => chatPhotoInputRef.current?.click()}
+              style={{
+                border: chatPhotoDragging ? '2px dashed #0F766E' : '2px dashed rgba(15,118,110,0.35)',
+                background: chatPhotoDragging ? 'rgba(15,118,110,0.08)' : 'linear-gradient(160deg,rgba(255,255,255,0.92),rgba(245,251,255,0.72))',
+                borderRadius: 18,
+                padding: '18px 14px',
+                marginBottom: 12,
+                textAlign: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{ fontSize: 13, color: '#0F172A', fontWeight: 700 }}>Drop photos here or tap to upload</div>
+              <div style={{ fontSize: 12, color: '#667085', marginTop: 4 }}>Your uploads go to Supabase bucket trip-photos and appear for both clubs.</div>
+              {chatPhotoUploading && <div style={{ marginTop: 6, fontSize: 11, color: '#0F6E56', fontWeight: 700 }}>Uploading {chatPhotoProgress}%</div>}
+              <input
+                ref={chatPhotoInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                style={{ display: 'none' }}
+                onChange={handleChatToolPhotoUpload}
+              />
             </div>
+
+            {chatPhotoSelected.size > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: 10, padding: '8px 10px', borderRadius: 12, background: '#EEF6FF', border: '1px solid #D7E8FF', flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 12, color: '#1E3A5F', fontWeight: 700 }}>{chatPhotoSelected.size} selected</div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button style={{ ...S.btn, marginTop: 0, padding: '7px 10px' }} onClick={() => void downloadSelectedChatPhotos()}>Download</button>
+                  <button
+                    style={{ ...S.btn, marginTop: 0, padding: '7px 10px', background: canDeleteSelectedChatPhotos ? '#F04438' : '#F1F3F5', color: canDeleteSelectedChatPhotos ? '#fff' : '#98A2B3', border: 'none' }}
+                    disabled={!canDeleteSelectedChatPhotos}
+                    onClick={() => void deleteSelectedChatPhotos()}
+                  >
+                    Delete
+                  </button>
+                  <button style={{ ...S.btn, marginTop: 0, padding: '7px 10px' }} onClick={clearChatPhotoSelection}>Clear</button>
+                </div>
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 10 }}>
               {Object.keys(chatPhotoFolders).map((folderKey) => {
@@ -1705,18 +1811,49 @@ function ClubPage({ trip, onTripRefresh }) {
             </div>
 
             {chatFolderPhotos.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px 0', color: '#667085' }}>No photos shared yet in the two trips. Upload to start the album.</div>
+              <div style={{ textAlign: 'center', padding: '32px 0', color: '#667085' }}>No photos shared yet in the two trips. Use the upload area above to start the album.</div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
                 {chatFolderPhotos.map((photo, index) => (
-                  <button
+                  <div
                     key={`cp-${photo.id}-${index}`}
                     onClick={() => setChatPhotoLightbox({ photos: chatFolderPhotos, index })}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') setChatPhotoLightbox({ photos: chatFolderPhotos, index });
+                    }}
                     style={{ position: 'relative', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }}
                   >
                     <img src={photo.url} alt="combined trip" style={{ width: '100%', height: 170, borderRadius: 14, objectFit: 'cover', display: 'block' }} />
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleChatPhotoSelection(photo.id);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        width: 24,
+                        height: 24,
+                        borderRadius: 999,
+                        border: '1px solid rgba(255,255,255,0.95)',
+                        background: chatPhotoSelected.has(photo.id) ? '#0F766E' : 'rgba(3,10,24,0.52)',
+                        color: '#fff',
+                        fontSize: 12,
+                        fontWeight: 800,
+                        display: 'grid',
+                        placeItems: 'center',
+                        cursor: 'pointer',
+                        padding: 0,
+                      }}
+                      aria-label={chatPhotoSelected.has(photo.id) ? 'Deselect photo' : 'Select photo'}
+                    >
+                      {chatPhotoSelected.has(photo.id) ? '✓' : ''}
+                    </button>
                     <div style={{ position: 'absolute', left: 8, bottom: 8, fontSize: 10, fontWeight: 800, color: '#fff', background: 'rgba(3,10,24,0.58)', padding: '3px 7px', borderRadius: 999 }}>{photo.source}</div>
-                  </button>
+                  </div>
                 ))}
               </div>
             )}

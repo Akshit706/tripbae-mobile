@@ -747,13 +747,19 @@ export default function App() {
                     ...(isActive ? activeStyle : {}),
                     animationDelay: `${idx * 35}ms`,
                     position: 'relative',
+                    width: '100%',
+                    minWidth: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                     borderRadius: 0,
                     borderLeft: idx > 0 ? '1px solid rgba(15,23,42,0.04)' : 'none',
                     boxShadow: 'none',
                   }}
                 >
                   <span style={{ fontSize: 15, lineHeight: 1, filter: isActive ? 'none' : 'grayscale(100%) opacity(0.68)' }}>{t.icon}</span>
-                  <span style={{ fontSize: tabs.length > 4 ? 8.6 : 9.5, maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'visible', textOverflow: 'clip', padding: '0 1px', letterSpacing: 0.12 }}>{t.label}</span>
+                  <span style={{ fontSize: tabs.length > 4 ? 8.6 : 9.5, maxWidth: '100%', width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center', padding: '0 2px', letterSpacing: 0.12 }}>{t.label}</span>
                   {isActive && <span style={{ position: 'absolute', bottom: 0, left: '16%', right: '16%', height: 2.5, borderRadius: 99, background: accentColor, opacity: 0.9 }} />}
                 </button>
               );
