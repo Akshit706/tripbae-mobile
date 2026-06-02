@@ -298,7 +298,7 @@ function buildCompatibility(myProfile, myTrip, item) {
   };
 }
 
-function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
+function ClubDiscoveryCard({ item, compatibility, alreadySent, distKm, onOpen }) {
   const activeNow = isRecentlyActive(item.updatedAt);
   const avatar = item.photoUrl || item.trip?.coverUrl || null;
   const moodLine = getGroupMoodLine(item);
@@ -334,9 +334,9 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
                   {compatibility.score}% match
                 </span>
               )}
-              {locationEnabled && item.latitude != null && item.longitude != null && (
+              {distKm != null && (
                 <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>
-                  {distanceLabel(haversine(myLat, myLng, item.latitude, item.longitude))}
+                  {distanceLabel(distKm)}
                 </span>
               )}
             </div>
@@ -1611,6 +1611,7 @@ function ClubPage({ trip, onTripRefresh }) {
                   item={item}
                   compatibility={compatibility}
                   alreadySent={alreadySent}
+                  distKm={locationEnabled && item.latitude != null && item.longitude != null ? haversine(myLat, myLng, item.latitude, item.longitude) : null}
                   onOpen={() => setSelectedCard(item)}
                 />
               ))}
