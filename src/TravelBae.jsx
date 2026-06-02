@@ -686,7 +686,7 @@ export default function App() {
         >
           {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0', position: activeTrip ? 'relative' : 'absolute', left: activeTrip ? 'auto' : '50%', transform: activeTrip ? 'none' : 'translateX(-50%)' }}>
           {activeTrip && <button style={{ ...S.btn, padding: '5px 8px', marginRight: 2, fontSize: 16 }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>←</button>}
           <div style={{ width: 34, height: 34, background: isSolo ? 'linear-gradient(135deg,#4A2C8A,#2D1B69)' : 'linear-gradient(135deg,#0D2B2E,#134E4A)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
             {isSolo ? '🎒' : '✈️'}
@@ -714,12 +714,7 @@ export default function App() {
               }}
             />
           </div>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
-            <div style={{ ...S.tripPill, color: '#fff', borderColor: 'rgba(246,201,122,0.55)', background: 'rgba(246,201,122,0.09)' }}>🏠 My Trips</div>
-            <button style={{ ...S.btn, fontSize: 12, padding: '5px 10px', color: '#F2F4F5', borderColor: 'rgba(255,255,255,0.35)', background: 'transparent', boxShadow: 'none' }} onClick={handleLogout}>Log out</button>
-          </div>
-        )}
+        ) : null}
       </div>
 
       {/* Nav Tabs */}
