@@ -314,9 +314,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
             Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
           </div>
-          <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 39, fontWeight: 900, lineHeight: 0.94, letterSpacing: '-0.35px', marginBottom: 8, textAlign: 'center' }}>
+          <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 39, fontWeight: 800, lineHeight: 1.02, letterSpacing: '-0.15px', marginBottom: 8, textAlign: 'center' }}>
             <div style={{ color: '#0D2B2E' }}>Where to</div>
-            <div style={{ color: '#1D9E75', marginTop: -4 }}>next?</div>
+            <div style={{ color: '#1D9E75' }}>next?</div>
           </div>
           <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 14, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'center' }}>Plan less. Experience more.</div>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
