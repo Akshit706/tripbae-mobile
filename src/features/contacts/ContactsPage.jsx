@@ -10,9 +10,46 @@ function ContactsPage({ trip, myNickname, isSolo }) {
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState('');
   const [form, setForm] = useState({ name: '', role: '', cat: 'driver', phone: '', note: '' });
+  const contactPickerSupported =
+    typeof navigator !== 'undefined' &&
+    navigator.contacts &&
+    typeof navigator.contacts.select === 'function';
   const [emergencyBannerDismissed, setEmergencyBannerDismissed] = useState(
     () => localStorage.getItem(`travelbae_contacts_emg_dismissed_${trip.id}`) === '1'
   );
+
+  const importFromPhoneContacts = async () => {
+    if (!contactPickerSupported) {
+      alert('Import from contacts is not supported on this device/browser yet.');
+      return;
+    }
+    try {
+      const selected = await navigator.contacts.select(['name', 'tel'], { multiple: false });
+      if (!selected || selected.length === 0) return;
+      const picked = selected[0];
+      const pickedName = Array.isArray(picked.name) ? picked.name.find(Boolean) : '';
+      const pickedPhone = Array.isArray(picked.tel) ? picked.tel.find(Boolean) : '';
+      if (!pickedPhone) {
+        alert('Selected contact has no phone number.');
+        return;
+      }
+      setForm(f => ({
+        ...f,
+        name: (f.name || '').trim() ? f.name : (pickedName || ''),
+        phone: pickedPhone,
+      }));
+    } catch (err) {
+      if (err?.name === 'NotAllowedError') {
+        alert('Permission denied. Please allow contact access and try again.');
+        return;
+      }
+      if (err?.name === 'InvalidStateError') {
+        alert('Please use the import button directly to pick a contact.');
+        return;
+      }
+      alert('Could not import contact right now.');
+    }
+  };
 
   const handleAdd = async () => {
     if (!form.name.trim() || !form.phone.trim()) return;
@@ -90,6 +127,37 @@ function ContactsPage({ trip, myNickname, isSolo }) {
         <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', marginTop: -16, padding: '1.5rem 1.25rem 3rem' }}>
 
           {/* Name + Role */}
+          {(form.cat === 'guardian' || form.cat === 'emergency') && (
+            <div style={{ marginBottom: '1rem' }}>
+              <button
+                onClick={importFromPhoneContacts}
+                type="button"
+                style={{
+                  ...S.btn,
+                  ...(isSolo ? S.btnSolo : S.btnP),
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: 12,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  opacity: contactPickerSupported ? 1 : 0.55,
+                  cursor: contactPickerSupported ? 'pointer' : 'not-allowed'
+                }}
+                disabled={!contactPickerSupported}
+                title={contactPickerSupported ? 'Pick from your phone contacts' : 'Not supported on this browser'}
+              >
+                📲 Import from phone contacts
+              </button>
+              <div style={{ marginTop: 6, fontSize: 11, color: '#6b6b68' }}>
+                {contactPickerSupported
+                  ? 'Quickly fill guardian/emergency contact from your phone address book.'
+                  : 'Contact import is unavailable here. You can still enter details manually.'}
+              </div>
+            </div>
+          )}
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: '1.25rem' }}>
             <div>
               <label style={S.label}>Full Name *</label>
