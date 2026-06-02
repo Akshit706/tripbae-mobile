@@ -1,8 +1,8 @@
-export const MCOLORS = ['#0F6E56','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
+export const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
 
 export const CATS = [
   {id:'food',icon:'🍽️',label:'Food',bg:'#FAEEDA'},
-  {id:'transport',icon:'🚗',label:'Transport',bg:'#0F6E56'},
+  {id:'transport',icon:'🚗',label:'Transport',bg:'#E1F5EE'},
   {id:'stay',icon:'🏠',label:'Stay',bg:'#E6F1FB'},
   {id:'activity',icon:'🎟️',label:'Activity',bg:'#EEEDFE'},
   {id:'shopping',icon:'🛍️',label:'Shopping',bg:'#FAECE7'},
@@ -11,7 +11,7 @@ export const CATS = [
 
 export const CONTACT_CATS = [
   {id:'guardian',icon:'🛡️',label:'Guardian',bg:'#EEEDFE',color:'#534AB7'},
-  {id:'driver',icon:'🚗',label:'Driver',bg:'#0F6E56',color:'#0F6E56'},
+  {id:'driver',icon:'🚗',label:'Driver',bg:'#E1F5EE',color:'#0F6E56'},
   {id:'hotel',icon:'🏨',label:'Hotel Staff',bg:'#E6F1FB',color:'#378ADD'},
   {id:'guide',icon:'🗺️',label:'Guide',bg:'#FAEEDA',color:'#854F0B'},
   {id:'medical',icon:'🏥',label:'Medical',bg:'#FAECE7',color:'#993C1D'},
@@ -60,7 +60,7 @@ export function tripStatusInfo(arrival, departure, completed) {
   const d = new Date(departure);
   if (now < a) {
     const daysLeft = Math.ceil((a - now) / 86400000);
-    return { label: `In ${daysLeft}d`, color: '#0F6E56', bg: '#0F6E56', border: '#0F6E56', isPast: false };
+    return { label: `In ${daysLeft}d`, color: '#0F6E56', bg: '#E1F5EE', border: '#9FE1CB', isPast: false };
   }
   if (now <= d) {
     return { label: 'Ongoing', color: '#854F0B', bg: '#FAEEDA', border: '#FAC775', isPast: false };

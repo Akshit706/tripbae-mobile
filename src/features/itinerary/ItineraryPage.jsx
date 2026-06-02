@@ -37,7 +37,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     if (['heritage','scenic','culture','offbeat'].includes(t)) return { bg: '#E6F1FB', color: '#378ADD' };
     return { bg: '#FAEEDA', color: '#854F0B' };
   };
-  const accentColor = isSolo ? '#7F77DD' : '#0F6E56';
+  const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
   const Sec = ({ icon, title, items, iconBg, secKey, dest, startIndex = 0 }) => {
     const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
     return (
@@ -46,7 +46,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           <div style={{ width: 32, height: 32, borderRadius: 9, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{icon}</div>
           <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: .4, textTransform: 'uppercase', color: '#6b6b68' }}>{title}</span>
           <span style={{ fontSize: 11, color: '#a8a8a5' }}>{items.length} picks</span>
-          {doneCount > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: accentColor, background: isSolo ? '#EEEDFE' : '#0F6E56', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#0F6E56'}`, borderRadius: 10, padding: '2px 8px', marginLeft: 'auto' }}>✓ {doneCount}/{items.length} done</span>}
+          {doneCount > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: accentColor, background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '2px 8px', marginLeft: 'auto' }}>✓ {doneCount}/{items.length} done</span>}
         </div>
         {items.map((item, i) => {
           const key = `${secKey}-${i}`;
@@ -89,7 +89,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
       <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" dest={dest} startIndex={4} />
       <PlacePhotosStrip queries={[`${dest} landmarks`]} style={{ marginBottom: '1rem' }} />
       <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" dest={dest} startIndex={8} />
-      {data.tip && <div style={{ background: isSolo ? '#EEEDFE' : '#0F6E56', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#0F6E56'}`, borderRadius: 10, padding: '.75rem 1rem', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: '1rem', fontSize: 12, color: isSolo ? '#26215C' : '#0F6E56', lineHeight: 1.5 }}>💡 <span><strong>Local tip:</strong> {data.tip}</span></div>}
+      {data.tip && <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '.75rem 1rem', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: '1rem', fontSize: 12, color: isSolo ? '#26215C' : '#085041', lineHeight: 1.5 }}>💡 <span><strong>Local tip:</strong> {data.tip}</span></div>}
     </div>
   );
 
@@ -163,8 +163,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [showDescBox, setShowDescBox] = useState(false);
 
   const accentStyle = isSolo ? S.btnSolo : S.btnP;
-  const accentColor = isSolo ? '#7F77DD' : '#0F6E56';
-  const headerBg = isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#0F6E56,#0F6E56)';
+  const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
+  const headerBg = isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)';
 
   const TYPE_ICONS = {
     attraction: '🏛️', food: '🍽️', experience: '✨',
@@ -254,7 +254,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       <div style={{ display: 'flex', gap: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 13, padding: 3, marginBottom: '1.1rem' }}>
         {ITABS.map(t => (
           <button key={t.id} onClick={() => setITab(t.id)}
-            style={{ flex: 1, padding: '8px 8px', fontSize: 12, fontWeight: 500, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: iTab === t.id ? (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#0F6E56') : 'transparent', color: iTab === t.id ? '#fff' : '#6b6b68', transition: 'all .15s' }}>
+            style={{ flex: 1, padding: '8px 8px', fontSize: 12, fontWeight: 500, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: iTab === t.id ? (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75') : 'transparent', color: iTab === t.id ? '#fff' : '#6b6b68', transition: 'all .15s' }}>
             {t.label}
           </button>
         ))}
@@ -266,13 +266,13 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           <div style={{ marginBottom: '1rem' }}>
             {!showDescBox && step === 'result' && (
               <button
-                style={{ ...S.btn, width: '100%', justifyContent: 'center', fontSize: 13, color: isSolo ? '#534AB7' : '#0F6E56', background: isSolo ? '#EEEDFE' : '#0F6E56', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#0F6E56'}` }}
+                style={{ ...S.btn, width: '100%', justifyContent: 'center', fontSize: 13, color: isSolo ? '#534AB7' : '#0F6E56', background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}` }}
                 onClick={() => setShowDescBox(true)}>
                 ✏️ Customize & regenerate itinerary
               </button>
             )}
             {(showDescBox || step === 'error' || (!trip._cachedItin && step !== 'loading')) && (
-              <div style={{ ...S.card, border: `0.5px solid ${isSolo ? '#AFA9EC' : '#0F6E56'}`, background: isSolo ? '#fdfcff' : '#f9fffe' }}>
+              <div style={{ ...S.card, border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, background: isSolo ? '#fdfcff' : '#f9fffe' }}>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: isSolo ? '#534AB7' : '#0F6E56', marginBottom: 4 }}>
                   ✏️ Customize your itinerary
                 </div>
@@ -394,7 +394,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         </div>
                       </div>
                       {d.weather?.tip && (
-                        <div style={{ padding: '6px 16px', background: isSolo ? '#f4f3ff' : '#0F6E56', borderBottom: `0.5px solid ${isSolo ? '#c9c5f5' : '#0F6E56'}`, fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56' }}>
+                        <div style={{ padding: '6px 16px', background: isSolo ? '#f4f3ff' : '#f0faf6', borderBottom: `0.5px solid ${isSolo ? '#c9c5f5' : '#c8ecd8'}`, fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56' }}>
                           💡 {d.weather.tip}
                         </div>
                       )}
@@ -416,7 +416,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                       <span style={{ fontSize: 16 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
                                       <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{a.name}</span>
                                       {a.mustDo && (
-                                        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#0F6E56', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
+                                        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
                                       )}
                                     </div>
                                     {a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 3, lineHeight: 1.5 }}>{a.note}</div>}
@@ -448,7 +448,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {sources.map((s, i) => (
                       <a key={i} href={s.url} target="_blank" rel="noreferrer"
-                        style={{ fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56', background: isSolo ? '#EEEDFE' : '#0F6E56', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#0F6E56'}`, borderRadius: 8, padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        style={{ fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56', background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 8, padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         🔗 {s.title?.slice(0, 28) || new URL(s.url).hostname}
                       </a>
                     ))}

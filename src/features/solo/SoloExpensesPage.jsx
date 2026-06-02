@@ -278,7 +278,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     if (barRef.current) {
       const cats = activeCats;
       if (cats.length === 0) return;
-      const BAR_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E' };
+      const BAR_COLORS = { food:'#BA7517', transport:'#1D9E75', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E' };
       chartInstances.current.bar = new window.Chart(barRef.current, {
         type: 'bar',
         data: {
@@ -536,7 +536,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           </div>
 
           {budget && pacePct !== null && (
-            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#0F6E56,#0F6E56)' }}>
+            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#F8FFF9,#F1FFFA)' }}>
               <div style={{ fontSize: 11, color: '#0F6E56', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Pace Meter</div>
               <div style={{ fontSize: 14, color: '#1a1a18', lineHeight: 1.5 }}>
                 {pacePct <= 95 && `🧘 Nice control. You're at ${pacePct}% of planned daily budget pace.`}

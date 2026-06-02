@@ -37,11 +37,11 @@ import ClubPageFeature from './features/club/ClubPage';
 // export const updateTrip = (id, data) => apiFetch(`/trips/${id}`, { method: 'PATCH', body: data });
 
 /* ─── CONSTANTS ─────────────────────────────────────── */
-const MCOLORS = ['#0F6E56','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
+const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
 const API_BASE = 'https://travelbae-backend.onrender.com';
 const CATS = [
   {id:'food',icon:'🍽️',label:'Food',bg:'#FAEEDA'},
-  {id:'transport',icon:'🚗',label:'Transport',bg:'#0F6E56'},
+  {id:'transport',icon:'🚗',label:'Transport',bg:'#E1F5EE'},
   {id:'stay',icon:'🏠',label:'Stay',bg:'#E6F1FB'},
   {id:'activity',icon:'🎟️',label:'Activity',bg:'#EEEDFE'},
   {id:'shopping',icon:'🛍️',label:'Shopping',bg:'#FAECE7'},
@@ -49,7 +49,7 @@ const CATS = [
 ];
 const CONTACT_CATS = [
   {id:'guardian',icon:'🛡️',label:'Guardian',bg:'#EEEDFE',color:'#534AB7'},
-  {id:'driver',icon:'🚗',label:'Driver',bg:'#0F6E56',color:'#0F6E56'},
+  {id:'driver',icon:'🚗',label:'Driver',bg:'#E1F5EE',color:'#0F6E56'},
   {id:'hotel',icon:'🏨',label:'Hotel Staff',bg:'#E6F1FB',color:'#378ADD'},
   {id:'guide',icon:'🗺️',label:'Guide',bg:'#FAEEDA',color:'#854F0B'},
   {id:'medical',icon:'🏥',label:'Medical',bg:'#FAECE7',color:'#993C1D'},
@@ -148,7 +148,7 @@ function tripStatusInfo(arrival, departure, completed) {
   const now = new Date(); const a = new Date(arrival); const d = new Date(departure);
   if (now < a) {
     const daysLeft = Math.ceil((a - now) / 86400000);
-    return { label: `In ${daysLeft}d`, color: '#0F6E56', bg: '#0F6E56', border: '#0F6E56', isPast: false };
+    return { label: `In ${daysLeft}d`, color: '#0F6E56', bg: '#E1F5EE', border: '#9FE1CB', isPast: false };
   } else if (now <= d) {
     return { label: 'Ongoing', color: '#854F0B', bg: '#FAEEDA', border: '#FAC775', isPast: false };
   }
@@ -224,18 +224,18 @@ const S = {
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
   navTabs: { background: 'rgba(255,255,255,0.42)', backdropFilter: 'blur(16px) saturate(1.08)', borderBottom: 'none', display: 'flex', padding: '8px 1rem 10px', overflowX: 'auto', gap: 8 },
   navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', fontSize: 12, fontWeight: 500, color: '#5D6A7B', cursor: 'pointer', background: 'rgba(255,255,255,0.56)', border: '1px solid rgba(23,37,84,0.08)', borderRadius: 999, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' },
-  navTabActive: { color: '#0F6E56', background: 'linear-gradient(135deg,#0F6E56,#0F6E56)', border: '1px solid rgba(15,110,86,0.32)', fontWeight: 700 },
+  navTabActive: { color: '#0F6E56', background: 'linear-gradient(135deg,#E6FFF4,#F2FFFA)', border: '1px solid rgba(29,158,117,0.32)', fontWeight: 700 },
   soloNavTabActive: { color: '#534AB7', background: 'linear-gradient(135deg,#F0EDFF,#F7F3FF)', border: '1px solid rgba(127,119,221,0.3)', fontWeight: 700 },
   page: { padding: '1rem 0.95rem', flex: 1, paddingBottom: '6.25rem', animation: 'tbPageIn .45s cubic-bezier(.2,.7,.2,1)' },
   btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999, fontSize: 13, fontWeight: 600, border: '1px solid rgba(25,37,67,0.12)', background: 'linear-gradient(180deg,#ffffff,#f6fafe)', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s ease, border-color .22s ease, background .22s ease', boxShadow: '0 8px 18px rgba(0,0,0,0.06)', position: 'relative', overflow: 'hidden' },
-  btnP: { background: 'linear-gradient(135deg,#0F6E56,#0F6E56)', color: '#fff', border: '0.5px solid rgba(15,110,86,0.68)', boxShadow: '0 10px 22px rgba(15,110,86,0.24)' },
+  btnP: { background: 'linear-gradient(135deg,#28B88A,#0F6E56)', color: '#fff', border: '0.5px solid rgba(15,110,86,0.68)', boxShadow: '0 10px 22px rgba(15,110,86,0.24)' },
   btnSolo: { background: 'linear-gradient(135deg,#7F77DD,#534AB7)', color: '#fff', border: 'none' },
   btnOrange: { background: '#FF6B35', color: '#fff', border: '0.5px solid #FF6B35' },
   btnDanger: { background: '#fff', color: '#993C1D', border: '0.5px solid #F5C4B3' },
   card: { background: 'linear-gradient(145deg,rgba(255,255,255,0.78),rgba(243,249,255,0.54))', border: '1px solid rgba(255,255,255,0.72)', borderRadius: 30, padding: '1rem 1.05rem', marginBottom: 12, boxShadow: '0 20px 40px rgba(8,16,35,0.10)', backdropFilter: 'blur(14px)', animation: 'tbCardIn .45s cubic-bezier(.2,.7,.2,1)' },
   input: { fontFamily: "'DM Sans',sans-serif", padding: '11px 13px', border: '1px solid rgba(11,27,50,0.13)', borderRadius: 16, fontSize: 14, background: 'rgba(255,255,255,0.92)', color: '#1a1a18', width: '100%', outline: 'none', boxSizing: 'border-box', boxShadow: '0 6px 16px rgba(15,23,42,0.05)', transition: 'border-color .2s ease, box-shadow .2s ease, transform .2s ease' },
   label: { fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', display: 'block', marginBottom: 5, marginTop: 10 },
-  spinner: { width: 36, height: 36, border: '3px solid #0F6E56', borderTopColor: '#0F6E56', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
+  spinner: { width: 36, height: 36, border: '3px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
   soloSpinner: { width: 36, height: 36, border: '3px solid #EEEDFE', borderTopColor: '#7F77DD', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
 };
 
@@ -591,11 +591,11 @@ export default function App() {
   // ── AUTH SCREEN ──
   if (!authToken) return (
     <div style={{ ...S.root, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: -120, right: -90, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(15,110,86,0.18) 0%, rgba(15,110,86,0) 70%)' }} />
+      <div style={{ position: 'absolute', top: -120, right: -90, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.18) 0%, rgba(29,158,117,0) 70%)' }} />
       <div style={{ position: 'absolute', bottom: -140, left: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(55,138,221,0.14) 0%, rgba(55,138,221,0) 70%)' }} />
       <div style={{ width: '100%', maxWidth: 380 }}>
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ width: 68, height: 68, background: 'linear-gradient(135deg,#0F6E56,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 33, margin: '0 auto 12px', boxShadow: '0 14px 30px rgba(15,110,86,0.28)' }}>✈️</div>
+          <div style={{ width: 68, height: 68, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 33, margin: '0 auto 12px', boxShadow: '0 14px 30px rgba(15,110,86,0.28)' }}>✈️</div>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 800 }}>Trip<span style={{ color: '#FF6B35' }}>bae</span></div>
           <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4 }}>Plan less. Experience more.</div>
           <div style={{ fontSize: 11.5, color: '#8d8c87', marginTop: 7 }}>A calmer way to travel with friends.</div>
@@ -604,7 +604,7 @@ export default function App() {
           <div style={{ display: 'flex', gap: 0, background: '#F1EFE8', borderRadius: 12, padding: 3, marginBottom: '1.5rem' }}>
             {['login', 'signup'].map(s => (
               <button key={s} onClick={() => { setAuthScreen(s); setAuthError(''); }}
-                style={{ flex: 1, padding: '9px', fontSize: 13, fontWeight: 500, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: authScreen === s ? '#0F6E56' : 'transparent', color: authScreen === s ? '#fff' : '#6b6b68', transition: 'all .2s' }}>
+                style={{ flex: 1, padding: '9px', fontSize: 13, fontWeight: 500, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: authScreen === s ? '#1D9E75' : 'transparent', color: authScreen === s ? '#fff' : '#6b6b68', transition: 'all .2s' }}>
                 {s === 'login' ? '🔑 Log In' : '✨ Sign Up'}
               </button>
             ))}
@@ -631,7 +631,7 @@ export default function App() {
 
   return (
     <div className="tb-app-shell" style={S.root}>
-      <div style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(15,110,86,0.13) 0%, rgba(15,110,86,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.13) 0%, rgba(29,158,117,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: -190, left: -110, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(127,119,221,0.11) 0%, rgba(127,119,221,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <div className="tb-noise-layer" />
       {sharedFlight && (
@@ -662,10 +662,10 @@ export default function App() {
         @keyframes tbGlowPulse{0%{opacity:.65}50%{opacity:1}100%{opacity:.65}}
         *{box-sizing:border-box;margin:0;padding:0}
         a{color:inherit;text-decoration:none}
-        ::selection{background:#0F6E56;color:#0F6E56}
-        input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#0F6E56;outline:none}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#0F6E56;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
-        input:focus, select:focus, textarea:focus { border-color:#0F6E56 !important; box-shadow:0 0 0 3px rgba(15,110,86,0.14) !important; }
+        ::selection{background:#c7eedf;color:#053f31}
+        input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#E1F5EE;outline:none}
+        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1D9E75;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
+        input:focus, select:focus, textarea:focus { border-color:#1D9E75 !important; box-shadow:0 0 0 3px rgba(29,158,117,0.14) !important; }
       `}</style>
 
       {newTripModal && <ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
@@ -678,7 +678,7 @@ export default function App() {
           title="My profile"
           style={{
             width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-            background: profile.avatar ? `url(${profile.avatar}) center/cover` : (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#0F6E56,#0F6E56)'),
+            background: profile.avatar ? `url(${profile.avatar}) center/cover` : (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'),
             color: '#fff', fontWeight: 700, fontSize: 12, fontFamily: "'Sora',sans-serif",
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', padding: 0, marginRight: 4,

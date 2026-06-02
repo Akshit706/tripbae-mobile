@@ -25,7 +25,7 @@ function ShareCodeModal({ trip, onDismiss }) {
               <div style={{ fontSize: 11, color: '#534AB7', fontWeight: 600, letterSpacing: .4, textTransform: 'uppercase', marginBottom: 8 }}>Your Share Code</div>
               <div className="tb-amount-pop" style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: '#26215C', letterSpacing: 3 }}>{trip.shareCode}</div>
             </div>
-            <button style={{ ...S.btn, ...(copied ? { background: '#0F6E56', color: '#0F6E56', border: '0.5px solid #0F6E56' } : S.btnP), width: '100%', justifyContent: 'center', padding: '12px', fontSize: 15, borderRadius: 12, marginBottom: 10 }} onClick={copy}>
+            <button style={{ ...S.btn, ...(copied ? { background: '#E1F5EE', color: '#0F6E56', border: '0.5px solid #9FE1CB' } : S.btnP), width: '100%', justifyContent: 'center', padding: '12px', fontSize: 15, borderRadius: 12, marginBottom: 10 }} onClick={copy}>
               {copied ? '✓ Copied!' : '📋 Copy Code'}
             </button>
           </>

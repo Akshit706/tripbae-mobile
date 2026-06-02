@@ -293,7 +293,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
     {
       title: 'Your travels',
       items: [
-        { id: 'badges',  icon: '🏆', label: 'Badges',       sub: `${earned.length}/${BADGE_DEFS.length} earned · ${earnedPct}%`,                          accent: '#0F6E56', action: 'view' },
+        { id: 'badges',  icon: '🏆', label: 'Badges',       sub: `${earned.length}/${BADGE_DEFS.length} earned · ${earnedPct}%`,                          accent: '#1D9E75', action: 'view' },
         { id: 'stats',   icon: '📊', label: 'Travel Stats', sub: `${stats.uniqueDests} places · ${totalTravelDays} days`,                                  accent: '#7F77DD', action: 'view' },
         { id: 'history', icon: '🧳', label: 'Trip History', sub: `${stats.completedCount} completed · ${Math.max(0, stats.tripCount - stats.completedCount)} active`, accent: '#FF6B35', action: 'view' },
       ],
@@ -303,7 +303,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       items: [
         { id: 'notifications', icon: '🔔', label: 'Notifications',    sub: 'Trip reminders & updates',                          accent: '#FF6B35', action: 'view' },
         { id: 'currency',      icon: '💱', label: 'Default Currency', sub: `${currencyMeta.code} — ${currencyMeta.name}`,       accent: '#0F6E56', action: 'view' },
-        { id: 'help',          icon: '❓', label: 'Help & Support',   sub: 'FAQs and contact us',                              accent: '#0F6E56', action: 'view' },
+        { id: 'help',          icon: '❓', label: 'Help & Support',   sub: 'FAQs and contact us',                              accent: '#1D9E75', action: 'view' },
       ],
     },
     {
@@ -319,7 +319,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       items: [
         { id: 'policy', icon: '📄', label: 'Privacy policy',    sub: 'What we do and don\'t collect', accent: '#534AB7', action: 'view' },
         { id: 'terms',  icon: '📖', label: 'Terms of service',  sub: 'How we keep things fair',       accent: '#6b6b68', action: 'view' },
-        { id: 'about',  icon: 'ℹ️', label: 'About TravelBae',   sub: 'Our story & version info',      accent: '#0F6E56', action: 'view' },
+        { id: 'about',  icon: 'ℹ️', label: 'About TravelBae',   sub: 'Our story & version info',      accent: '#1D9E75', action: 'view' },
       ],
     },
   ];
@@ -340,7 +340,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         @keyframes pfFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pfBadgePop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
         @keyframes pfSlideIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
-        .pf-badge:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,110,86,0.18); }
+        .pf-badge:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(29,158,117,0.18); }
         .pf-badge-locked:hover { transform: translateY(-2px); }
         .pf-avatar-edit:hover { background: #0F6E56 !important; }
         .pf-row:hover { background: #faf9f5 !important; }
@@ -351,7 +351,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       <div style={{ background: 'rgba(255,255,255,0.9)', backdropFilter: 'blur(12px)', borderBottom: '0.5px solid rgba(0,0,0,0.08)', padding: '13px 1.25rem', paddingTop: 'calc(13px + env(safe-area-inset-top, 0px))', display: 'flex', alignItems: 'center', gap: 12, position: 'sticky', top: 0, zIndex: 10, boxShadow: '0 10px 24px rgba(0,0,0,0.05)' }}>
         <button style={{ ...S.btn, padding: '5px 8px', fontSize: 16 }} onClick={goBack}>←</button>
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700 }}>{headerTitle}</div>
-        {saved && <div style={{ marginLeft: 'auto', fontSize: 11, color: '#0F6E56', background: '#0F6E56', border: '0.5px solid #0F6E56', borderRadius: 10, padding: '4px 10px', fontWeight: 600, animation: 'pfFadeIn .2s' }}>✓ Saved</div>}
+        {saved && <div style={{ marginLeft: 'auto', fontSize: 11, color: '#0F6E56', background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 10, padding: '4px 10px', fontWeight: 600, animation: 'pfFadeIn .2s' }}>✓ Saved</div>}
       </div>
 
       {/* Floating toast */}
@@ -433,7 +433,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         <div style={{ animation: 'pfFadeIn .25s ease-out' }}>
           {/* Identity card */}
           <div style={{ padding: '1.5rem 1.25rem 0' }}>
-            <div style={{ background: 'linear-gradient(135deg,#0F6E56,#0F6E56)', borderRadius: 22, padding: '1.75rem 1.25rem', textAlign: 'center', color: '#fff', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(15,110,86,0.25)' }}>
+            <div style={{ background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, padding: '1.75rem 1.25rem', textAlign: 'center', color: '#fff', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(29,158,117,0.25)' }}>
               <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
               <div style={{ position: 'absolute', bottom: -50, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
 
@@ -445,7 +445,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   type="button"
                   className="pf-avatar-edit"
                   onClick={() => fileRef.current?.click()}
-                  style={{ position: 'absolute', bottom: 2, right: 2, width: 34, height: 34, borderRadius: '50%', background: '#0F6E56', border: '2.5px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: '#fff', transition: 'all .15s', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
+                  style={{ position: 'absolute', bottom: 2, right: 2, width: 34, height: 34, borderRadius: '50%', background: '#1D9E75', border: '2.5px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, color: '#fff', transition: 'all .15s', boxShadow: '0 2px 8px rgba(0,0,0,0.2)' }}
                   title="Upload photo"
                 >
                   📷
@@ -583,7 +583,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           </div>
           <div style={{ padding: '0 1.25rem' }}>
             <div style={{ height: 6, background: '#E8E6DE', borderRadius: 6, overflow: 'hidden' }}>
-              <div style={{ width: `${earnedPct}%`, height: '100%', background: 'linear-gradient(90deg,#0F6E56,#0F6E56)', transition: 'width .4s' }} />
+              <div style={{ width: `${earnedPct}%`, height: '100%', background: 'linear-gradient(90deg,#1D9E75,#0F6E56)', transition: 'width .4s' }} />
             </div>
           </div>
 
@@ -593,14 +593,14 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               <div style={{ padding: '0 1.25rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
                 {earned.map((b, i) => (
                   <div key={b.id} className="pf-badge" style={{
-                    background: 'linear-gradient(135deg,#fff,#0F6E56)',
-                    border: '0.5px solid #0F6E56',
+                    background: 'linear-gradient(135deg,#fff,#F0FAF5)',
+                    border: '0.5px solid #9FE1CB',
                     borderRadius: 14, padding: '14px 10px', textAlign: 'center',
                     cursor: 'default', transition: 'all .18s',
                     animation: `pfBadgePop .3s ease-out ${i * 0.04}s both`,
                     position: 'relative', overflow: 'hidden',
                   }}>
-                    <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 700, color: '#0F6E56', background: '#0F6E56', padding: '2px 6px', borderRadius: 6 }}>✓</div>
+                    <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 700, color: '#0F6E56', background: '#E1F5EE', padding: '2px 6px', borderRadius: 6 }}>✓</div>
                     <div style={{ fontSize: 32, marginBottom: 6, lineHeight: 1 }}>{b.emoji}</div>
                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#0F6E56', marginBottom: 3 }}>{b.name}</div>
                     <div style={{ fontSize: 10.5, color: '#6b6b68', lineHeight: 1.4 }}>{b.desc}</div>
@@ -624,7 +624,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#6b6b68', marginBottom: 3 }}>{b.name}</div>
                     <div style={{ fontSize: 10.5, color: '#9a9a96', lineHeight: 1.4 }}>{b.desc}</div>
                     {b.progress && (
-                      <div style={{ marginTop: 8, fontSize: 10, fontWeight: 700, color: '#0F6E56', background: '#F1EFE8', borderRadius: 8, padding: '2px 8px', display: 'inline-block' }}>
+                      <div style={{ marginTop: 8, fontSize: 10, fontWeight: 700, color: '#1D9E75', background: '#F1EFE8', borderRadius: 8, padding: '2px 8px', display: 'inline-block' }}>
                         {b.progress(stats)}
                       </div>
                     )}
@@ -658,12 +658,12 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   onClick={() => setSpanFilter(opt.id)}
                   style={{
                     flex: 1, padding: '8px 4px', borderRadius: 10, border: 'none',
-                    background: active ? '#0F6E56' : 'transparent',
+                    background: active ? '#1D9E75' : 'transparent',
                     color: active ? '#fff' : '#6b6b68',
                     fontSize: 12, fontWeight: active ? 700 : 500,
                     cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
                     transition: 'all .18s',
-                    boxShadow: active ? '0 3px 10px rgba(15,110,86,0.25)' : 'none',
+                    boxShadow: active ? '0 3px 10px rgba(29,158,117,0.25)' : 'none',
                   }}
                 >
                   {opt.label}
@@ -718,7 +718,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                       <div style={{
                         height: '100%', borderRadius: 99,
                         width: `${pct}%`,
-                        background: 'linear-gradient(90deg,#0F6E56,#0F6E56)',
+                        background: 'linear-gradient(90deg,#1D9E75,#0F6E56)',
                         transition: 'width .4s ease',
                       }} />
                     </div>
@@ -758,13 +758,13 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               const spend = (t.expenses || []).reduce((a, e) => a + (e.amount || 0), 0);
               return (
                 <div key={t.id} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: t.isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : '#0F6E56', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: t.isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
                     {t.emoji || (t.isSolo ? '🎒' : '✈️')}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                       <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.groupName || 'Untitled trip'}</div>
-                      {t.completed && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#0F6E56', color: '#0F6E56' }}>DONE</span>}
+                      {t.completed && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#E1F5EE', color: '#0F6E56' }}>DONE</span>}
                       {t.isSolo && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#EEEDFE', color: '#534AB7' }}>SOLO</span>}
                     </div>
                     <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -791,7 +791,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               </div>
               <button
                 onClick={() => savePrefs({ ...prefs, notifications: !prefs.notifications })}
-                style={{ width: 44, height: 26, borderRadius: 14, border: 'none', cursor: 'pointer', background: prefs.notifications ? '#0F6E56' : '#d1cfc8', position: 'relative', transition: 'background .2s', flexShrink: 0 }}
+                style={{ width: 44, height: 26, borderRadius: 14, border: 'none', cursor: 'pointer', background: prefs.notifications ? '#1D9E75' : '#d1cfc8', position: 'relative', transition: 'background .2s', flexShrink: 0 }}
               >
                 <div style={{ position: 'absolute', top: 3, left: prefs.notifications ? 21 : 3, width: 20, height: 20, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'left .2s' }} />
               </button>
@@ -813,7 +813,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                 </div>
                 <button
                   onClick={() => savePrefs({ ...prefs, [row.key]: !prefs[row.key] })}
-                  style={{ width: 40, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: prefs[row.key] ? '#0F6E56' : '#d1cfc8', position: 'relative', transition: 'background .2s', flexShrink: 0 }}
+                  style={{ width: 40, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: prefs[row.key] ? '#1D9E75' : '#d1cfc8', position: 'relative', transition: 'background .2s', flexShrink: 0 }}
                 >
                   <div style={{ position: 'absolute', top: 3, left: prefs[row.key] ? 19 : 3, width: 18, height: 18, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'left .2s' }} />
                 </button>
@@ -826,8 +826,8 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       {/* ════════ CURRENCY VIEW ════════ */}
       {view === 'currency' && (
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
-          <div style={{ background: 'linear-gradient(135deg,#0F6E56,#0F6E56)', border: '0.5px solid #0F6E56', borderRadius: 14, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', border: '0.5px solid #0F6E56', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontFamily: "'Sora',sans-serif", fontWeight: 700, color: '#0F6E56' }}>{currencyMeta.symbol}</div>
+          <div style={{ background: 'linear-gradient(135deg,#E1F5EE,#F0FAF5)', border: '0.5px solid #9FE1CB', borderRadius: 14, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', border: '0.5px solid #9FE1CB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontFamily: "'Sora',sans-serif", fontWeight: 700, color: '#0F6E56' }}>{currencyMeta.symbol}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#0F6E56' }}>Currently using {currencyMeta.code}</div>
               <div style={{ fontSize: 11.5, color: '#0F6E56', opacity: 0.85, marginTop: 2 }}>{currencyMeta.name}</div>
@@ -843,21 +843,21 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   className="pf-row"
                   onClick={() => savePrefs({ ...prefs, currency: c.code })}
                   style={{
-                    width: '100%', background: active ? '#0F6E56' : '#fff', border: 'none',
+                    width: '100%', background: active ? '#F0FAF5' : '#fff', border: 'none',
                     borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)',
                     padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
                     cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif",
                     transition: 'background .15s',
                   }}
                 >
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: active ? '#0F6E56' : '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: active ? '#fff' : '#1a1a18', flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: active ? '#1D9E75' : '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: active ? '#fff' : '#1a1a18', flexShrink: 0 }}>
                     {c.symbol}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13.5, fontWeight: 600, color: '#1a1a18' }}>{c.code}</div>
                     <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 1 }}>{c.name}</div>
                   </div>
-                  {active && <div style={{ fontSize: 14, color: '#0F6E56', fontWeight: 700 }}>✓</div>}
+                  {active && <div style={{ fontSize: 14, color: '#1D9E75', fontWeight: 700 }}>✓</div>}
                 </button>
               );
             })}
@@ -879,7 +879,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
             ].map((it, idx) => (
               <details key={it.q} style={{ padding: '12px 16px', borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)' }}>
                 <summary style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#0F6E56', fontWeight: 700 }}>›</span> {it.q}
+                  <span style={{ color: '#1D9E75', fontWeight: 700 }}>›</span> {it.q}
                 </summary>
                 <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55, marginTop: 8, paddingLeft: 16 }}>{it.a}</div>
               </details>
@@ -903,7 +903,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       {/* ════════ PRIVACY VIEW ════════ */}
       {view === 'privacy' && (
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
-          <div style={{ background: 'linear-gradient(135deg,#0F6E56,#0F6E56)', border: '0.5px solid #0F6E56', borderRadius: 14, padding: '14px 16px', marginBottom: 12, display: 'flex', gap: 10 }}>
+          <div style={{ background: 'linear-gradient(135deg,#E1F5EE,#F0FAF5)', border: '0.5px solid #9FE1CB', borderRadius: 14, padding: '14px 16px', marginBottom: 12, display: 'flex', gap: 10 }}>
             <div style={{ fontSize: 22, lineHeight: 1 }}>🔒</div>
             <div style={{ fontSize: 12.5, color: '#0F6E56', lineHeight: 1.5 }}>
               Your photos, expenses and trip data are <strong>end-to-end encrypted</strong> and visible only to you and your trip mates. We never share, sell, or use your content to train any models.
@@ -975,18 +975,18 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', maxWidth: 680 }}>
           {/* Hero */}
           <div style={{ textAlign: 'center', padding: '1rem 1rem 1.5rem' }}>
-            <div style={{ width: 78, height: 78, background: 'linear-gradient(135deg,#0F6E56,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, margin: '0 auto 14px', boxShadow: '0 10px 28px rgba(15,110,86,0.35)' }}>✈️</div>
+            <div style={{ width: 78, height: 78, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, margin: '0 auto 14px', boxShadow: '0 10px 28px rgba(29,158,117,0.35)' }}>✈️</div>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 700, letterSpacing: '-0.4px' }}>
-              Travel<span style={{ color: '#0F6E56' }}>Bae</span>
+              Travel<span style={{ color: '#1D9E75' }}>Bae</span>
             </div>
             <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4, fontStyle: 'italic' }}>Plan, split, explore — together.</div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, padding: '4px 12px', borderRadius: 12, background: '#0F6E56', border: '0.5px solid #0F6E56', fontSize: 11, color: '#0F6E56', fontWeight: 600 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, padding: '4px 12px', borderRadius: 12, background: '#E1F5EE', border: '0.5px solid #9FE1CB', fontSize: 11, color: '#0F6E56', fontWeight: 600 }}>
               <span>v1.0.0</span> · <span>Build 2026.05</span>
             </div>
           </div>
 
           {/* What is TravelBae */}
-          <div style={{ background: 'linear-gradient(135deg,#fff,#0F6E56)', border: '0.5px solid #0F6E56', borderRadius: 16, padding: '18px 18px', marginBottom: 12 }}>
+          <div style={{ background: 'linear-gradient(135deg,#fff,#F0FAF5)', border: '0.5px solid #9FE1CB', borderRadius: 16, padding: '18px 18px', marginBottom: 12 }}>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#0F6E56', marginBottom: 8 }}>What is TravelBae?</div>
             <div style={{ fontSize: 13, color: '#1a1a18', lineHeight: 1.65 }}>
               TravelBae is a calm, all-in-one companion for travellers who'd rather spend their energy on the journey than the logistics. From the first spark of an idea to the photos you scroll through years later, every part of a trip — planning, money, people, memories — lives in one place. No spreadsheets, no scattered group chats, no awkward "who owes whom" maths.
@@ -1011,7 +1011,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               { icon: '📸', title: 'Remember', body: 'Private photo folders per traveller, encrypted and visible only to your trip mates.' },
             ].map((f, idx) => (
               <div key={f.title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingTop: idx === 0 ? 0 : 10, paddingBottom: 10, borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.05)' }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, background: '#0F6E56', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{f.icon}</div>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: '#F0FAF5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{f.icon}</div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13.5, fontWeight: 700, color: '#1a1a18', marginBottom: 2 }}>{f.title}</div>
                   <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55 }}>{f.body}</div>
@@ -1051,7 +1051,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
 
           {/* Footer */}
           <div style={{ textAlign: 'center', fontSize: 12, color: '#6b6b68', marginTop: '1.25rem', paddingBottom: '0.5rem', lineHeight: 1.6 }}>
-            Made with <span style={{ color: '#0F6E56' }}>💚</span> for travellers, everywhere.
+            Made with <span style={{ color: '#1D9E75' }}>💚</span> for travellers, everywhere.
           </div>
           <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', paddingBottom: '1rem' }}>
             © 2026 TravelBae · All rights reserved
