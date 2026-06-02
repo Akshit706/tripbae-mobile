@@ -728,18 +728,18 @@ export default function App() {
           <div style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
-            gap: 6,
-            padding: 6,
-            borderRadius: 18,
+            gap: 5,
+            padding: 5,
+            borderRadius: 16,
             background: isSolo
-              ? 'linear-gradient(140deg, rgba(245,243,255,0.95), rgba(239,246,255,0.9))'
-              : 'linear-gradient(140deg, rgba(238,255,249,0.95), rgba(242,248,255,0.9))',
+              ? 'linear-gradient(145deg, rgba(247,244,255,0.96), rgba(241,247,255,0.92))'
+              : 'linear-gradient(145deg, rgba(239,255,250,0.96), rgba(244,250,255,0.92))',
             border: isSolo
-              ? '1px solid rgba(127,119,221,0.22)'
-              : '1px solid rgba(15,110,86,0.18)',
+              ? '1px solid rgba(127,119,221,0.19)'
+              : '1px solid rgba(15,110,86,0.16)',
             boxShadow: isSolo
-              ? '0 14px 30px rgba(83,74,183,0.12), inset 0 1px 0 rgba(255,255,255,0.75)'
-              : '0 14px 30px rgba(15,110,86,0.12), inset 0 1px 0 rgba(255,255,255,0.75)',
+              ? '0 10px 24px rgba(83,74,183,0.12), inset 0 1px 0 rgba(255,255,255,0.82)'
+              : '0 10px 24px rgba(15,110,86,0.11), inset 0 1px 0 rgba(255,255,255,0.82)',
           }}>
             {tabs.map((t, idx) => {
               const isActive = tab === t.id;
@@ -755,36 +755,12 @@ export default function App() {
                     ...(isActive ? activeStyle : {}),
                     animationDelay: `${idx * 35}ms`,
                     position: 'relative',
-                    boxShadow: isActive ? `0 10px 18px ${isSolo ? 'rgba(83,74,183,0.25)' : 'rgba(15,110,86,0.22)'}` : 'none',
-                    background: isActive
-                      ? (isSolo ? 'linear-gradient(145deg,#FFFFFF,#F1EEFF)' : 'linear-gradient(145deg,#FFFFFF,#EAFFF7)')
-                      : 'transparent',
+                    boxShadow: isActive ? `0 8px 16px ${isSolo ? 'rgba(83,74,183,0.2)' : 'rgba(15,110,86,0.18)'}` : 'none',
                   }}
                 >
-                  <span style={{
-                    position: 'absolute',
-                    inset: 0,
-                    borderRadius: 12,
-                    background: isActive
-                      ? (isSolo ? 'radial-gradient(circle at 50% 0%, rgba(127,119,221,0.22), transparent 65%)' : 'radial-gradient(circle at 50% 0%, rgba(29,158,117,0.2), transparent 65%)')
-                      : 'transparent',
-                    pointerEvents: 'none',
-                  }} />
-                  <span style={{
-                    position: 'relative',
-                    width: 28,
-                    height: 28,
-                    borderRadius: '50%',
-                    display: 'grid',
-                    placeItems: 'center',
-                    fontSize: 17,
-                    background: isActive
-                      ? (isSolo ? 'rgba(127,119,221,0.16)' : 'rgba(29,158,117,0.14)')
-                      : 'rgba(255,255,255,0.7)',
-                    filter: isActive ? 'none' : 'grayscale(25%)',
-                  }}>{t.icon}</span>
-                  <span style={{ position: 'relative', fontSize: 10, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t.label}</span>
-                  {isActive && <span style={{ position: 'absolute', bottom: 2, left: '22%', right: '22%', height: 2.5, borderRadius: 99, background: accentColor }} />}
+                  <span style={{ fontSize: 16, lineHeight: 1, filter: isActive ? 'none' : 'grayscale(20%) opacity(0.75)' }}>{t.icon}</span>
+                  <span style={{ fontSize: tabs.length > 4 ? 9.2 : 10.5, maxWidth: '100%', whiteSpace: 'normal', wordBreak: 'break-word', padding: '0 1px' }}>{t.label}</span>
+                  {isActive && <span style={{ position: 'absolute', bottom: 1, left: '20%', right: '20%', height: 2, borderRadius: 99, background: accentColor }} />}
                 </button>
               );
             })}

@@ -208,7 +208,7 @@ code {
   position: absolute;
   inset: -1px;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(255,255,255,0.34), rgba(255,255,255,0.08));
+  background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.04));
   opacity: 0;
   transition: opacity 180ms ease;
   z-index: -1;
