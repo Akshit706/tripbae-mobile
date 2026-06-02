@@ -264,9 +264,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes progressFill { from{width:0} to{width:var(--w)} }
         @keyframes tbPlaneArc {
-          0% { transform: translate(-14%, 86%) rotate(-20deg); }
-          45% { transform: translate(46%, 12%) rotate(4deg); }
-          100% { transform: translate(115%, -34%) rotate(16deg); }
+          0% { transform: translate(0px, 0px) rotate(-16deg); }
+          50% { transform: translate(170px, -88px) rotate(2deg); }
+          100% { transform: translate(320px, -152px) rotate(14deg); }
         }
         @keyframes tbTrailPulse { 0%,100%{opacity:.16} 50%{opacity:.3} }
         @keyframes tbPinPulse { 0%,100%{transform:scale(1);opacity:.14} 50%{transform:scale(1.14);opacity:.24} }
@@ -274,8 +274,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         .tb-hero-greet { animation: fadeUp 0.4s ease both; }
         .tb-hero-ambient { position:absolute; inset:0; z-index:1; pointer-events:none; overflow:hidden; }
         .tb-hero-trails { position:absolute; inset:0; width:100%; height:100%; animation: tbTrailPulse 6.2s ease-in-out infinite; }
-        .tb-hero-trails path { stroke:#475467; stroke-width:1.35; fill:none; stroke-linecap:round; stroke-dasharray:4 6; opacity:.24; }
-        .tb-hero-plane { position:absolute; left:-26px; bottom:-20px; width:23px; height:23px; opacity:.32; animation: tbPlaneArc 12s linear infinite; }
+        .tb-hero-trails path { stroke:#98A2B3; stroke-width:1.6; fill:none; stroke-linecap:round; stroke-dasharray:4 6; opacity:.34; }
+        .tb-hero-plane { position:absolute; left:6%; bottom:20px; font-size:22px; line-height:1; opacity:.5; filter: drop-shadow(0 1px 2px rgba(0,0,0,0.12)); animation: tbPlaneArc 10s linear infinite; }
         .tb-hero-pin { position:absolute; width:12px; height:12px; opacity:.18; animation: tbPinPulse 5.4s ease-in-out infinite; }
         .tb-hero-pin.pin-1 { left:16%; top:20%; }
         .tb-hero-pin.pin-2 { left:62%; top:10%; animation-delay:1.4s; }
@@ -332,10 +332,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             <path d="M28 204 Q112 160 222 142 T414 42" style={{ opacity: 0.16 }} />
             <path d="M36 186 Q124 124 236 104 T418 6" style={{ opacity: 0.14 }} />
           </svg>
-          <svg className="tb-hero-plane" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M3 11.7L20.7 3.2C21.3 2.9 22 3.5 21.7 4.1L13.2 21.8C12.9 22.4 12 22.3 11.9 21.6L10.6 14.8L3.8 13.5C3.1 13.4 3 12 3.7 11.7Z" fill="#FF6B35"/>
-            <path d="M10.6 14.8L14.9 10.5" stroke="#FFFFFF" strokeWidth="1.3" strokeLinecap="round"/>
-          </svg>
+          <div className="tb-hero-plane">✈️</div>
           <svg className="tb-hero-pin pin-1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path fill="#667085" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/>
           </svg>
