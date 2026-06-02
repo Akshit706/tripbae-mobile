@@ -309,14 +309,14 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Hero Section */}
-      <div style={{ background: 'transparent', padding: '1.6rem 1.35rem 1.25rem', position: 'relative', textAlign: 'left' }}>
-        <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'left' }}>
+      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 1rem', position: 'relative', textAlign: 'left' }}>
+        <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 8, textAlign: 'left' }}>
           Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
         </div>
-        <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 40, fontWeight: 800, lineHeight: 1.12, marginBottom: 10, textAlign: 'left' }}>
+        <div className="tb-hero-title" style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.15, marginBottom: 6, textAlign: 'left', whiteSpace: 'nowrap' }}>
           <span style={{ color: '#0D2B2E' }}>Where to </span><span style={{ color: '#1D9E75' }}>next?</span>
         </div>
-        <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 22, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'left' }}>Plan less. Experience more.</div>
+        <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 16, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'left' }}>Plan less. Experience more.</div>
         <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
           <button
             className="tb-new-btn"
