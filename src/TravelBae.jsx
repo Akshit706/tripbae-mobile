@@ -724,7 +724,13 @@ export default function App() {
 
       {/* Nav Tabs */}
       {activeTrip && activeTripData && (
-        <div className="tb-nav-ribbon" style={{ ...S.navTabs, gridTemplateColumns: `repeat(${tabs.length}, 1fr)`, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
+        <div className="tb-nav-ribbon" style={{
+          ...S.navTabs,
+          gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
+          borderTop: isSolo ? '0.5px solid rgba(127,119,221,0.15)' : '0.5px solid rgba(0,0,0,0.07)',
+          borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.15)' : '0.5px solid rgba(0,0,0,0.07)',
+          boxShadow: '0 2px 10px rgba(15,23,42,0.05)',
+        }}>
           {tabs.map((t, idx) => {
             const isActive = tab === t.id;
             const activeStyle = isSolo ? S.soloNavTabActive : S.navTabActive;
@@ -733,9 +739,11 @@ export default function App() {
               <button key={t.id} onClick={() => handleTabChange(t.id)}
                 className="tb-nav-pill tb-tab-entrance"
                 style={{ ...S.navTab, ...(isActive ? activeStyle : {}), animationDelay: `${idx * 35}ms`, position: 'relative' }}>
-                <span style={{ fontSize: 18, lineHeight: 1 }}>{t.icon}</span>
-                <span style={{ fontSize: 9.5, letterSpacing: 0.1 }}>{t.label}</span>
-                {isActive && <span style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 2.5, borderRadius: 99, background: accentColor, opacity: 0.8 }} />}
+                <span style={{ fontSize: 20, lineHeight: 1, filter: isActive ? 'none' : 'grayscale(40%) opacity(0.7)' }}>{t.icon}</span>
+                <span style={{ fontSize: 9, letterSpacing: 0.1, maxWidth: '100%' }}>{t.label}</span>
+                {isActive && (
+                  <span style={{ position: 'absolute', bottom: -1, left: '25%', right: '25%', height: 2, borderRadius: 99, background: accentColor }} />
+                )}
               </button>
             );
           })}

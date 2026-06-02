@@ -180,10 +180,11 @@ code {
   position: static;
   top: auto;
   z-index: auto;
-  background: rgba(255, 255, 255, 0.72);
-  backdrop-filter: blur(8px) saturate(1.02);
-  margin-bottom: 8px;
+  background: #fff;
+  margin-bottom: 0;
   pointer-events: none;
+  overflow: hidden;
+  width: 100%;
 }
 
 .tb-nav-ribbon .tb-nav-pill {
