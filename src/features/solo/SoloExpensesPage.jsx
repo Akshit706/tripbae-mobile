@@ -16,9 +16,10 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const todayStr = new Date().toISOString().split('T')[0];
   const getNow = () => {
     const now = new Date();
+    const pad = n => String(n).padStart(2, '0');
     return {
-      date: now.toISOString().split('T')[0],
-      time: now.toTimeString().slice(0, 5),
+      date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+      time: `${pad(now.getHours())}:${pad(now.getMinutes())}`,
     };
   };
   const [form, setForm] = useState({ desc: '', amount: '', cat: 'food', date: getNow().date, time: getNow().time, note: '' });
@@ -127,10 +128,10 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
 
   const getExpenseTimeLabel = (exp) => {
     if (exp.time) return exp.time;
-    if (typeof exp.date === 'string' && !exp.date.includes('T00:00:00.000Z')) {
+    if (exp.date) {
       const d = new Date(exp.date);
       if (!Number.isNaN(d.getTime())) {
-        return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+        return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       }
     }
     return null;
@@ -168,7 +169,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         cat: form.cat,
         split: [myNickname || 'Me'],
         note: form.note,
-        date: form.time ? `${form.date}T${form.time}:00` : form.date,
+        date: form.time ? new Date(`${form.date}T${form.time}:00`).toISOString() : new Date(form.date).toISOString(),
         time: form.time,
       };
       if (editingExpenseId) {
@@ -192,8 +193,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       desc: exp.desc || '',
       amount: String(exp.amount || ''),
       cat: exp.cat || 'food',
-      date: exp.date ? new Date(exp.date).toISOString().split('T')[0] : getNow().date,
-      time: exp.time || getExpenseTimeLabel(exp) || getNow().time,
+      date: exp.date ? (() => { const d = new Date(exp.date); const pad = n => String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; })() : getNow().date,
+      time: exp.time || (() => { const d = new Date(exp.date); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })() || getNow().time,
       note: exp.note || '',
     });
     setEditingExpenseId(exp.id);
@@ -484,22 +485,26 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           {sortedFiltered.map(exp => {
             const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
             const timeLabel = getExpenseTimeLabel(exp);
+            const accentColor = CAT_COLORS?.[exp.cat] || '#b0a8a0';
             return (
-              <div key={exp.id} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 18 }}>{cat.icon}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500 }}>{exp.desc}</div>
-                  <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>
-                    {cat.label} · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                    {timeLabel && <span> · {timeLabel}</span>}
-                    {exp.note && <span style={{ fontStyle: 'italic' }}> · {exp.note}</span>}
+              <div key={exp.id} style={{ background: '#fff', borderRadius: 18, marginBottom: 10, boxShadow: '0 4px 18px rgba(15,23,42,0.07)', overflow: 'hidden', border: '0.5px solid rgba(0,0,0,0.06)' }}>
+                <div style={{ height: 3, background: `linear-gradient(90deg, ${accentColor}, ${accentColor}88)` }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 21, boxShadow: `0 2px 8px ${accentColor}44` }}>{cat.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
+                    <div style={{ fontSize: 11, color: '#9ca3af' }}>
+                      {cat.label} · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                      {timeLabel && <span> · {timeLabel}</span>}
+                      {exp.note && <span style={{ fontStyle: 'italic', color: '#b0a8a0' }}> · {exp.note}</span>}
+                    </div>
                   </div>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700 }}>₹{exp.amount.toLocaleString('en-IN')}</div>
-                  <div style={{ display: 'flex', gap: 2 }}>
-                    <button onClick={() => handleEdit(exp)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#6b6b68', borderColor: 'transparent', background: 'transparent' }}>✎</button>
-                    <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#a8a8a5', borderColor: 'transparent', background: 'transparent' }}>✕</button>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: '#111827' }}>₹{exp.amount.toLocaleString('en-IN')}</div>
+                    <div style={{ display: 'flex', gap: 3 }}>
+                      <button onClick={() => handleEdit(exp)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#6b7280', border: 'none', background: 'rgba(0,0,0,0.04)', borderRadius: 6 }}>✎</button>
+                      <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#ef4444', border: 'none', background: 'rgba(239,68,68,0.06)', borderRadius: 6 }}>✕</button>
+                    </div>
                   </div>
                 </div>
               </div>

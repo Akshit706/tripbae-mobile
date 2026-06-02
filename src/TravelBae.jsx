@@ -557,16 +557,16 @@ export default function App() {
 
 
   const groupTabs = [
-    { id: 'main', label: '💳 Split' },
-    { id: 'contacts', label: '📒 Contacts' },
-    { id: 'itinerary', label: '🗺️ Itinerary' },
-    { id: 'photos', label: '📸 Photos' },
-    { id: 'club', label: '🧭 Club' },
+    { id: 'main',      icon: '💳', label: 'Split' },
+    { id: 'contacts', icon: '📒', label: 'Contacts' },
+    { id: 'itinerary',icon: '🗺️', label: 'Itinerary' },
+    { id: 'photos',   icon: '📸', label: 'Photos' },
+    { id: 'club',     icon: '🧭', label: 'Club' },
   ];
   const soloTabs = [
-    { id: 'main', label: '💰 Expenses' },
-    { id: 'itinerary', label: '🗺️ Itinerary' },
-    { id: 'club', label: '🧭 Club' },
+    { id: 'main',      icon: '💰', label: 'Expenses' },
+    { id: 'itinerary', icon: '🗺️', label: 'Itinerary' },
+    { id: 'club',      icon: '🧭', label: 'Club' },
   ];
   const tabs = isSolo ? soloTabs : groupTabs;
   const [viewDirection, setViewDirection] = useState('forward');
@@ -724,14 +724,21 @@ export default function App() {
 
       {/* Nav Tabs */}
       {activeTrip && activeTripData && (
-        <div className="tb-nav-ribbon" style={{ ...S.navTabs, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
-          {tabs.map((t, idx) => (
-            <button key={t.id} onClick={() => handleTabChange(t.id)}
-              className="tb-nav-pill tb-tab-entrance"
-              style={{ ...S.navTab, ...(tab === t.id ? (isSolo ? S.soloNavTabActive : S.navTabActive) : {}), animationDelay: `${idx * 35}ms` }}>
-              {t.label}
-            </button>
-          ))}
+        <div className="tb-nav-ribbon" style={{ ...S.navTabs, gridTemplateColumns: `repeat(${tabs.length}, 1fr)`, borderBottom: isSolo ? '0.5px solid rgba(127,119,221,0.2)' : '0.5px solid rgba(0,0,0,0.09)' }}>
+          {tabs.map((t, idx) => {
+            const isActive = tab === t.id;
+            const activeStyle = isSolo ? S.soloNavTabActive : S.navTabActive;
+            const accentColor = isSolo ? '#534AB7' : '#0F6E56';
+            return (
+              <button key={t.id} onClick={() => handleTabChange(t.id)}
+                className="tb-nav-pill tb-tab-entrance"
+                style={{ ...S.navTab, ...(isActive ? activeStyle : {}), animationDelay: `${idx * 35}ms`, position: 'relative' }}>
+                <span style={{ fontSize: 18, lineHeight: 1 }}>{t.icon}</span>
+                <span style={{ fontSize: 9.5, letterSpacing: 0.1 }}>{t.label}</span>
+                {isActive && <span style={{ position: 'absolute', bottom: 0, left: '20%', right: '20%', height: 2.5, borderRadius: 99, background: accentColor, opacity: 0.8 }} />}
+              </button>
+            );
+          })}
         </div>
       )}
 

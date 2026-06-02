@@ -219,7 +219,7 @@ function SplitPage({ trip, myNickname }) {
         desc: form.desc, amount: parseFloat(form.amount),
         paidBy: form.paidBy, cat: form.cat,
         split: splitWith,
-        date: form.time ? `${form.date}T${form.time}:00` : form.date,
+        date: form.time ? new Date(`${form.date}T${form.time}:00`).toISOString() : new Date(form.date).toISOString(),
         time: form.time,
       };
       if (editingExpenseId) {
@@ -238,7 +238,9 @@ function SplitPage({ trip, myNickname }) {
 
   const handleEditExpense = (exp) => {
     const splitArr = Array.isArray(exp.split) && exp.split.length > 0 ? exp.split : memberNames;
-    const normalizedDate = exp.date ? new Date(exp.date).toISOString().split('T')[0] : todayStr;
+    const pad = n => String(n).padStart(2, '0');
+    const d = exp.date ? new Date(exp.date) : new Date();
+    const normalizedDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
     const isAll = splitArr.length === memberNames.length && memberNames.every(m => splitArr.includes(m));
     setForm({
       desc: exp.desc || '',
@@ -246,8 +248,8 @@ function SplitPage({ trip, myNickname }) {
       paidBy: exp.paidBy || myNickname || memberNames[0] || '',
       cat: exp.cat || 'food',
       date: normalizedDate,
-      time: exp.time || (typeof exp.date === 'string' && !exp.date.includes('T00:00:00.000Z')
-        ? new Date(exp.date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false })
+      time: exp.time || (exp.date
+        ? (() => { const d = new Date(exp.date); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; })()
         : getNow().time),
       splitMode: isAll ? 'all' : 'select',
       splitWith: [...splitArr],
@@ -268,10 +270,10 @@ function SplitPage({ trip, myNickname }) {
 
   const getExpenseTimeLabel = (exp) => {
     if (exp.time) return exp.time;
-    if (typeof exp.date === 'string' && !exp.date.includes('T00:00:00.000Z')) {
+    if (exp.date) {
       const d = new Date(exp.date);
       if (!Number.isNaN(d.getTime())) {
-        return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: false });
+        return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
       }
     }
     return null;
@@ -588,33 +590,38 @@ function SplitPage({ trip, myNickname }) {
             const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
             const splitArr = Array.isArray(exp.split) && exp.split.length > 0 ? exp.split : memberNames;
             const timeLabel = getExpenseTimeLabel(exp);
+            const accentColor = CAT_COLORS[exp.cat] || '#b0a8a0';
             return (
-              <div key={exp.id} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8, borderLeft: `3px solid ${CAT_COLORS[exp.cat] || '#ccc'}`, borderRadius: '0 14px 14px 0', padding: '12px 14px 12px 12px' }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 20 }}>{cat.icon}</div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, marginBottom: 2 }}>{exp.desc}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <div style={{ width: 16, height: 16, borderRadius: '50%', background: mcolor(exp.paidBy), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{exp.paidBy.slice(0, 2).toUpperCase()}</div>
-                      <span style={{ fontSize: 12, color: '#6b6b68' }}>{exp.paidBy}</span>
+              <div key={exp.id} style={{ background: '#fff', borderRadius: 18, marginBottom: 10, boxShadow: '0 4px 18px rgba(15,23,42,0.07)', overflow: 'hidden', border: '0.5px solid rgba(0,0,0,0.06)' }}>
+                {/* color top strip */}
+                <div style={{ height: 3, background: `linear-gradient(90deg, ${accentColor}, ${accentColor}88)` }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px' }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 21, boxShadow: `0 2px 8px ${accentColor}44` }}>{cat.icon}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ width: 16, height: 16, borderRadius: '50%', background: mcolor(exp.paidBy), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 7, fontWeight: 800 }}>{exp.paidBy.slice(0,2).toUpperCase()}</div>
+                        <span style={{ fontSize: 11, color: '#6b7280', fontWeight: 500 }}>{exp.paidBy}</span>
+                      </div>
+                      <span style={{ color: '#D3D1C7', fontSize: 10 }}>•</span>
+                      <div style={{ display: 'flex' }}>
+                        {splitArr.slice(0, 4).map((m, i) => (
+                          <div key={m} style={{ width: 15, height: 15, borderRadius: '50%', background: mcolor(m), border: '1.5px solid #fff', marginLeft: i > 0 ? -5 : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 6, fontWeight: 700 }}>{m.slice(0,1).toUpperCase()}</div>
+                        ))}
+                        {splitArr.length > 4 && <div style={{ width: 15, height: 15, borderRadius: '50%', background: '#D3D1C7', border: '1.5px solid #fff', marginLeft: -5, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 6, color: '#6b6b68', fontWeight: 700 }}>+{splitArr.length-4}</div>}
+                      </div>
+                      <span style={{ color: '#D3D1C7', fontSize: 10 }}>•</span>
+                      <span style={{ fontSize: 11, color: '#9ca3af' }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}{timeLabel ? ` · ${timeLabel}` : ''}</span>
                     </div>
-                    <span style={{ fontSize: 11, color: '#D3D1C7' }}>·</span>
-                    <div style={{ display: 'flex' }}>
-                      {splitArr.slice(0, 4).map((m, i) => (
-                        <div key={m} style={{ width: 16, height: 16, borderRadius: '50%', background: mcolor(m), border: '1.5px solid #fff', marginLeft: i > 0 ? -5 : 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 7, fontWeight: 700 }}>{m.slice(0, 1).toUpperCase()}</div>
-                      ))}
-                      {splitArr.length > 4 && <div style={{ width: 16, height: 16, borderRadius: '50%', background: '#D3D1C7', border: '1.5px solid #fff', marginLeft: -5, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, color: '#6b6b68', fontWeight: 700 }}>+{splitArr.length - 4}</div>}
-                    </div>
-                    <span style={{ fontSize: 11, color: '#D3D1C7' }}>·</span>
-                    <span style={{ fontSize: 11, color: '#a8a8a5' }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}{timeLabel ? ` · ${timeLabel}` : ''}</span>
                   </div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700 }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
-                  <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>₹{Math.round(exp.amount / splitArr.length).toLocaleString('en-IN')} each</div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 2, marginTop: 2 }}>
-                    <button onClick={() => handleEditExpense(exp)} style={{ ...S.btn, padding: '2px 6px', fontSize: 11, color: '#6b6b68', border: 'none', background: 'transparent' }}>✎</button>
-                    <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 6px', fontSize: 11, color: '#ccc', border: 'none', background: 'transparent' }}>✕</button>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: '#111827' }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
+                    <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1 }}>₹{Math.round(exp.amount / splitArr.length).toLocaleString('en-IN')} each</div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 2, marginTop: 4 }}>
+                      <button onClick={() => handleEditExpense(exp)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#6b7280', border: 'none', background: 'rgba(0,0,0,0.04)', borderRadius: 6 }}>✎</button>
+                      <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#ef4444', border: 'none', background: 'rgba(239,68,68,0.06)', borderRadius: 6 }}>✕</button>
+                    </div>
                   </div>
                 </div>
               </div>
