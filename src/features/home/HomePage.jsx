@@ -313,20 +313,20 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
           Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
         </div>
-        <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 44, fontWeight: 800, lineHeight: 1.04, marginBottom: 8, textAlign: 'center' }}>
+        <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 39, fontWeight: 800, lineHeight: 1.06, marginBottom: 8, textAlign: 'center' }}>
           <div style={{ color: '#0D2B2E' }}>Where to</div>
           <div style={{ color: '#1D9E75' }}>next?</div>
         </div>
         <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 14, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'center' }}>Plan less. Experience more.</div>
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 11 }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
           <button
             className="tb-new-btn"
-            style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 14, padding: '13px 24px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)', width: '100%', justifyContent: 'center' }}
+            style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 14, padding: '13px 24px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)', flex: 1, justifyContent: 'center' }}
             onClick={() => { setShowCreate(true); setShowJoin(false); }}>
             + New Trip
           </button>
           <button
-            style={{ ...S.btn, background: 'rgba(255,255,255,0.96)', color: '#1f2937', border: '1px solid rgba(15,23,42,0.15)', boxShadow: '0 4px 14px rgba(15,23,42,0.06)', fontSize: 14, fontWeight: 700, padding: '13px 24px', borderRadius: 999, width: '100%', justifyContent: 'center' }}
+            style={{ ...S.btn, background: 'rgba(255,255,255,0.96)', color: '#1f2937', border: '1px solid rgba(15,23,42,0.15)', boxShadow: '0 4px 14px rgba(15,23,42,0.06)', fontSize: 14, fontWeight: 700, padding: '13px 24px', borderRadius: 999, flex: 1, justifyContent: 'center' }}
             onClick={() => { setShowJoin(true); setShowCreate(false); }}>
             Join with Code
           </button>
