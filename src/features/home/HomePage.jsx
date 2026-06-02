@@ -309,23 +309,24 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Hero Section */}
-      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 1rem', position: 'relative', textAlign: 'left' }}>
-        <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 8, textAlign: 'left' }}>
+      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'center' }}>
+        <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
           Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
         </div>
-        <div className="tb-hero-title" style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.15, marginBottom: 6, textAlign: 'left', whiteSpace: 'nowrap' }}>
-          <span style={{ color: '#0D2B2E' }}>Where to </span><span style={{ color: '#1D9E75' }}>next?</span>
+        <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 44, fontWeight: 800, lineHeight: 1.04, marginBottom: 8, textAlign: 'center' }}>
+          <div style={{ color: '#0D2B2E' }}>Where to</div>
+          <div style={{ color: '#1D9E75' }}>next?</div>
         </div>
-        <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 16, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'left' }}>Plan less. Experience more.</div>
-        <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 14, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'center' }}>Plan less. Experience more.</div>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 11 }}>
           <button
             className="tb-new-btn"
-            style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, padding: '13px 24px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)', width: 'auto' }}
+            style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 14, padding: '13px 24px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)', width: '100%', justifyContent: 'center' }}
             onClick={() => { setShowCreate(true); setShowJoin(false); }}>
             + New Trip
           </button>
           <button
-            style={{ ...S.btn, background: 'transparent', color: '#0F6E56', border: 'none', boxShadow: 'none', fontSize: 13, padding: '13px 2px', borderRadius: 0, textDecoration: 'underline', textUnderlineOffset: 4, width: 'auto' }}
+            style={{ ...S.btn, background: 'rgba(255,255,255,0.96)', color: '#1f2937', border: '1px solid rgba(15,23,42,0.15)', boxShadow: '0 4px 14px rgba(15,23,42,0.06)', fontSize: 14, fontWeight: 700, padding: '13px 24px', borderRadius: 999, width: '100%', justifyContent: 'center' }}
             onClick={() => { setShowJoin(true); setShowCreate(false); }}>
             Join with Code
           </button>

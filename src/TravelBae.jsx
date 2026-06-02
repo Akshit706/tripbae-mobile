@@ -218,7 +218,7 @@ function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
   root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(120% 85% at 0% 0%, #F9FDFF 0%, #EEF6F9 40%, #ECF1F7 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased', position: 'relative', overflowX: 'hidden' },
-  topBar: { background: 'transparent', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 1, boxShadow: 'none' },
+  topBar: { background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.08)', padding: '0.2rem 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 1, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
   logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, letterSpacing: '-0.45px', color: '#0D2B2E' },
   tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
@@ -688,9 +688,9 @@ export default function App() {
         >
           {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0', position: activeTrip ? 'relative' : 'absolute', left: activeTrip ? 'auto' : '50%', transform: activeTrip ? 'none' : 'translateX(-50%)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0', position: activeTrip ? 'relative' : 'absolute', left: activeTrip ? 'auto' : '50%', transform: activeTrip ? 'none' : 'translateX(-50%)' }}>
           {activeTrip && <button style={{ ...S.btn, padding: '5px 8px', marginRight: 2, fontSize: 16 }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>←</button>}
-          <img src={bglessLogo} alt="TripBae" style={{ height: 44, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <img src={bglessLogo} alt="TripBae" style={{ height: 52, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {activeTrip && activeTripData ? (
           /* Top-bar pill with trip name + inline Mark Complete / Delete actions */
