@@ -652,7 +652,7 @@ export default function App() {
           <span style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sharedFlight.label}</span>
         </div>
       )}
-      <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&family=DM+Serif+Display&display=swap" rel="stylesheet" />
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
@@ -690,7 +690,7 @@ export default function App() {
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0', position: activeTrip ? 'relative' : 'absolute', left: activeTrip ? 'auto' : '50%', transform: activeTrip ? 'none' : 'translateX(-50%)' }}>
           {activeTrip && <button style={{ ...S.btn, padding: '5px 8px', marginRight: 2, fontSize: 16 }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>←</button>}
-          <img src={bglessLogo} alt="TripBae" style={{ height: 56, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <img src={bglessLogo} alt="TripBae" style={{ height: 60, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {activeTrip && activeTripData ? (
           /* Top-bar pill with trip name + inline Mark Complete / Delete actions */
