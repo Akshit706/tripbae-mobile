@@ -266,15 +266,16 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         .tb-hero-title { animation: fadeUp 0.5s ease both; animation-delay: 0.05s; }
         .tb-hero-greet { animation: fadeUp 0.4s ease both; }
         .tb-trip-card-new {
-          border-radius: 24px; margin-bottom: 14px; overflow: hidden; position: relative;
-          cursor: pointer; will-change: transform;
-          box-shadow: 0 2px 20px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+          border-radius: 26px; margin-bottom: 16px; overflow: hidden; position: relative;
+          cursor: pointer; will-change: transform; transform: translateZ(0);
+          box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.10), 0 24px 48px rgba(0,0,0,0.06);
+          border-top: 1px solid rgba(255,255,255,0.15);
           transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
         @media (hover: hover) {
-          .tb-trip-card-new:hover { transform: translateY(-3px); box-shadow: 0 8px 32px rgba(0,0,0,0.13) !important; }
+          .tb-trip-card-new:hover { transform: translateY(-3px) translateZ(0); box-shadow: 0 8px 40px rgba(0,0,0,0.18) !important; }
         }
-        .tb-trip-card-new:active { transform: scale(0.98); }
+        .tb-trip-card-new:active { transform: scale(0.98) translateZ(0); }
         .tb-new-btn { transition: transform 0.18s ease, box-shadow 0.18s ease; }
         @media (hover: hover) {
           .tb-new-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,107,53,0.4) !important; }
@@ -308,7 +309,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Hero Section */}
-      <div style={{ padding: '28px 18px 24px', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ padding: '28px 18px 24px', position: 'relative', overflow: 'hidden', background: '#fff' }}>
         {/* atmospheric blobs */}
         <div style={{ position: 'absolute', top: -50, right: -30, width: 200, height: 200, background: 'radial-gradient(circle, rgba(29,158,117,0.1) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -30, left: -10, width: 150, height: 150, background: 'radial-gradient(circle, rgba(255,107,53,0.08) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
@@ -317,20 +318,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
           </div>
           <div className="tb-hero-title">
-            <div style={{ fontSize: 32, fontWeight: 800, color: '#0D1117', letterSpacing: '-1px', lineHeight: 1.1, fontFamily: "'Inter',sans-serif" }}>Where to</div>
-            <div style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-1px', lineHeight: 1.1, fontFamily: "'Inter',sans-serif", background: 'linear-gradient(90deg,#1D9E75,#5DCAA5)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>next?</div>
+            <div style={{ fontSize: 38, fontWeight: 800, color: '#0D1117', letterSpacing: '-1px', lineHeight: 1.1, fontFamily: "'Inter',sans-serif" }}>Where to</div>
+            <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-1px', lineHeight: 1.1, fontFamily: "'Inter',sans-serif", background: 'linear-gradient(90deg,#1D9E75 0%,#0F6E56 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>next?</div>
           </div>
-          <div style={{ fontSize: 14, color: 'rgba(0,0,0,0.38)', fontWeight: 400, marginBottom: 20, marginTop: 6 }}>Plan less. Experience more.</div>
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-            <div className="tb-stat-pill" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 20, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', fontSize: 12, color: '#555', fontWeight: 500 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: activeTrips.length > 0 ? '#1D9E75' : '#ccc', animation: activeTrips.length > 0 ? 'pulse 2s ease-in-out infinite' : 'none', display: 'inline-block', flexShrink: 0 }} />
-              {activeTrips.length} active
-            </div>
-            <div className="tb-stat-pill" style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 10px', borderRadius: 20, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 4px rgba(0,0,0,0.05)', fontSize: 12, color: '#555', fontWeight: 500 }}>
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ccc', display: 'inline-block', flexShrink: 0 }} />
-              {pastTrips.length} archived
-            </div>
-          </div>
+          <div style={{ fontSize: 15, color: 'rgba(0,0,0,0.42)', fontWeight: 400, marginBottom: 20, marginTop: 6 }}>Plan less. Experience more.</div>
           <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
             <button
               className="tb-new-btn"
@@ -347,7 +338,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       </div>
 
-      <div style={{ padding: '0 18px' }}>
+      <div style={{ padding: '0 16px 80px' }}>
 
       {showJoin && (
         <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '1.25rem' }}>
@@ -608,7 +599,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {activeTrips.length > 0 && (
-        <div style={{ padding: '4px 0 0', fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', marginBottom: 12 }}>YOUR TRIPS</div>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', marginBottom: 14, marginTop: 12 }}>YOUR TRIPS</div>
       )}
 
       {activeTrips.map((trip, idx) => {
@@ -649,8 +640,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             {/* glow blob */}
             <div style={{ position: 'absolute', top: -20, right: -20, width: 130, height: 130, borderRadius: '50%', background: glowBg, pointerEvents: 'none' }} />
 
+            {/* inner top shine */}
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60, background: 'linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)', borderRadius: '26px 26px 0 0', pointerEvents: 'none', zIndex: 2 }} />
             {/* card body */}
-            <div style={{ padding: '18px 18px 0', position: 'relative', zIndex: 1, cursor: 'pointer' }} onClick={(event) => openTripWithMotion(trip.id, event)}>
+            <div style={{ padding: '20px 20px 0', position: 'relative', zIndex: 1, cursor: 'pointer' }} onClick={(event) => openTripWithMotion(trip.id, event)}>
               {/* top row */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 13 }}>
                 <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
@@ -658,26 +651,26 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   {trip.isSolo && (
-                    <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(127,119,221,0.18)', color: '#AFA9EC', border: '1px solid rgba(127,119,221,0.25)' }}>Solo</span>
+                    <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(127,119,221,0.18)', color: '#AFA9EC', border: '1px solid rgba(127,119,221,0.25)', boxShadow: '0 2px 8px rgba(127,119,221,0.2)' }}>Solo</span>
                   )}
-                  <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, ...statusBadgeStyle }}>
+                  <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...((!isPast) ? { boxShadow: '0 2px 8px rgba(29,158,117,0.2)' } : {}) }}>
                     {isPast ? 'Past' : status.label}
                   </span>
                 </div>
               </div>
 
               {/* destination + name */}
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', letterSpacing: '-0.4px', lineHeight: 1.15, marginBottom: 3, fontFamily: "'Inter',sans-serif" }}>{trip.destination}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.6px', lineHeight: 1.15, marginBottom: 5, fontFamily: "'Inter',sans-serif" }}>{trip.destination}</div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>{trip.groupName}</div>
 
               {/* stats line */}
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.45)', fontWeight: 500, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: 500, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
                 <span>{formatDateRange(trip.arrival, trip.departure)}</span>
-                <span style={{ opacity: 0.4 }}>·</span>
+                <span style={{ opacity: 0.35 }}>·</span>
                 <span>{days} nights</span>
-                <span style={{ opacity: 0.4 }}>·</span>
+                <span style={{ opacity: 0.35 }}>·</span>
                 <span>{memberNames.length} {memberNames.length === 1 ? 'member' : 'members'}</span>
-                <span style={{ opacity: 0.4 }}>·</span>
+                <span style={{ opacity: 0.35 }}>·</span>
                 <span>₹{Math.round(totalSpend).toLocaleString('en-IN')}</span>
               </div>
 
@@ -688,21 +681,21 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                     <span>Budget</span>
                     <span style={{ color: trip.isSolo ? '#FFAA80' : '#5DCAA5' }}>{budgetPct}% · ₹{Math.round(budgetBase - totalSpend).toLocaleString('en-IN')} left</span>
                   </div>
-                  <div style={{ height: 3, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 99, background: barFill, '--w': `${budgetPct}%`, animation: `progressFill 1s ease both`, animationDelay: `${cardDelay + 200}ms`, width: `${budgetPct}%` }} />
+                  <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', borderRadius: 99, background: barFill, '--w': `${budgetPct}%`, animation: `progressFill 1s ease both`, animationDelay: `${cardDelay + 200}ms`, width: `${budgetPct}%`, boxShadow: trip.isSolo ? '0 0 8px rgba(255,107,53,0.5)' : '0 0 8px rgba(29,158,117,0.5)' }} />
                   </div>
                 </div>
               )}
             </div>
 
             {/* card footer */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 18px', marginTop: budgetBase > 0 ? 0 : 14, borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.18)', backdropFilter: 'blur(10px)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 20px', marginTop: budgetBase > 0 ? 0 : 14, borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.18)', backdropFilter: 'blur(10px)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flex: 1 }} onClick={(event) => openTripWithMotion(trip.id, event)}>
                 {trip.isSolo
                   ? <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
                   : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
                 }
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginLeft: 0 }}>
+                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginLeft: 0 }}>
                   {memberNames[0] || (trip.isSolo ? 'You' : 'Member')}{!trip.isSolo && memberNames.length > 1 ? ` +${memberNames.length - 1}` : ''}
                 </span>
               </div>

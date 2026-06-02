@@ -217,8 +217,8 @@ function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
   root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(120% 85% at 0% 0%, #F9FDFF 0%, #EEF6F9 40%, #ECF1F7 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased', position: 'relative', overflowX: 'hidden' },
-  topBar: { background: '#0D2B2E', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 1, boxShadow: '0 12px 28px rgba(6,16,23,0.35)' },
-  logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, letterSpacing: '-0.45px', color: '#fff' },
+  topBar: { background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 1, boxShadow: '0 1px 0 rgba(0,0,0,0.06), 0 4px 24px rgba(0,0,0,0.08)' },
+  logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, letterSpacing: '-0.45px', color: '#0D2B2E' },
   tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
   navTabs: { background: 'rgba(255,255,255,0.42)', backdropFilter: 'blur(16px) saturate(1.08)', borderBottom: 'none', display: 'flex', padding: '8px 1rem 10px', overflowX: 'auto', gap: 8 },
@@ -682,21 +682,22 @@ export default function App() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', padding: 0, marginRight: 4,
             boxShadow: '0 2px 6px rgba(0,0,0,0.08)',
+            border: '2px solid rgba(29,158,117,0.4)',
           }}
         >
           {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '13px 0', position: activeTrip ? 'relative' : 'absolute', left: activeTrip ? 'auto' : '50%', transform: activeTrip ? 'none' : 'translateX(-50%)' }}>
           {activeTrip && <button style={{ ...S.btn, padding: '5px 8px', marginRight: 2, fontSize: 16 }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>←</button>}
-          <div style={{ width: 34, height: 34, background: isSolo ? 'linear-gradient(135deg,#4A2C8A,#2D1B69)' : 'linear-gradient(135deg,#0D2B2E,#134E4A)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
+          <div style={{ width: 34, height: 34, background: isSolo ? 'linear-gradient(135deg,#FF8F65,#FF6B35)' : 'linear-gradient(135deg,#FF8F65,#FF6B35)', borderRadius: 10, border: '1px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, boxShadow: '0 4px 12px rgba(255,107,53,0.35)' }}>
             {isSolo ? '🎒' : '✈️'}
           </div>
-          <div style={S.logoText}>Trip<span style={{ color: '#FF6B35' }}>bae</span></div>
+          <div style={{ ...S.logoText, color: '#0D2B2E' }}>Trip<span style={{ color: '#FF6B35' }}>bae</span></div>
         </div>
         {activeTrip && activeTripData ? (
           /* Top-bar pill with trip name + inline Mark Complete / Delete actions */
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={isSolo ? S.soloPill : S.tripPill} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>
+            <div style={{ ...(isSolo ? S.soloPill : S.tripPill), background: 'rgba(13,43,46,0.07)', border: '1px solid rgba(13,43,46,0.15)', color: '#0D2B2E' }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>
               {activeTripData.emoji} {activeTripData.groupName}
               {isSolo && <span style={{ marginLeft: 4, fontSize: 10, fontWeight: 700, background: 'rgba(127,119,221,0.2)', borderRadius: 8, padding: '1px 6px' }}>Solo</span>}
             </div>
