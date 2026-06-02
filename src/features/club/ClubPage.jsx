@@ -515,10 +515,9 @@ function ClubPage({ trip, onTripRefresh }) {
       if (locationEnabled && myLat !== null && myLng !== null) {
         const itemLat = item.latitude ?? item.trip?.latitude;
         const itemLng = item.longitude ?? item.trip?.longitude;
-        if (itemLat != null && itemLng != null) {
-          const dist = haversine(myLat, myLng, itemLat, itemLng);
-          if (dist > debouncedRadius) return false;
-        }
+        // If the remote group has no coordinates, we can't verify proximity → exclude
+        if (itemLat == null || itemLng == null) return false;
+        if (haversine(myLat, myLng, itemLat, itemLng) > debouncedRadius) return false;
       }
 
       if (q) {
