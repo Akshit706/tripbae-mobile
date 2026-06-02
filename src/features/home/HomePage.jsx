@@ -309,32 +309,26 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Hero Section */}
-      <div style={{ padding: '28px 18px 24px', position: 'relative', overflow: 'hidden', background: '#fff' }}>
-        {/* atmospheric blobs */}
-        <div style={{ position: 'absolute', top: -50, right: -30, width: 200, height: 200, background: 'radial-gradient(circle, rgba(29,158,117,0.1) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -30, left: -10, width: 150, height: 150, background: 'radial-gradient(circle, rgba(255,107,53,0.08) 0%, transparent 70%)', borderRadius: '50%', pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 8 }}>
-            Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
-          </div>
-          <div className="tb-hero-title">
-            <div style={{ fontSize: 38, fontWeight: 800, color: '#0D1117', letterSpacing: '-1px', lineHeight: 1.1, fontFamily: "'Inter',sans-serif" }}>Where to</div>
-            <div style={{ fontSize: 38, fontWeight: 800, letterSpacing: '-1px', lineHeight: 1.1, fontFamily: "'Inter',sans-serif", background: 'linear-gradient(90deg,#1D9E75 0%,#0F6E56 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>next?</div>
-          </div>
-          <div style={{ fontSize: 15, color: 'rgba(0,0,0,0.42)', fontWeight: 400, marginBottom: 20, marginTop: 6 }}>Plan less. Experience more.</div>
-          <div style={{ display: 'flex', gap: 10, marginTop: 20 }}>
-            <button
-              className="tb-new-btn"
-              style={{ flex: 1, padding: 13, background: 'linear-gradient(135deg,#FF6B35,#FF4500)', border: 'none', borderRadius: 14, color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: "'Inter',sans-serif", boxShadow: '0 4px 16px rgba(255,107,53,0.3)', cursor: 'pointer' }}
-              onClick={() => { setShowCreate(true); setShowJoin(false); }}>
-              + New Trip
-            </button>
-            <button
-              style={{ flex: 1, padding: 13, background: 'rgba(255,255,255,0.9)', border: '1.5px solid rgba(0,0,0,0.1)', borderRadius: 14, color: '#333', fontSize: 14, fontWeight: 600, fontFamily: "'Inter',sans-serif", cursor: 'pointer', backdropFilter: 'blur(8px)' }}
-              onClick={() => { setShowJoin(true); setShowCreate(false); }}>
-              Join with Code
-            </button>
-          </div>
+      <div style={{ background: 'linear-gradient(135deg,#0D2B2E,#134E4A)', padding: '1.7rem 1.35rem 1.5rem', position: 'relative', overflow: 'hidden', marginBottom: '1.5rem' }}>
+        <div style={{ position: 'absolute', top: -20, right: -14, fontSize: 94, opacity: 0.12, transform: 'rotate(12deg)' }}>✈️</div>
+        <div style={{ position: 'absolute', left: -42, bottom: -62, width: 150, height: 150, borderRadius: '50%', background: 'rgba(246,201,122,0.12)' }} />
+        <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10 }}>
+          Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
+        </div>
+        <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 800, color: '#fff', marginBottom: 8, lineHeight: 1.15 }}>Where to next?</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', marginBottom: 20, lineHeight: 1.5, fontStyle: 'italic' }}>Plan less. Experience more.</div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            className="tb-new-btn"
+            style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, padding: '10px 18px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)' }}
+            onClick={() => { setShowCreate(true); setShowJoin(false); }}>
+            + New Trip
+          </button>
+          <button
+            style={{ ...S.btn, background: 'transparent', color: '#F2F4F5', border: 'none', boxShadow: 'none', fontSize: 13, padding: '10px 2px', borderRadius: 0, textDecoration: 'underline', textUnderlineOffset: 4 }}
+            onClick={() => { setShowJoin(true); setShowCreate(false); }}>
+            Join with Code
+          </button>
         </div>
       </div>
 
