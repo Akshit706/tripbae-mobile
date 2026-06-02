@@ -334,7 +334,11 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, onOpen }) {
                   {compatibility.score}% match
                 </span>
               )}
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>{distanceLabel(item.distance)}</span>
+              {locationEnabled && item.latitude != null && item.longitude != null && (
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>
+                  {distanceLabel(haversine(myLat, myLng, item.latitude, item.longitude))}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -372,17 +376,20 @@ function ClubPage({ trip, onTripRefresh }) {
   const [requestFor, setRequestFor] = useState(null);
   const [requestMessage, setRequestMessage] = useState('');
 
-  const [userLocation, setUserLocation] = useState(null);
-  const [locationError, setLocationError] = useState('');
-  const [locationEnabled, setLocationEnabled] = useState(() => {
-    try {
-      return localStorage.getItem('travelbae_club_location_enabled') === 'true';
-    } catch {
-      return false;
-    }
-  });
-  const [radius, setRadius] = useState(25);
+  // ── Location (Nominatim search + optional GPS reverse-geocode) ──
+  const [locQuery, setLocQuery] = useState(() => { try { return localStorage.getItem('travelbae_club_loc_label') || ''; } catch { return ''; } });
+  const [locSuggestions, setLocSuggestions] = useState([]);
+  const [locSearching, setLocSearching] = useState(false);
+  const [locLabel, setLocLabel] = useState(() => { try { return localStorage.getItem('travelbae_club_loc_label') || ''; } catch { return ''; } });
+  const [myLat, setMyLat] = useState(() => { try { const v = localStorage.getItem('travelbae_club_loc_lat'); return v ? parseFloat(v) : null; } catch { return null; } });
+  const [myLng, setMyLng] = useState(() => { try { const v = localStorage.getItem('travelbae_club_loc_lng'); return v ? parseFloat(v) : null; } catch { return null; } });
+  const [locError, setLocError] = useState('');
+  const [locDetecting, setLocDetecting] = useState(false);
+  const [radius, setRadius] = useState(() => { try { return parseInt(localStorage.getItem('travelbae_club_radius') || '25', 10); } catch { return 25; } });
   const [debouncedRadius, setDebouncedRadius] = useState(radius);
+  const locDebounce = useRef(null);
+
+  const locationEnabled = myLat !== null && myLng !== null;
 
   const [profileForm, setProfileForm] = useState({
     title: '',
@@ -404,34 +411,63 @@ function ClubPage({ trip, onTripRefresh }) {
     return () => clearTimeout(t);
   }, [radius]);
 
-  const requestLocation = useCallback(({ silent = false, openFilters = true } = {}) => {
-    if (!navigator.geolocation) {
-      if (!silent) setLocationError('Geolocation is not supported on this browser.');
-      return;
-    }
+  // ── Nominatim locality search ──
+  const searchLocality = useCallback(async (text) => {
+    if (text.length < 2) { setLocSuggestions([]); return; }
+    setLocSearching(true);
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=6&accept-language=en`,
+        { headers: { 'User-Agent': 'TravelBae/1.0' } }
+      );
+      const data = await res.json();
+      setLocSuggestions(data.slice(0, 6));
+    } catch { setLocSuggestions([]); }
+    setLocSearching(false);
+  }, []);
+
+  const pickLocSuggestion = useCallback((item) => {
+    const lat = parseFloat(item.lat);
+    const lng = parseFloat(item.lon);
+    const a = item.address || {};
+    const label = a.city || a.town || a.village || a.county || a.state_district || a.state || item.display_name.split(',')[0];
+    setMyLat(lat); setMyLng(lng); setLocLabel(label); setLocQuery(label); setLocSuggestions([]);
+    try { localStorage.setItem('travelbae_club_loc_lat', String(lat)); localStorage.setItem('travelbae_club_loc_lng', String(lng)); localStorage.setItem('travelbae_club_loc_label', label); } catch {}
+    setLocError('');
+  }, []);
+
+  const detectGPS = useCallback(() => {
+    if (!navigator.geolocation) { setLocError('Geolocation not supported.'); return; }
+    setLocDetecting(true); setLocError('');
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setUserLocation({ latitude: position.coords.latitude, longitude: position.coords.longitude });
-        setLocationError('');
-        setLocationEnabled(true);
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
         try {
-          localStorage.setItem('travelbae_club_location_enabled', 'true');
-        } catch {}
-        if (openFilters) setFiltersOpen(true);
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=en`,
+            { headers: { 'User-Agent': 'TravelBae/1.0' } }
+          );
+          const data = await res.json();
+          const a = data.address || {};
+          const label = a.city || a.town || a.village || a.county || a.state_district || a.state || 'Your location';
+          setMyLat(latitude); setMyLng(longitude); setLocLabel(label); setLocQuery(label); setLocSuggestions([]);
+          try { localStorage.setItem('travelbae_club_loc_lat', String(latitude)); localStorage.setItem('travelbae_club_loc_lng', String(longitude)); localStorage.setItem('travelbae_club_loc_label', label); } catch {}
+          setLocError('');
+        } catch { setLocError('Could not reverse-geocode your location.'); }
+        setLocDetecting(false);
       },
-      () => {
-        if (!silent) {
-          setLocationError('Location permission denied. You can still use manual filters.');
-        }
-      },
+      () => { setLocError('Permission denied. Search a locality manually.'); setLocDetecting(false); },
       { enableHighAccuracy: false, timeout: 10000 }
     );
   }, []);
 
-  useEffect(() => {
-    if (locationEnabled) {
-      requestLocation({ silent: true, openFilters: false });
-    }
+  // Haversine distance in km
+  const haversine = useCallback((lat1, lon1, lat2, lon2) => {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   }, []);
 
 
@@ -439,14 +475,7 @@ function ClubPage({ trip, onTripRefresh }) {
   const loadHub = useCallback(async () => {
     setClubLoading(true);
     try {
-      const params = {
-        vibe: filters.vibe,
-      };
-      if (locationEnabled && userLocation) {
-        params.latitude = userLocation.latitude;
-        params.longitude = userLocation.longitude;
-        params.radius = debouncedRadius;
-      }
+      const params = { vibe: filters.vibe };
       const data = await getClubHub(trip.id, params);
       setHub(data);
       setProfileForm({
@@ -464,7 +493,7 @@ function ClubPage({ trip, onTripRefresh }) {
       alert('Could not load club: ' + err.message);
     }
     setClubLoading(false);
-  }, [trip.id, trip.groupName, locationEnabled, userLocation, debouncedRadius, filters.vibe]);
+  }, [trip.id, trip.groupName, filters.vibe]);
 
   useEffect(() => { loadHub(); }, [loadHub]);
 
@@ -482,8 +511,15 @@ function ClubPage({ trip, onTripRefresh }) {
 
       if (filters.genderMix !== 'any' && (item.genderMix || 'mixed') !== filters.genderMix) return false;
 
-      // Client-side distance guard (backend already filters, but double-check)
-      if (locationEnabled && item.distance != null && item.distance > debouncedRadius) return false;
+      // Client-side Haversine distance filter
+      if (locationEnabled && myLat !== null && myLng !== null) {
+        const itemLat = item.latitude ?? item.trip?.latitude;
+        const itemLng = item.longitude ?? item.trip?.longitude;
+        if (itemLat != null && itemLng != null) {
+          const dist = haversine(myLat, myLng, itemLat, itemLng);
+          if (dist > debouncedRadius) return false;
+        }
+      }
 
       if (q) {
         const hay = [
@@ -499,7 +535,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
       return true;
     });
-  }, [hub.discover, filters, locationEnabled, debouncedRadius]);
+  }, [hub.discover, filters, locationEnabled, myLat, myLng, debouncedRadius, haversine]);
 
   const handleToggle = async () => {
     setClubBusy(true);
@@ -559,8 +595,8 @@ function ClubPage({ trip, onTripRefresh }) {
         boysCount: profileForm.boysCount === '' ? null : Number(profileForm.boysCount),
         girlsCount: profileForm.girlsCount === '' ? null : Number(profileForm.girlsCount),
         coverTags: safeTags,
-        latitude: locationEnabled && userLocation ? userLocation.latitude : null,
-        longitude: locationEnabled && userLocation ? userLocation.longitude : null,
+        latitude: myLat,
+        longitude: myLng,
       });
       await loadHub();
       setClubView('discover');
@@ -997,18 +1033,63 @@ function ClubPage({ trip, onTripRefresh }) {
             placeholder="late-night, photography, budget-friendly, bike-rides"
           />
 
-          {!locationEnabled && (
-            <div style={{ background: '#FFF8EC', border: '1px solid #F5C4B3', borderRadius: 12, padding: 10, marginTop: 12, marginBottom: 10, fontSize: 12, color: '#5D4037' }}>
-              <div style={{ marginBottom: 8 }}>📍 Enable location so other groups can see how far you are.</div>
-              <button 
-                type="button"
-                style={{ ...S.btn, ...S.btnOrange, marginTop: 0, width: '100%' }}
-                onClick={() => requestLocation({ silent: false, openFilters: false })}
-              >
-                Use my location
-              </button>
-            </div>
-          )}
+          {/* ── Location picker ── */}
+          <div style={{ marginTop: 14, background: '#F4F9FF', border: '1px solid rgba(55,138,221,0.22)', borderRadius: 14, padding: 12 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#378ADD', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>📍 Your Location</div>
+            {locLabel ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#0F172A' }}>📍 {locLabel}</div>
+                <button type="button" onClick={() => { setLocLabel(''); setLocQuery(''); setMyLat(null); setMyLng(null); try { localStorage.removeItem('travelbae_club_loc_lat'); localStorage.removeItem('travelbae_club_loc_lng'); localStorage.removeItem('travelbae_club_loc_label'); } catch {} }} style={{ ...S.btn, padding: '4px 10px', fontSize: 11, color: '#6b6b68' }}>Change</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ position: 'relative', marginBottom: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 12, border: '1px solid rgba(0,0,0,0.12)', padding: '0 10px' }}>
+                    <span style={{ fontSize: 14 }}>🔍</span>
+                    <input
+                      style={{ ...S.input, border: 'none', background: 'transparent', flex: 1, padding: '10px 0', fontSize: 14, outline: 'none', boxShadow: 'none' }}
+                      placeholder="Type your city or locality…"
+                      value={locQuery}
+                      onChange={e => {
+                        setLocQuery(e.target.value);
+                        clearTimeout(locDebounce.current);
+                        locDebounce.current = setTimeout(() => searchLocality(e.target.value), 340);
+                      }}
+                    />
+                    {locSearching && <div style={{ width: 16, height: 16, border: '2px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', flexShrink: 0 }} />}
+                  </div>
+                  {locSuggestions.length > 0 && (
+                    <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', background: '#fff', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 50, overflow: 'hidden', marginTop: 4 }}>
+                      {locSuggestions.map((item, i) => {
+                        const a = item.address || {};
+                        const main = a.city || a.town || a.village || a.state_district || a.county || a.state || item.display_name.split(',')[0];
+                        const sub = [a.state, a.country].filter(Boolean).join(', ');
+                        return (
+                          <div key={item.osm_id + item.osm_type + i}
+                            onClick={() => pickLocSuggestion(item)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: i < locSuggestions.length - 1 ? '0.5px solid #f0f0f0' : 'none', cursor: 'pointer' }}
+                            onMouseEnter={e => e.currentTarget.style.background = '#f7f6f2'}
+                            onMouseLeave={e => e.currentTarget.style.background = '#fff'}
+                          >
+                            <span style={{ fontSize: 18, flexShrink: 0 }}>📍</span>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{main}</div>
+                              {sub && <div style={{ fontSize: 11, color: '#888' }}>{sub}</div>}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <button type="button" onClick={detectGPS} disabled={locDetecting}
+                  style={{ ...S.btn, width: '100%', justifyContent: 'center', fontSize: 12, color: '#378ADD', borderColor: 'rgba(55,138,221,0.3)', background: '#EEF6FF', opacity: locDetecting ? 0.6 : 1 }}>
+                  {locDetecting ? 'Detecting…' : '🎯 Detect my location'}
+                </button>
+                {locError && <div style={{ marginTop: 6, fontSize: 11, color: '#993C1D' }}>{locError}</div>}
+              </>
+            )}
+          </div>
 
           <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button style={{ ...S.btn, ...S.btnP }} disabled={clubBusy} onClick={handleSaveProfile}>Save Card</button>
@@ -1565,18 +1646,23 @@ function ClubPage({ trip, onTripRefresh }) {
 
             <div style={{ marginTop: 10, background: '#F6FFFB', border: '1px solid #D9F5EA', borderRadius: 16, padding: 12 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: '#0F6E56' }}>Distance Range</div>
-                <div style={{ fontSize: 12, color: '#0F6E56', fontWeight: 700 }}>{locationEnabled ? `${radius} km` : 'Location off'}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#0F6E56' }}>📍 Radius Filter</div>
+                <div style={{ fontSize: 12, color: '#0F6E56', fontWeight: 700 }}>{locationEnabled ? `within ${radius} km of ${locLabel}` : 'Set location in profile first'}</div>
               </div>
-              <input type="range" min="2" max="150" value={radius} onChange={(e) => setRadius(Number(e.target.value))} style={{ width: '100%' }} />
-              <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 4 }}>2 km to 150 km+</div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                {!locationEnabled && <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={() => requestLocation({ silent: false, openFilters: true })}>Use my location</button>}
-                {locationEnabled && <button style={{ ...S.btn, marginTop: 0 }} onClick={() => { setLocationEnabled(false); try { localStorage.setItem('travelbae_club_location_enabled', 'false'); } catch {} }}>Turn location off</button>}
-              </div>
+              {locationEnabled ? (
+                <>
+                  <input type="range" min="2" max="150" value={radius}
+                    onChange={e => { const v = Number(e.target.value); setRadius(v); try { localStorage.setItem('travelbae_club_radius', String(v)); } catch {} }}
+                    style={{ width: '100%' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#6b6b68', marginTop: 4 }}>
+                    <span>2 km</span><span>{radius} km selected</span><span>150 km</span>
+                  </div>
+                  <button style={{ ...S.btn, marginTop: 8, fontSize: 11, color: '#6b6b68' }} onClick={() => { setMyLat(null); setMyLng(null); setLocLabel(''); setLocQuery(''); try { localStorage.removeItem('travelbae_club_loc_lat'); localStorage.removeItem('travelbae_club_loc_lng'); localStorage.removeItem('travelbae_club_loc_label'); } catch {}; }}>Clear location</button>
+                </>
+              ) : (
+                <div style={{ fontSize: 12, color: '#6b6b68' }}>Go to <strong>Edit Profile</strong> and set your locality to unlock radius filtering.</div>
+              )}
             </div>
-
-            {locationError && <div style={{ marginTop: 8, fontSize: 12, color: '#C3582D' }}>{locationError}</div>}
 
             <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
               <button style={{ ...S.btn, flex: 1, marginTop: 0 }} onClick={() => { setFilterDraft(initialFilters); setRadius(25); }}>Reset</button>
@@ -1596,7 +1682,11 @@ function ClubPage({ trip, onTripRefresh }) {
               <div style={{ position: 'relative', padding: 18, minHeight: 280, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', maxWidth: '75%' }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>{distanceLabel(selectedCard.distance)}</span>
+                    {locationEnabled && selectedCard.latitude != null && selectedCard.longitude != null && (
+                      <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>
+                        {distanceLabel(haversine(myLat, myLng, selectedCard.latitude, selectedCard.longitude))}
+                      </span>
+                    )}
                     <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>{(selectedCard.vibe || 'mixed').toUpperCase()} vibe</span>
                     <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: isRecentlyActive(selectedCard.updatedAt) ? 'rgba(103,255,186,0.25)' : 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>{isRecentlyActive(selectedCard.updatedAt) ? 'Active Today' : 'Quiet Today'}</span>
                   </div>
