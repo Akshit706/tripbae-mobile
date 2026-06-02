@@ -1587,7 +1587,7 @@ function ClubPage({ trip, onTripRefresh }) {
               {`Filters: ${VIBE_OPTIONS.find(v => v.value === filters.vibe)?.label || 'Any vibe'} • ${GENDER_MIX_OPTIONS.find(v => v.value === filters.genderMix)?.label || 'Any mix'} • ${MEMBER_BAND_OPTIONS.find(v => v.value === filters.memberBand)?.label || 'Any size'}${locationEnabled ? ` • ${radius} km` : ''}`}
             </div>
 
-            {locationError && <div style={{ marginTop: 8, fontSize: 12, color: '#C3582D' }}>{locationError}</div>}
+
           </div>
 
           <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
