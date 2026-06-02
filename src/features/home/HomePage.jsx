@@ -313,7 +313,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
           Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
         </div>
-        <div className="tb-hero-title" style={{ fontFamily: "'DM Serif Display', serif", fontSize: 39, fontWeight: 800, lineHeight: 1.06, marginBottom: 8, textAlign: 'center' }}>
+        <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 39, fontWeight: 800, lineHeight: 1.06, marginBottom: 8, textAlign: 'center' }}>
           <div style={{ color: '#0D2B2E' }}>Where to</div>
           <div style={{ color: '#1D9E75' }}>next?</div>
         </div>
