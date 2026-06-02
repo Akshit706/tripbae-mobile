@@ -1657,70 +1657,68 @@ function ClubPage({ trip, onTripRefresh }) {
           </div>
 
           <div style={{ padding: 18, maxWidth: 1240, margin: '0 auto' }}>
-            {combinedPhotos.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '32px 0', color: '#667085' }}>No photos shared yet in the two trips.</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
+              <div style={{ fontSize: 12, color: '#667085' }}>Use the same upload flow as Photos tab.</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {chatPhotoUploading && <div style={{ fontSize: 11, color: '#0F6E56', fontWeight: 700 }}>Uploading {chatPhotoProgress}%</div>}
+                <button
+                  onClick={() => chatPhotoInputRef.current?.click()}
+                  disabled={chatPhotoUploading}
+                  style={{ ...S.btn, ...S.btnP, marginTop: 0, borderRadius: 12, padding: '7px 12px', opacity: chatPhotoUploading ? 0.7 : 1 }}
+                >
+                  {chatPhotoUploading ? 'Uploading…' : 'Upload photos'}
+                </button>
+                <input
+                  ref={chatPhotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  style={{ display: 'none' }}
+                  onChange={handleChatToolPhotoUpload}
+                />
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 10 }}>
+              {Object.keys(chatPhotoFolders).map((folderKey) => {
+                const count = (chatPhotoFolders[folderKey] || []).length;
+                const isActive = chatPhotoFolder === folderKey;
+                return (
+                  <button
+                    key={`folder-${folderKey}`}
+                    onClick={() => setChatPhotoFolder(folderKey)}
+                    style={{
+                      ...S.btn,
+                      marginTop: 0,
+                      borderRadius: 999,
+                      padding: '7px 12px',
+                      whiteSpace: 'nowrap',
+                      background: isActive ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : '#fff',
+                      color: isActive ? '#fff' : '#475467',
+                      border: isActive ? '1px solid rgba(15,110,86,0.68)' : '1px solid rgba(10,18,35,0.12)',
+                    }}
+                  >
+                    {folderKey === 'all' ? 'All photos' : folderKey} ({count})
+                  </button>
+                );
+              })}
+            </div>
+
+            {chatFolderPhotos.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: '#667085' }}>No photos shared yet in the two trips. Upload to start the album.</div>
             ) : (
-              <>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, color: '#667085' }}>Use the same upload flow as Photos tab.</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {chatPhotoUploading && <div style={{ fontSize: 11, color: '#0F6E56', fontWeight: 700 }}>Uploading {chatPhotoProgress}%</div>}
-                    <button
-                      onClick={() => chatPhotoInputRef.current?.click()}
-                      disabled={chatPhotoUploading}
-                      style={{ ...S.btn, ...S.btnP, marginTop: 0, borderRadius: 12, padding: '7px 12px', opacity: chatPhotoUploading ? 0.7 : 1 }}
-                    >
-                      {chatPhotoUploading ? 'Uploading…' : 'Upload photos'}
-                    </button>
-                    <input
-                      ref={chatPhotoInputRef}
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      style={{ display: 'none' }}
-                      onChange={handleChatToolPhotoUpload}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 10 }}>
-                  {Object.keys(chatPhotoFolders).map((folderKey) => {
-                    const count = (chatPhotoFolders[folderKey] || []).length;
-                    const isActive = chatPhotoFolder === folderKey;
-                    return (
-                      <button
-                        key={`folder-${folderKey}`}
-                        onClick={() => setChatPhotoFolder(folderKey)}
-                        style={{
-                          ...S.btn,
-                          marginTop: 0,
-                          borderRadius: 999,
-                          padding: '7px 12px',
-                          whiteSpace: 'nowrap',
-                          background: isActive ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : '#fff',
-                          color: isActive ? '#fff' : '#475467',
-                          border: isActive ? '1px solid rgba(15,110,86,0.68)' : '1px solid rgba(10,18,35,0.12)',
-                        }}
-                      >
-                        {folderKey === 'all' ? 'All photos' : folderKey} ({count})
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-                  {chatFolderPhotos.map((photo, index) => (
-                    <button
-                      key={`cp-${photo.id}-${index}`}
-                      onClick={() => setChatPhotoLightbox({ photos: chatFolderPhotos, index })}
-                      style={{ position: 'relative', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }}
-                    >
-                      <img src={photo.url} alt="combined trip" style={{ width: '100%', height: 170, borderRadius: 14, objectFit: 'cover', display: 'block' }} />
-                      <div style={{ position: 'absolute', left: 8, bottom: 8, fontSize: 10, fontWeight: 800, color: '#fff', background: 'rgba(3,10,24,0.58)', padding: '3px 7px', borderRadius: 999 }}>{photo.source}</div>
-                    </button>
-                  ))}
-                </div>
-              </>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
+                {chatFolderPhotos.map((photo, index) => (
+                  <button
+                    key={`cp-${photo.id}-${index}`}
+                    onClick={() => setChatPhotoLightbox({ photos: chatFolderPhotos, index })}
+                    style={{ position: 'relative', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }}
+                  >
+                    <img src={photo.url} alt="combined trip" style={{ width: '100%', height: 170, borderRadius: 14, objectFit: 'cover', display: 'block' }} />
+                    <div style={{ position: 'absolute', left: 8, bottom: 8, fontSize: 10, fontWeight: 800, color: '#fff', background: 'rgba(3,10,24,0.58)', padding: '3px 7px', borderRadius: 999 }}>{photo.source}</div>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 

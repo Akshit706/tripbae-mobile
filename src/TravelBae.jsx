@@ -730,10 +730,8 @@ export default function App() {
             gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
             gap: 0,
             width: '100%',
-            borderTop: '1px solid rgba(15,23,42,0.08)',
-            borderBottom: '1px solid rgba(15,23,42,0.08)',
-            background: 'rgba(255,255,255,0.78)',
-            backdropFilter: 'blur(8px)',
+            borderBottom: '1px solid rgba(15,23,42,0.12)',
+            background: '#fff',
           }}>
             {tabs.map((t, idx) => {
               const isActive = tab === t.id;
@@ -750,13 +748,13 @@ export default function App() {
                     animationDelay: `${idx * 35}ms`,
                     position: 'relative',
                     borderRadius: 0,
-                    borderLeft: idx > 0 ? '1px solid rgba(15,23,42,0.06)' : 'none',
-                    boxShadow: isActive ? 'inset 0 1px 0 rgba(255,255,255,0.92)' : 'none',
+                    borderLeft: idx > 0 ? '1px solid rgba(15,23,42,0.04)' : 'none',
+                    boxShadow: 'none',
                   }}
                 >
                   <span style={{ fontSize: 15, lineHeight: 1, filter: isActive ? 'none' : 'grayscale(100%) opacity(0.68)' }}>{t.icon}</span>
                   <span style={{ fontSize: tabs.length > 4 ? 8.6 : 9.5, maxWidth: '100%', whiteSpace: 'nowrap', overflow: 'visible', textOverflow: 'clip', padding: '0 1px', letterSpacing: 0.12 }}>{t.label}</span>
-                  {isActive && <span style={{ position: 'absolute', bottom: 1, left: '20%', right: '20%', height: 1.8, borderRadius: 99, background: accentColor, opacity: 0.8 }} />}
+                  {isActive && <span style={{ position: 'absolute', bottom: 0, left: '16%', right: '16%', height: 2.5, borderRadius: 99, background: accentColor, opacity: 0.9 }} />}
                 </button>
               );
             })}
