@@ -889,13 +889,8 @@ function ClubPage({ trip, onTripRefresh }) {
       } catch (refreshErr) {
         console.warn('Could not refresh club hub after upload:', refreshErr);
       }
-      if (onTripRefresh) {
-        try {
-          await onTripRefresh();
-        } catch (tripRefreshErr) {
-          console.warn('Could not refresh trip after upload:', tripRefreshErr);
-        }
-      }
+      // Keep the user in the photo tool screen by avoiding parent-level remount/reset.
+      // Club hub refresh is sufficient to show the newly uploaded images here.
     } catch (err) {
       alert('Could not upload photo(s): ' + getErrorMessage(err, 'Unknown upload error'));
     } finally {
@@ -963,13 +958,6 @@ function ClubPage({ trip, onTripRefresh }) {
         await loadHub();
       } catch (refreshErr) {
         console.warn('Could not refresh club hub after delete:', refreshErr);
-      }
-      if (onTripRefresh) {
-        try {
-          await onTripRefresh();
-        } catch (tripRefreshErr) {
-          console.warn('Could not refresh trip after delete:', tripRefreshErr);
-        }
       }
       clearChatPhotoSelection();
     } catch (err) {
