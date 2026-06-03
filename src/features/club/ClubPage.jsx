@@ -1212,7 +1212,7 @@ function ClubPage({ trip, onTripRefresh }) {
       <div style={{ padding: '0 0 0.9rem', animation: 'clubPop .3s ease-out both' }}>
         {/* Logo centered */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-          <img src={bglessLogo} alt="TripBae" style={{ height: 52, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <img src={bglessLogo} alt="TripBae" style={{ height: 65, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 12, fontStyle: 'italic', opacity: 0.85 }}>
           find your people.
@@ -1459,31 +1459,44 @@ function ClubPage({ trip, onTripRefresh }) {
 
       {clubView === 'chats' && activeChat && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 545, background: 'linear-gradient(160deg,#FBF8F0 0%,#EEF9F4 42%,#EEF2FF 100%)', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: '10px 12px', paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))', borderBottom: '1px solid rgba(10,18,35,0.08)', background: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-              <button style={{ ...S.btn, marginTop: 0, padding: '8px 11px', borderRadius: 12 }} onClick={() => setSelectedChatId(null)}>←</button>
+          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: '10px 14px', paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))', borderBottom: '1px solid rgba(10,18,35,0.07)', background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+            {/* Back + avatar stack + title */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
+              <button style={{ ...S.btn, marginTop: 0, padding: '7px 10px', borderRadius: 10, flexShrink: 0 }} onClick={() => setSelectedChatId(null)}>←</button>
+              {/* Stacked initials avatars */}
+              <div style={{ position: 'relative', width: 42, height: 30, flexShrink: 0 }}>
+                <div style={{ position: 'absolute', left: 0, top: 0, width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, color: '#fff', border: '2px solid rgba(255,255,255,0.9)', zIndex: 2 }}>
+                  {(trip.groupName || 'M').slice(0,2).toUpperCase()}
+                </div>
+                <div style={{ position: 'absolute', left: 14, top: 0, width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#4F46E5,#7C3AED)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, color: '#fff', border: '2px solid rgba(255,255,255,0.9)', zIndex: 1 }}>
+                  {(activeChat.otherTrip?.groupName || 'J').slice(0,2).toUpperCase()}
+                </div>
+              </div>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeChat.title}</div>
-                <div style={{ fontSize: 11, color: '#627089', marginTop: 2 }}>Last seen {formatChatMetaTime(activeChat.latestMessage?.createdAt)}</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>
+                  {trip.groupName?.split(' ')[0]} &amp; {activeChat.otherTrip?.groupName?.split(' ')[0]}
+                </div>
+                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2, fontWeight: 400 }}>Tap to view group info</div>
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Actions */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
               <div style={{ position: 'relative' }}>
                 <button
-                  style={{ ...S.btn, marginTop: 0, padding: '8px 13px', borderRadius: 12, fontSize: 18, fontWeight: 700, letterSpacing: 1, lineHeight: 1 }}
+                  style={{ ...S.btn, marginTop: 0, padding: '7px 11px', borderRadius: 10, fontSize: 17, fontWeight: 700, letterSpacing: 1, lineHeight: 1 }}
                   onClick={() => setChatMenuOpen(o => !o)}
                 >⋯</button>
                 {chatMenuOpen && (
-                  <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', borderRadius: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.16)', border: '1px solid rgba(0,0,0,0.07)', zIndex: 10, overflow: 'hidden', minWidth: 158 }}>
+                  <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', borderRadius: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.16)', border: '1px solid rgba(0,0,0,0.07)', zIndex: 10, overflow: 'hidden', minWidth: 162 }}>
                     <button
                       onClick={() => { setChatMenuOpen(false); handleDeleteChat(); }}
                       disabled={clubBusy}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, color: '#D9433A', fontWeight: 600 }}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '13px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, color: '#D9433A', fontWeight: 600 }}
                     >🗑 Delete Chat</button>
                   </div>
                 )}
               </div>
-              <button style={{ ...S.btn, marginTop: 0, padding: '8px 12px', borderRadius: 12, fontSize: 16, lineHeight: 1 }} onClick={() => { setSelectedChatId(null); setChatMenuOpen(false); }}>✕</button>
+              <button style={{ ...S.btn, marginTop: 0, padding: '7px 11px', borderRadius: 10, fontSize: 15, lineHeight: 1 }} onClick={() => { setSelectedChatId(null); setChatMenuOpen(false); }}>✕</button>
             </div>
           </div>
 
@@ -1503,15 +1516,13 @@ function ClubPage({ trip, onTripRefresh }) {
               );
             }) : (
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1.5rem', textAlign: 'center' }}>
-                <div style={{ fontSize: 54, marginBottom: 14 }}>✈️</div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, color: '#0F172A', marginBottom: 6 }}>No messages yet.</div>
-                <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 20, lineHeight: 1.65 }}>Say hi. Worst case, awkward silence.</div>
-                <span style={{ display: 'inline-block', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', color: '#fff', borderRadius: 999, padding: '10px 22px', fontSize: 13, fontWeight: 700, boxShadow: '0 6px 18px rgba(15,110,86,0.28)' }}>Break the ice 👋</span>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: '#1E293B', marginBottom: 7 }}>No messages yet.</div>
+                <div style={{ fontSize: 13, color: '#94A3B8', fontStyle: 'italic', lineHeight: 1.65 }}>Say hi. Worst case, awkward silence.</div>
               </div>
             )}
           </div>
 
-          <div style={{ padding: 12, paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(10,18,35,0.08)', background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(8px)' }}>
+          <div style={{ padding: 12, paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(10,18,35,0.06)', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(16px)', boxShadow: '0 -8px 24px rgba(15,23,42,0.06)' }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
               <textarea
                 style={{ ...S.input, resize: 'none', minHeight: 46, maxHeight: 122, marginBottom: 0, flex: 1, borderRadius: 15, border: '1px solid rgba(15,23,42,0.1)', boxShadow: '0 8px 18px rgba(15,23,42,0.06)' }}
@@ -1544,7 +1555,7 @@ function ClubPage({ trip, onTripRefresh }) {
             <div style={{ background: 'linear-gradient(135deg,#0F4B3E,#1D9E75)', padding: '18px 18px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>Tools</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', marginTop: 2 }}>What do you want to do?</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', marginTop: 2 }}>Choose what you want to do for this group</div>
               </div>
               <button
                 style={{ width: 32, height: 32, borderRadius: 999, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.12)', color: '#fff', fontSize: 14, cursor: 'pointer', display: 'grid', placeItems: 'center' }}
@@ -2059,12 +2070,9 @@ function ClubPage({ trip, onTripRefresh }) {
             </div>
             {/* Snooze banner */}
             {!listed && (
-              <div style={{ margin: '12px 0 16px', background: 'linear-gradient(135deg,#FFF8EC,#FFF1D6)', border: '1px solid rgba(255,176,32,0.35)', borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, animation: 'clubSectionIn .25s ease-out both' }}>
-                <span style={{ fontSize: 22, flexShrink: 0 }}>😴</span>
-                <div>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 14, color: '#7A4B00', marginBottom: 4 }}>You're in stealth mode</div>
-                  <div style={{ fontSize: 12, color: '#9A6200', lineHeight: 1.6 }}>Other travelers can't see your group, and their cards are hidden from you too. Toggle <strong>Live</strong> to discover and be discovered.</div>
-                </div>
+              <div style={{ margin: '10px 0 14px', borderRadius: 12, padding: '11px 14px', background: 'rgba(148,163,184,0.1)', border: '1px solid rgba(148,163,184,0.2)', display: 'flex', alignItems: 'center', gap: 10, animation: 'clubSectionIn .25s ease-out both' }}>
+                <span style={{ fontSize: 16, flexShrink: 0, opacity: 0.7 }}>😴</span>
+                <div style={{ fontSize: 12, color: '#64748B', lineHeight: 1.55 }}>You're snoozed — not visible to others, and their cards are hidden from you. Toggle <strong style={{ color: '#475569' }}>Live</strong> to start discovering.</div>
               </div>
             )}
             {listed && filteredDiscover.length === 0 && (
