@@ -529,17 +529,17 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Hero Section */}
-      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'center' }}>
+      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'left' }}>
         <div style={{ position: 'relative', zIndex: 2 }}>
-          <div className="tb-hero-greet" style={{ fontSize: 12, fontWeight: 600, letterSpacing: '1.6px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 7, textAlign: 'center' }}>
+          <div className="tb-hero-greet" style={{ fontSize: 12, fontWeight: 600, letterSpacing: '1.6px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 7, textAlign: 'left' }}>
             {greetPhrase}{profileName ? <span style={{ color: '#1a1a18', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
           </div>
-          <div style={{ overflow: 'hidden', height: 44, marginBottom: 18, display: 'flex', alignItems: 'center' }}>
+          <div style={{ overflow: 'hidden', height: 52, marginBottom: 18, display: 'flex', alignItems: 'center' }}>
             <div
               key={tagIdx}
               style={{
-                fontFamily: "'DM Sans',sans-serif", fontSize: 32, fontWeight: 700, lineHeight: 1.18,
-                letterSpacing: '-0.3px', color: '#1a1a18', whiteSpace: 'nowrap',
+                fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1.25,
+                letterSpacing: '-0.2px', color: '#0F6E56', whiteSpace: 'nowrap',
                 ...(tagPhase === 'out'
                   ? { transform: 'translateX(-110%)', transition: 'transform 0.26s cubic-bezier(.4,0,.8,.2)' }
                   : { animation: 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both' }
@@ -549,7 +549,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               {HERO_TAGLINES[tagIdx].line}
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
             <button
               className="tb-new-btn"
               style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 14, padding: '13px 24px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)', flex: 1, justifyContent: 'center' }}

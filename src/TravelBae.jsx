@@ -665,12 +665,15 @@ export default function App() {
         @keyframes tbDestDrift3{0%,100%{transform:translateY(0px) translateX(0px)}50%{transform:translateY(-11px) translateX(3px)}}
         @keyframes tbDestDrift4{0%,100%{transform:translateY(0px) translateX(0px)}35%{transform:translateY(7px) translateX(-5px)}75%{transform:translateY(-6px) translateX(3px)}}
         .tb-bg-ambient{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-        .tb-bg-dest{position:absolute;font-size:11px;pointer-events:none;color:rgba(30,30,30,0.1);white-space:nowrap;font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:0.2px;user-select:none}
-        .tb-bg-dest.d1{top:14%;left:61%;animation:tbDestDrift1 15s ease-in-out infinite}
-        .tb-bg-dest.d2{top:43%;left:7%;animation:tbDestDrift2 19s ease-in-out infinite;animation-delay:4s}
-        .tb-bg-dest.d3{top:68%;left:54%;animation:tbDestDrift3 17s ease-in-out infinite;animation-delay:8s}
-        .tb-bg-dest.d4{top:26%;left:76%;animation:tbDestDrift4 21s ease-in-out infinite;animation-delay:2s}
-        .tb-bg-dest.d5{top:80%;left:20%;animation:tbDestDrift1 13s ease-in-out infinite;animation-delay:10s}
+        .tb-bg-flag{position:absolute;font-size:18px;pointer-events:none;user-select:none;opacity:0.09;filter:grayscale(40%)}
+        .tb-bg-flag.f1{top:58%;left:8%;animation:tbDestDrift1 17s ease-in-out infinite}
+        .tb-bg-flag.f2{top:64%;left:31%;animation:tbDestDrift2 22s ease-in-out infinite;animation-delay:3s}
+        .tb-bg-flag.f3{top:72%;left:55%;animation:tbDestDrift3 19s ease-in-out infinite;animation-delay:7s}
+        .tb-bg-flag.f4{top:55%;left:74%;animation:tbDestDrift4 25s ease-in-out infinite;animation-delay:5s}
+        .tb-bg-flag.f5{top:82%;left:18%;animation:tbDestDrift1 14s ease-in-out infinite;animation-delay:11s}
+        .tb-bg-flag.f6{top:88%;left:42%;animation:tbDestDrift2 20s ease-in-out infinite;animation-delay:2s}
+        .tb-bg-flag.f7{top:78%;left:86%;animation:tbDestDrift3 16s ease-in-out infinite;animation-delay:9s}
+        .tb-bg-flag.f8{top:93%;left:63%;animation:tbDestDrift4 23s ease-in-out infinite;animation-delay:4s}
         *{box-sizing:border-box;margin:0;padding:0}
         a{color:inherit;text-decoration:none}
         ::selection{background:#c7eedf;color:#053f31}
@@ -696,12 +699,15 @@ export default function App() {
             <path id="tbArc1" d="M-10 820 C70 580 190 360 402 80"/>
             <path id="tbArc2" d="M-30 570 C90 390 230 270 430 45"/>
             <path id="tbArc3" d="M15 940 C140 690 280 470 418 195"/>
+            <clipPath id="tbClipBottom">
+              <rect x="-20" y="430" width="460" height="540"/>
+            </clipPath>
           </defs>
 
-          {/* Dashed arc strokes */}
-          <path d="M-10 820 C70 580 190 360 402 80" fill="none" stroke="#1D9E75" strokeWidth="1.4" strokeDasharray="5 11" opacity="0.15"/>
-          <path d="M-30 570 C90 390 230 270 430 45" fill="none" stroke="#FF6B35" strokeWidth="1.1" strokeDasharray="4 10" opacity="0.11"/>
-          <path d="M15 940 C140 690 280 470 418 195" fill="none" stroke="#7F77DD" strokeWidth="1" strokeDasharray="3 9" opacity="0.09"/>
+          {/* Dashed arc strokes — confined to bottom 55% of screen */}
+          <path d="M-10 820 C70 580 190 360 402 80" fill="none" stroke="#1D9E75" strokeWidth="1.4" strokeDasharray="5 11" opacity="0.15" clipPath="url(#tbClipBottom)"/>
+          <path d="M-30 570 C90 390 230 270 430 45" fill="none" stroke="#FF6B35" strokeWidth="1.1" strokeDasharray="4 10" opacity="0.11" clipPath="url(#tbClipBottom)"/>
+          <path d="M15 940 C140 690 280 470 418 195" fill="none" stroke="#7F77DD" strokeWidth="1" strokeDasharray="3 9" opacity="0.09" clipPath="url(#tbClipBottom)"/>
 
           {/* Destination pins — pulsing rings */}
           <circle cx="402" cy="80" r="3.5" fill="#1D9E75" opacity="0.22">
@@ -752,12 +758,15 @@ export default function App() {
           </g>
         </svg>
 
-        {/* Floating city labels */}
-        <div className="tb-bg-dest d1">🗼 Paris</div>
-        <div className="tb-bg-dest d2">🏰 Jaipur</div>
-        <div className="tb-bg-dest d3">🌊 Bali</div>
-        <div className="tb-bg-dest d4">🌸 Tokyo</div>
-        <div className="tb-bg-dest d5">🐘 Nairobi</div>
+        {/* Floating country flags — bottom half only, very faded */}
+        <div className="tb-bg-flag f1">🇮🇳</div>
+        <div className="tb-bg-flag f2">🇯🇵</div>
+        <div className="tb-bg-flag f3">🇫🇷</div>
+        <div className="tb-bg-flag f4">🇮🇹</div>
+        <div className="tb-bg-flag f5">🇺🇸</div>
+        <div className="tb-bg-flag f6">🇬🇧</div>
+        <div className="tb-bg-flag f7">🇧🇦</div>
+        <div className="tb-bg-flag f8">🇹🇭</div>
       </div>
 
       {newTripModal && <ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
@@ -780,17 +789,22 @@ export default function App() {
         >
           {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0', position: activeTrip ? 'relative' : 'absolute', left: activeTrip ? 'auto' : '50%', transform: activeTrip ? 'none' : 'translateX(-50%)' }}>
-          {activeTrip && <button style={{ ...S.btn, padding: '5px 8px', marginRight: 2, fontSize: 16 }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>←</button>}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
           <img src={bglessLogo} alt="TripBae" style={{ height: 72, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {activeTrip && activeTripData ? (
-          /* Top-bar pill with trip name + inline Mark Complete / Delete actions */
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ ...(isSolo ? S.soloPill : S.tripPill), background: 'rgba(13,43,46,0.07)', border: '1px solid rgba(13,43,46,0.15)', color: '#0D2B2E' }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>
-              {activeTripData.emoji} {activeTripData.groupName}
-              {isSolo && <span style={{ marginLeft: 4, fontSize: 10, fontWeight: 700, background: 'rgba(127,119,221,0.2)', borderRadius: 8, padding: '1px 6px' }}>Solo</span>}
-            </div>
+            {/* Home icon */}
+            <button
+              onClick={() => { setActiveTrip(null); setActiveTripData(null); }}
+              title="Home"
+              style={{ width: 32, height: 32, borderRadius: 9, background: 'transparent', border: '1px solid rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V9.5z"/>
+                <path d="M9 21V12h6v9"/>
+              </svg>
+            </button>
             {/* Quick action menu inside a trip */}
             <TripActionMenuFeature
               trip={activeTripData}
