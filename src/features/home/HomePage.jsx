@@ -7,13 +7,14 @@ import {
 } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
+import { fetchPlacePhotos } from '../../api';
 
 const HERO_TAGLINES = [
   { icon: '🏯', line: "Explore Rajasthan's ancient forts" },
   { icon: '☕', line: 'Find hidden cafes in Lisbon' },
   { icon: '🌸', line: 'Chase cherry blossoms in Tokyo' },
   { icon: '🏔️', line: 'Trek Himalayan passes at dawn' },
-  { icon: '🌊', line: 'Surf at sunrise in Bali' },
+  { icon: '🌊', line: 'Surf at beautiful sunrise in Bali' },
   { icon: '🍝', line: 'Get lost in the alleys of Naples' },
   { icon: '🐘', line: 'Wake up to a safari in Kenya' },
   { icon: '🎭', line: "Lose yourself in Vienna's old town" },
@@ -25,6 +26,184 @@ const HERO_GREETINGS = {
   evening: ['Golden hour plans', 'Dusk wanderer', 'Evening plotters', 'Sunset chaser', 'Bag it, book it'],
   night: ['Night owl travels', 'Stars out, bags ready', 'Late night routes', 'Moon & destinations', 'Plotting after dark'],
 };
+
+function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, setConfirmComplete, setConfirmDelete }) {
+  const [photos, setPhotos] = useState([]);
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const touchStartX = useRef(null);
+
+  useEffect(() => {
+    if (!trip.destination) return;
+    let cancelled = false;
+    fetchPlacePhotos(trip.destination)
+      .then(data => {
+        if (cancelled) return;
+        const urls = (data.urls || []).slice(0, 3);
+        if (urls.length) setPhotos(urls);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [trip.destination]);
+
+  const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
+  const days = tripDuration(trip.arrival, trip.departure);
+  const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
+  const memberNames = normalizeMembers(trip.members);
+  const budgetBase = trip.budget || 0;
+  const budgetPct = budgetBase > 0 ? Math.min(100, Math.round((totalSpend / budgetBase) * 100)) : 0;
+  const isMenuOpen = menuOpen === trip.id;
+  const isPast = status.label === 'Past' || status.label === 'Completed';
+  const cardBg = trip.isSolo
+    ? 'linear-gradient(145deg,#1c0e40 0%,#2e1a60 55%,#1c0e40 100%)'
+    : 'linear-gradient(145deg,#0a2a1f 0%,#0f3d2e 55%,#0a2a1f 100%)';
+  const glowBg = trip.isSolo
+    ? 'radial-gradient(circle,rgba(127,119,221,0.3) 0%,transparent 70%)'
+    : 'radial-gradient(circle,rgba(29,158,117,0.3) 0%,transparent 70%)';
+  const barFill = trip.isSolo
+    ? 'linear-gradient(90deg,#FF6B35,#FFAA80)'
+    : 'linear-gradient(90deg,#1D9E75,#5DCAA5)';
+  let statusBadgeStyle;
+  if (isPast) {
+    statusBadgeStyle = { background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' };
+  } else if (status.label === 'Ongoing') {
+    statusBadgeStyle = { background: 'rgba(29,158,117,0.18)', color: '#5DCAA5', border: '1px solid rgba(29,158,117,0.25)' };
+  } else {
+    statusBadgeStyle = { background: 'rgba(29,158,117,0.18)', color: '#5DCAA5', border: '1px solid rgba(29,158,117,0.25)' };
+  }
+  const cardDelay = idx * 70;
+
+  return (
+    <div
+      className="tb-trip-card-new"
+      style={{ background: cardBg, opacity: isPast ? 0.65 : 1, animation: `fadeUp 0.45s ease both`, animationDelay: `${cardDelay}ms` }}
+      onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+      onTouchEnd={e => {
+        if (touchStartX.current === null || photos.length < 2) return;
+        const diff = touchStartX.current - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 40) setPhotoIdx(i => (i + (diff > 0 ? 1 : -1) + photos.length) % photos.length);
+        touchStartX.current = null;
+      }}
+    >
+      {/* Photo backgrounds */}
+      {photos.map((url, i) => (
+        <img
+          key={url}
+          src={url}
+          alt=""
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+            opacity: i === photoIdx ? 1 : 0,
+            transition: 'opacity 0.6s ease',
+            filter: 'brightness(0.32) saturate(1.1)',
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+          onError={e => { e.target.style.display = 'none'; }}
+        />
+      ))}
+
+      {/* Slide dot indicators */}
+      {photos.length > 1 && (
+        <div style={{ position: 'absolute', bottom: 58, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 10, pointerEvents: 'none' }}>
+          {photos.map((_, i) => (
+            <div key={i} style={{ width: i === photoIdx ? 16 : 5, height: 5, borderRadius: 99, background: i === photoIdx ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.28)', transition: 'all 0.3s ease' }} />
+          ))}
+        </div>
+      )}
+
+      {/* glow blob */}
+      <div style={{ position: 'absolute', top: -20, right: -20, width: 130, height: 130, borderRadius: '50%', background: glowBg, pointerEvents: 'none', zIndex: 1 }} />
+      {/* inner top shine */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60, background: 'linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)', borderRadius: '26px 26px 0 0', pointerEvents: 'none', zIndex: 2 }} />
+      {/* card body */}
+      <div style={{ padding: '20px 20px 0', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
+        {/* top row */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 13 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
+            {trip.emoji}
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            {trip.isSolo && (
+              <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(127,119,221,0.18)', color: '#AFA9EC', border: '1px solid rgba(127,119,221,0.25)', boxShadow: '0 2px 8px rgba(127,119,221,0.2)' }}>Solo</span>
+            )}
+            <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...((!isPast) ? { boxShadow: '0 2px 8px rgba(29,158,117,0.2)' } : {}) }}>
+              {isPast ? 'Past' : status.label}
+            </span>
+          </div>
+        </div>
+        {/* destination + name */}
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.6px', lineHeight: 1.15, marginBottom: 5, fontFamily: "'Inter',sans-serif" }}>{trip.destination}</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>{trip.groupName}</div>
+        {/* stats line */}
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: 500, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+          <span>{formatDateRange(trip.arrival, trip.departure)}</span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span>{days} nights</span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span>{memberNames.length} {memberNames.length === 1 ? 'member' : 'members'}</span>
+          <span style={{ opacity: 0.35 }}>·</span>
+          <span>₹{Math.round(totalSpend).toLocaleString('en-IN')}</span>
+        </div>
+        {/* budget bar */}
+        {budgetBase > 0 && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 5 }}>
+              <span>Budget</span>
+              <span style={{ color: trip.isSolo ? '#FFAA80' : '#5DCAA5' }}>{budgetPct}% · ₹{Math.round(budgetBase - totalSpend).toLocaleString('en-IN')} left</span>
+            </div>
+            <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 99, background: barFill, '--w': `${budgetPct}%`, animation: `progressFill 1s ease both`, animationDelay: `${cardDelay + 200}ms`, width: `${budgetPct}%`, boxShadow: trip.isSolo ? '0 0 8px rgba(255,107,53,0.5)' : '0 0 8px rgba(29,158,117,0.5)' }} />
+            </div>
+          </div>
+        )}
+      </div>
+      {/* card footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 20px', marginTop: budgetBase > 0 ? 0 : 14, borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.18)', backdropFilter: 'blur(10px)', position: 'relative', zIndex: 3 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flex: 1 }} onClick={(event) => onOpen(trip.id, event)}>
+          {trip.isSolo
+            ? <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
+            : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
+          }
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginLeft: 0 }}>
+            {memberNames[0] || (trip.isSolo ? 'You' : 'Member')}{!trip.isSolo && memberNames.length > 1 ? ` +${memberNames.length - 1}` : ''}
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          {!trip.isSolo && (
+            <div onClick={e => { e.stopPropagation(); onCopy(trip.shareCode, trip.id); }}
+              style={{ fontFamily: "'SF Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.07)', padding: '3px 8px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.06)', letterSpacing: '0.5px', cursor: 'pointer' }}>
+              {copied === trip.id ? '✓ copied' : trip.shareCode}
+            </div>
+          )}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={e => { e.stopPropagation(); setMenuOpen(isMenuOpen ? null : trip.id); }}
+              style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', fontSize: 13, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
+              ⋯
+            </button>
+            {isMenuOpen && (
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 420 }} onClick={() => setMenuOpen(null)} />
+                <div style={{ position: 'absolute', bottom: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 421, minWidth: 180, overflow: 'hidden' }}>
+                  <button
+                    onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmComplete(trip); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
+                    ✅ Mark as Completed
+                  </button>
+                  <button
+                    onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmDelete(trip); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#993C1D', fontFamily: "'DM Sans',sans-serif" }}>
+                    🗑️ Delete Trip
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive, profileName }) {
   const [showCreate, setShowCreate] = useState(false);
@@ -646,141 +825,20 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', marginBottom: 14, marginTop: 12 }}>YOUR TRIPS</div>
       )}
 
-      {activeTrips.map((trip, idx) => {
-        const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
-        const days = tripDuration(trip.arrival, trip.departure);
-        const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
-        const memberNames = normalizeMembers(trip.members);
-        const budgetBase = trip.budget || 0;
-        const budgetPct = budgetBase > 0 ? Math.min(100, Math.round((totalSpend / budgetBase) * 100)) : 0;
-        const isMenuOpen = menuOpen === trip.id;
-        const isPast = status.label === 'Past' || status.label === 'Completed';
-        const cardBg = trip.isSolo
-          ? 'linear-gradient(145deg,#1c0e40 0%,#2e1a60 55%,#1c0e40 100%)'
-          : 'linear-gradient(145deg,#0a2a1f 0%,#0f3d2e 55%,#0a2a1f 100%)';
-        const glowBg = trip.isSolo
-          ? 'radial-gradient(circle,rgba(127,119,221,0.3) 0%,transparent 70%)'
-          : 'radial-gradient(circle,rgba(29,158,117,0.3) 0%,transparent 70%)';
-        const barFill = trip.isSolo
-          ? 'linear-gradient(90deg,#FF6B35,#FFAA80)'
-          : 'linear-gradient(90deg,#1D9E75,#5DCAA5)';
-
-        let statusBadgeStyle;
-        if (isPast) {
-          statusBadgeStyle = { background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' };
-        } else if (status.label === 'Ongoing') {
-          statusBadgeStyle = { background: 'rgba(29,158,117,0.18)', color: '#5DCAA5', border: '1px solid rgba(29,158,117,0.25)' };
-        } else {
-          statusBadgeStyle = { background: 'rgba(29,158,117,0.18)', color: '#5DCAA5', border: '1px solid rgba(29,158,117,0.25)' };
-        }
-        const cardDelay = idx * 70;
-
-        return (
-          <div
-            key={trip.id}
-            className="tb-trip-card-new"
-            style={{ background: cardBg, opacity: isPast ? 0.65 : 1, animation: `fadeUp 0.45s ease both`, animationDelay: `${cardDelay}ms` }}
-          >
-            {/* glow blob */}
-            <div style={{ position: 'absolute', top: -20, right: -20, width: 130, height: 130, borderRadius: '50%', background: glowBg, pointerEvents: 'none' }} />
-
-            {/* inner top shine */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60, background: 'linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)', borderRadius: '26px 26px 0 0', pointerEvents: 'none', zIndex: 2 }} />
-            {/* card body */}
-            <div style={{ padding: '20px 20px 0', position: 'relative', zIndex: 1, cursor: 'pointer' }} onClick={(event) => openTripWithMotion(trip.id, event)}>
-              {/* top row */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 13 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
-                  {trip.emoji}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  {trip.isSolo && (
-                    <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(127,119,221,0.18)', color: '#AFA9EC', border: '1px solid rgba(127,119,221,0.25)', boxShadow: '0 2px 8px rgba(127,119,221,0.2)' }}>Solo</span>
-                  )}
-                  <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...((!isPast) ? { boxShadow: '0 2px 8px rgba(29,158,117,0.2)' } : {}) }}>
-                    {isPast ? 'Past' : status.label}
-                  </span>
-                </div>
-              </div>
-
-              {/* destination + name */}
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.6px', lineHeight: 1.15, marginBottom: 5, fontFamily: "'Inter',sans-serif" }}>{trip.destination}</div>
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>{trip.groupName}</div>
-
-              {/* stats line */}
-              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: 500, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-                <span>{formatDateRange(trip.arrival, trip.departure)}</span>
-                <span style={{ opacity: 0.35 }}>·</span>
-                <span>{days} nights</span>
-                <span style={{ opacity: 0.35 }}>·</span>
-                <span>{memberNames.length} {memberNames.length === 1 ? 'member' : 'members'}</span>
-                <span style={{ opacity: 0.35 }}>·</span>
-                <span>₹{Math.round(totalSpend).toLocaleString('en-IN')}</span>
-              </div>
-
-              {/* budget bar */}
-              {budgetBase > 0 && (
-                <div style={{ marginBottom: 14 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 5 }}>
-                    <span>Budget</span>
-                    <span style={{ color: trip.isSolo ? '#FFAA80' : '#5DCAA5' }}>{budgetPct}% · ₹{Math.round(budgetBase - totalSpend).toLocaleString('en-IN')} left</span>
-                  </div>
-                  <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 99, background: barFill, '--w': `${budgetPct}%`, animation: `progressFill 1s ease both`, animationDelay: `${cardDelay + 200}ms`, width: `${budgetPct}%`, boxShadow: trip.isSolo ? '0 0 8px rgba(255,107,53,0.5)' : '0 0 8px rgba(29,158,117,0.5)' }} />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* card footer */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 20px', marginTop: budgetBase > 0 ? 0 : 14, borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.18)', backdropFilter: 'blur(10px)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flex: 1 }} onClick={(event) => openTripWithMotion(trip.id, event)}>
-                {trip.isSolo
-                  ? <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
-                  : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
-                }
-                <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginLeft: 0 }}>
-                  {memberNames[0] || (trip.isSolo ? 'You' : 'Member')}{!trip.isSolo && memberNames.length > 1 ? ` +${memberNames.length - 1}` : ''}
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                {!trip.isSolo && (
-                  <div onClick={e => { e.stopPropagation(); copyCode(trip.shareCode, trip.id); }}
-                    style={{ fontFamily: "'SF Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.07)', padding: '3px 8px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.06)', letterSpacing: '0.5px', cursor: 'pointer' }}>
-                    {copied === trip.id ? '✓ copied' : trip.shareCode}
-                  </div>
-                )}
-
-                <div style={{ position: 'relative' }}>
-                  <button
-                    onClick={e => { e.stopPropagation(); setMenuOpen(isMenuOpen ? null : trip.id); }}
-                    style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', fontSize: 13, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
-                    ⋯
-                  </button>
-                  {isMenuOpen && (
-                    <>
-                      <div style={{ position: 'fixed', inset: 0, zIndex: 420 }} onClick={() => setMenuOpen(null)} />
-                      <div style={{ position: 'absolute', bottom: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 421, minWidth: 180, overflow: 'hidden' }}>
-                        <button
-                          onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmComplete(trip); }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
-                          ✅ Mark as Completed
-                        </button>
-                        <button
-                          onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmDelete(trip); }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#993C1D', fontFamily: "'DM Sans',sans-serif" }}>
-                          🗑️ Delete Trip
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })}
+      {activeTrips.map((trip, idx) => (
+        <TripCard
+          key={trip.id}
+          trip={trip}
+          idx={idx}
+          onOpen={openTripWithMotion}
+          copied={copied}
+          onCopy={copyCode}
+          menuOpen={menuOpen}
+          setMenuOpen={setMenuOpen}
+          setConfirmComplete={setConfirmComplete}
+          setConfirmDelete={setConfirmDelete}
+        />
+      ))}
 
       {pastTrips.length > 0 && (
         <div onClick={() => setShowPast(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '14px 18px', cursor: 'pointer', marginTop: 8, marginBottom: 4 }}>
