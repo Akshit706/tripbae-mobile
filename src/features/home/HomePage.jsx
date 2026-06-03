@@ -10,21 +10,23 @@ import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
 import { fetchPlacePhotos } from '../../api';
 
 const HERO_TAGLINES = [
-{ icon: '🏔️', line: 'Ladakh called again' },
-{ icon: '🎒', line: 'Kasol, lost again' },
-{ icon: '🌊', line: 'Goa, off-season vibes' },
-{ icon: '🛺', line: 'Varanasi never sleeps' },
+{ icon: '🏔️', line: 'Ladakh called again!' },
+{ icon: '🌊', line: 'Goa, off-season vibes?' },
+{ icon: '🌿', line: 'Meghalaya, clouds live here' },
 { icon: '☕', line: 'Hidden cafes, Lisbon' },
-{ icon: '🌴', line: 'Andamans, who needs wifi' },
-{ icon: '🏯', line: 'Jaipur, dress accordingly' },
-{ icon: '🌿', line: 'Rishikesh, fix me' },
+{ icon: '🌴', line: 'Andamans, who needs wifi?' },
+{ icon: '🌿', line: 'Meghalaya, clouds live here' },
+{ icon: '🏯', line: 'Jaipur, dress accordingly!' },
+{ icon: '🌿', line: 'Rishikesh, fix me!' },
 { icon: '🌸', line: 'Cherry blossoms, Tokyo' },
-{ icon: '🚂', line: 'Darjeeling, sip slowly' },
+{ icon: '🎒', line: 'Kasol, lost again?' },
+{ icon: '🚂', line: 'Darjeeling, sip slowly.' },
 { icon: '🌊', line: 'Sunrise surf, Bali' },
-{ icon: '🐘', line: 'Coorg said stay' },
+{ icon: '🐘', line: 'Coorg said "stay"' },
 { icon: '🍵', line: 'Munnar stole me' },
+{ icon: '🛺', line: 'Varanasi never sleeps!' },
 { icon: '🎭', line: "Vienna's old town" },
-{ icon: '📵', line: 'Spiti, no signal' },
+{ icon: '📵', line: 'Spiti, no signal!' },
 ];
 
 const HERO_GREETINGS = {
