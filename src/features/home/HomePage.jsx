@@ -10,23 +10,22 @@ import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
 import { fetchPlacePhotos } from '../../api';
 
 const HERO_TAGLINES = [
-{ icon: '🏔️', line: 'Ladakh called again!' },
+{ icon: '🌿', line: 'Rishikesh, fix me!' },
+{ icon: '🐘', line: 'Coorg said "stay"' },
 { icon: '🌊', line: 'Goa, off-season vibes?' },
+{ icon: '🎭', line: "Vienna's old town" },
+{ icon: '📵', line: 'Spiti, no signal!' },
+{ icon: '🎒', line: 'Kasol, lost again?' },
+{ icon: '🏔️', line: 'Ladakh called again!' },
 { icon: '🌿', line: 'Meghalaya, clouds live here' },
 { icon: '☕', line: 'Hidden cafes, Lisbon' },
 { icon: '🌴', line: 'Andamans, who needs wifi?' },
-{ icon: '🌿', line: 'Meghalaya, clouds live here' },
 { icon: '🏯', line: 'Jaipur, dress accordingly!' },
-{ icon: '🌿', line: 'Rishikesh, fix me!' },
 { icon: '🌸', line: 'Cherry blossoms, Tokyo' },
-{ icon: '🎒', line: 'Kasol, lost again?' },
 { icon: '🚂', line: 'Darjeeling, sip slowly.' },
 { icon: '🌊', line: 'Sunrise surf, Bali' },
-{ icon: '🐘', line: 'Coorg said "stay"' },
 { icon: '🍵', line: 'Munnar stole me' },
 { icon: '🛺', line: 'Varanasi never sleeps!' },
-{ icon: '🎭', line: "Vienna's old town" },
-{ icon: '📵', line: 'Spiti, no signal!' },
 ];
 
 const HERO_GREETINGS = {
@@ -551,7 +550,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             <div
               key={tagIdx}
               style={{
-                fontFamily: "'Sora',sans-serif", fontSize: 24, fontWeight: 700, lineHeight: 1.25,
+                fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 700, lineHeight: 1.25,
                 letterSpacing: '-0.2px', color: '#0F6E56', whiteSpace: 'nowrap',
                 animation: tagPhase === 'out'
                   ? 'taglineSlideOut 0.28s cubic-bezier(.4,0,.8,.2) both'

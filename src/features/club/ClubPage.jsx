@@ -3,6 +3,7 @@ import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respo
 import { supabase } from '../../supabase';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
+import bglessLogo from '../../assets/bgless.png';
 
 const VIBE_OPTIONS = [
   { value: 'any', label: 'Any vibe' },
@@ -87,7 +88,10 @@ function MatchRing({ score }) {
 }
 
 function buildCardGallery(item) {
-  return [item?.photoUrl, item?.trip?.coverUrl].filter(Boolean);
+  const ownPhotos = Array.isArray(item?.photoUrls) && item.photoUrls.length > 0
+    ? item.photoUrls
+    : [item?.photoUrl].filter(Boolean);
+  return [...ownPhotos, item?.trip?.coverUrl].filter(Boolean);
 }
 
 function formatChatTime(value) {
@@ -492,7 +496,7 @@ function ClubPage({ trip, onTripRefresh }) {
     title: '',
     about: '',
     lookingFor: '',
-    photoUrl: null,
+    photoUrls: [],
     vibe: 'mixed',
     genderMix: 'mixed',
     boysCount: '',
@@ -588,7 +592,9 @@ function ClubPage({ trip, onTripRefresh }) {
         title: data.myProfile?.title || trip.groupName,
         about: data.myProfile?.about || '',
         lookingFor: data.myProfile?.lookingFor || '',
-        photoUrl: data.myProfile?.photoUrl || null,
+        photoUrls: Array.isArray(data.myProfile?.photoUrls) && data.myProfile.photoUrls.length > 0
+          ? data.myProfile.photoUrls
+          : (data.myProfile?.photoUrl ? [data.myProfile.photoUrl] : []),
         vibe: data.myProfile?.vibe || 'mixed',
         genderMix: data.myProfile?.genderMix || 'mixed',
         boysCount: data.myProfile?.boysCount != null ? String(data.myProfile.boysCount) : '',
@@ -656,11 +662,12 @@ function ClubPage({ trip, onTripRefresh }) {
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if ((profileForm.photoUrls || []).length >= 3) return;
     const reader = new FileReader();
     reader.onload = (ev) => {
       const img = new Image();
       img.onload = () => {
-        const MAX = 300;
+        const MAX = 900;
         const scale = Math.min(1, MAX / Math.max(img.width, img.height));
         const w = Math.round(img.width * scale);
         const h = Math.round(img.height * scale);
@@ -668,8 +675,9 @@ function ClubPage({ trip, onTripRefresh }) {
         c.width = w;
         c.height = h;
         c.getContext('2d').drawImage(img, 0, 0, w, h);
-        const dataUrl = c.toDataURL('image/jpeg', 0.86);
-        setProfileForm((f) => ({ ...f, photoUrl: dataUrl }));
+        const dataUrl = c.toDataURL('image/jpeg', 0.88);
+        setProfileForm((f) => ({ ...f, photoUrls: [...(f.photoUrls || []).slice(0, 2), dataUrl] }));
+        if (e.target) e.target.value = '';
       };
       img.src = ev.target.result;
     };
@@ -694,7 +702,8 @@ function ClubPage({ trip, onTripRefresh }) {
         title: profileForm.title,
         about: profileForm.about,
         lookingFor: profileForm.lookingFor,
-        photoUrl: profileForm.photoUrl,
+        photoUrl: (profileForm.photoUrls || [])[0] || null,
+        photoUrls: profileForm.photoUrls || [],
         vibe: profileForm.vibe,
         genderMix: profileForm.genderMix,
         boysCount: profileForm.boysCount === '' ? null : Number(profileForm.boysCount),
@@ -1195,13 +1204,16 @@ function ClubPage({ trip, onTripRefresh }) {
       `}</style>
 
       {/* ── Hero header ── */}
-      <div style={{ padding: '0.1rem 0 0.6rem', animation: 'clubPop .3s ease-out both' }}>
-        <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: '1.6px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 5 }}>
-          TravelBae Club
+      <div style={{ padding: '0 0 0.9rem', animation: 'clubPop .3s ease-out both' }}>
+        {/* Logo + CLUB badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+          <img src={bglessLogo} alt="TripBae" style={{ height: 38, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.8px', color: '#fff', textTransform: 'uppercase', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', padding: '3px 9px', borderRadius: 999, boxShadow: '0 2px 8px rgba(15,110,86,0.38)', flexShrink: 0 }}>CLUB</span>
         </div>
-        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 24, fontWeight: 700, color: '#0F6E56', lineHeight: 1.2, marginBottom: 10 }}>
-          Find your people.
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: '#0F6E56', lineHeight: 1.2, marginBottom: 12 }}>
+          Find your people{trip.groupName ? `, ${trip.groupName.split(' ')[0]}` : ''} 🤝
         </div>
+        {/* Toggle inline */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button
             onClick={handleToggle}
@@ -1257,19 +1269,28 @@ function ClubPage({ trip, onTripRefresh }) {
           <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Build Your Discovery Card</div>
 
           <div style={{ marginBottom: 12 }}>
-            <label style={S.label}>Group Photo</label>
-            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              {profileForm.photoUrl ? (
-                <img src={profileForm.photoUrl} alt="preview" style={{ width: 84, height: 84, borderRadius: 12, objectFit: 'cover' }} />
-              ) : (
-                <div style={{ width: 84, height: 84, borderRadius: 12, background: '#ECEFF8', display: 'grid', placeItems: 'center', fontSize: 24 }}>🖼️</div>
+            <label style={S.label}>Group Photos — add up to 3</label>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              {(profileForm.photoUrls || []).map((url, i) => (
+                <div key={i} style={{ position: 'relative' }}>
+                  <img src={url} alt={`photo ${i + 1}`} style={{ width: 82, height: 82, borderRadius: 12, objectFit: 'cover', display: 'block' }} />
+                  <button
+                    type="button"
+                    onClick={() => setProfileForm(f => ({ ...f, photoUrls: f.photoUrls.filter((_, j) => j !== i) }))}
+                    style={{ position: 'absolute', top: -7, right: -7, width: 20, height: 20, borderRadius: '50%', border: '2px solid #fff', background: '#ef4444', color: '#fff', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                  >✕</button>
+                </div>
+              ))}
+              {(profileForm.photoUrls || []).length < 3 && (
+                <button
+                  type="button"
+                  style={{ width: 82, height: 82, borderRadius: 12, background: '#F1EFE8', border: '1.5px dashed #D3D1C7', display: 'grid', placeItems: 'center', fontSize: 24, cursor: 'pointer', color: '#9ca3af' }}
+                  onClick={() => fileRef.current?.click()}
+                >+</button>
               )}
-              <div style={{ flex: 1 }}>
-                <button style={{ ...S.btn, ...S.btnOrange, width: '100%', marginTop: 0 }} onClick={() => fileRef.current?.click()}>{profileForm.photoUrl ? 'Change photo' : 'Upload photo'}</button>
-                <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
-                {profileForm.photoUrl && <button style={{ ...S.btn, width: '100%', marginTop: 6 }} onClick={() => setProfileForm(f => ({ ...f, photoUrl: null }))}>Remove photo</button>}
-              </div>
             </div>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
+            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Photos appear as swipeable backgrounds in your discovery card.</div>
           </div>
 
           <label style={S.label}>Title</label>
@@ -1370,17 +1391,25 @@ function ClubPage({ trip, onTripRefresh }) {
       )}
 
       {clubView === 'requests' && (
-        <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Incoming Requests</div>
-          {hub.incomingRequests.length === 0 && <div style={{ fontSize: 12, color: '#6b6b68' }}>No pending requests right now.</div>}
-          {hub.incomingRequests.map(req => (
-            <div key={req.id} style={{ border: '1px solid rgba(13,24,48,0.1)', borderRadius: 14, padding: 12, marginBottom: 8, background: 'linear-gradient(180deg,#FFFFFF,#F8FBFF)' }}>
-              <div style={{ fontSize: 14, fontWeight: 700 }}>{req.requesterTrip.groupName}</div>
-              <div style={{ fontSize: 12, color: '#60636D', marginTop: 2 }}>{req.message}</div>
-              <div style={{ fontSize: 11, color: '#77839A', marginTop: 4 }}>Received {formatChatMetaTime(req.createdAt)}</div>
-              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <button style={{ ...S.btn, ...S.btnP, marginTop: 0 }} onClick={() => handleRequestAction(req.id, 'accepted')} disabled={clubBusy}>Accept</button>
-                <button style={{ ...S.btn, marginTop: 0 }} onClick={() => handleRequestAction(req.id, 'declined')} disabled={clubBusy}>Decline</button>
+        <div style={{ animation: 'clubPop .25s ease-out both', paddingBottom: 8 }}>
+          {hub.incomingRequests.length === 0 && (
+            <div style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '2.5rem 0' }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
+              No pending requests right now.
+            </div>
+          )}
+          {hub.incomingRequests.map((req, idx) => (
+            <div key={req.id} style={{ paddingBottom: 14, marginBottom: 14, borderBottom: idx < hub.incomingRequests.length - 1 ? '1px solid rgba(15,23,42,0.07)' : 'none' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>{req.requesterTrip.groupName}</div>
+                  <div style={{ fontSize: 12, color: '#60636D', marginTop: 3, lineHeight: 1.5 }}>{req.message}</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>{formatChatMetaTime(req.createdAt)}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <button style={{ ...S.btn, ...S.btnP, marginTop: 0, flex: 1, justifyContent: 'center' }} onClick={() => handleRequestAction(req.id, 'accepted')} disabled={clubBusy}>Accept</button>
+                <button style={{ ...S.btn, marginTop: 0, flex: 1, justifyContent: 'center' }} onClick={() => handleRequestAction(req.id, 'declined')} disabled={clubBusy}>Decline</button>
               </div>
             </div>
           ))}
@@ -1388,65 +1417,51 @@ function ClubPage({ trip, onTripRefresh }) {
       )}
 
       {clubView === 'chats' && (
-        <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 4 }}>Club Chats</div>
-          <div style={{ fontSize: 12, color: '#667085', marginBottom: 12, display: 'flex', justifyContent: 'space-between' }}>
-            <span>Single-window chat experience.</span>
-            <span>{hasUnreadChats ? 'New messages waiting' : 'All caught up'}</span>
-          </div>
-
+        <div style={{ animation: 'clubPop .25s ease-out both' }}>
           {(!hub.chats || hub.chats.length === 0) && (
-            <div style={{ fontSize: 13, color: '#6b6b68', textAlign: 'center', padding: '18px 0' }}>
-              Accept a request to unlock a shared trip chat.
+            <div style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '2.5rem 0' }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>💬</div>
+              Accept a request to start chatting.
             </div>
           )}
 
-          {hub.chats?.length > 0 && (
-            <div>
-              {!activeChat && (
-                <div style={{ display: 'grid', gap: 8 }}>
-                  {hub.chats.map(chat => {
-                    const preview = chat.latestMessage?.text || `Start the ${chat.title} chat.`;
-                    const avatar = chat.otherTrip?.clubProfile?.photoUrl || chat.otherTrip?.coverUrl || null;
-                    const unread = unreadCountByChat[chat.id] || 0;
-                    return (
-                      <button
-                        key={chat.id}
-                        onClick={() => setSelectedChatId(chat.id)}
-                        style={{
-                          width: '100%',
-                          textAlign: 'left',
-                          border: unread ? '1px solid rgba(23,127,94,0.28)' : '1px solid rgba(10,18,35,0.07)',
-                          background: unread ? 'linear-gradient(180deg,#F2FFF8,#FFFFFF)' : 'linear-gradient(180deg,#FFFFFF,#F8FBFF)',
-                          borderRadius: 18,
-                          padding: 12,
-                          cursor: 'pointer',
-                          boxShadow: unread ? '0 12px 24px rgba(23,127,94,0.12)' : '0 8px 20px rgba(15,23,42,0.05)',
-                        }}>
-                        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-                          {avatar ? (
-                            <img src={avatar} alt="chat avatar" style={{ width: 46, height: 46, borderRadius: 13, objectFit: 'cover' }} />
-                          ) : (
-                            <div style={{ width: 46, height: 46, borderRadius: 13, display: 'grid', placeItems: 'center', background: '#EEF3FB', fontSize: 20 }}>
-                              {chat.otherTrip?.emoji || '💬'}
-                            </div>
-                          )}
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                              <div style={{ fontSize: 13, fontWeight: 800, color: '#101828', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{chat.title}</div>
-                              <div style={{ fontSize: 10, color: '#8A94A6', flexShrink: 0 }}>{formatChatMetaTime(chat.latestMessage?.createdAt)}</div>
-                            </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, alignItems: 'center' }}>
-                              <div style={{ fontSize: 11, color: unread ? '#1E7B5E' : '#6B7280', marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: unread ? 700 : 500 }}>{preview}</div>
-                              {unread ? <span style={{ minWidth: 18, height: 18, borderRadius: 9, background: '#1D9E75', color: '#fff', fontSize: 10, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginTop: 4 }}>1</span> : null}
-                            </div>
-                          </div>
+          {hub.chats?.length > 0 && !activeChat && (
+            <div style={{ display: 'grid', gap: 0 }}>
+              {hub.chats.map((chat, idx) => {
+                const preview = chat.latestMessage?.text || `Say hi to ${chat.otherTrip?.groupName}.`;
+                const avatar = chat.otherTrip?.clubProfile?.photoUrl || chat.otherTrip?.coverUrl || null;
+                const unread = unreadCountByChat[chat.id] || 0;
+                return (
+                  <button
+                    key={chat.id}
+                    onClick={() => setSelectedChatId(chat.id)}
+                    style={{
+                      width: '100%', textAlign: 'left', border: 'none',
+                      borderBottom: idx < hub.chats.length - 1 ? '1px solid rgba(15,23,42,0.07)' : 'none',
+                      background: 'transparent', padding: '12px 0', cursor: 'pointer',
+                    }}>
+                    <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
+                      {avatar ? (
+                        <img src={avatar} alt="chat avatar" style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'cover', flexShrink: 0 }} />
+                      ) : (
+                        <div style={{ width: 48, height: 48, borderRadius: 14, display: 'grid', placeItems: 'center', background: unread ? '#E1F5EE' : '#F1EFE8', fontSize: 20, flexShrink: 0 }}>
+                          {chat.otherTrip?.emoji || '💬'}
                         </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+                      )}
+                      <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                          <div style={{ fontSize: 14, fontWeight: unread ? 800 : 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chat.title}</div>
+                          <div style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0 }}>{formatChatMetaTime(chat.latestMessage?.createdAt)}</div>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginTop: 2 }}>
+                          <div style={{ fontSize: 12, color: unread ? '#0F6E56' : '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: unread ? 600 : 400 }}>{preview}</div>
+                          {unread ? <span style={{ minWidth: 18, height: 18, borderRadius: 9, background: '#1D9E75', color: '#fff', fontSize: 10, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</span> : null}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
@@ -1969,31 +1984,39 @@ function ClubPage({ trip, onTripRefresh }) {
       {clubView === 'discover' && (
         <>
           <div style={{ padding: '0 0 14px', animation: 'clubPop .25s ease-out both' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
-              <div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, color: '#111827' }}>Find Your Crowd</div>
-                <div style={{ fontSize: 12, color: '#8a8e97', marginTop: 2 }}>Discover groups, vibe-match, connect.</div>
-              </div>
-              <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={() => { setFilterDraft(filters); setFiltersOpen(true); }}>Filters</button>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
+            {/* Full-width search bar with inline ✕ */}
+            <div style={{ position: 'relative', marginBottom: 8 }}>
               <input
-                style={{ ...S.input, marginBottom: 0, background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.1)' }}
+                style={{ ...S.input, marginBottom: 0, background: 'rgba(255,255,255,0.92)', paddingRight: filters.search ? 40 : 14 }}
                 value={filters.search}
                 onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
-                placeholder="Search group, destination, vibe, tags"
+                placeholder="Search group, destination, vibe…"
               />
-              <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setFilters(initialFilters)}>Reset</button>
+              {filters.search && (
+                <button
+                  onClick={() => setFilters(f => ({ ...f, search: '' }))}
+                  style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', width: 22, height: 22, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.1)', color: '#6b6b68', fontSize: 11, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+                >✕</button>
+              )}
             </div>
-
-            <div style={{ marginTop: 8, fontSize: 11, color: '#8a8e97' }}>
+            <div style={{ fontSize: 11, color: '#9ca3af' }}>
               {`${VIBE_OPTIONS.find(v => v.value === filters.vibe)?.label || 'Any vibe'} · ${GENDER_MIX_OPTIONS.find(v => v.value === filters.genderMix)?.label || 'Any mix'} · ${MEMBER_BAND_OPTIONS.find(v => v.value === filters.memberBand)?.label || 'Any size'}${locationEnabled ? ` · ${radius} km` : ''}`}
             </div>
           </div>
 
           <div style={{ paddingBottom: 20, animation: 'clubPop .3s ease-out both' }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 13, color: '#6b6b68', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Discover · {filteredDiscover.length} group{filteredDiscover.length !== 1 ? 's' : ''}</div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 13, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Discover · {filteredDiscover.length} group{filteredDiscover.length !== 1 ? 's' : ''}</div>
+              <button
+                onClick={() => { setFilterDraft(filters); setFiltersOpen(true); }}
+                style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }}
+                title="Filters"
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+                </svg>
+              </button>
+            </div>
             {filteredDiscover.length === 0 && (
               <div style={{ fontSize: 13, color: '#6b6b68', textAlign: 'center', padding: '18px 0' }}>
                 No groups found. Try wider radius, different vibe, or remove a filter.
