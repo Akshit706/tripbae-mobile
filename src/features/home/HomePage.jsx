@@ -355,8 +355,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             key={tagIdx}
             className="tb-hero-title tb-tagline-enter"
             style={{
-              fontFamily: "'Sora',sans-serif", fontSize: 34, fontWeight: 800, lineHeight: 1.12,
-              letterSpacing: '-0.2px', marginBottom: 10, textAlign: 'center', color: '#0D2B2E',
+              fontFamily: "'DM Sans',sans-serif", fontSize: 32, fontWeight: 700, lineHeight: 1.18,
+              letterSpacing: '-0.3px', marginBottom: 18, textAlign: 'center', color: '#1a1a18',
               ...(tagPhase === 'out' ? {
                 opacity: 0, transform: 'translateY(-10px) scale(0.97)', filter: 'blur(4px)',
                 transition: 'opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease',
@@ -364,12 +364,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               } : {}),
             }}
           >
-            <span style={{ marginRight: 7, fontSize: 30 }}>{HERO_TAGLINES[tagIdx].icon}</span>{HERO_TAGLINES[tagIdx].line}
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 16 }}>
-            {HERO_TAGLINES.map((_, i) => (
-              <div key={i} style={{ width: i === tagIdx ? 18 : 6, height: 6, borderRadius: 99, background: i === tagIdx ? '#FF6B35' : 'rgba(0,0,0,0.14)', transition: 'all 0.35s ease' }} />
-            ))}
+            {HERO_TAGLINES[tagIdx].line}
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
             <button
