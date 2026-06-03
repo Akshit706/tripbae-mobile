@@ -35,7 +35,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
   useEffect(() => {
     if (!trip.destination) return;
     let cancelled = false;
-    fetchPlacePhotos(trip.destination)
+    fetchPlacePhotos(`${trip.destination} famous landmark tourist attraction`)
       .then(data => {
         if (cancelled) return;
         const urls = (data.urls || []).slice(0, 3);
@@ -94,13 +94,18 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
             position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
             opacity: i === photoIdx ? 1 : 0,
             transition: 'opacity 0.6s ease',
-            filter: 'brightness(0.32) saturate(1.1)',
+            filter: 'brightness(0.38) saturate(1.15)',
             zIndex: 0,
             pointerEvents: 'none',
           }}
           onError={e => { e.target.style.display = 'none'; }}
         />
       ))}
+
+      {/* Bottom scrim for text contrast */}
+      {photos.length > 0 && (
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.0) 35%, rgba(0,0,0,0.55) 100%)', zIndex: 1, pointerEvents: 'none' }} />
+      )}
 
       {/* Slide dot indicators */}
       {photos.length > 1 && (
@@ -132,10 +137,10 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
           </div>
         </div>
         {/* destination + name */}
-        <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.6px', lineHeight: 1.15, marginBottom: 5, fontFamily: "'Inter',sans-serif" }}>{trip.destination}</div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', marginBottom: 12 }}>{trip.groupName}</div>
+        <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.15, marginBottom: 4, fontFamily: "'Inter',sans-serif", textShadow: '0 1px 12px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4)' }}>{trip.destination}</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 12, fontWeight: 500, textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>{trip.groupName}</div>
         {/* stats line */}
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.55)', fontWeight: 500, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
           <span>{formatDateRange(trip.arrival, trip.departure)}</span>
           <span style={{ opacity: 0.35 }}>·</span>
           <span>{days} nights</span>

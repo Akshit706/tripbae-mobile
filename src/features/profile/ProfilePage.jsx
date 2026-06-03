@@ -340,6 +340,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         @keyframes pfFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pfBadgePop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
         @keyframes pfSlideIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pfBgFloat { from { transform: scale(1.15) translateY(0px); } to { transform: scale(1.22) translateY(-8px); } }
         .pf-badge:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(29,158,117,0.18); }
         .pf-badge-locked:hover { transform: translateY(-2px); }
         .pf-avatar-edit:hover { background: #0F6E56 !important; }
@@ -433,12 +434,47 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         <div style={{ animation: 'pfFadeIn .25s ease-out' }}>
           {/* Identity card */}
           <div style={{ padding: '1.5rem 1.25rem 0' }}>
-            <div style={{ background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, padding: '1.75rem 1.25rem', textAlign: 'center', color: '#fff', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 30px rgba(29,158,117,0.25)' }}>
-              <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-              <div style={{ position: 'absolute', bottom: -50, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+            <div style={{
+              borderRadius: 22, padding: '1.75rem 1.25rem', textAlign: 'center', color: '#fff',
+              position: 'relative', overflow: 'hidden',
+              background: avatar ? 'transparent' : 'linear-gradient(135deg,#1D9E75,#0F6E56)',
+              boxShadow: avatar ? '0 10px 40px rgba(0,0,0,0.28)' : '0 10px 30px rgba(29,158,117,0.25)',
+              minHeight: 220,
+            }}>
+              {/* Blurred avatar background */}
+              {avatar && (
+                <>
+                  <img
+                    src={avatar}
+                    alt=""
+                    style={{
+                      position: 'absolute', inset: 0, width: '100%', height: '100%',
+                      objectFit: 'cover', filter: 'blur(22px) brightness(0.55) saturate(1.3)',
+                      transform: 'scale(1.15)',
+                      zIndex: 0, pointerEvents: 'none',
+                      animation: 'pfBgFloat 8s ease-in-out infinite alternate',
+                    }}
+                  />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg,rgba(0,0,0,0.18) 0%,rgba(0,0,0,0.45) 100%)', zIndex: 0, pointerEvents: 'none', borderRadius: 22 }} />
+                </>
+              )}
+              {!avatar && (
+                <>
+                  <div style={{ position: 'absolute', top: -40, right: -40, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+                  <div style={{ position: 'absolute', bottom: -50, left: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+                </>
+              )}
 
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
-                <div style={{ width: 110, height: 110, borderRadius: '50%', background: avatar ? `url(${avatar}) center/cover` : 'rgba(255,255,255,0.18)', border: '3px solid rgba(255,255,255,0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 38, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: '#fff', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }}>
+              {/* Avatar ring */}
+              <div style={{ position: 'relative', zIndex: 2, display: 'inline-block', marginBottom: 14 }}>
+                <div style={{
+                  width: 110, height: 110, borderRadius: '50%',
+                  background: avatar ? `url(${avatar}) center/cover` : 'rgba(255,255,255,0.18)',
+                  border: avatar ? '3px solid rgba(255,255,255,0.6)' : '3px solid rgba(255,255,255,0.35)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 38, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: '#fff',
+                  boxShadow: avatar ? '0 8px 32px rgba(0,0,0,0.35), 0 0 0 5px rgba(255,255,255,0.12)' : '0 8px 24px rgba(0,0,0,0.15)',
+                }}>
                   {!avatar && initials}
                 </div>
                 <button
@@ -454,34 +490,60 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               </div>
 
               {avatar && (
-                <div style={{ marginBottom: 10 }}>
+                <div style={{ marginBottom: 10, position: 'relative', zIndex: 2 }}>
                   <button onClick={removeAvatar} style={{ fontSize: 11, padding: '3px 10px', borderRadius: 12, border: '0.5px solid rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.12)', color: '#fff', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>Remove photo</button>
                 </div>
               )}
 
-              {editingName ? (
-                <div style={{ display: 'flex', gap: 6, justifyContent: 'center', maxWidth: 260, margin: '0 auto' }}>
-                  <input
-                    autoFocus
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setName(profile.name || ''); setEditingName(false); } }}
-                    style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 15, fontWeight: 600, textAlign: 'center', fontFamily: "'Sora',sans-serif", outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#0F6E56' }}
-                    placeholder="Your name"
-                    maxLength={30}
-                  />
-                  <button onClick={saveName} style={{ padding: '8px 12px', borderRadius: 10, border: 'none', background: '#fff', color: '#0F6E56', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>✓</button>
-                </div>
-              ) : (
-                <div onClick={() => setEditingName(true)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px' }}>
-                    {name || 'Tap to add name'}
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                {editingName ? (
+                  <div style={{ display: 'flex', gap: 6, justifyContent: 'center', maxWidth: 260, margin: '0 auto' }}>
+                    <input
+                      autoFocus
+                      value={name}
+                      onChange={e => setName(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setName(profile.name || ''); setEditingName(false); } }}
+                      style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 15, fontWeight: 600, textAlign: 'center', fontFamily: "'Sora',sans-serif", outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#0F6E56' }}
+                      placeholder="Your name"
+                      maxLength={30}
+                    />
+                    <button onClick={saveName} style={{ padding: '8px 12px', borderRadius: 10, border: 'none', background: '#fff', color: '#0F6E56', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>✓</button>
                   </div>
-                  <span style={{ fontSize: 13, opacity: 0.75 }}>✎</span>
+                ) : (
+                  <div onClick={() => setEditingName(true)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px', textShadow: avatar ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>
+                      {name || 'Tap to add name'}
+                    </div>
+                    <span style={{ fontSize: 13, opacity: 0.75 }}>✎</span>
+                  </div>
+                )}
+                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
+                  {stats.tripCount} trip{stats.tripCount === 1 ? '' : 's'} · {stats.uniqueDests} destination{stats.uniqueDests === 1 ? '' : 's'}
                 </div>
-              )}
-              <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6, position: 'relative', zIndex: 1 }}>
-                {stats.tripCount} trip{stats.tripCount === 1 ? '' : 's'} · {stats.uniqueDests} destination{stats.uniqueDests === 1 ? '' : 's'} · {earned.length} badge{earned.length === 1 ? '' : 's'}
+                {/* Earned badge chips */}
+                {earned.length > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
+                    {earned.slice(0, 4).map(b => (
+                      <div key={b.id} style={{
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        background: avatar ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.14)',
+                        backdropFilter: 'blur(8px)',
+                        border: '0.5px solid rgba(255,255,255,0.28)',
+                        borderRadius: 20, padding: '4px 10px',
+                        fontSize: 11, fontWeight: 600, color: '#fff',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                      }}>
+                        <span style={{ fontSize: 13 }}>{b.emoji}</span>
+                        <span>{b.name}</span>
+                      </div>
+                    ))}
+                    {earned.length > 4 && (
+                      <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)', border: '0.5px solid rgba(255,255,255,0.28)', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#fff' }}>
+                        +{earned.length - 4} more
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
