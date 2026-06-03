@@ -1209,12 +1209,12 @@ function ClubPage({ trip, onTripRefresh }) {
       `}</style>
 
       {/* ── Hero header ── */}
-      <div style={{ padding: '0 0 0.4rem', animation: 'clubPop .3s ease-out both' }}>
+      <div style={{ padding: '0 0 0', animation: 'clubPop .3s ease-out both' }}>
         {/* Logo centered */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
-          <img src={bglessLogo} alt="TripBae" style={{ height: 70, width: 'auto', objectFit: 'contain', display: 'block' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 2 }}>
+          <img src={bglessLogo} alt="TripBae" style={{ height: 65, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
-        <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 8, fontStyle: 'italic', opacity: 0.75 }}>
+        <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 6, fontStyle: 'italic', opacity: 0.7 }}>
           find your people.
         </div>
       </div>
@@ -1416,14 +1416,15 @@ function ClubPage({ trip, onTripRefresh }) {
           )}
 
           {hub.chats?.length > 0 && !activeChat && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {hub.chats.map((chat) => {
                 const preview = chat.latestMessage?.text || 'No messages yet.';
                 const unread = unreadCountByChat[chat.id] || 0;
                 const otherName = chat.otherTrip?.groupName || '';
                 const myName = trip.groupName || '';
+                const myInitial = (myName.trim()[0] || 'A').toUpperCase();
+                const otherInitial = (otherName.trim()[0] || 'J').toUpperCase();
                 const displayTitle = [myName.split(' ')[0], otherName.split(' ')[0]].filter(Boolean).join(' & ');
-                const initials = (otherName.slice(0, 2) || '??').toUpperCase();
                 const timeLabel = chat.latestMessage?.createdAt ? formatChatMetaTime(chat.latestMessage.createdAt) : '';
                 return (
                   <button
@@ -1431,35 +1432,32 @@ function ClubPage({ trip, onTripRefresh }) {
                     onClick={() => setSelectedChatId(chat.id)}
                     style={{
                       width: '100%', textAlign: 'left', border: 'none',
-                      background: unread ? 'rgba(29,158,117,0.05)' : 'rgba(255,255,255,0.72)',
-                      borderRadius: 14,
-                      padding: '11px 12px',
+                      background: '#fff',
+                      borderRadius: 16,
+                      padding: '14px 14px 14px 16px',
                       cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 12,
-                      boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      boxShadow: '0 2px 12px rgba(15,23,42,0.07)',
+                      borderLeft: `3px solid ${unread ? '#1D9E75' : '#E5E7EB'}`,
                     }}>
-                    {/* Circular initials avatar */}
-                    <div style={{
-                      width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
-                      background: unread ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : 'linear-gradient(135deg,#E2E8F0,#CBD5E1)',
-                      display: 'grid', placeItems: 'center',
-                      fontSize: 13, fontWeight: 800,
-                      color: unread ? '#fff' : '#475569',
-                      letterSpacing: '0.03em',
-                    }}>
-                      {initials}
+                    {/* Two overlapping circular avatar chips */}
+                    <div style={{ position: 'relative', width: 48, height: 34, flexShrink: 0 }}>
+                      <div style={{ position: 'absolute', left: 0, top: 2, width: 30, height: 30, borderRadius: '50%', background: '#1D9E75', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 800, color: '#fff', border: '2.5px solid #fff', zIndex: 2, boxShadow: '0 2px 6px rgba(29,158,117,0.28)' }}>
+                        {myInitial}
+                      </div>
+                      <div style={{ position: 'absolute', left: 18, top: 2, width: 30, height: 30, borderRadius: '50%', background: '#FF6B35', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 800, color: '#fff', border: '2.5px solid #fff', zIndex: 1, boxShadow: '0 2px 6px rgba(255,107,53,0.28)' }}>
+                        {otherInitial}
+                      </div>
                     </div>
                     {/* Text */}
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
-                        <div style={{ fontSize: 14, fontWeight: unread ? 800 : 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayTitle}</div>
-                        <div style={{ fontSize: 10, color: '#CBD5E1', flexShrink: 0, fontWeight: 400, letterSpacing: '0.01em' }}>{timeLabel}</div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
+                        <div style={{ fontSize: 14, fontWeight: unread ? 800 : 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayTitle}</div>
+                        <div style={{ fontSize: 10, color: '#D1D5DB', flexShrink: 0, fontWeight: 400 }}>{timeLabel}</div>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                        <div style={{ fontSize: 12, color: unread ? '#374151' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: unread ? 500 : 400 }}>{preview}</div>
-                        {unread ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D9E75', flexShrink: 0, display: 'block' }} /> : null}
-                      </div>
+                      <div style={{ fontSize: 12, color: unread ? '#374151' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: preview === 'No messages yet.' ? 'italic' : 'normal', fontWeight: unread ? 500 : 400 }}>{preview}</div>
                     </div>
+                    {unread ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D9E75', flexShrink: 0, display: 'block' }} /> : null}
                   </button>
                 );
               })}
@@ -2092,7 +2090,7 @@ function ClubPage({ trip, onTripRefresh }) {
               </div>
             )}
 
-            {filteredDiscover
+            {listed && filteredDiscover
               .map(item => ({
                 item,
                 alreadySent: hub.outgoingRequests.some(r => r.targetTripId === item.tripId && r.status === 'pending'),

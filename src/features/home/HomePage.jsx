@@ -312,7 +312,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     const tick = () => {
       setTagPhase('out');
       tagSwapRef.current = setTimeout(() => {
-        setTagIdx(i => (i + 1) % HERO_TAGLINES.length);
+        setTagIdx(i => {
+          let next;
+          do { next = Math.floor(Math.random() * HERO_TAGLINES.length); } while (next === i && HERO_TAGLINES.length > 1);
+          return next;
+        });
         setTagPhase('in');
       }, 350);
     };
@@ -831,8 +835,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         <div style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
           <div style={{ fontSize: 56, marginBottom: 14 }}>🗺️</div>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, marginBottom: 8 }}>No upcoming trips!</div>
-          <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 24 }}>Create your first trip or join one with a code.</div>
-          <button style={{ ...S.btn, ...S.btnP, padding: '10px 24px', fontSize: 14 }} onClick={() => setShowCreate(true)}>+ New Trip</button>
+          <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 8 }}>Create your first trip or join one with a code.</div>
         </div>
       )}
 
@@ -867,7 +870,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Tagline footer */}
-      <div style={{ borderTop: '1px solid #e8e6e1', padding: '28px 20px 36px' }}>
+      <div style={{ borderTop: '1px solid #e8e6e1', padding: '28px 20px 36px', marginTop: activeTrips.length === 0 && pastTrips.length === 0 ? '25vh' : 24 }}>
         <div style={{ fontFamily: "'Inter', 'DM Sans', sans-serif", fontSize: 32, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.15, letterSpacing: '-0.5px' }}>
           Plan. Split. Explore.
         </div>
