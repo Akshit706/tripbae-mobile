@@ -3,7 +3,7 @@ import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respo
 import { supabase } from '../../supabase';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
-import bglessLogo from '../../assets/bgless.png';
+import bglessLogo from '../../assets/bgless_club.png';
 
 const VIBE_OPTIONS = [
   { value: 'any', label: 'Any vibe' },
@@ -427,6 +427,7 @@ function ClubPage({ trip, onTripRefresh }) {
   const [chatTool, setChatTool] = useState(null);
   const [toolsChooserOpen, setToolsChooserOpen] = useState(false);
   const [toolScreenOpen, setToolScreenOpen] = useState(false);
+  const [chatMenuOpen, setChatMenuOpen] = useState(false);
   const [chatPhotoFolder, setChatPhotoFolder] = useState('all');
   const [chatPhotoLightbox, setChatPhotoLightbox] = useState(null);
   const [chatPhotoUploading, setChatPhotoUploading] = useState(false);
@@ -1201,17 +1202,20 @@ function ClubPage({ trip, onTripRefresh }) {
             box-shadow: 0 24px 54px rgba(16,24,40,0.14);
           }
         }
+        .club-chat-thread {
+          background-image: radial-gradient(rgba(15,110,86,0.05) 1.5px, transparent 1.5px);
+          background-size: 20px 20px;
+        }
       `}</style>
 
       {/* ── Hero header ── */}
       <div style={{ padding: '0 0 0.9rem', animation: 'clubPop .3s ease-out both' }}>
-        {/* Logo + CLUB badge */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-          <img src={bglessLogo} alt="TripBae" style={{ height: 38, width: 'auto', objectFit: 'contain', display: 'block' }} />
-          <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: '1.8px', color: '#fff', textTransform: 'uppercase', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', padding: '3px 9px', borderRadius: 999, boxShadow: '0 2px 8px rgba(15,110,86,0.38)', flexShrink: 0 }}>CLUB</span>
+        {/* Logo centered */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
+          <img src={bglessLogo} alt="TripBae" style={{ height: 34, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
-        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: '#0F6E56', lineHeight: 1.2, marginBottom: 12 }}>
-          Find your people{trip.groupName ? `, ${trip.groupName.split(' ')[0]}` : ''} 🤝
+        <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 12, fontStyle: 'italic', opacity: 0.85 }}>
+          find your people ✌️
         </div>
         {/* Toggle inline */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1468,7 +1472,7 @@ function ClubPage({ trip, onTripRefresh }) {
       )}
 
       {clubView === 'chats' && activeChat && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 545, background: 'linear-gradient(180deg,#ECF6F4,#F4F9FF 68%,#FFFFFF)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 545, background: 'linear-gradient(160deg,#FBF8F0 0%,#EEF9F4 42%,#EEF2FF 100%)', display: 'flex', flexDirection: 'column' }}>
           <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: '10px 12px', paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))', borderBottom: '1px solid rgba(10,18,35,0.08)', background: 'rgba(255,255,255,0.78)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
               <button style={{ ...S.btn, marginTop: 0, padding: '8px 11px', borderRadius: 12 }} onClick={() => setSelectedChatId(null)}>←</button>
@@ -1478,12 +1482,26 @@ function ClubPage({ trip, onTripRefresh }) {
               </div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0, padding: '8px 12px', borderRadius: 12, fontSize: 12 }} onClick={handleDeleteChat} disabled={clubBusy}>Delete</button>
-              <button style={{ ...S.btn, marginTop: 0, padding: '8px 12px', borderRadius: 12 }} onClick={() => setSelectedChatId(null)}>Close</button>
+              <div style={{ position: 'relative' }}>
+                <button
+                  style={{ ...S.btn, marginTop: 0, padding: '8px 13px', borderRadius: 12, fontSize: 18, fontWeight: 700, letterSpacing: 1, lineHeight: 1 }}
+                  onClick={() => setChatMenuOpen(o => !o)}
+                >⋯</button>
+                {chatMenuOpen && (
+                  <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', borderRadius: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.16)', border: '1px solid rgba(0,0,0,0.07)', zIndex: 10, overflow: 'hidden', minWidth: 158 }}>
+                    <button
+                      onClick={() => { setChatMenuOpen(false); handleDeleteChat(); }}
+                      disabled={clubBusy}
+                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '12px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, color: '#D9433A', fontWeight: 600 }}
+                    >🗑 Delete Chat</button>
+                  </div>
+                )}
+              </div>
+              <button style={{ ...S.btn, marginTop: 0, padding: '8px 12px', borderRadius: 12, fontSize: 16, lineHeight: 1 }} onClick={() => { setSelectedChatId(null); setChatMenuOpen(false); }}>✕</button>
             </div>
           </div>
 
-          <div ref={chatThreadRef} style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div ref={chatThreadRef} className="club-chat-thread" style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             {activeChat.messages?.length ? activeChat.messages.map(message => {
               const mine = message.senderTripId === trip.id;
               return (
@@ -1498,7 +1516,12 @@ function ClubPage({ trip, onTripRefresh }) {
                 </div>
               );
             }) : (
-              <div style={{ fontSize: 13, color: '#6B7280', textAlign: 'center', padding: '18px 0' }}>No messages yet. Break the ice.</div>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1.5rem', textAlign: 'center' }}>
+                <div style={{ fontSize: 54, marginBottom: 14 }}>✈️</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, color: '#0F172A', marginBottom: 6 }}>No messages yet.</div>
+                <div style={{ fontSize: 13, color: '#9CA3AF', marginBottom: 20, lineHeight: 1.65 }}>Say hi. Worst case, awkward silence.</div>
+                <span style={{ display: 'inline-block', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', color: '#fff', borderRadius: 999, padding: '10px 22px', fontSize: 13, fontWeight: 700, boxShadow: '0 6px 18px rgba(15,110,86,0.28)' }}>Break the ice 👋</span>
+              </div>
             )}
           </div>
 
@@ -1530,31 +1553,47 @@ function ClubPage({ trip, onTripRefresh }) {
 
       {toolsChooserOpen && activeChat && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 560, background: 'rgba(9,12,18,0.52)', display: 'grid', placeItems: 'center', padding: '1rem' }}>
-          <div style={{ width: '100%', maxWidth: 440, background: 'linear-gradient(180deg,#FFFFFF,#F5F9FF)', borderRadius: 26, padding: 16, boxShadow: '0 28px 80px rgba(0,0,0,0.28)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div style={{ width: '100%', maxWidth: 400, borderRadius: 26, overflow: 'hidden', boxShadow: '0 32px 80px rgba(0,0,0,0.32)', animation: 'clubSheetIn .28s cubic-bezier(.2,.7,.2,1) both' }}>
+            {/* Gradient header */}
+            <div style={{ background: 'linear-gradient(135deg,#0F4B3E,#1D9E75)', padding: '18px 18px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800 }}>Tools</div>
-                <div style={{ fontSize: 12, color: '#667085', marginTop: 2 }}>Choose what you want to do for this group</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px' }}>Tools</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', marginTop: 2 }}>What do you want to do?</div>
               </div>
-              <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setToolsChooserOpen(false)}>Close</button>
+              <button
+                style={{ width: 32, height: 32, borderRadius: 999, border: '1px solid rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.12)', color: '#fff', fontSize: 14, cursor: 'pointer', display: 'grid', placeItems: 'center' }}
+                onClick={() => setToolsChooserOpen(false)}
+              >✕</button>
             </div>
-
-            <div style={{ display: 'grid', gap: 10 }}>
+            {/* Tool cards */}
+            <div style={{ background: '#fff', padding: '14px 14px 18px', display: 'grid', gap: 12 }}>
               <button
                 onClick={() => openToolScreen('split')}
-                style={{ textAlign: 'left', border: '1px solid rgba(10,18,35,0.10)', borderRadius: 18, padding: 14, background: '#F8FAFC' }}
+                style={{ textAlign: 'left', border: 'none', borderRadius: 18, padding: 0, background: 'none', cursor: 'pointer' }}
               >
-                <div style={{ fontSize: 20 }}>🧾</div>
-                <div style={{ fontWeight: 800, marginTop: 6 }}>Split</div>
-                <div style={{ fontSize: 12, color: '#667085', marginTop: 2 }}>Add expenses and see balances for every member in both groups.</div>
+                <div style={{ background: 'linear-gradient(135deg,#E8FFF8,#C9F5E7)', borderRadius: 18, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 16px rgba(15,110,86,0.1)' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'grid', placeItems: 'center', flexShrink: 0, boxShadow: '0 6px 16px rgba(15,110,86,0.32)' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="18" rx="3"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, color: '#0A2A1F' }}>Split Expenses</div>
+                    <div style={{ fontSize: 12, color: '#3D8A6E', marginTop: 3, lineHeight: 1.45 }}>Track & split costs across both groups</div>
+                  </div>
+                </div>
               </button>
               <button
                 onClick={() => openToolScreen('photos')}
-                style={{ textAlign: 'left', border: '1px solid rgba(10,18,35,0.10)', borderRadius: 18, padding: 14, background: '#F8FAFC' }}
+                style={{ textAlign: 'left', border: 'none', borderRadius: 18, padding: 0, background: 'none', cursor: 'pointer' }}
               >
-                <div style={{ fontSize: 20 }}>🖼️</div>
-                <div style={{ fontWeight: 800, marginTop: 6 }}>Photos</div>
-                <div style={{ fontSize: 12, color: '#667085', marginTop: 2 }}>Open a full-screen gallery of the combined group photos.</div>
+                <div style={{ background: 'linear-gradient(135deg,#FFF5EC,#FFDFBE)', borderRadius: 18, padding: '16px', display: 'flex', alignItems: 'center', gap: 14, boxShadow: '0 4px 16px rgba(255,107,53,0.1)' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: 14, background: 'linear-gradient(135deg,#FF6B35,#E04A1F)', display: 'grid', placeItems: 'center', flexShrink: 0, boxShadow: '0 6px 16px rgba(255,107,53,0.32)' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21,15 16,10 5,21"/></svg>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 15, color: '#2A1200' }}>Shared Album</div>
+                    <div style={{ fontSize: 12, color: '#A04A1F', marginTop: 3, lineHeight: 1.45 }}>Browse & upload photos from both trips</div>
+                  </div>
+                </div>
               </button>
             </div>
           </div>
@@ -1568,7 +1607,7 @@ function ClubPage({ trip, onTripRefresh }) {
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>Split</div>
               <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>{combinedMembers.length} combined members, one shared wallet view</div>
             </div>
-            <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.18)' }} onClick={() => setToolScreenOpen(false)}>Close</button>
+            <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.18)' }} onClick={() => setToolScreenOpen(false)}>✕</button>
           </div>
 
           <div style={{ padding: 16, maxWidth: 1020, margin: '0 auto' }}>
@@ -1832,7 +1871,7 @@ function ClubPage({ trip, onTripRefresh }) {
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800 }}>Photos</div>
               <div style={{ fontSize: 13, opacity: 0.9, marginTop: 4 }}>{combinedPhotos.length} combined group photos</div>
             </div>
-            <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.18)' }} onClick={() => setToolScreenOpen(false)}>Close</button>
+            <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.18)' }} onClick={() => setToolScreenOpen(false)}>✕</button>
           </div>
 
           <div style={{ padding: 18, maxWidth: 1240, margin: '0 auto' }}>
@@ -1960,7 +1999,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
           {chatPhotoLightbox && (
             <div style={{ position: 'fixed', inset: 0, zIndex: 590, background: 'rgba(6,10,18,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
-              <button onClick={() => setChatPhotoLightbox(null)} style={{ position: 'absolute', top: 14, right: 14, ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)' }}>Close</button>
+              <button onClick={() => setChatPhotoLightbox(null)} style={{ position: 'absolute', top: 14, right: 14, ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.12)', color: '#fff', border: '1px solid rgba(255,255,255,0.22)' }}>✕</button>
               <button
                 onClick={() => setChatPhotoLightbox((curr) => ({ ...curr, index: Math.max(0, curr.index - 1) }))}
                 disabled={chatPhotoLightbox.index === 0}
@@ -2052,7 +2091,7 @@ function ClubPage({ trip, onTripRefresh }) {
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800 }}>Tune Your Match Feed</div>
                 <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>Pick the energy you want, then save and jump back in.</div>
               </div>
-              <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setFiltersOpen(false)}>Close</button>
+              <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setFiltersOpen(false)}>✕</button>
             </div>
 
             <label style={S.label}>Vibe</label>
@@ -2116,7 +2155,7 @@ function ClubPage({ trip, onTripRefresh }) {
                     <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>{(selectedCard.vibe || 'mixed').toUpperCase()} vibe</span>
                     <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: isRecentlyActive(selectedCard.updatedAt) ? 'rgba(103,255,186,0.25)' : 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>{isRecentlyActive(selectedCard.updatedAt) ? 'Active Today' : 'Quiet Today'}</span>
                   </div>
-                  <button style={{ ...S.btn, marginTop: 0, alignSelf: 'flex-start', background: 'rgba(255,255,255,0.16)', color: '#fff', border: '1px solid rgba(255,255,255,0.24)', backdropFilter: 'blur(10px)' }} onClick={() => setSelectedCard(null)}>Close</button>
+                  <button style={{ ...S.btn, marginTop: 0, alignSelf: 'flex-start', background: 'rgba(255,255,255,0.16)', color: '#fff', border: '1px solid rgba(255,255,255,0.24)', backdropFilter: 'blur(10px)' }} onClick={() => setSelectedCard(null)}>✕</button>
                 </div>
 
                 <div>
