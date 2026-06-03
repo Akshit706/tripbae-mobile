@@ -233,7 +233,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmComplete, setConfirmComplete] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
-  const [tagIdx, setTagIdx] = useState(0);
+  const [tagIdx, setTagIdx] = useState(() => {
+    const pool = [0, 1, 2, 9, 10, 7];
+    return pool[Math.floor(Math.random() * pool.length)];
+  });
   const [tagPhase, setTagPhase] = useState('in');
   const [greetPhrase] = useState(() => {
     const h = new Date().getHours();
@@ -312,11 +315,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     const tick = () => {
       setTagPhase('out');
       tagSwapRef.current = setTimeout(() => {
-        setTagIdx(i => {
-          let next;
-          do { next = Math.floor(Math.random() * HERO_TAGLINES.length); } while (next === i && HERO_TAGLINES.length > 1);
-          return next;
-        });
+        setTagIdx(i => (i + 1) % HERO_TAGLINES.length);
         setTagPhase('in');
       }, 350);
     };
@@ -580,7 +579,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       </div>
 
-      <div style={{ padding: '0 16px 80px' }}>
+      <div style={{ padding: '0 16px 80px', display: 'flex', flexDirection: 'column', minHeight: 'calc(100svh - 220px)' }}>
 
       {showJoin && (
         <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '1.25rem' }}>
@@ -832,10 +831,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {activeTrips.length === 0 && !showCreate && !showJoin && (
-        <div style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
-          <div style={{ fontSize: 56, marginBottom: 14 }}>🗺️</div>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, marginBottom: 8 }}>No upcoming trips!</div>
-          <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 8 }}>Create your first trip or join one with a code.</div>
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '1.5rem' }}>
+          <div style={{ fontSize: 52, marginBottom: 12 }}>🗺️</div>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, marginBottom: 6 }}>No upcoming trips!</div>
+          <div style={{ fontSize: 13, color: '#6b6b68' }}>Create your first trip or join one with a code.</div>
         </div>
       )}
 
@@ -869,8 +868,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       )}
 
+      <div style={{ flex: 1, minHeight: (activeTrips.length > 0 || pastTrips.length > 0) ? 16 : 0 }} />
       {/* Tagline footer */}
-      <div style={{ borderTop: '1px solid #e8e6e1', padding: '28px 20px 36px', marginTop: activeTrips.length === 0 && pastTrips.length === 0 ? '25vh' : 24 }}>
+      <div style={{ borderTop: '1px solid #e8e6e1', padding: '28px 20px 36px', marginTop: 0 }}>
         <div style={{ fontFamily: "'Inter', 'DM Sans', sans-serif", fontSize: 32, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.15, letterSpacing: '-0.5px' }}>
           Plan. Split. Explore.
         </div>

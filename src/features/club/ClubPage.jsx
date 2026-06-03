@@ -1474,11 +1474,11 @@ function ClubPage({ trip, onTripRefresh }) {
               <button style={{ ...S.btn, marginTop: 0, padding: '7px 10px', borderRadius: 10, flexShrink: 0 }} onClick={() => setSelectedChatId(null)}>←</button>
               {/* Stacked initials avatars */}
               <div style={{ position: 'relative', width: 42, height: 30, flexShrink: 0 }}>
-                <div style={{ position: 'absolute', left: 0, top: 0, width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, color: '#fff', border: '2px solid rgba(255,255,255,0.9)', zIndex: 2 }}>
-                  {(trip.groupName || 'M').slice(0,2).toUpperCase()}
+                <div style={{ position: 'absolute', left: 0, top: 0, width: 28, height: 28, borderRadius: '50%', background: '#1D9E75', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: '#fff', border: '2.5px solid #fff', zIndex: 2, boxShadow: '0 2px 6px rgba(29,158,117,0.28)' }}>
+                  {(trip.groupName?.trim()[0] || 'M').toUpperCase()}
                 </div>
-                <div style={{ position: 'absolute', left: 14, top: 0, width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#4F46E5,#7C3AED)', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 800, color: '#fff', border: '2px solid rgba(255,255,255,0.9)', zIndex: 1 }}>
-                  {(activeChat.otherTrip?.groupName || 'J').slice(0,2).toUpperCase()}
+                <div style={{ position: 'absolute', left: 14, top: 0, width: 28, height: 28, borderRadius: '50%', background: '#FF6B35', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: '#fff', border: '2.5px solid #fff', zIndex: 1, boxShadow: '0 2px 6px rgba(255,107,53,0.28)' }}>
+                  {(activeChat.otherTrip?.groupName?.trim()[0] || 'J').toUpperCase()}
                 </div>
               </div>
               <div style={{ minWidth: 0 }}>
