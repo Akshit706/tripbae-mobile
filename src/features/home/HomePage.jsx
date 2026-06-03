@@ -8,6 +8,24 @@ import {
 import { S } from '../shared/styles';
 import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
 
+const HERO_TAGLINES = [
+  { icon: '🏯', line: "Explore Rajasthan's ancient forts" },
+  { icon: '☕', line: 'Find hidden cafes in Lisbon' },
+  { icon: '🌸', line: 'Chase cherry blossoms in Tokyo' },
+  { icon: '🏔️', line: 'Trek Himalayan passes at dawn' },
+  { icon: '🌊', line: 'Surf at sunrise in Bali' },
+  { icon: '🍝', line: 'Get lost in the alleys of Naples' },
+  { icon: '🐘', line: 'Wake up to a safari in Kenya' },
+  { icon: '🎭', line: "Lose yourself in Vienna's old town" },
+];
+
+const HERO_GREETINGS = {
+  morning: ['Rise & wander', 'Suitcase ready?', 'Sunrise mode on', 'Up early, go far', 'Morning, explorer'],
+  afternoon: ['Midday dreamer', 'Sun-chasing mode', 'Wanderlust calling', 'Plan something wild', 'Afternoon escape'],
+  evening: ['Golden hour plans', 'Dusk wanderer', 'Evening plotters', 'Sunset chaser', 'Bag it, book it'],
+  night: ['Night owl travels', 'Stars out, bags ready', 'Late night routes', 'Moon & destinations', 'Plotting after dark'],
+};
+
 function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive, profileName }) {
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
@@ -23,12 +41,21 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmComplete, setConfirmComplete] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
+  const [tagIdx, setTagIdx] = useState(0);
+  const [tagPhase, setTagPhase] = useState('in');
+  const [greetPhrase] = useState(() => {
+    const h = new Date().getHours();
+    const bucket = h >= 5 && h < 12 ? 'morning' : h >= 12 && h < 17 ? 'afternoon' : h >= 17 && h < 21 ? 'evening' : 'night';
+    const pool = HERO_GREETINGS[bucket];
+    return pool[Math.floor(Math.random() * pool.length)];
+  });
 
   const [showDestPicker, setShowDestPicker] = useState(false);
   const [destQuery, setDestQuery] = useState('');
   const [destSuggestions, setDestSuggestions] = useState([]);
   const [destLoading, setDestLoading] = useState(false);
   const destDebounce = useRef(null);
+  const tagSwapRef = useRef(null);
 
   const searchDest = useCallback(async (text) => {
     if (text.length < 2) { setDestSuggestions([]); return; }
@@ -88,6 +115,18 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   useEffect(() => {
     setForm(f => ({ ...f, createdBy: profileName || '' }));
   }, [profileName]);
+
+  useEffect(() => {
+    const tick = () => {
+      setTagPhase('out');
+      tagSwapRef.current = setTimeout(() => {
+        setTagIdx(i => (i + 1) % HERO_TAGLINES.length);
+        setTagPhase('in');
+      }, 350);
+    };
+    const id = setInterval(tick, 3200);
+    return () => { clearInterval(id); clearTimeout(tagSwapRef.current); };
+  }, []);
 
   const openTripWithMotion = (tripId, event) => {
     const rect = event?.currentTarget?.getBoundingClientRect?.();
@@ -248,13 +287,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
   const emojiOptions = isSoloMode ? EMOJI_OPTIONS_SOLO : EMOJI_OPTIONS_GROUP;
 
-  const greeting = (() => {
-    const h = new Date().getHours();
-    if (h < 12) return 'morning';
-    if (h < 17) return 'afternoon';
-    return 'evening';
-  })();
-
   return (
     <div style={{ margin: '-1rem -0.95rem', fontFamily: "'Inter', 'DM Sans', sans-serif" }}>
       <style>{`
@@ -265,6 +297,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @keyframes progressFill { from{width:0} to{width:var(--w)} }
         .tb-hero-title { animation: fadeUp 0.5s ease both; animation-delay: 0.05s; }
         .tb-hero-greet { animation: fadeUp 0.4s ease both; }
+        @keyframes taglineIn {
+          from { opacity: 0; transform: translateY(18px) scale(0.95); filter: blur(5px); }
+          to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+        .tb-tagline-enter { animation: taglineIn 0.45s cubic-bezier(.2,.85,.2,1) both; }
         .tb-trip-card-new {
           border-radius: 26px; margin-bottom: 16px; overflow: hidden; position: relative;
           cursor: pointer; will-change: transform; transform: translateZ(0);
@@ -311,14 +348,29 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       {/* Hero Section */}
       <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'center' }}>
         <div style={{ position: 'relative', zIndex: 2 }}>
-          <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
-            Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
+          <div className="tb-hero-greet" style={{ fontSize: 12, fontWeight: 600, letterSpacing: '1.6px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 7, textAlign: 'center' }}>
+            {greetPhrase}{profileName ? <span style={{ color: '#1a1a18', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
           </div>
-          <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 39, fontWeight: 800, lineHeight: 1.02, letterSpacing: '-0.15px', marginBottom: 8, textAlign: 'center' }}>
-            <div style={{ color: '#0D2B2E' }}>Where to</div>
-            <div style={{ color: '#1D9E75' }}>next?</div>
+          <div
+            key={tagIdx}
+            className="tb-hero-title tb-tagline-enter"
+            style={{
+              fontFamily: "'Sora',sans-serif", fontSize: 34, fontWeight: 800, lineHeight: 1.12,
+              letterSpacing: '-0.2px', marginBottom: 10, textAlign: 'center', color: '#0D2B2E',
+              ...(tagPhase === 'out' ? {
+                opacity: 0, transform: 'translateY(-10px) scale(0.97)', filter: 'blur(4px)',
+                transition: 'opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease',
+                animation: 'none',
+              } : {}),
+            }}
+          >
+            <span style={{ marginRight: 7, fontSize: 30 }}>{HERO_TAGLINES[tagIdx].icon}</span>{HERO_TAGLINES[tagIdx].line}
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 14, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'center' }}>Plan less. Experience more.</div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 16 }}>
+            {HERO_TAGLINES.map((_, i) => (
+              <div key={i} style={{ width: i === tagIdx ? 18 : 6, height: 6, borderRadius: 99, background: i === tagIdx ? '#FF6B35' : 'rgba(0,0,0,0.14)', transition: 'all 0.35s ease' }} />
+            ))}
+          </div>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
             <button
               className="tb-new-btn"
