@@ -520,30 +520,6 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                 <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
                   {stats.tripCount} trip{stats.tripCount === 1 ? '' : 's'} · {stats.uniqueDests} destination{stats.uniqueDests === 1 ? '' : 's'}
                 </div>
-                {/* Earned badge chips */}
-                {earned.length > 0 && (
-                  <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-                    {earned.slice(0, 4).map(b => (
-                      <div key={b.id} style={{
-                        display: 'flex', alignItems: 'center', gap: 5,
-                        background: avatar ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.14)',
-                        backdropFilter: 'blur(8px)',
-                        border: '0.5px solid rgba(255,255,255,0.28)',
-                        borderRadius: 20, padding: '4px 10px',
-                        fontSize: 11, fontWeight: 600, color: '#fff',
-                        boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                      }}>
-                        <span style={{ fontSize: 13 }}>{b.emoji}</span>
-                        <span>{b.name}</span>
-                      </div>
-                    ))}
-                    {earned.length > 4 && (
-                      <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.14)', backdropFilter: 'blur(8px)', border: '0.5px solid rgba(255,255,255,0.28)', borderRadius: 20, padding: '4px 10px', fontSize: 11, fontWeight: 600, color: '#fff' }}>
-                        +{earned.length - 4} more
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -562,6 +538,36 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               </div>
             ))}
           </div>
+
+          {/* ── Achievements strip ── */}
+          {earned.length > 0 && (
+            <div style={{ padding: '1.25rem 1.25rem 0' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', paddingLeft: 2 }}>🏆 Achievements</div>
+                <div style={{ fontSize: 11, color: '#1D9E75', fontWeight: 600 }}>{earned.length}/{BADGE_DEFS.length} earned</div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 6, scrollbarWidth: 'none' }}>
+                {earned.map((b, i) => (
+                  <div key={b.id} style={{
+                    flexShrink: 0,
+                    width: 90,
+                    background: 'linear-gradient(160deg,#fff 0%,#F0FAF5 100%)',
+                    border: '0.5px solid #9FE1CB',
+                    borderRadius: 16,
+                    padding: '12px 8px 10px',
+                    textAlign: 'center',
+                    boxShadow: '0 3px 12px rgba(29,158,117,0.10)',
+                    animation: `pfBadgePop .3s ease-out ${i * 0.04}s both`,
+                    position: 'relative',
+                  }}>
+                    <div style={{ position: 'absolute', top: 5, right: 5, fontSize: 8, fontWeight: 700, color: '#0F6E56', background: '#E1F5EE', padding: '1px 5px', borderRadius: 6 }}>✓</div>
+                    <div style={{ fontSize: 28, lineHeight: 1, marginBottom: 6 }}>{b.emoji}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 10, fontWeight: 700, color: '#0F6E56', lineHeight: 1.3 }}>{b.name}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Menu list — grouped sections */}
           {MENU_SECTIONS.map(section => (

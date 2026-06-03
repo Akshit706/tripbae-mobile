@@ -35,7 +35,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
   useEffect(() => {
     if (!trip.destination) return;
     let cancelled = false;
-    fetchPlacePhotos(`${trip.destination} famous landmark tourist attraction`)
+    fetchPlacePhotos(trip.destination)
       .then(data => {
         if (cancelled) return;
         const urls = (data.urls || []).slice(0, 3);
