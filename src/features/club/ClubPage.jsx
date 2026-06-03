@@ -1209,18 +1209,18 @@ function ClubPage({ trip, onTripRefresh }) {
       `}</style>
 
       {/* ── Hero header ── */}
-      <div style={{ padding: '0 0 0.9rem', animation: 'clubPop .3s ease-out both' }}>
+      <div style={{ padding: '0 0 0.4rem', animation: 'clubPop .3s ease-out both' }}>
         {/* Logo centered */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-          <img src={bglessLogo} alt="TripBae" style={{ height: 80, width: 'auto', objectFit: 'contain', display: 'block' }} />
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+          <img src={bglessLogo} alt="TripBae" style={{ height: 65, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
-        <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 12, fontStyle: 'italic', opacity: 0.85 }}>
+        <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 8, fontStyle: 'italic', opacity: 0.75 }}>
           find your people.
         </div>
       </div>
 
       {/* ── Underline tabs ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1.5px solid rgba(15,23,42,0.1)', marginBottom: '1.1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1.5px solid rgba(15,23,42,0.1)', marginBottom: '0.75rem' }}>
         {[
           { id: 'discover', label: 'Discover' },
           { id: 'profile', label: 'Profile' },
@@ -1409,44 +1409,55 @@ function ClubPage({ trip, onTripRefresh }) {
       {clubView === 'chats' && (
         <div style={{ animation: 'clubPop .25s ease-out both' }}>
           {(!hub.chats || hub.chats.length === 0) && (
-            <div style={{ fontSize: 13, color: '#9ca3af', textAlign: 'center', padding: '2.5rem 0' }}>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>💬</div>
-              Accept a request to start chatting.
+            <div style={{ textAlign: 'center', padding: '3rem 0' }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 4 }}>No chats yet.</div>
+              <div style={{ fontSize: 12, color: '#9ca3af' }}>Accept a request to start chatting.</div>
             </div>
           )}
 
           {hub.chats?.length > 0 && !activeChat && (
-            <div style={{ display: 'grid', gap: 0 }}>
-              {hub.chats.map((chat, idx) => {
-                const preview = chat.latestMessage?.text || `Say hi to ${chat.otherTrip?.groupName}.`;
-                const avatar = chat.otherTrip?.clubProfile?.photoUrl || chat.otherTrip?.coverUrl || null;
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {hub.chats.map((chat) => {
+                const preview = chat.latestMessage?.text || 'No messages yet.';
                 const unread = unreadCountByChat[chat.id] || 0;
+                const otherName = chat.otherTrip?.groupName || '';
+                const myName = trip.groupName || '';
+                const displayTitle = [myName.split(' ')[0], otherName.split(' ')[0]].filter(Boolean).join(' & ');
+                const initials = (otherName.slice(0, 2) || '??').toUpperCase();
+                const timeLabel = chat.latestMessage?.createdAt ? formatChatMetaTime(chat.latestMessage.createdAt) : '';
                 return (
                   <button
                     key={chat.id}
                     onClick={() => setSelectedChatId(chat.id)}
                     style={{
                       width: '100%', textAlign: 'left', border: 'none',
-                      borderBottom: idx < hub.chats.length - 1 ? '1px solid rgba(15,23,42,0.07)' : 'none',
-                      background: 'transparent', padding: '12px 0', cursor: 'pointer',
+                      background: unread ? 'rgba(29,158,117,0.05)' : 'rgba(255,255,255,0.72)',
+                      borderRadius: 14,
+                      padding: '11px 12px',
+                      cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 12,
+                      boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
                     }}>
-                    <div style={{ display: 'flex', gap: 11, alignItems: 'center' }}>
-                      {avatar ? (
-                        <img src={avatar} alt="chat avatar" style={{ width: 48, height: 48, borderRadius: 14, objectFit: 'cover', flexShrink: 0 }} />
-                      ) : (
-                        <div style={{ width: 48, height: 48, borderRadius: 14, display: 'grid', placeItems: 'center', background: unread ? '#E1F5EE' : '#F1EFE8', fontSize: 20, flexShrink: 0 }}>
-                          {chat.otherTrip?.emoji || '💬'}
-                        </div>
-                      )}
-                      <div style={{ minWidth: 0, flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
-                          <div style={{ fontSize: 14, fontWeight: unread ? 800 : 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{chat.title}</div>
-                          <div style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0 }}>{formatChatMetaTime(chat.latestMessage?.createdAt)}</div>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                          <div style={{ fontSize: 12, color: unread ? '#0F6E56' : '#6B7280', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: unread ? 600 : 400 }}>{preview}</div>
-                          {unread ? <span style={{ minWidth: 18, height: 18, borderRadius: 9, background: '#1D9E75', color: '#fff', fontSize: 10, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>1</span> : null}
-                        </div>
+                    {/* Circular initials avatar */}
+                    <div style={{
+                      width: 44, height: 44, borderRadius: '50%', flexShrink: 0,
+                      background: unread ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : 'linear-gradient(135deg,#E2E8F0,#CBD5E1)',
+                      display: 'grid', placeItems: 'center',
+                      fontSize: 13, fontWeight: 800,
+                      color: unread ? '#fff' : '#475569',
+                      letterSpacing: '0.03em',
+                    }}>
+                      {initials}
+                    </div>
+                    {/* Text */}
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 2 }}>
+                        <div style={{ fontSize: 14, fontWeight: unread ? 800 : 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayTitle}</div>
+                        <div style={{ fontSize: 10, color: '#CBD5E1', flexShrink: 0, fontWeight: 400, letterSpacing: '0.01em' }}>{timeLabel}</div>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                        <div style={{ fontSize: 12, color: unread ? '#374151' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: unread ? 500 : 400 }}>{preview}</div>
+                        {unread ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D9E75', flexShrink: 0, display: 'block' }} /> : null}
                       </div>
                     </div>
                   </button>
