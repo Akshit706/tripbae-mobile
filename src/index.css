@@ -63,10 +63,7 @@ body {
   margin: 0;
   overflow-x: hidden;
   scroll-behavior: smooth;
-  background:
-    radial-gradient(1400px 700px at -5% -10%, rgba(29, 158, 117, 0.10), transparent 42%),
-    radial-gradient(1200px 650px at 105% 0%, rgba(55, 138, 221, 0.10), transparent 40%),
-    #ffffff;
+  background: radial-gradient(circle at 14% 8%, #ffffff 0%, #f8f7f2 34%, #f3f2ed 100%);
   animation: tbAmbientShift 18s ease-in-out infinite alternate;
 }
 
