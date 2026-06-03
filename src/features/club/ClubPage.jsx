@@ -1212,24 +1212,10 @@ function ClubPage({ trip, onTripRefresh }) {
       <div style={{ padding: '0 0 0.9rem', animation: 'clubPop .3s ease-out both' }}>
         {/* Logo centered */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
-          <img src={bglessLogo} alt="TripBae" style={{ height: 34, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <img src={bglessLogo} alt="TripBae" style={{ height: 52, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 12, fontStyle: 'italic', opacity: 0.85 }}>
-          find your people ✌️
-        </div>
-        {/* Toggle inline */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <button
-            onClick={handleToggle}
-            disabled={clubBusy}
-            style={{ width: 46, height: 26, borderRadius: 999, border: 'none', background: listed ? '#1D9E75' : '#D3D1C7', padding: 3, cursor: clubBusy ? 'not-allowed' : 'pointer', flexShrink: 0, transition: 'background .2s ease' }}
-            aria-label="Toggle listed"
-          >
-            <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', display: 'block', transform: listed ? 'translateX(19px)' : 'translateX(0)', transition: 'transform .2s ease', boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }} />
-          </button>
-          <span style={{ fontSize: 12, color: '#6b6b68', fontWeight: 500 }}>
-            {listed ? 'Visible to nearby travelers' : 'Snoozed — not visible'}
-          </span>
+          find your people.
         </div>
       </div>
 
@@ -2044,19 +2030,44 @@ function ClubPage({ trip, onTripRefresh }) {
           </div>
 
           <div style={{ paddingBottom: 20, animation: 'clubPop .3s ease-out both' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: !listed ? 0 : 14 }}>
               <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 13, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Discover · {filteredDiscover.length} group{filteredDiscover.length !== 1 ? 's' : ''}</div>
-              <button
-                onClick={() => { setFilterDraft(filters); setFiltersOpen(true); }}
-                style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }}
-                title="Filters"
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
-                </svg>
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {/* Snooze toggle */}
+                <button
+                  onClick={handleToggle}
+                  disabled={clubBusy}
+                  title={listed ? 'Snooze — hide your card' : 'Go live — show your card'}
+                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 999, border: listed ? '1px solid rgba(29,158,117,0.35)' : '1px solid rgba(0,0,0,0.1)', background: listed ? 'rgba(29,158,117,0.1)' : 'rgba(255,255,255,0.9)', cursor: clubBusy ? 'not-allowed' : 'pointer', flexShrink: 0, transition: 'all .2s ease' }}
+                >
+                  <span style={{ width: 28, height: 16, borderRadius: 999, background: listed ? '#1D9E75' : '#D3D1C7', padding: 2, display: 'block', flexShrink: 0, transition: 'background .2s ease', position: 'relative' }}>
+                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff', display: 'block', position: 'absolute', top: 2, left: listed ? 14 : 2, transition: 'left .2s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.18)' }} />
+                  </span>
+                  <span style={{ fontSize: 11, fontWeight: 600, color: listed ? '#0F6E56' : '#9ca3af', whiteSpace: 'nowrap' }}>{listed ? 'Live' : 'Snoozed'}</span>
+                </button>
+                {/* Filter button */}
+                <button
+                  onClick={() => { setFilterDraft(filters); setFiltersOpen(true); }}
+                  style={{ width: 32, height: 32, borderRadius: 9, border: '1px solid rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0, flexShrink: 0 }}
+                  title="Filters"
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+                  </svg>
+                </button>
+              </div>
             </div>
-            {filteredDiscover.length === 0 && (
+            {/* Snooze banner */}
+            {!listed && (
+              <div style={{ margin: '12px 0 16px', background: 'linear-gradient(135deg,#FFF8EC,#FFF1D6)', border: '1px solid rgba(255,176,32,0.35)', borderRadius: 16, padding: '14px 16px', display: 'flex', alignItems: 'flex-start', gap: 12, animation: 'clubSectionIn .25s ease-out both' }}>
+                <span style={{ fontSize: 22, flexShrink: 0 }}>😴</span>
+                <div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 14, color: '#7A4B00', marginBottom: 4 }}>You're in stealth mode</div>
+                  <div style={{ fontSize: 12, color: '#9A6200', lineHeight: 1.6 }}>Other travelers can't see your group, and their cards are hidden from you too. Toggle <strong>Live</strong> to discover and be discovered.</div>
+                </div>
+              </div>
+            )}
+            {listed && filteredDiscover.length === 0 && (
               <div style={{ fontSize: 13, color: '#6b6b68', textAlign: 'center', padding: '18px 0' }}>
                 No groups found. Try wider radius, different vibe, or remove a filter.
               </div>
