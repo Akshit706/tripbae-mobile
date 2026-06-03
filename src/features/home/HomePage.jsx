@@ -579,7 +579,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       </div>
 
-      <div style={{ padding: '0 16px 180px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+      <div style={{ padding: '0 16px 0', display: 'flex', flexDirection: 'column', flex: 1 }}>
 
       {showJoin && (
         <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '1.25rem' }}>
@@ -868,8 +868,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       )}
 
-      {/* Tagline footer — fixed to bottom */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', padding: '20px 20px calc(20px + env(safe-area-inset-bottom, 0px))', zIndex: 10 }}>
+      <div style={{ flex: 1, minHeight: 16 }} />
+      {/* Tagline footer — pinned to bottom */}
+      <div style={{ borderTop: '1px solid #e8e6e1', padding: '28px 20px calc(28px + env(safe-area-inset-bottom, 16px))', marginTop: 0, flexShrink: 0 }}>
         <div style={{ fontFamily: "'Inter', 'DM Sans', sans-serif", fontSize: 32, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.15, letterSpacing: '-0.5px' }}>
           Plan. Split. Explore.
         </div>
