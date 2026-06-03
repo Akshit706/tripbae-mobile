@@ -784,7 +784,8 @@ export default function App() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', padding: 0, marginRight: 4,
             boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
-            border: '2px solid rgba(255,255,255,0.18)',
+            border: '2.5px solid #fff',
+            outline: '1.5px solid rgba(0,0,0,0.08)',
           }}
         >
           {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}

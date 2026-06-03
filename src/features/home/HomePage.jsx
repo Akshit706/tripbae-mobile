@@ -10,14 +10,21 @@ import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
 import { fetchPlacePhotos } from '../../api';
 
 const HERO_TAGLINES = [
-{ icon: '🏯', line: "Rajasthan's ancient forts" },
+{ icon: '🏔️', line: 'Ladakh called again' },
+{ icon: '🎒', line: 'Kasol, lost again' },
+{ icon: '🌊', line: 'Goa, off-season vibes' },
+{ icon: '🛺', line: 'Varanasi never sleeps' },
 { icon: '☕', line: 'Hidden cafes, Lisbon' },
+{ icon: '🌴', line: 'Andamans, who needs wifi' },
+{ icon: '🏯', line: 'Jaipur, dress accordingly' },
+{ icon: '🌿', line: 'Rishikesh, fix me' },
 { icon: '🌸', line: 'Cherry blossoms, Tokyo' },
-{ icon: '🏔️', line: 'Himalayan dawn treks' },
+{ icon: '🚂', line: 'Darjeeling, sip slowly' },
 { icon: '🌊', line: 'Sunrise surf, Bali' },
-{ icon: '🍝', line: 'Alleys of Naples' },
-{ icon: '🐘', line: 'Safari mornings, Kenya' },
+{ icon: '🐘', line: 'Coorg said stay' },
+{ icon: '🍵', line: 'Munnar stole me' },
 { icon: '🎭', line: "Vienna's old town" },
+{ icon: '📵', line: 'Spiti, no signal' },
 ];
 
 const HERO_GREETINGS = {
@@ -485,6 +492,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           from { transform: translateX(108%); }
           to   { transform: translateX(0); }
         }
+        @keyframes taglineSlideOut {
+          from { transform: translateX(0); }
+          to   { transform: translateX(-112%); }
+        }
         .tb-trip-card-new {
           border-radius: 26px; margin-bottom: 16px; overflow: hidden; position: relative;
           cursor: pointer; will-change: transform; transform: translateZ(0);
@@ -540,10 +551,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               style={{
                 fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1.25,
                 letterSpacing: '-0.2px', color: '#0F6E56', whiteSpace: 'nowrap',
-                ...(tagPhase === 'out'
-                  ? { transform: 'translateX(-110%)', transition: 'transform 0.26s cubic-bezier(.4,0,.8,.2)' }
-                  : { animation: 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both' }
-                ),
+                animation: tagPhase === 'out'
+                  ? 'taglineSlideOut 0.28s cubic-bezier(.4,0,.8,.2) both'
+                  : 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both',
               }}
             >
               {HERO_TAGLINES[tagIdx].line}

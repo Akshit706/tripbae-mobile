@@ -324,46 +324,43 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, distKm, onOpen })
     <button
       data-club-card="true"
       onClick={onOpen}
-      style={{ width: '100%', textAlign: 'left', borderRadius: 24, overflow: 'hidden', border: '1px solid rgba(10,18,35,0.07)', marginBottom: 16, background: '#fff', boxShadow: '0 18px 44px rgba(16,24,40,0.10)', padding: 0, cursor: 'pointer', animation: 'clubCardIn .45s cubic-bezier(.2,.7,.2,1) both', transition: 'transform .25s ease, box-shadow .25s ease' }}>
-      <div style={{ background: moodGradient(item.vibe || 'mixed'), padding: 14, color: '#fff', position: 'relative' }}>
-        <div style={{ position: 'absolute', right: -24, top: -24, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', animation: 'clubFloat 4.8s ease-in-out infinite' }} />
-        <div style={{ position: 'absolute', right: 12, top: 12 }}>
-          <span style={{ fontSize: 10, fontWeight: 800, padding: '5px 10px', borderRadius: 999, background: activeNow ? 'rgba(103,255,186,0.26)' : 'rgba(255,255,255,0.22)', color: '#fff', backdropFilter: 'blur(8px)', animation: activeNow ? 'clubPulse 1.9s ease-in-out infinite' : 'none' }}>
+      style={{ width: '100%', textAlign: 'left', borderRadius: 20, overflow: 'hidden', border: 'none', marginBottom: 14, background: '#fff', boxShadow: '0 4px 20px rgba(16,24,40,0.08), 0 1px 4px rgba(16,24,40,0.04)', padding: 0, cursor: 'pointer', animation: 'clubCardIn .45s cubic-bezier(.2,.7,.2,1) both', transition: 'transform .25s ease, box-shadow .25s ease' }}>
+      <div style={{ background: moodGradient(item.vibe || 'mixed'), padding: '12px 14px', color: '#fff', position: 'relative' }}>
+        <div style={{ position: 'absolute', right: 10, top: 10 }}>
+          <span style={{ fontSize: 10, fontWeight: 700, padding: '4px 8px', borderRadius: 999, background: activeNow ? 'rgba(103,255,186,0.26)' : 'rgba(255,255,255,0.2)', color: '#fff', backdropFilter: 'blur(8px)', animation: activeNow ? 'clubPulse 1.9s ease-in-out infinite' : 'none' }}>
             {activeNow ? 'Active Today' : 'Quiet Today'}
           </span>
         </div>
-        <div style={{ display: 'flex', gap: 10 }}>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
           {avatar ? (
-            <img src={avatar} alt="group" style={{ width: 76, height: 76, borderRadius: 14, objectFit: 'cover', border: '2px solid rgba(255,255,255,0.38)' }} />
+            <img src={avatar} alt="group" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', border: '2px solid rgba(255,255,255,0.38)', flexShrink: 0 }} />
           ) : (
-            <div style={{ width: 76, height: 76, borderRadius: 14, background: 'rgba(255,255,255,0.22)', display: 'grid', placeItems: 'center', fontSize: 28 }}>
+            <div style={{ width: 56, height: 56, borderRadius: 12, background: 'rgba(255,255,255,0.22)', display: 'grid', placeItems: 'center', fontSize: 24, flexShrink: 0 }}>
               {item.trip?.emoji || '🧭'}
             </div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1.2 }}>{item.trip?.groupName}</div>
-            <div style={{ fontSize: 12, opacity: 0.93, marginTop: 4 }}>
-              {item.trip?.destination}
-            </div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
-              {compatibility && (
-                <span style={{ fontSize: 10, fontWeight: 800, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.26)' }}>
-                  {compatibility.score}% match
-                </span>
-              )}
-              {distKm != null && (
-                <span style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 999, background: 'rgba(255,255,255,0.22)' }}>
-                  {distanceLabel(distKm)}
-                </span>
-              )}
-            </div>
+            <div style={{ fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>{item.trip?.groupName}</div>
+            <div style={{ fontSize: 12, opacity: 0.9, marginTop: 3 }}>{item.trip?.destination}</div>
           </div>
         </div>
       </div>
 
-      <div style={{ padding: 14 }}>
-        <div style={{ fontSize: 14, color: '#242424', lineHeight: 1.55, fontWeight: 600 }}>{moodLine}</div>
-        {alreadySent && <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: '#8C6B28' }}>Request already sent</div>}
+      <div style={{ padding: '10px 14px 12px' }}>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+          {compatibility && (
+            <span style={{ fontSize: 11, fontWeight: 800, padding: '4px 9px', borderRadius: 999, background: '#E8FFF5', color: '#0B7A5A', border: '1px solid #9FE1CB' }}>
+              {compatibility.score}% match
+            </span>
+          )}
+          {distKm != null && (
+            <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 999, background: '#F0F4FF', color: '#3B69C0', border: '1px solid #C7D8FF' }}>
+              {distanceLabel(distKm)}
+            </span>
+          )}
+        </div>
+        <div style={{ fontSize: 13, color: '#3d4148', lineHeight: 1.5, fontWeight: 500 }}>{moodLine}</div>
+        {alreadySent && <div style={{ marginTop: 8, fontSize: 11, fontWeight: 700, color: '#8C6B28' }}>Request already sent</div>}
       </div>
     </button>
   );
@@ -1155,25 +1152,24 @@ function ClubPage({ trip, onTripRefresh }) {
         }
       `}</style>
 
-      <div style={{ position: 'relative', background: trip.isSolo ? 'linear-gradient(132deg,#5E46E7,#3F2CA1 52%,#281D72)' : 'linear-gradient(132deg,#0A7A61,#0A4F40 52%,#123D72)', borderRadius: 26, padding: '1.15rem 1rem 1rem', marginBottom: '1rem', color: '#fff', overflow: 'hidden', boxShadow: '0 24px 60px rgba(8,18,35,0.25)' }}>
-        <div style={{ position: 'absolute', top: -44, right: -50, width: 170, height: 170, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.22), rgba(255,255,255,0))' }} />
-        <div style={{ position: 'absolute', bottom: -60, left: -35, width: 180, height: 180, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.16), rgba(255,255,255,0))' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-          <div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, letterSpacing: '-0.02em' }}>TravelBae Club</div>
-            <div style={{ fontSize: 12, opacity: 0.88, marginTop: 3 }}>{listed ? 'Your group is visible to nearby travelers.' : 'You are snoozed right now.'}</div>
+      <div style={{ position: 'relative', background: trip.isSolo ? 'linear-gradient(132deg,#5E46E7,#3F2CA1 52%,#281D72)' : 'linear-gradient(132deg,#0A7A61,#0A4F40 52%,#123D72)', borderRadius: 18, padding: '0.65rem 1rem 0.7rem', marginBottom: '0.75rem', color: '#fff', overflow: 'hidden', boxShadow: '0 8px 28px rgba(8,18,35,0.16)' }}>
+        <div style={{ position: 'absolute', top: -30, right: -34, width: 110, height: 110, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,0.18), rgba(255,255,255,0))' }} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 800, letterSpacing: '-0.01em', lineHeight: 1.2 }}>TravelBae Club</div>
+            <div style={{ fontSize: 11, opacity: 0.82, marginTop: 2 }}>{listed ? 'Visible to nearby travelers' : 'Snoozed — not visible'}</div>
           </div>
           <button
             onClick={handleToggle}
             disabled={clubBusy}
-            style={{ width: 52, height: 30, borderRadius: 999, border: 'none', background: listed ? '#35D38E' : 'rgba(255,255,255,0.3)', padding: 3, cursor: clubBusy ? 'not-allowed' : 'pointer' }}
+            style={{ width: 46, height: 26, borderRadius: 999, border: 'none', background: listed ? '#35D38E' : 'rgba(255,255,255,0.28)', padding: 3, cursor: clubBusy ? 'not-allowed' : 'pointer', flexShrink: 0 }}
             aria-label="Toggle listed"
           >
-            <span style={{ width: 24, height: 24, borderRadius: '50%', background: '#fff', display: 'block', transform: listed ? 'translateX(21px)' : 'translateX(0)', transition: 'transform .2s ease' }} />
+            <span style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', display: 'block', transform: listed ? 'translateX(19px)' : 'translateX(0)', transition: 'transform .2s ease' }} />
           </button>
         </div>
 
-        <div style={{ display: 'flex', gap: 7, marginTop: 12, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 5, marginTop: 9, flexWrap: 'wrap' }}>
           {['discover', 'profile', 'requests', 'chats'].map(tab => (
             <button
               key={tab}
@@ -1183,11 +1179,11 @@ function ClubPage({ trip, onTripRefresh }) {
                   setSelectedChatId(null);
                 }
               }}
-              style={{ ...S.btn, marginTop: 0, border: 'none', fontSize: 12, background: clubView === tab ? '#fff' : 'rgba(255,255,255,0.14)', color: clubView === tab ? '#0B4D3D' : '#fff', fontWeight: 700, borderRadius: 999, padding: '8px 14px', boxShadow: clubView === tab ? '0 8px 24px rgba(12,22,45,0.2)' : 'none' }}
+              style={{ ...S.btn, marginTop: 0, border: 'none', fontSize: 11, background: clubView === tab ? '#fff' : 'rgba(255,255,255,0.14)', color: clubView === tab ? '#0B4D3D' : '#fff', fontWeight: 700, borderRadius: 999, padding: '5px 11px', boxShadow: clubView === tab ? '0 4px 12px rgba(12,22,45,0.18)' : 'none' }}
             >
               {tab === 'requests' ? `Requests (${hub.incomingRequests.length})` : tab === 'profile' ? 'Edit Profile' : tab === 'chats' ? `Chats (${hub.chats?.length || 0})` : 'Discover'}
               {tab === 'chats' && hasUnreadChats ? (
-                <span style={{ marginLeft: 6, width: 8, height: 8, borderRadius: '50%', background: '#FFB020', display: 'inline-block' }} />
+                <span style={{ marginLeft: 5, width: 7, height: 7, borderRadius: '50%', background: '#FFB020', display: 'inline-block' }} />
               ) : null}
             </button>
           ))}
@@ -1910,18 +1906,18 @@ function ClubPage({ trip, onTripRefresh }) {
 
       {clubView === 'discover' && (
         <>
-          <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
+          <div style={{ padding: '0 0 14px', animation: 'clubPop .25s ease-out both' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 10 }}>
               <div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16 }}>Find Your Crowd</div>
-                <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>Clean filters, premium cards, one-tap deep dive.</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, color: '#111827' }}>Find Your Crowd</div>
+                <div style={{ fontSize: 12, color: '#8a8e97', marginTop: 2 }}>Discover groups, vibe-match, connect.</div>
               </div>
               <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0 }} onClick={() => { setFilterDraft(filters); setFiltersOpen(true); }}>Filters</button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 8 }}>
               <input
-                style={{ ...S.input, marginBottom: 0 }}
+                style={{ ...S.input, marginBottom: 0, background: 'rgba(255,255,255,0.85)', border: '1px solid rgba(0,0,0,0.1)' }}
                 value={filters.search}
                 onChange={e => setFilters(f => ({ ...f, search: e.target.value }))}
                 placeholder="Search group, destination, vibe, tags"
@@ -1929,15 +1925,13 @@ function ClubPage({ trip, onTripRefresh }) {
               <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setFilters(initialFilters)}>Reset</button>
             </div>
 
-            <div style={{ marginTop: 9, fontSize: 12, color: '#5B6370' }}>
-              {`Filters: ${VIBE_OPTIONS.find(v => v.value === filters.vibe)?.label || 'Any vibe'} • ${GENDER_MIX_OPTIONS.find(v => v.value === filters.genderMix)?.label || 'Any mix'} • ${MEMBER_BAND_OPTIONS.find(v => v.value === filters.memberBand)?.label || 'Any size'}${locationEnabled ? ` • ${radius} km` : ''}`}
+            <div style={{ marginTop: 8, fontSize: 11, color: '#8a8e97' }}>
+              {`${VIBE_OPTIONS.find(v => v.value === filters.vibe)?.label || 'Any vibe'} · ${GENDER_MIX_OPTIONS.find(v => v.value === filters.genderMix)?.label || 'Any mix'} · ${MEMBER_BAND_OPTIONS.find(v => v.value === filters.memberBand)?.label || 'Any size'}${locationEnabled ? ` · ${radius} km` : ''}`}
             </div>
-
-
           </div>
 
-          <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Discover ({filteredDiscover.length})</div>
+          <div style={{ paddingBottom: 20, animation: 'clubPop .3s ease-out both' }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, fontSize: 13, color: '#6b6b68', marginBottom: 12, textTransform: 'uppercase', letterSpacing: '0.06em' }}>Discover · {filteredDiscover.length} group{filteredDiscover.length !== 1 ? 's' : ''}</div>
             {filteredDiscover.length === 0 && (
               <div style={{ fontSize: 13, color: '#6b6b68', textAlign: 'center', padding: '18px 0' }}>
                 No groups found. Try wider radius, different vibe, or remove a filter.
