@@ -218,7 +218,7 @@ function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
   root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #f8f7f2 34%, #f3f2ed 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased', position: 'relative', overflowX: 'hidden' },
-  topBar: { background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.08)', padding: '0.2rem 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 1, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
+  topBar: { background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 1, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
   logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, letterSpacing: '-0.45px', color: '#0D2B2E' },
   tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
@@ -660,20 +660,17 @@ export default function App() {
         @keyframes tbCardIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes tbBlobDrift{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(-18px,14px,0)}100%{transform:translate3d(0,0,0)}}
         @keyframes tbGlowPulse{0%{opacity:.65}50%{opacity:1}100%{opacity:.65}}
-        @keyframes tbBgPlaneFlyA{0%{transform:translate(0,0) rotate(-18deg)}50%{transform:translate(42vw,-20vh) rotate(4deg)}100%{transform:translate(85vw,-38vh) rotate(15deg)}}
-        @keyframes tbBgPlaneFlyB{0%{transform:translate(0,0) rotate(-12deg)}55%{transform:translate(38vw,-22vh) rotate(6deg)}100%{transform:translate(78vw,-42vh) rotate(13deg)}}
-        @keyframes tbBgTrailPulse{0%,100%{opacity:.1}50%{opacity:.26}}
-        @keyframes tbBgPinPulse{0%,100%{transform:scale(1);opacity:.08}50%{transform:scale(1.12);opacity:.16}}
+        @keyframes tbDestDrift1{0%,100%{transform:translateY(0px) translateX(0px)}33%{transform:translateY(-9px) translateX(4px)}66%{transform:translateY(5px) translateX(-3px)}}
+        @keyframes tbDestDrift2{0%,100%{transform:translateY(0px)}40%{transform:translateY(-7px) translateX(-5px)}80%{transform:translateY(5px) translateX(4px)}}
+        @keyframes tbDestDrift3{0%,100%{transform:translateY(0px) translateX(0px)}50%{transform:translateY(-11px) translateX(3px)}}
+        @keyframes tbDestDrift4{0%,100%{transform:translateY(0px) translateX(0px)}35%{transform:translateY(7px) translateX(-5px)}75%{transform:translateY(-6px) translateX(3px)}}
         .tb-bg-ambient{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-        .tb-bg-trails{position:absolute;inset:0;width:100%;height:100%;animation:tbBgTrailPulse 7s ease-in-out infinite}
-        .tb-bg-trails path{stroke:#98A2B3;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-dasharray:5 7;opacity:.24}
-        .tb-bg-plane{position:absolute;width:22px;height:22px;opacity:.22;filter:drop-shadow(0 1px 2px rgba(0,0,0,.1))}
-        .tb-bg-plane.a{left:-6vw;bottom:18vh;animation:tbBgPlaneFlyA 18s linear infinite}
-        .tb-bg-plane.b{left:-10vw;bottom:52vh;animation:tbBgPlaneFlyB 22s linear infinite;animation-delay:5s}
-        .tb-bg-pin{position:absolute;width:12px;height:12px;opacity:.1;animation:tbBgPinPulse 6s ease-in-out infinite}
-        .tb-bg-pin.p1{left:18%;top:20%}
-        .tb-bg-pin.p2{left:72%;top:28%;animation-delay:1.6s}
-        .tb-bg-pin.p3{left:44%;top:66%;animation-delay:2.4s}
+        .tb-bg-dest{position:absolute;font-size:11px;pointer-events:none;color:rgba(30,30,30,0.1);white-space:nowrap;font-family:'DM Sans',sans-serif;font-weight:600;letter-spacing:0.2px;user-select:none}
+        .tb-bg-dest.d1{top:14%;left:61%;animation:tbDestDrift1 15s ease-in-out infinite}
+        .tb-bg-dest.d2{top:43%;left:7%;animation:tbDestDrift2 19s ease-in-out infinite;animation-delay:4s}
+        .tb-bg-dest.d3{top:68%;left:54%;animation:tbDestDrift3 17s ease-in-out infinite;animation-delay:8s}
+        .tb-bg-dest.d4{top:26%;left:76%;animation:tbDestDrift4 21s ease-in-out infinite;animation-delay:2s}
+        .tb-bg-dest.d5{top:80%;left:20%;animation:tbDestDrift1 13s ease-in-out infinite;animation-delay:10s}
         *{box-sizing:border-box;margin:0;padding:0}
         a{color:inherit;text-decoration:none}
         ::selection{background:#c7eedf;color:#053f31}
@@ -683,23 +680,84 @@ export default function App() {
       `}</style>
 
       <div className="tb-bg-ambient" aria-hidden="true">
-        <svg className="tb-bg-trails" viewBox="0 0 1200 900" preserveAspectRatio="none">
-          <path d="M-40 760 Q220 600 470 540 T1240 220" />
-          <path d="M-120 520 Q180 360 460 300 T1220 10" style={{ opacity: 0.17 }} />
-          <path d="M-30 880 Q260 700 540 620 T1280 300" style={{ opacity: 0.14 }} />
-          <path d="M-80 680 Q180 500 440 420 T1180 160" style={{ opacity: 0.12 }} />
+        {/* Dot grid */}
+        <svg style={{position:'absolute',inset:0,width:'100%',height:'100%'}} xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <pattern id="tbDotGrid" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+              <circle cx="1.1" cy="1.1" r="0.9" fill="#8896AB" opacity="0.28"/>
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#tbDotGrid)" opacity="0.55"/>
         </svg>
-        <svg className="tb-bg-plane a" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path fill="#FF6B35" d="M3 11.7L20.7 3.2C21.3 2.9 22 3.5 21.7 4.1L13.2 21.8C12.9 22.4 12 22.3 11.9 21.6L10.6 14.8L3.8 13.5C3.1 13.4 3 12 3.7 11.7Z"/>
-          <path d="M10.6 14.8L14.9 10.5" stroke="#fff" strokeWidth="1.3" strokeLinecap="round"/>
+
+        {/* Curved flight arcs + animateMotion planes + pulsing pins */}
+        <svg style={{position:'absolute',inset:0,width:'100%',height:'100%'}} viewBox="0 0 400 860" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <path id="tbArc1" d="M-10 820 C70 580 190 360 402 80"/>
+            <path id="tbArc2" d="M-30 570 C90 390 230 270 430 45"/>
+            <path id="tbArc3" d="M15 940 C140 690 280 470 418 195"/>
+          </defs>
+
+          {/* Dashed arc strokes */}
+          <path d="M-10 820 C70 580 190 360 402 80" fill="none" stroke="#1D9E75" strokeWidth="1.4" strokeDasharray="5 11" opacity="0.15"/>
+          <path d="M-30 570 C90 390 230 270 430 45" fill="none" stroke="#FF6B35" strokeWidth="1.1" strokeDasharray="4 10" opacity="0.11"/>
+          <path d="M15 940 C140 690 280 470 418 195" fill="none" stroke="#7F77DD" strokeWidth="1" strokeDasharray="3 9" opacity="0.09"/>
+
+          {/* Destination pins — pulsing rings */}
+          <circle cx="402" cy="80" r="3.5" fill="#1D9E75" opacity="0.22">
+            <animate attributeName="r" values="3.5;6;3.5" dur="3s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.22;0.40;0.22" dur="3s" repeatCount="indefinite"/>
+          </circle>
+          <circle cx="-10" cy="820" r="3" fill="#1D9E75" opacity="0.16">
+            <animate attributeName="r" values="3;5.5;3" dur="3.8s" repeatCount="indefinite" begin="1s"/>
+          </circle>
+          <circle cx="430" cy="45" r="3" fill="#FF6B35" opacity="0.17">
+            <animate attributeName="r" values="3;5;3" dur="4.2s" repeatCount="indefinite" begin="1.5s"/>
+          </circle>
+          <circle cx="-30" cy="570" r="2.5" fill="#FF6B35" opacity="0.14">
+            <animate attributeName="r" values="2.5;4.5;2.5" dur="3.5s" repeatCount="indefinite" begin="2.3s"/>
+          </circle>
+          <circle cx="195" cy="410" r="2.5" fill="#7F77DD" opacity="0.13">
+            <animate attributeName="r" values="2.5;4;2.5" dur="5s" repeatCount="indefinite" begin="3.1s"/>
+          </circle>
+          <circle cx="418" cy="195" r="3" fill="#7F77DD" opacity="0.15">
+            <animate attributeName="r" values="3;5.5;3" dur="3.6s" repeatCount="indefinite" begin="0.4s"/>
+          </circle>
+          <circle cx="260" cy="560" r="2" fill="#BA7517" opacity="0.12">
+            <animate attributeName="r" values="2;3.5;2" dur="4.5s" repeatCount="indefinite" begin="2s"/>
+          </circle>
+
+          {/* Plane 1 — green arc */}
+          <g opacity="0.30">
+            <path d="M0,-4.5 L4.2,0 L0,4.5 L-1.1,0 Z" fill="#FF6B35"/>
+            <animateMotion dur="26s" repeatCount="indefinite" rotate="auto">
+              <mpath href="#tbArc1"/>
+            </animateMotion>
+          </g>
+
+          {/* Plane 2 — orange arc, delayed */}
+          <g opacity="0.22">
+            <path d="M0,-3.8 L3.5,0 L0,3.8 L-0.9,0 Z" fill="#1D9E75"/>
+            <animateMotion dur="34s" repeatCount="indefinite" rotate="auto" begin="9s">
+              <mpath href="#tbArc2"/>
+            </animateMotion>
+          </g>
+
+          {/* Plane 3 — purple arc, small */}
+          <g opacity="0.16">
+            <path d="M0,-3.2 L2.8,0 L0,3.2 L-0.7,0 Z" fill="#7F77DD"/>
+            <animateMotion dur="42s" repeatCount="indefinite" rotate="auto" begin="17s">
+              <mpath href="#tbArc3"/>
+            </animateMotion>
+          </g>
         </svg>
-        <svg className="tb-bg-plane b" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path fill="#FF6B35" d="M3 11.7L20.7 3.2C21.3 2.9 22 3.5 21.7 4.1L13.2 21.8C12.9 22.4 12 22.3 11.9 21.6L10.6 14.8L3.8 13.5C3.1 13.4 3 12 3.7 11.7Z"/>
-          <path d="M10.6 14.8L14.9 10.5" stroke="#fff" strokeWidth="1.3" strokeLinecap="round"/>
-        </svg>
-        <svg className="tb-bg-pin p1" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#667085" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/></svg>
-        <svg className="tb-bg-pin p2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#667085" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/></svg>
-        <svg className="tb-bg-pin p3" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path fill="#667085" d="M12 2.8a6.6 6.6 0 0 0-6.6 6.6c0 4.8 6 11.8 6.3 12.1a.4.4 0 0 0 .6 0c.3-.3 6.3-7.3 6.3-12.1A6.6 6.6 0 0 0 12 2.8Zm0 9.2a2.6 2.6 0 1 1 0-5.2 2.6 2.6 0 0 1 0 5.2Z"/></svg>
+
+        {/* Floating city labels */}
+        <div className="tb-bg-dest d1">🗼 Paris</div>
+        <div className="tb-bg-dest d2">🏰 Jaipur</div>
+        <div className="tb-bg-dest d3">🌊 Bali</div>
+        <div className="tb-bg-dest d4">🌸 Tokyo</div>
+        <div className="tb-bg-dest d5">🐘 Nairobi</div>
       </div>
 
       {newTripModal && <ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
@@ -724,7 +782,7 @@ export default function App() {
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0', position: activeTrip ? 'relative' : 'absolute', left: activeTrip ? 'auto' : '50%', transform: activeTrip ? 'none' : 'translateX(-50%)' }}>
           {activeTrip && <button style={{ ...S.btn, padding: '5px 8px', marginRight: 2, fontSize: 16 }} onClick={() => { setActiveTrip(null); setActiveTripData(null); }}>←</button>}
-          <img src={bglessLogo} alt="TripBae" style={{ height: 60, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <img src={bglessLogo} alt="TripBae" style={{ height: 72, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {activeTrip && activeTripData ? (
           /* Top-bar pill with trip name + inline Mark Complete / Delete actions */

@@ -481,11 +481,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @keyframes progressFill { from{width:0} to{width:var(--w)} }
         .tb-hero-title { animation: fadeUp 0.5s ease both; animation-delay: 0.05s; }
         .tb-hero-greet { animation: fadeUp 0.4s ease both; }
-        @keyframes taglineIn {
-          from { opacity: 0; transform: translateY(18px) scale(0.95); filter: blur(5px); }
-          to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        @keyframes taglineSlideIn {
+          from { transform: translateX(108%); }
+          to   { transform: translateX(0); }
         }
-        .tb-tagline-enter { animation: taglineIn 0.45s cubic-bezier(.2,.85,.2,1) both; }
         .tb-trip-card-new {
           border-radius: 26px; margin-bottom: 16px; overflow: hidden; position: relative;
           cursor: pointer; will-change: transform; transform: translateZ(0);
@@ -535,20 +534,20 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           <div className="tb-hero-greet" style={{ fontSize: 12, fontWeight: 600, letterSpacing: '1.6px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 7, textAlign: 'center' }}>
             {greetPhrase}{profileName ? <span style={{ color: '#1a1a18', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
           </div>
-          <div
-            key={tagIdx}
-            className="tb-hero-title tb-tagline-enter"
-            style={{
-              fontFamily: "'DM Sans',sans-serif", fontSize: 32, fontWeight: 700, lineHeight: 1.18,
-              letterSpacing: '-0.3px', marginBottom: 18, textAlign: 'center', color: '#1a1a18',
-              ...(tagPhase === 'out' ? {
-                opacity: 0, transform: 'translateY(-10px) scale(0.97)', filter: 'blur(4px)',
-                transition: 'opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease',
-                animation: 'none',
-              } : {}),
-            }}
-          >
-            {HERO_TAGLINES[tagIdx].line}
+          <div style={{ overflow: 'hidden', height: 44, marginBottom: 18, display: 'flex', alignItems: 'center' }}>
+            <div
+              key={tagIdx}
+              style={{
+                fontFamily: "'DM Sans',sans-serif", fontSize: 32, fontWeight: 700, lineHeight: 1.18,
+                letterSpacing: '-0.3px', color: '#1a1a18', whiteSpace: 'nowrap',
+                ...(tagPhase === 'out'
+                  ? { transform: 'translateX(-110%)', transition: 'transform 0.26s cubic-bezier(.4,0,.8,.2)' }
+                  : { animation: 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both' }
+                ),
+              }}
+            >
+              {HERO_TAGLINES[tagIdx].line}
+            </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
             <button
