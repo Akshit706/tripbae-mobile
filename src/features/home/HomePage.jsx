@@ -10,14 +10,14 @@ import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
 import { fetchPlacePhotos } from '../../api';
 
 const HERO_TAGLINES = [
-  { icon: '🏯', line: "Explore Rajasthan's ancient forts" },
-  { icon: '☕', line: 'Find hidden cafes in Lisbon' },
-  { icon: '🌸', line: 'Chase cherry blossoms in Tokyo' },
-  { icon: '🏔️', line: 'Trek Himalayan passes at dawn' },
-  { icon: '🌊', line: 'Surf at beautiful sunrise in Bali' },
-  { icon: '🍝', line: 'Get lost in the alleys of Naples' },
-  { icon: '🐘', line: 'Wake up to a safari in Kenya' },
-  { icon: '🎭', line: "Lose yourself in Vienna's old town" },
+{ icon: '🏯', line: "Rajasthan's ancient forts" },
+{ icon: '☕', line: 'Hidden cafes, Lisbon' },
+{ icon: '🌸', line: 'Cherry blossoms, Tokyo' },
+{ icon: '🏔️', line: 'Himalayan dawn treks' },
+{ icon: '🌊', line: 'Sunrise surf, Bali' },
+{ icon: '🍝', line: 'Alleys of Naples' },
+{ icon: '🐘', line: 'Safari mornings, Kenya' },
+{ icon: '🎭', line: "Vienna's old town" },
 ];
 
 const HERO_GREETINGS = {
