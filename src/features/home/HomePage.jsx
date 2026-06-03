@@ -23,21 +23,12 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmComplete, setConfirmComplete] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
-  const [heroTaglineIndex, setHeroTaglineIndex] = useState(0);
-  const [heroTaglineVisible, setHeroTaglineVisible] = useState(true);
 
   const [showDestPicker, setShowDestPicker] = useState(false);
   const [destQuery, setDestQuery] = useState('');
   const [destSuggestions, setDestSuggestions] = useState([]);
   const [destLoading, setDestLoading] = useState(false);
   const destDebounce = useRef(null);
-  const taglineSwapTimeout = useRef(null);
-
-  const heroTaglines = [
-    "Explore Rajasthan's forts",
-    'Find hidden cafes in Lisbon',
-    'Chase cherry blossoms in Tokyo',
-  ];
 
   const searchDest = useCallback(async (text) => {
     if (text.length < 2) { setDestSuggestions([]); return; }
@@ -117,21 +108,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
   const activeTrips = trips.filter(t => !t.completed);
   const pastTrips   = trips.filter(t =>  t.completed);
-
-  useEffect(() => {
-    const rotateTimer = setInterval(() => {
-      setHeroTaglineVisible(false);
-      taglineSwapTimeout.current = setTimeout(() => {
-        setHeroTaglineIndex(i => (i + 1) % heroTaglines.length);
-        setHeroTaglineVisible(true);
-      }, 260);
-    }, 3000);
-
-    return () => {
-      clearInterval(rotateTimer);
-      if (taglineSwapTimeout.current) clearTimeout(taglineSwapTimeout.current);
-    };
-  }, [heroTaglines.length]);
 
   const handleCreate = async () => {
     if (!form.groupName || !form.destination || !form.arrival || !form.departure) return;
@@ -272,12 +248,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
   const emojiOptions = isSoloMode ? EMOJI_OPTIONS_SOLO : EMOJI_OPTIONS_GROUP;
 
-  const greetingLabel = (() => {
+  const greeting = (() => {
     const h = new Date().getHours();
-    if (h >= 5 && h < 12) return 'Good morning';
-    if (h >= 12 && h < 17) return 'Good afternoon';
-    if (h >= 17 && h < 21) return 'Good evening';
-    return 'Good night';
+    if (h < 12) return 'morning';
+    if (h < 17) return 'afternoon';
+    return 'evening';
   })();
 
   return (
@@ -290,15 +265,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @keyframes progressFill { from{width:0} to{width:var(--w)} }
         .tb-hero-title { animation: fadeUp 0.5s ease both; animation-delay: 0.05s; }
         .tb-hero-greet { animation: fadeUp 0.4s ease both; }
-        .tb-hero-tagline {
-          transition: opacity .26s ease, transform .26s ease;
-          opacity: 1;
-          transform: translateY(0);
-        }
-        .tb-hero-tagline.is-hidden {
-          opacity: 0;
-          transform: translateY(8px);
-        }
         .tb-trip-card-new {
           border-radius: 26px; margin-bottom: 16px; overflow: hidden; position: relative;
           cursor: pointer; will-change: transform; transform: translateZ(0);
@@ -343,16 +309,16 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Hero Section */}
-      <div style={{ background: 'linear-gradient(145deg,#0F172A 0%,#1F2937 100%)', padding: '1.2rem 1.35rem 1.1rem', position: 'relative', textAlign: 'center', borderRadius: '0 0 24px 24px', marginBottom: 10, boxShadow: '0 12px 30px rgba(15,23,42,0.24)' }}>
+      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'center' }}>
         <div style={{ position: 'relative', zIndex: 2 }}>
-          <div className="tb-hero-greet" style={{ fontSize: 13, fontWeight: 600, letterSpacing: '1.8px', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
-            {greetingLabel}
-            {profileName ? <span style={{ color: '#fff', fontWeight: 500, marginLeft: 6 }}>{profileName.split(' ')[0]}</span> : null}
+          <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.4px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'center' }}>
+            Good {greeting}{profileName ? `, ${profileName.split(' ')[0]}` : ''}
           </div>
-          <div className={`tb-hero-title tb-hero-tagline ${heroTaglineVisible ? '' : 'is-hidden'}`} style={{ fontFamily: "'Sora',sans-serif", fontSize: 38, fontWeight: 800, lineHeight: 1.08, letterSpacing: '-0.35px', marginBottom: 10, textAlign: 'center', color: '#fff', maxWidth: 520, marginInline: 'auto' }}>
-            {heroTaglines[heroTaglineIndex]}
+          <div className="tb-hero-title" style={{ fontFamily: "'Sora',sans-serif", fontSize: 39, fontWeight: 800, lineHeight: 1.02, letterSpacing: '-0.15px', marginBottom: 8, textAlign: 'center' }}>
+            <div style={{ color: '#0D2B2E' }}>Where to</div>
+            <div style={{ color: '#1D9E75' }}>next?</div>
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.72)', marginBottom: 16, lineHeight: 1.5, textAlign: 'center' }}>Build your next chapter in minutes.</div>
+          <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.42)', marginBottom: 14, lineHeight: 1.5, fontStyle: 'italic', textAlign: 'center' }}>Plan less. Experience more.</div>
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
             <button
               className="tb-new-btn"
