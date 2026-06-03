@@ -551,7 +551,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             <div
               key={tagIdx}
               style={{
-                fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1.25,
+                fontFamily: "'Sora',sans-serif", fontSize: 24, fontWeight: 700, lineHeight: 1.25,
                 letterSpacing: '-0.2px', color: '#0F6E56', whiteSpace: 'nowrap',
                 animation: tagPhase === 'out'
                   ? 'taglineSlideOut 0.28s cubic-bezier(.4,0,.8,.2) both'
