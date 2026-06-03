@@ -856,6 +856,19 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       )}
 
+      {/* Tagline footer */}
+      <div style={{ borderTop: '1px solid #ebebeb', padding: '28px 20px 36px', background: '#fff' }}>
+        <div style={{ fontFamily: "'Inter', 'DM Sans', sans-serif", fontSize: 32, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.15, letterSpacing: '-0.5px' }}>
+          Plan. Split. Explore.
+        </div>
+        <div style={{ fontFamily: "'Inter', 'DM Sans', sans-serif", fontSize: 32, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: 14 }}>
+          Together.
+        </div>
+        <div style={{ fontSize: 12, color: '#c0bfbb', fontWeight: 500, letterSpacing: '0.2px' }}>
+          Made with ❤️ in India
+        </div>
+      </div>
+
       </div>{/* end padding wrapper */}
     </div>
   );
