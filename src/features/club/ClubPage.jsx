@@ -1214,13 +1214,13 @@ function ClubPage({ trip, onTripRefresh }) {
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 2 }}>
           <img src={bglessLogo} alt="TripBae" style={{ height: 65, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
-        <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 6, fontStyle: 'italic', opacity: 0.7 }}>
+        <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 10, fontStyle: 'italic', opacity: 0.7 }}>
           find your people.
         </div>
       </div>
 
       {/* ── Underline tabs ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1.5px solid rgba(15,23,42,0.1)', marginBottom: '0.75rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1.5px solid rgba(15,23,42,0.1)', marginBottom: '0.75rem', marginTop: 2 }}>
         {[
           { id: 'discover', label: 'Discover' },
           { id: 'profile', label: 'Profile' },
@@ -1534,7 +1534,7 @@ function ClubPage({ trip, onTripRefresh }) {
           <div style={{ padding: 12, paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(10,18,35,0.06)', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(16px)', boxShadow: '0 -8px 24px rgba(15,23,42,0.06)' }}>
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
               <textarea
-                style={{ ...S.input, resize: 'none', minHeight: 46, maxHeight: 122, marginBottom: 0, flex: 1, borderRadius: 15, border: '1px solid rgba(15,23,42,0.1)', boxShadow: '0 8px 18px rgba(15,23,42,0.06)' }}
+                style={{ ...S.input, resize: 'none', height: 46, minHeight: 46, maxHeight: 46, marginBottom: 0, flex: 1, borderRadius: 15, border: '1px solid rgba(15,23,42,0.1)', boxShadow: '0 8px 18px rgba(15,23,42,0.06)', overflowY: 'auto' }}
                 value={chatDraft}
                 onChange={e => setChatDraft(e.target.value)}
                 onKeyDown={handleChatKeyDown}

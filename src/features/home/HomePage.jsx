@@ -483,7 +483,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const emojiOptions = isSoloMode ? EMOJI_OPTIONS_SOLO : EMOJI_OPTIONS_GROUP;
 
   return (
-    <div style={{ margin: '-1rem -0.95rem', fontFamily: "'Inter', 'DM Sans', sans-serif" }}>
+    <div style={{ margin: '-1rem -0.95rem', fontFamily: "'Inter', 'DM Sans', sans-serif", minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         @keyframes float { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-5px)} }
@@ -553,7 +553,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             <div
               key={tagIdx}
               style={{
-                fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 700, lineHeight: 1.25,
+                fontFamily: "'Sora',sans-serif", fontSize: 25, fontWeight: 700, lineHeight: 1.25,
                 letterSpacing: '-0.2px', color: '#0F6E56', whiteSpace: 'nowrap',
                 animation: tagPhase === 'out'
                   ? 'taglineSlideOut 0.28s cubic-bezier(.4,0,.8,.2) both'
@@ -579,7 +579,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       </div>
 
-      <div style={{ padding: '0 16px 80px', display: 'flex', flexDirection: 'column', minHeight: 'calc(100svh - 220px)' }}>
+      <div style={{ padding: '0 16px 0', display: 'flex', flexDirection: 'column', flex: 1 }}>
 
       {showJoin && (
         <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '1.25rem' }}>
@@ -868,9 +868,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       )}
 
-      <div style={{ flex: 1, minHeight: (activeTrips.length > 0 || pastTrips.length > 0) ? 16 : 0 }} />
-      {/* Tagline footer */}
-      <div style={{ borderTop: '1px solid #e8e6e1', padding: '28px 20px 36px', marginTop: 0 }}>
+      <div style={{ flex: 1, minHeight: 16 }} />
+      {/* Tagline footer — pinned to bottom */}
+      <div style={{ borderTop: '1px solid #e8e6e1', padding: '28px 20px calc(28px + env(safe-area-inset-bottom, 16px))', marginTop: 0, flexShrink: 0 }}>
         <div style={{ fontFamily: "'Inter', 'DM Sans', sans-serif", fontSize: 32, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.15, letterSpacing: '-0.5px' }}>
           Plan. Split. Explore.
         </div>
