@@ -1212,7 +1212,7 @@ function ClubPage({ trip, onTripRefresh }) {
       <div style={{ padding: '0 0 0.4rem', animation: 'clubPop .3s ease-out both' }}>
         {/* Logo centered */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
-          <img src={bglessLogo} alt="TripBae" style={{ height: 65, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <img src={bglessLogo} alt="TripBae" style={{ height: 70, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 8, fontStyle: 'italic', opacity: 0.75 }}>
           find your people.
