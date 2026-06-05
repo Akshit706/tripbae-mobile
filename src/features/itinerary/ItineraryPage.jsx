@@ -397,6 +397,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 style={{ marginBottom: '1rem' }}
               />
 
+              {/* Reliability disclaimer */}
+              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#F8F8F6', border: '0.5px solid #E0DED8', borderRadius: 10, padding: '10px 12px', marginBottom: '1rem', fontSize: 11, color: '#6b6b68', lineHeight: 1.6 }}>
+                <span style={{ flexShrink: 0, fontSize: 14 }}>ℹ️</span>
+                <span>Place names and descriptions are sourced from real travel publications. Hours marked <strong style={{ color: '#1D9E75' }}>✓</strong> are from those sources; hours marked <strong style={{ color: '#7A6FCF' }}>est.</strong> are safe estimates — always verify before visiting. Prices are approximate.</span>
+              </div>
+
               {(() => {
                 let photoIndex = 0;
                 return (itin.days || []).map((d, dayIndex) => {
@@ -476,7 +482,15 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                         )}
                                       </div>
                                       {a.openingHours && (
-                                        <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>🕐 Open {a.openingHours}</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>
+                                          <span>🕐 Open {a.openingHours}</span>
+                                          {a.hoursSource === 'estimated' && (
+                                            <span style={{ fontSize: 9, background: '#F4F3FF', color: '#7A6FCF', borderRadius: 5, padding: '1px 5px', fontWeight: 600 }}>est.</span>
+                                          )}
+                                          {a.hoursSource === 'verified' && (
+                                            <span style={{ fontSize: 9, background: '#E1F5EE', color: '#1D9E75', borderRadius: 5, padding: '1px 5px', fontWeight: 600 }}>✓</span>
+                                          )}
+                                        </div>
                                       )}
                                       {a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 4, lineHeight: 1.55, fontStyle: 'italic' }}>{a.note}</div>}
                                       {a.headsUp && (
