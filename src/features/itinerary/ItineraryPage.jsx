@@ -172,10 +172,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   };
 
   const ENERGY_CONFIG = {
-    high:   { label: 'Active',  bg: '#FAECE7', color: '#993C1D' },
-    medium: { label: 'Moderate', bg: '#E6F1FB', color: '#1A6BAD' },
-    low:    { label: 'Easy',    bg: '#E8F8EE', color: '#1A7A4A' },
-    rest:   { label: 'Rest',    bg: '#F4F3FF', color: '#534AB7' },
+    high:   { label: 'Active',   symbol: '▲▲', bg: '#FAECE7', color: '#993C1D' },
+    medium: { label: 'Moderate', symbol: '▲',  bg: '#E6F1FB', color: '#1A6BAD' },
+    low:    { label: 'Easy',     symbol: '–',  bg: '#E8F8EE', color: '#1A7A4A' },
+    rest:   { label: 'Rest',     symbol: '○',  bg: '#F4F3FF', color: '#534AB7' },
   };
 
   const firstActivitySlot = () => {
@@ -432,8 +432,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                         <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
                                       )}
                                       {a.energyLevel && ENERGY_CONFIG[a.energyLevel] && (
-                                        <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 8, background: ENERGY_CONFIG[a.energyLevel].bg, color: ENERGY_CONFIG[a.energyLevel].color, textTransform: 'uppercase', letterSpacing: .3 }}>
-                                          {a.energyLevel === 'high' ? '🔥' : a.energyLevel === 'rest' ? '😌' : a.energyLevel === 'low' ? '🌿' : '⚡'} {ENERGY_CONFIG[a.energyLevel].label}
+                                        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 8, background: ENERGY_CONFIG[a.energyLevel].bg, color: ENERGY_CONFIG[a.energyLevel].color, letterSpacing: .3, fontFamily: 'monospace' }}>
+                                          {ENERGY_CONFIG[a.energyLevel].symbol} {ENERGY_CONFIG[a.energyLevel].label}
                                         </span>
                                       )}
                                     </div>
