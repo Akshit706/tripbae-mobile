@@ -32,6 +32,28 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   };
 
   const toggleDone = (key) => setDoneItems(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+
+  const renderStars = (rating) => {
+    if (!rating) return null;
+    const r = parseFloat(rating);
+    if (isNaN(r)) return null;
+    const full = Math.floor(r);
+    const half = r - full >= 0.3;
+    const stars = [];
+    for (let i = 0; i < 5; i++) {
+      if (i < full) stars.push('★');
+      else if (i === full && half) stars.push('½');
+      else stars.push('☆');
+    }
+    return (
+      <span style={{ fontSize: 11, letterSpacing: 1 }}>
+        <span style={{ color: '#E6A817' }}>{stars.slice(0, full + (half ? 1 : 0)).join('')}</span>
+        <span style={{ color: '#D3D1C7' }}>{stars.slice(full + (half ? 1 : 0)).join('')}</span>
+        <span style={{ color: '#a8a8a5', marginLeft: 3 }}>{r.toFixed(1)}</span>
+      </span>
+    );
+  };
+
   const tagBg = t => {
     if (['must-try','must-do','iconic'].includes(t)) return { bg: '#FAECE7', color: '#993C1D' };
     if (['heritage','scenic','culture','offbeat'].includes(t)) return { bg: '#E6F1FB', color: '#378ADD' };
@@ -56,6 +78,16 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
               <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0, filter: isDone ? 'grayscale(1)' : 'none' }}>{item.emoji}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 3, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? '#a8a8a5' : '#1a1a18' }}>{item.name}</div>
+                {/* Rating + price + best time row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 5 }}>
+                  {item.rating && renderStars(item.rating)}
+                  {item.priceRange && (
+                    <span style={{ fontSize: 11, color: '#5a3a0a', background: '#FAEEDA', borderRadius: 6, padding: '1px 7px', fontWeight: 600 }}>{item.priceRange}</span>
+                  )}
+                  {item.bestTime && (
+                    <span style={{ fontSize: 11, color: '#0F6E56', background: '#E1F5EE', borderRadius: 6, padding: '1px 7px', fontWeight: 600 }}>Best: {item.bestTime}</span>
+                  )}
+                </div>
                 <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{item.desc}</div>
                 <div style={{ margin: '10px 0 4px' }}>
                   <PlacePhoto query={`${item.name} ${dest} photo`} style={{ height: 110 }} delay={(startIndex + i) * 600} />
@@ -415,42 +447,67 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         {(d.activities || []).map((a, i) => {
                           const showPhoto = a.type === 'attraction' || a.type === 'food' || a.type === 'experience' || a.type === 'shopping';
                           const currentDelay = showPhoto ? photoIndex++ * 600 : 0;
+                          const isLast = i === d.activities.length - 1;
                           return (
-                            <div key={i} style={{ display: 'flex', gap: 12, padding: '10px 0', borderBottom: i < d.activities.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 14 }}>
-                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: a.mustDo ? accentColor : '#D3D1C7', marginTop: 4, flexShrink: 0, border: a.mustDo ? `2px solid ${accentColor}33` : 'none', boxSizing: 'border-box' }} />
-                                {i < d.activities.length - 1 && <div style={{ width: 1, flex: 1, background: 'rgba(0,0,0,0.06)', marginTop: 3 }} />}
-                              </div>
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 3 }}>
-                                  <span style={{ fontSize: 11, color: '#a8a8a5', width: 58, flexShrink: 0, paddingTop: 2 }}>{a.time}</span>
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                      <span style={{ fontSize: 16 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
-                                      <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{a.name}</span>
-                                      {a.mustDo && (
-                                        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
-                                      )}
-                                      {a.energyLevel && ENERGY_CONFIG[a.energyLevel] && (
-                                        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 8, background: ENERGY_CONFIG[a.energyLevel].bg, color: ENERGY_CONFIG[a.energyLevel].color, letterSpacing: .3, fontFamily: 'monospace' }}>
-                                          {ENERGY_CONFIG[a.energyLevel].symbol} {ENERGY_CONFIG[a.energyLevel].label}
-                                        </span>
-                                      )}
+                            <div key={i}>
+                              <div style={{ display: 'flex', gap: 12, padding: '10px 0' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 14 }}>
+                                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: a.mustDo ? accentColor : '#D3D1C7', marginTop: 4, flexShrink: 0, border: a.mustDo ? `2px solid ${accentColor}33` : 'none', boxSizing: 'border-box' }} />
+                                  {!isLast && <div style={{ width: 1, flex: 1, background: 'rgba(0,0,0,0.06)', marginTop: 3 }} />}
+                                </div>
+                                <div style={{ flex: 1, minWidth: 0 }}>
+                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 3 }}>
+                                    {/* Time column: shows start → end */}
+                                    <div style={{ flexShrink: 0, width: 80, paddingTop: 2 }}>
+                                      <div style={{ fontSize: 11, color: '#a8a8a5', fontWeight: 600 }}>{a.time}</div>
+                                      {a.endTime && <div style={{ fontSize: 10, color: '#c8c8c4' }}>↓ {a.endTime}</div>}
                                     </div>
-                                    {a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 3, lineHeight: 1.5 }}>{a.note}</div>}
-                                    <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
-                                      {a.duration && <span style={{ fontSize: 11, color: '#a8a8a5' }}>⏱ {a.duration}</span>}
-                                      {a.cost && <span style={{ fontSize: 11, color: '#a8a8a5' }}>💰 {a.cost}</span>}
-                                      {a.rating && <span style={{ fontSize: 11, color: '#BA7517' }}>{a.rating}</span>}
-                                    </div>
-                                    {showPhoto && (
-                                      <div style={{ marginTop: 10 }}>
-                                        <PlacePhoto query={`${a.name} ${form.dest}`} style={{ height: 120 }} delay={currentDelay} />
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                                        <span style={{ fontSize: 16 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
+                                        <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{a.name}</span>
+                                        {a.mustDo && (
+                                          <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
+                                        )}
+                                        {a.energyLevel && ENERGY_CONFIG[a.energyLevel] && (
+                                          <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 8, background: ENERGY_CONFIG[a.energyLevel].bg, color: ENERGY_CONFIG[a.energyLevel].color, letterSpacing: .3, fontFamily: 'monospace' }}>
+                                            {ENERGY_CONFIG[a.energyLevel].symbol} {ENERGY_CONFIG[a.energyLevel].label}
+                                          </span>
+                                        )}
                                       </div>
-                                    )}
+                                      {a.openingHours && (
+                                        <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>🕐 Open {a.openingHours}</div>
+                                      )}
+                                      {a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 4, lineHeight: 1.55, fontStyle: 'italic' }}>{a.note}</div>}
+                                      <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
+                                        {a.duration && <span style={{ fontSize: 11, color: '#a8a8a5' }}>⏱ {a.duration}</span>}
+                                        {a.cost && <span style={{ fontSize: 11, color: '#a8a8a5' }}>💰 {a.cost}</span>}
+                                        {a.area && <span style={{ fontSize: 11, color: '#a8a8a5' }}>📍 {a.area}</span>}
+                                      </div>
+                                      {showPhoto && (
+                                        <div style={{ marginTop: 10 }}>
+                                          <PlacePhoto query={`${a.name} ${form.dest}`} style={{ height: 120 }} delay={currentDelay} />
+                                        </div>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
                               </div>
+                              {/* Travel connector to next activity */}
+                              {!isLast && a.travelToNext && (
+                                <div style={{ display: 'flex', gap: 12, paddingBottom: 2 }}>
+                                  <div style={{ width: 14, display: 'flex', justifyContent: 'center' }}>
+                                    <div style={{ width: 1, background: 'rgba(0,0,0,0.06)', height: '100%' }} />
+                                  </div>
+                                  <div style={{ fontSize: 10, color: '#b0b0aa', paddingLeft: 2, paddingBottom: 4, fontStyle: 'italic' }}>
+                                    🚶 {a.travelToNext}
+                                  </div>
+                                </div>
+                              )}
+                              {/* Separator line between activities (not after travel connector) */}
+                              {!isLast && !a.travelToNext && (
+                                <div style={{ marginLeft: 26, height: '0.5px', background: 'rgba(0,0,0,0.05)' }} />
+                              )}
                             </div>
                           );
                         })}
