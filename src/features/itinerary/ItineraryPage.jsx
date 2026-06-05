@@ -171,6 +171,13 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     transport: '🚗', hotel: '🏨', shopping: '🛍️',
   };
 
+  const ENERGY_CONFIG = {
+    high:   { label: 'Active',  bg: '#FAECE7', color: '#993C1D' },
+    medium: { label: 'Moderate', bg: '#E6F1FB', color: '#1A6BAD' },
+    low:    { label: 'Easy',    bg: '#E8F8EE', color: '#1A7A4A' },
+    rest:   { label: 'Rest',    bg: '#F4F3FF', color: '#534AB7' },
+  };
+
   const firstActivitySlot = () => {
     const idx = SLOT_ORDER.indexOf(form.arrivalSlot);
     return SLOT_ORDER[Math.min(idx + 1, SLOT_ORDER.length - 1)];
@@ -398,6 +405,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                           💡 {d.weather.tip}
                         </div>
                       )}
+                      {d.proTip && (
+                        <div style={{ padding: '8px 16px', background: '#FAEEDA', borderBottom: '0.5px solid #FAC775', fontSize: 12, color: '#5a3a0a', lineHeight: 1.5, display: 'flex', gap: 8 }}>
+                          <span style={{ flexShrink: 0 }}>🎯</span>
+                          <span><strong>Local tip:</strong> {d.proTip}</span>
+                        </div>
+                      )}
                       <div style={{ padding: '10px 16px' }}>
                         {(d.activities || []).map((a, i) => {
                           const showPhoto = a.type === 'attraction' || a.type === 'food' || a.type === 'experience' || a.type === 'shopping';
@@ -417,6 +430,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                       <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{a.name}</span>
                                       {a.mustDo && (
                                         <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
+                                      )}
+                                      {a.energyLevel && ENERGY_CONFIG[a.energyLevel] && (
+                                        <span style={{ fontSize: 9, fontWeight: 600, padding: '2px 6px', borderRadius: 8, background: ENERGY_CONFIG[a.energyLevel].bg, color: ENERGY_CONFIG[a.energyLevel].color, textTransform: 'uppercase', letterSpacing: .3 }}>
+                                          {a.energyLevel === 'high' ? '🔥' : a.energyLevel === 'rest' ? '😌' : a.energyLevel === 'low' ? '🌿' : '⚡'} {ENERGY_CONFIG[a.energyLevel].label}
+                                        </span>
                                       )}
                                     </div>
                                     {a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 3, lineHeight: 1.5 }}>{a.note}</div>}
