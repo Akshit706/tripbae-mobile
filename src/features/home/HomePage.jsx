@@ -483,6 +483,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     <div style={{ margin: '-1rem -0.95rem', fontFamily: "'Inter', 'DM Sans', sans-serif", minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
         @keyframes float { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-5px)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
@@ -557,7 +558,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                   : 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both',
               }}
             >
-              {(() => { const { line, place } = HERO_TAGLINES[tagIdx]; if (!place || !line.includes(place)) return line; const pi = line.indexOf(place); return <>{line.slice(0, pi)}<span style={{ color: '#FF6B35', fontStyle: 'italic' }}>{place}</span>{line.slice(pi + place.length)}</>; })()}
+              {(() => { const { line, place } = HERO_TAGLINES[tagIdx]; if (!place || !line.includes(place)) return line; const pi = line.indexOf(place); return <>{line.slice(0, pi)}<span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontStyle: 'italic', fontSize: '1.08em', letterSpacing: '-0.5px' }}>{place}</span>{line.slice(pi + place.length)}</>; })()}
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
@@ -579,21 +580,40 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       <div style={{ padding: '0 16px 0', display: 'flex', flexDirection: 'column', flex: 1 }}>
 
       {showJoin && (
-        <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '1.25rem' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: '#0F6E56', marginBottom: 12 }}>🔗 Join a Trip</div>
-          <label style={S.label}>Share Code</label>
-          <input style={{ ...S.input, letterSpacing: 2, fontFamily: "'Sora',sans-serif", fontWeight: 600, textTransform: 'uppercase' }}
-            value={joinCode} onChange={e => { setJoinCode(e.target.value); setJoinError(''); }}
-            placeholder="e.g. JAI-4820" maxLength={10} />
-          <label style={S.label}>Your Name</label>
-          <input style={S.input} value={joinName} onChange={e => { setJoinName(e.target.value); setJoinError(''); }} placeholder="e.g. Rahul" />
-          {joinError && <div style={{ fontSize: 12, color: '#993C1D', marginTop: 8, padding: '7px 10px', background: '#FAECE7', borderRadius: 8 }}>⚠️ {joinError}</div>}
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button style={{ ...S.btn, ...S.btnP, flex: 1, justifyContent: 'center', padding: '10px', opacity: joining ? 0.6 : 1 }}
-              onClick={handleJoin} disabled={!joinCode.trim() || !joinName.trim() || joining}>
-              {joining ? 'Joining…' : '✓ Join Trip'}
-            </button>
-            <button style={S.btn} onClick={() => { setShowJoin(false); setJoinError(''); }}>✕</button>
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(10,26,18,0.55)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '0 0 env(safe-area-inset-bottom,0)' }}
+          onClick={e => { if (e.target === e.currentTarget) { setShowJoin(false); setJoinError(''); } }}
+        >
+          <div style={{ background: '#fff', borderRadius: '22px 22px 0 0', width: '100%', maxWidth: 520, padding: '0 0 0', boxShadow: '0 -8px 40px rgba(0,0,0,0.18)', animation: 'slideUp .28s cubic-bezier(.15,.85,.25,1) both' }}>
+            <style>{`@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }`}</style>
+            {/* drag pill */}
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, paddingBottom: 6 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(0,0,0,0.12)' }} />
+            </div>
+            <div style={{ padding: '4px 22px 24px' }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#0F1A12', marginBottom: 4 }}>🔗 Join a Trip</div>
+              <div style={{ fontSize: 13, color: '#8a8a86', marginBottom: 20 }}>Enter the share code your friend sent you</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 7 }}>Share Code</div>
+              <input
+                autoFocus
+                style={{ ...S.input, letterSpacing: 3, fontFamily: "'Sora',sans-serif", fontWeight: 700, textTransform: 'uppercase', fontSize: 17, padding: '13px 14px', marginBottom: 14 }}
+                value={joinCode} onChange={e => { setJoinCode(e.target.value.toUpperCase()); setJoinError(''); }}
+                placeholder="e.g. JAI-4820" maxLength={10} />
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 7 }}>Your Name</div>
+              <input
+                style={{ ...S.input, fontSize: 15, padding: '13px 14px', marginBottom: 14 }}
+                value={joinName} onChange={e => { setJoinName(e.target.value); setJoinError(''); }}
+                placeholder="e.g. Rahul" />
+              {joinError && (
+                <div style={{ fontSize: 12, color: '#993C1D', marginBottom: 12, padding: '8px 12px', background: '#FAECE7', borderRadius: 10, border: '0.5px solid #F5C4B3' }}>⚠️ {joinError}</div>
+              )}
+              <button
+                style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px', fontSize: 15, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', color: '#fff', boxShadow: '0 6px 20px rgba(29,158,117,0.35)', opacity: (!joinCode.trim() || !joinName.trim() || joining) ? 0.45 : 1, transition: 'opacity .2s' }}
+                onClick={handleJoin}
+                disabled={!joinCode.trim() || !joinName.trim() || joining}>
+                {joining ? '✨ Joining…' : '✓ Join Trip'}
+              </button>
+            </div>
           </div>
         </div>
       )}
