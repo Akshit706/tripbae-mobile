@@ -558,7 +558,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                   : 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both',
               }}
             >
-              {(() => { const { line, place } = HERO_TAGLINES[tagIdx]; if (!place || !line.includes(place)) return line; const pi = line.indexOf(place); return <>{line.slice(0, pi)}<span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontStyle: 'italic', fontSize: '1.08em', letterSpacing: '-0.5px' }}>{place}</span>{line.slice(pi + place.length)}</>; })()}
+              {(() => { const { line, place } = HERO_TAGLINES[tagIdx]; if (!place || !line.includes(place)) return line; const pi = line.indexOf(place); return <>{line.slice(0, pi)}<span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontStyle: 'italic', fontSize: '1.28em', letterSpacing: '-0.5px', lineHeight: 1 }}>{place}</span>{line.slice(pi + place.length)}</>; })()}
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
