@@ -396,6 +396,8 @@ export default function App() {
     }
     // Kick off itinerary generation in background immediately
     if (trip.destination) {
+      // Mark as in-flight so ItineraryPage doesn't fire a duplicate request
+      setTrips(ts => ts.map(t => t.id === trip.id ? { ...t, _generationPending: true } : t));
       import('./api').then(async ({ generateItinerary, generateLocalTaste }) => {
         const days = trip.arrival && trip.departure
           ? Math.max(1, Math.round((new Date(trip.departure) - new Date(trip.arrival)) / 86400000))
@@ -419,7 +421,7 @@ export default function App() {
             generateLocalTaste({ destination: trip.destination }),
           ]);
           setTrips(ts => ts.map(t => t.id === trip.id
-            ? { ...t, _cachedItin: itinResult, _cachedTaste: tasteResult }
+            ? { ...t, _cachedItin: itinResult, _cachedTaste: tasteResult, _generationPending: false }
             : t
           ));
           const cache = readAiCache();
@@ -431,6 +433,8 @@ export default function App() {
           writeAiCache(cache);
         } catch (e) {
           console.warn('Background itinerary generation failed:', e);
+          // Clear the pending flag so ItineraryPage can retry on its own
+          setTrips(ts => ts.map(t => t.id === trip.id ? { ...t, _generationPending: false } : t));
         }
       });
     }

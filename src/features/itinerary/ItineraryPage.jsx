@@ -188,13 +188,15 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       setLocalTasteStep('result');
     }
 
-    // Only generate what's missing
-    if (!hasGenerated.current) {
+    // Only generate what's missing and not already in-flight from the parent
+    // (parent sets _generationPending when it kicks off background pre-generation
+    // on trip create — we wait for it to finish rather than firing a duplicate request)
+    if (!hasGenerated.current && !trip._generationPending) {
       hasGenerated.current = true;
       if (!trip._cachedItin) runGenerateItinerary();
       if (!trip._cachedTaste) runGenerateLocalTaste();
     }
-  }, [trip._cachedItin, trip._cachedTaste]);
+  }, [trip._cachedItin, trip._cachedTaste, trip._generationPending]);
 
   const runGenerateItinerary = async (descOverride) => {
     setStep('loading');
