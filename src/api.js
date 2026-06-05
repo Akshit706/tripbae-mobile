@@ -71,11 +71,26 @@ export const aiChat = (system, messages) =>
 export const aiItinerary = (destination, days, interests) =>
   apiFetch('/ai/itinerary', { method: 'POST', body: { destination, days, interests } });
 
-export const generateItinerary = (data) =>
-  apiFetch('/ai/itinerary', { method: 'POST', body: data });
+// In-flight deduplication: if the exact same request is already in-flight,
+// return the same promise instead of firing a second HTTP call.
+const _inFlight = new Map();
 
-export const generateLocalTaste = (data) =>
-  apiFetch('/ai/local-taste', { method: 'POST', body: data });
+function dedupedFetch(key, fetcher) {
+  if (_inFlight.has(key)) return _inFlight.get(key);
+  const promise = fetcher().finally(() => _inFlight.delete(key));
+  _inFlight.set(key, promise);
+  return promise;
+}
+
+export const generateItinerary = (data) => {
+  const key = `itin:${data.destination}:${data.days}:${data.budget}:${data.people}:${(data.interests || []).join(',')}:${data.arrivalSlot}:${data.departureSlot}`;
+  return dedupedFetch(key, () => apiFetch('/ai/itinerary', { method: 'POST', body: data }));
+};
+
+export const generateLocalTaste = (data) => {
+  const key = `taste:${data.destination}`;
+  return dedupedFetch(key, () => apiFetch('/ai/local-taste', { method: 'POST', body: data }));
+};
 
 // Club
 export const getClubHub = (tripId, { latitude, longitude, radius, vibe, activeOnly } = {}) => {
