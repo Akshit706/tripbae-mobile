@@ -10,22 +10,22 @@ import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
 import { fetchPlacePhotos } from '../../api';
 
 const HERO_TAGLINES = [
-{ icon: '🌿', line: 'Rishikesh, fix me!' },
-{ icon: '🐘', line: 'Coorg said "stay"' },
-{ icon: '🌊', line: 'Goa, off-season vibes?' },
-{ icon: '🎭', line: "Vienna's old town" },
-{ icon: '📵', line: 'Spiti, no signal!' },
-{ icon: '🎒', line: 'Kasol, lost again?' },
-{ icon: '🏔️', line: 'Ladakh called again!' },
-{ icon: '🌿', line: 'Meghalaya, clouds live here' },
-{ icon: '☕', line: 'Hidden cafes, Lisbon' },
-{ icon: '🌴', line: 'Andamans, who needs wifi?' },
-{ icon: '🏯', line: 'Jaipur, dress accordingly!' },
-{ icon: '🌸', line: 'Cherry blossoms, Tokyo' },
-{ icon: '🚂', line: 'Darjeeling, sip slowly.' },
-{ icon: '🌊', line: 'Sunrise surf, Bali' },
-{ icon: '🍵', line: 'Munnar stole me' },
-{ icon: '🛺', line: 'Varanasi never sleeps!' },
+{ icon: '🌿', line: 'Rishikesh, fix me!', place: 'Rishikesh' },
+{ icon: '🐘', line: 'Coorg said "stay"', place: 'Coorg' },
+{ icon: '🌊', line: 'Goa, off-season vibes?', place: 'Goa' },
+{ icon: '🎭', line: "Vienna's old town", place: 'Vienna' },
+{ icon: '📵', line: 'Spiti, no signal!', place: 'Spiti' },
+{ icon: '🎒', line: 'Kasol, lost again?', place: 'Kasol' },
+{ icon: '🏔️', line: 'Ladakh called again!', place: 'Ladakh' },
+{ icon: '🌿', line: 'Meghalaya, clouds live here', place: 'Meghalaya' },
+{ icon: '☕', line: 'Hidden cafes, Lisbon', place: 'Lisbon' },
+{ icon: '🌴', line: 'Andamans, who needs wifi?', place: 'Andamans' },
+{ icon: '🏯', line: 'Jaipur, dress accordingly!', place: 'Jaipur' },
+{ icon: '🌸', line: 'Cherry blossoms, Tokyo', place: 'Tokyo' },
+{ icon: '🚂', line: 'Darjeeling, sip slowly.', place: 'Darjeeling' },
+{ icon: '🌊', line: 'Sunrise surf, Bali', place: 'Bali' },
+{ icon: '🍵', line: 'Munnar stole me', place: 'Munnar' },
+{ icon: '🛺', line: 'Varanasi never sleeps!', place: 'Varanasi' },
 ];
 
 const HERO_GREETINGS = {
@@ -302,9 +302,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   })();
 
   const [form, setForm] = useState({
-    groupName: '', destination: '', emoji: '✈️', arrival: today, departure: '',
+    groupName: '', destination: '', arrival: today, departure: '',
     arrivalSlot: 'morning', departureSlot: 'morning',
-    people: 2, createdBy: profileName || '', budget: '',
+    createdBy: profileName || '', budget: '',
   });
 
   useEffect(() => {
@@ -337,8 +337,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     onOpenTrip(tripId);
   };
 
-  const EMOJI_OPTIONS_GROUP = ['✈️','🏖️','🏔️','🏰','🌴','🗺️','🎡','🛕','🌅','🌿','🎭','🏛️'];
-  const EMOJI_OPTIONS_SOLO  = ['🎒','🧳','🛺','🚂','🏍️','🌏','🪂','🧗','🌄','☕','📖','🦋'];
+
 
   const activeTrips = trips.filter(t => !t.completed);
   const pastTrips   = trips.filter(t =>  t.completed);
@@ -350,18 +349,18 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       await onCreateTrip({
         groupName: form.groupName,
         destination: form.destination,
-        emoji: form.emoji,
+        emoji: isSoloMode ? '🎒' : '✈️',
         arrival: form.arrival,
         departure: form.departure,
         arrivalSlot: form.arrivalSlot,
         departureSlot: form.departureSlot,
         isSolo: isSoloMode,
-        people: isSoloMode ? 1 : parseInt(form.people),
+        people: isSoloMode ? 1 : 2,
         budget: form.budget ? parseFloat(form.budget) : null,
         nickname: (profileName || form.createdBy || 'Me').trim(),
       });
       setShowCreate(false);
-      setForm({ groupName: '', destination: '', emoji: '✈️', arrival: today, departure: '', people: 2, createdBy: profileName || '', budget: '' });
+      setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '' });
     } catch (err) {
       alert('Could not create trip: ' + err.message);
     }
@@ -480,8 +479,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     );
   }
 
-  const emojiOptions = isSoloMode ? EMOJI_OPTIONS_SOLO : EMOJI_OPTIONS_GROUP;
-
   return (
     <div style={{ margin: '-1rem -0.95rem', fontFamily: "'Inter', 'DM Sans', sans-serif", minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
       <style>{`
@@ -560,7 +557,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                   : 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both',
               }}
             >
-              {HERO_TAGLINES[tagIdx].line}
+              {(() => { const { line, place } = HERO_TAGLINES[tagIdx]; if (!place || !line.includes(place)) return line; const pi = line.indexOf(place); return <>{line.slice(0, pi)}<span style={{ color: '#FF6B35', fontStyle: 'italic' }}>{place}</span>{line.slice(pi + place.length)}</>; })()}
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
@@ -602,231 +599,191 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {showCreate && (
-        <div style={{ ...S.card, border: `0.5px solid ${isSoloMode ? '#AFA9EC' : '#9FE1CB'}`, background: isSoloMode ? '#fdfcff' : '#f9fffe', marginBottom: '1.25rem' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: isSoloMode ? '#534AB7' : '#0F6E56', marginBottom: 14 }}>
-            {isSoloMode ? '🎒 New Solo Adventure' : '✈️ Create New Group Trip'}
-          </div>
-          <div style={{ display: 'flex', gap: 0, background: '#F1EFE8', borderRadius: 12, padding: 3, marginBottom: 16 }}>
-            {[{ val: false, label: '👥 Group', desc: 'Travel with friends' }, { val: true, label: '🎒 Solo', desc: 'Just me, myself & I' }].map(opt => (
-              <button key={String(opt.val)} onClick={() => { setIsSoloMode(opt.val); setForm(f => ({ ...f, emoji: opt.val ? '🎒' : '✈️', people: opt.val ? 1 : 2 })); }}
-                style={{ flex: 1, padding: '9px 10px', borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
-                  background: isSoloMode === opt.val ? (opt.val ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75') : 'transparent',
-                  color: isSoloMode === opt.val ? '#fff' : '#6b6b68', fontWeight: 500, fontSize: 13, transition: 'all .2s' }}>
-                {opt.label}
-                <div style={{ fontSize: 10, opacity: 0.75, marginTop: 1 }}>{opt.desc}</div>
-              </button>
-            ))}
-          </div>
-          <label style={S.label}>Trip Emoji</label>
-          <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', margin: '6px 0 10px' }}>
-            {emojiOptions.map(e => (
-              <div key={e} onClick={() => setForm(f => ({ ...f, emoji: e }))}
-                style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer',
-                  border: form.emoji === e ? `2px solid ${isSoloMode ? '#7F77DD' : '#1D9E75'}` : '0.5px solid rgba(0,0,0,0.12)',
-                  background: form.emoji === e ? (isSoloMode ? '#EEEDFE' : '#E1F5EE') : '#fff', transition: 'all .12s' }}>
-                {e}
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#f7f6f2', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
+
+          {/* ── Gradient header ── */}
+          <div style={{ background: isSoloMode ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)', padding: '1.1rem 1.25rem 1.5rem', paddingTop: 'calc(1.1rem + env(safe-area-inset-top, 0px))', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+              <button onClick={() => setShowCreate(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.18)', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>←</button>
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 2 }}>New Trip</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 21, fontWeight: 700, color: '#fff', lineHeight: 1.15 }}>{isSoloMode ? '🎒 Solo Adventure' : '✈️ Group Trip'}</div>
               </div>
-            ))}
+            </div>
+            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.18)', borderRadius: 13, padding: 3 }}>
+              {[{ val: false, label: '👥 Group' }, { val: true, label: '🎒 Solo' }].map(opt => (
+                <button key={String(opt.val)} onClick={() => setIsSoloMode(opt.val)}
+                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: isSoloMode === opt.val ? 'rgba(255,255,255,0.97)' : 'transparent', color: isSoloMode === opt.val ? (opt.val ? '#534AB7' : '#0F6E56') : 'rgba(255,255,255,0.72)', fontWeight: 700, fontSize: 14, transition: 'all .2s' }}>
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <div style={{ gridColumn: '1/-1' }}>
-              <label style={S.label}>{isSoloMode ? 'Adventure Name *' : 'Group Name *'}</label>
-              <input style={S.input} value={form.groupName} onChange={e => setForm(f => ({ ...f, groupName: e.target.value }))}
+
+          {/* ── Form sections ── */}
+          <div style={{ flex: 1, padding: '1.75rem 1.25rem 0' }}>
+
+            {/* Trip name */}
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 8 }}>{isSoloMode ? 'Adventure Name' : 'Trip Name'}</div>
+              <input style={{ ...S.input, fontSize: 15, padding: '13px 14px' }} value={form.groupName} onChange={e => setForm(f => ({ ...f, groupName: e.target.value }))}
                 placeholder={isSoloMode ? 'e.g. My Jaipur Chapter' : 'e.g. Pink City Explorers'} />
             </div>
-            <div style={{ gridColumn: '1/-1' }}>
-              <label style={S.label}>Destination *</label>
 
-              {/* Tappable field — opens picker */}
-              <div
-                onClick={() => { setShowDestPicker(true); setDestQuery(form.destination); setDestSuggestions([]); }}
-                style={{ ...S.input, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: form.destination ? '#111' : '#aaa', userSelect: 'none' }}
-              >
-                <span>📍</span>
-                <span style={{ flex: 1 }}>{form.destination || 'Search city or place…'}</span>
-                {form.destination && (
-                  <span
-                    onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, destination: '' })); }}
-                    style={{ fontSize: 13, color: '#aaa', padding: '0 2px', cursor: 'pointer' }}>✕</span>
-                )}
+            {/* Destination */}
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 8 }}>Destination</div>
+              <div onClick={() => { setShowDestPicker(true); setDestQuery(form.destination); setDestSuggestions([]); }}
+                style={{ ...S.input, fontSize: 15, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', color: form.destination ? '#111' : '#aaa', userSelect: 'none' }}>
+                <span style={{ fontSize: 17 }}>{form.destination ? '📍' : '🔍'}</span>
+                <span style={{ flex: 1, fontWeight: form.destination ? 600 : 400 }}>{form.destination || 'Search city or place…'}</span>
+                {form.destination
+                  ? <span onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, destination: '' })); }} style={{ fontSize: 14, color: '#aaa', cursor: 'pointer' }}>✕</span>
+                  : <span style={{ fontSize: 18, color: '#ccc' }}>›</span>}
               </div>
+            </div>
 
-              {/* Inline fullscreen picker overlay */}
-              {showDestPicker && (
-                <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0 }}>
-                  <div className="tb-sheet-panel" style={{ background: '#fff', display: 'flex', flexDirection: 'column', position: 'absolute', inset: 0 }}>
-
-                  {/* Header */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', borderBottom: '0.5px solid rgba(0,0,0,0.08)', background: '#fff', flexShrink: 0 }}>
-                    <button
-                      onClick={() => { setShowDestPicker(false); setDestSuggestions([]); }}
-                      style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>
-                      ←
+            {/* Arrival */}
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 8 }}>Arrival</div>
+              <input style={{ ...S.input, fontSize: 15, padding: '13px 14px', marginBottom: 12 }} type="date" value={form.arrival} min={today} max={maxDate}
+                onChange={e => setForm(f => ({ ...f, arrival: e.target.value, departure: f.departure && f.departure < e.target.value ? '' : f.departure }))}
+                onBlur={e => { if (e.target.value && e.target.value < today) setForm(f => ({ ...f, arrival: today })); }} />
+              <div style={{ fontSize: 12, color: '#6b6b68', fontWeight: 500, marginBottom: 10 }}>When do you land / arrive?</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {[
+                  { id: 'night',     icon: '🌙', label: 'Night',     time: '12AM – 6AM' },
+                  { id: 'morning',   icon: '🌅', label: 'Morning',   time: '6AM – 12PM' },
+                  { id: 'afternoon', icon: '☀️', label: 'Afternoon', time: '12PM – 6PM' },
+                  { id: 'evening',   icon: '🌆', label: 'Evening',   time: '6PM – 12AM' },
+                ].map(slot => {
+                  const sel = form.arrivalSlot === slot.id;
+                  const ac = isSoloMode ? '#534AB7' : '#0F6E56';
+                  const acBg = isSoloMode ? '#EEEDFE' : '#E1F5EE';
+                  const acBr = isSoloMode ? '#AFA9EC' : '#9FE1CB';
+                  return (
+                    <button key={slot.id} type="button" onClick={() => setForm(f => ({ ...f, arrivalSlot: slot.id }))}
+                      style={{ padding: '12px 12px', borderRadius: 12, border: `1.5px solid ${sel ? acBr : 'rgba(0,0,0,0.09)'}`, background: sel ? acBg : '#fff', cursor: 'pointer', textAlign: 'left', transition: 'all .15s', boxShadow: sel ? `0 2px 8px ${acBr}88` : 'none' }}>
+                      <div style={{ fontSize: 22, marginBottom: 5 }}>{slot.icon}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: sel ? ac : '#1a1a18', marginBottom: 2, fontFamily: "'DM Sans',sans-serif" }}>{slot.label}</div>
+                      <div style={{ fontSize: 11, color: sel ? ac : '#a8a8a5', fontWeight: 500 }}>{slot.time}</div>
                     </button>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>Destination</div>
-                  </div>
-
-                  {/* Search box */}
-                  <div style={{ padding: '12px 14px', flexShrink: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F5F5F3', borderRadius: 12, padding: '0 12px', border: '0.5px solid #e0e0e0' }}>
-                      <span style={{ fontSize: 15 }}>🔍</span>
-                      <input
-                        autoFocus
-                        style={{ ...S.input, border: 'none', background: 'transparent', flex: 1, padding: '10px 0', fontSize: 15, outline: 'none' }}
-                        value={destQuery}
-                        onChange={e => {
-                          setDestQuery(e.target.value);
-                          clearTimeout(destDebounce.current);
-                          destDebounce.current = setTimeout(() => searchDest(e.target.value), 350);
-                        }}
-                        placeholder="Search city or place…"
-                      />
-                      {destLoading && <div style={{ width: 18, height: 18, border: '2px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', flexShrink: 0 }} />}
-                      {destQuery && !destLoading && (
-                        <span onClick={() => { setDestQuery(''); setDestSuggestions([]); }} style={{ fontSize: 16, color: '#aaa', cursor: 'pointer', flexShrink: 0 }}>✕</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Suggestions */}
-                  <div style={{ flex: 1, overflowY: 'auto' }}>
-                    {destSuggestions.length > 0 && destSuggestions.map((item, i) => {
-                      const a = item.address || {};
-                      const mainText = a.city || a.town || a.village || a.state_district || a.county || a.state || item.display_name.split(',')[0];
-                      const subText = [a.state, a.country].filter(Boolean).join(', ');
-                      return (
-                        <div key={item.osm_id + item.osm_type}
-                          onClick={() => {
-                            const name = formatDestName(item);
-                            setForm(f => ({ ...f, destination: name }));
-                            setShowDestPicker(false);
-                            setDestSuggestions([]);
-                            setDestQuery('');
-                          }}
-                          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: '0.5px solid #f0f0f0', cursor: 'pointer' }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#f7f6f2'}
-                          onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-                        >
-                          <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>
-                            {getDestIcon(item)}
-                          </div>
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mainText}</div>
-                            {subText && <div style={{ fontSize: 12, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subText}</div>}
-                          </div>
-                          <span style={{ fontSize: 18, color: '#ccc' }}>›</span>
-                        </div>
-                      );
-                    })}
-
-                    {/* No results */}
-                    {destQuery.length >= 2 && !destLoading && destSuggestions.length === 0 && (
-                      <div style={{ textAlign: 'center', padding: '4rem 1.5rem', color: '#6b6b68' }}>
-                        <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
-                        <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>No results for "{destQuery}"</div>
-                        <div style={{ fontSize: 13 }}>Try a different spelling or nearby city</div>
-                      </div>
-                    )}
-
-                    {/* Hint */}
-                    {destQuery.length < 2 && (
-                      <div style={{ textAlign: 'center', paddingTop: 40, color: '#bbb', fontSize: 13 }}>
-                        Start typing to search destinations…
-                      </div>
-                    )}
-                  </div>
-
-                  {/* OSM attribution — required */}
-                  <div style={{ padding: '10px', textAlign: 'center', borderTop: '0.5px solid #f0f0f0', fontSize: 11, color: '#bbb', flexShrink: 0 }}>
-                    © OpenStreetMap contributors
-                  </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div>
-              <label style={S.label}>Date of Arrival *</label>
-              <input
-                style={S.input}
-                type="date"
-                value={form.arrival}
-                min={today}
-                max={maxDate}
-                onChange={e => setForm(f => ({
-                  ...f,
-                  arrival: e.target.value,
-                  departure: f.departure && f.departure < e.target.value ? '' : f.departure,
-                }))}
-                onBlur={e => {
-                  const v = e.target.value;
-                  if (v && v < today) setForm(f => ({ ...f, arrival: today }));
-                }}
-              />
-              <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
-                {[
-                  { id: 'night', label: '🌙 12AM–6AM' },
-                  { id: 'morning', label: '🌅 6AM–12PM' },
-                  { id: 'afternoon', label: '☀️ 12–6PM' },
-                  { id: 'evening', label: '🌆 6PM–12AM' },
-                ].map(slot => (
-                  <button key={slot.id} type="button"
-                    onClick={() => setForm(f => ({ ...f, arrivalSlot: slot.id }))}
-                    style={{ flex: 1, padding: '5px 4px', borderRadius: 8, border: `1.5px solid ${form.arrivalSlot === slot.id ? (isSoloMode ? '#7F77DD' : '#1D9E75') : 'rgba(0,0,0,0.12)'}`, background: form.arrivalSlot === slot.id ? (isSoloMode ? '#EEEDFE' : '#E1F5EE') : '#fff', color: form.arrivalSlot === slot.id ? (isSoloMode ? '#534AB7' : '#0F6E56') : '#6b6b68', fontSize: 10, fontWeight: form.arrivalSlot === slot.id ? 600 : 400, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .12s', whiteSpace: 'nowrap' }}>
-                    {slot.label}
-                  </button>
-                ))}
+                  );
+                })}
               </div>
             </div>
-            <div>
-              <label style={S.label}>Date of Departure *</label>
-              <input
-                style={S.input}
-                type="date"
-                value={form.departure}
-                min={form.arrival || today}
-                max={maxDate}
+
+            {/* Departure */}
+            <div style={{ marginBottom: '1.75rem' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 8 }}>Departure</div>
+              <input style={{ ...S.input, fontSize: 15, padding: '13px 14px', marginBottom: 12 }} type="date" value={form.departure} min={form.arrival || today} max={maxDate}
                 onChange={e => setForm(f => ({ ...f, departure: e.target.value }))}
-                onBlur={e => {
-                  const v = e.target.value;
-                  const minDep = form.arrival || today;
-                  if (v && v < minDep) setForm(f => ({ ...f, departure: minDep }));
-                }}
-              />
-              <div style={{ display: 'flex', gap: 5, marginTop: 7, flexWrap: 'wrap' }}>
+                onBlur={e => { const v = e.target.value; const minDep = form.arrival || today; if (v && v < minDep) setForm(f => ({ ...f, departure: minDep })); }} />
+              <div style={{ fontSize: 12, color: '#6b6b68', fontWeight: 500, marginBottom: 10 }}>When do you head back?</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                 {[
-                  { id: 'night', label: '🌙 12AM–6AM' },
-                  { id: 'morning', label: '🌅 6AM–12PM' },
-                  { id: 'afternoon', label: '☀️ 12–6PM' },
-                  { id: 'evening', label: '🌆 6PM–12AM' },
-                ].map(slot => (
-                  <button key={slot.id} type="button"
-                    onClick={() => setForm(f => ({ ...f, departureSlot: slot.id }))}
-                    style={{ flex: 1, padding: '5px 4px', borderRadius: 8, border: `1.5px solid ${form.departureSlot === slot.id ? (isSoloMode ? '#7F77DD' : '#1D9E75') : 'rgba(0,0,0,0.12)'}`, background: form.departureSlot === slot.id ? (isSoloMode ? '#EEEDFE' : '#E1F5EE') : '#fff', color: form.departureSlot === slot.id ? (isSoloMode ? '#534AB7' : '#0F6E56') : '#6b6b68', fontSize: 10, fontWeight: form.departureSlot === slot.id ? 600 : 400, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all .12s', whiteSpace: 'nowrap' }}>
-                    {slot.label}
-                  </button>
-                ))}
+                  { id: 'night',     icon: '🌙', label: 'Night',     time: '12AM – 6AM' },
+                  { id: 'morning',   icon: '🌅', label: 'Morning',   time: '6AM – 12PM' },
+                  { id: 'afternoon', icon: '☀️', label: 'Afternoon', time: '12PM – 6PM' },
+                  { id: 'evening',   icon: '🌆', label: 'Evening',   time: '6PM – 12AM' },
+                ].map(slot => {
+                  const sel = form.departureSlot === slot.id;
+                  const ac = isSoloMode ? '#534AB7' : '#0F6E56';
+                  const acBg = isSoloMode ? '#EEEDFE' : '#E1F5EE';
+                  const acBr = isSoloMode ? '#AFA9EC' : '#9FE1CB';
+                  return (
+                    <button key={slot.id} type="button" onClick={() => setForm(f => ({ ...f, departureSlot: slot.id }))}
+                      style={{ padding: '12px 12px', borderRadius: 12, border: `1.5px solid ${sel ? acBr : 'rgba(0,0,0,0.09)'}`, background: sel ? acBg : '#fff', cursor: 'pointer', textAlign: 'left', transition: 'all .15s', boxShadow: sel ? `0 2px 8px ${acBr}88` : 'none' }}>
+                      <div style={{ fontSize: 22, marginBottom: 5 }}>{slot.icon}</div>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: sel ? ac : '#1a1a18', marginBottom: 2, fontFamily: "'DM Sans',sans-serif" }}>{slot.label}</div>
+                      <div style={{ fontSize: 11, color: sel ? ac : '#a8a8a5', fontWeight: 500 }}>{slot.time}</div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
-            {!isSoloMode && (
-              <div>
-                <label style={S.label}>Number of People</label>
-                <input style={S.input} type="number" min={1} max={50} value={form.people} onChange={e => setForm(f => ({ ...f, people: e.target.value }))} />
+
+            {/* Budget */}
+            <div style={{ marginBottom: '2.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase' }}>Budget</div>
+                <span style={{ fontSize: 11, color: '#c8c8c4', fontStyle: 'italic' }}>optional</span>
               </div>
-            )}
-            <div style={{ gridColumn: isSoloMode ? '1/-1' : 'auto' }}>
-              <label style={S.label}>Budget ₹ (optional)</label>
-              <input style={S.input} type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: '#6b6b68', fontWeight: 700, pointerEvents: 'none' }}>₹</span>
+                <input style={{ ...S.input, fontSize: 15, padding: '13px 14px 13px 30px' }} type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
+              </div>
+              <div style={{ fontSize: 12, color: '#b0b0aa', marginTop: 5 }}>Total trip budget for the group</div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+
+          {/* ── Sticky create button ── */}
+          <div style={{ padding: '1rem 1.25rem', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 16px))', borderTop: '0.5px solid rgba(0,0,0,0.08)', background: '#fff', flexShrink: 0, position: 'sticky', bottom: 0 }}>
+            {(!form.groupName || !form.destination || !form.arrival || !form.departure) && (
+              <div style={{ fontSize: 12, color: '#b0b0aa', textAlign: 'center', marginBottom: 8 }}>Fill in name, destination and dates to continue</div>
+            )}
             <button
-              style={{ ...S.btn, ...(isSoloMode ? S.btnSolo : S.btnP), flex: 1, justifyContent: 'center', padding: '11px', fontSize: 14, borderRadius: 12, opacity: creating ? 0.6 : 1 }}
+              style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '15px', fontSize: 15, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", borderRadius: 14, border: 'none', cursor: 'pointer', background: isSoloMode ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)', color: '#fff', boxShadow: isSoloMode ? '0 8px 24px rgba(127,119,221,0.38)' : '0 8px 24px rgba(29,158,117,0.38)', opacity: (!form.groupName || !form.destination || !form.arrival || !form.departure || creating) ? 0.45 : 1, transition: 'opacity .2s' }}
               onClick={handleCreate}
               disabled={!form.groupName || !form.destination || !form.arrival || !form.departure || creating}>
-              {creating ? 'Creating…' : isSoloMode ? '🎒 Start Solo Adventure' : '🚀 Create & Get Share Code'}
+              {creating ? '✨ Creating your trip…' : isSoloMode ? '🎒 Start Solo Adventure' : '🚀 Create & Get Share Code'}
             </button>
-            <button style={S.btn} onClick={() => setShowCreate(false)}>✕</button>
           </div>
+
+          {/* ── Destination search overlay (layers above this full-page form) ── */}
+          {showDestPicker && (
+            <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1001 }}>
+              <div className="tb-sheet-panel" style={{ background: '#fff', display: 'flex', flexDirection: 'column', position: 'absolute', inset: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', borderBottom: '0.5px solid rgba(0,0,0,0.08)', background: '#fff', flexShrink: 0 }}>
+                  <button onClick={() => { setShowDestPicker(false); setDestSuggestions([]); }}
+                    style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>Destination</div>
+                </div>
+                <div style={{ padding: '12px 14px', flexShrink: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#F5F5F3', borderRadius: 12, padding: '0 12px', border: '0.5px solid #e0e0e0' }}>
+                    <span style={{ fontSize: 15 }}>🔍</span>
+                    <input autoFocus
+                      style={{ ...S.input, border: 'none', background: 'transparent', flex: 1, padding: '10px 0', fontSize: 15, outline: 'none' }}
+                      value={destQuery}
+                      onChange={e => { setDestQuery(e.target.value); clearTimeout(destDebounce.current); destDebounce.current = setTimeout(() => searchDest(e.target.value), 350); }}
+                      placeholder="Search city or place…" />
+                    {destLoading && <div style={{ width: 18, height: 18, border: '2px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', flexShrink: 0 }} />}
+                    {destQuery && !destLoading && <span onClick={() => { setDestQuery(''); setDestSuggestions([]); }} style={{ fontSize: 16, color: '#aaa', cursor: 'pointer', flexShrink: 0 }}>✕</span>}
+                  </div>
+                </div>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                  {destSuggestions.length > 0 && destSuggestions.map((item) => {
+                    const a = item.address || {};
+                    const mainText = a.city || a.town || a.village || a.state_district || a.county || a.state || item.display_name.split(',')[0];
+                    const subText = [a.state, a.country].filter(Boolean).join(', ');
+                    return (
+                      <div key={item.osm_id + item.osm_type}
+                        onClick={() => { setForm(f => ({ ...f, destination: formatDestName(item) })); setShowDestPicker(false); setDestSuggestions([]); setDestQuery(''); }}
+                        style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: '0.5px solid #f0f0f0', cursor: 'pointer' }}
+                        onMouseEnter={e => e.currentTarget.style.background = '#f7f6f2'}
+                        onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
+                        <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{getDestIcon(item)}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 15, fontWeight: 600, color: '#111', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{mainText}</div>
+                          {subText && <div style={{ fontSize: 12, color: '#888', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{subText}</div>}
+                        </div>
+                        <span style={{ fontSize: 18, color: '#ccc' }}>›</span>
+                      </div>
+                    );
+                  })}
+                  {destQuery.length >= 2 && !destLoading && destSuggestions.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '4rem 1.5rem', color: '#6b6b68' }}>
+                      <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
+                      <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 6 }}>No results for "{destQuery}"</div>
+                      <div style={{ fontSize: 13 }}>Try a different spelling or nearby city</div>
+                    </div>
+                  )}
+                  {destQuery.length < 2 && <div style={{ textAlign: 'center', paddingTop: 40, color: '#bbb', fontSize: 13 }}>Start typing to search destinations…</div>}
+                </div>
+                <div style={{ padding: '10px', textAlign: 'center', borderTop: '0.5px solid #f0f0f0', fontSize: 11, color: '#bbb', flexShrink: 0 }}>© OpenStreetMap contributors</div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
