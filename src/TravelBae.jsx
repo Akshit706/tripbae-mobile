@@ -19,7 +19,8 @@ import {
   upsertClubProfile,
   updateClubStatus,
   sendClubRequest,
-  respondClubRequest
+  respondClubRequest,
+  saveAiCache,
 } from './api';
 import HomePageFeature from './features/home/HomePage';
 import ShareCodeModalFeature from './features/home/ShareCodeModal';
@@ -279,8 +280,9 @@ export default function App() {
           const c = cache[t.id] || {};
           return {
             ...t,
-            _cachedItin: c._cachedItin ?? t._cachedItin ?? null,
-            _cachedTaste: c._cachedTaste ?? t._cachedTaste ?? null,
+            // DB is source of truth (shared across all members); localStorage is fallback
+            _cachedItin:   t.cachedItinerary  ?? c._cachedItin  ?? null,
+            _cachedTaste:  t.cachedTaste      ?? c._cachedTaste ?? null,
           };
         });
         setTrips(merged);
@@ -315,8 +317,8 @@ export default function App() {
           const localTrip = trips.find(x => x.id === activeTrip);
           setActiveTripData({
             ...d.trip,
-            _cachedItin: localTrip?._cachedItin ?? d.trip._cachedItin ?? null,
-            _cachedTaste: localTrip?._cachedTaste ?? d.trip._cachedTaste ?? null,
+            _cachedItin:  d.trip.cachedItinerary  ?? localTrip?._cachedItin  ?? null,
+            _cachedTaste: d.trip.cachedTaste      ?? localTrip?._cachedTaste ?? null,
           });
           setMyNickname(d.myNickname);
         })
@@ -429,6 +431,9 @@ export default function App() {
             _cachedTaste: tasteResult,
           };
           writeAiCache(cache);
+          // Persist to DB so all group members see it without regenerating
+          saveAiCache(trip.id, { cachedItinerary: itinResult, cachedTaste: tasteResult })
+            .catch(e => console.warn('AI cache DB save failed:', e.message));
         } catch (e) {
           console.warn('Background itinerary generation failed:', e);
         }
@@ -552,6 +557,18 @@ export default function App() {
       cache[tripId] = next;
     }
     writeAiCache(cache);
+
+    // Persist to DB so all group members see the same itinerary
+    const dbUpdate = {};
+    if (Object.prototype.hasOwnProperty.call(update, '_cachedItin')) {
+      dbUpdate.cachedItinerary = update._cachedItin ?? null;
+    }
+    if (Object.prototype.hasOwnProperty.call(update, '_cachedTaste')) {
+      dbUpdate.cachedTaste = update._cachedTaste ?? null;
+    }
+    if (Object.keys(dbUpdate).length > 0) {
+      saveAiCache(tripId, dbUpdate).catch(e => console.warn('AI cache DB save failed:', e.message));
+    }
   }, []);
 
 
@@ -904,14 +921,14 @@ export default function App() {
                             setMyNickname(data.myNickname);
                             setActiveTripData(prev => ({
                               ...data.trip,
-                              _cachedItin: prev?._cachedItin ?? data.trip._cachedItin ?? null,
-                              _cachedTaste: prev?._cachedTaste ?? data.trip._cachedTaste ?? null,
+                              _cachedItin:  data.trip.cachedItinerary  ?? prev?._cachedItin  ?? null,
+                              _cachedTaste: data.trip.cachedTaste      ?? prev?._cachedTaste ?? null,
                             }));
                             setTrips(ts => ts.map(t => (t.id === data.trip.id
                               ? {
                                   ...data.trip,
-                                  _cachedItin: t._cachedItin ?? null,
-                                  _cachedTaste: t._cachedTaste ?? null,
+                                  _cachedItin:  data.trip.cachedItinerary  ?? t._cachedItin  ?? null,
+                                  _cachedTaste: data.trip.cachedTaste      ?? t._cachedTaste ?? null,
                                 }
                               : t)));
                           } catch (err) {
@@ -945,14 +962,14 @@ export default function App() {
                             setMyNickname(data.myNickname);
                             setActiveTripData(prev => ({
                               ...data.trip,
-                              _cachedItin: prev?._cachedItin ?? data.trip._cachedItin ?? null,
-                              _cachedTaste: prev?._cachedTaste ?? data.trip._cachedTaste ?? null,
+                              _cachedItin:  data.trip.cachedItinerary  ?? prev?._cachedItin  ?? null,
+                              _cachedTaste: data.trip.cachedTaste      ?? prev?._cachedTaste ?? null,
                             }));
                             setTrips(ts => ts.map(t => (t.id === data.trip.id
                               ? {
                                   ...data.trip,
-                                  _cachedItin: t._cachedItin ?? null,
-                                  _cachedTaste: t._cachedTaste ?? null,
+                                  _cachedItin:  data.trip.cachedItinerary  ?? t._cachedItin  ?? null,
+                                  _cachedTaste: data.trip.cachedTaste      ?? t._cachedTaste ?? null,
                                 }
                               : t)));
                           } catch (err) {

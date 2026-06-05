@@ -191,8 +191,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [localTasteData, setLocalTasteData] = useState(trip._cachedTaste || null);
   const [localTasteStep, setLocalTasteStep] = useState(trip._cachedTaste ? 'result' : 'loading');
   const hasGenerated = useRef(false);
-  const [customDesc, setCustomDesc] = useState('');
-  const [showDescBox, setShowDescBox] = useState(false);
+  const [doneActivities, setDoneActivities] = useState(new Set());
+  const toggleActivity = (key) => setDoneActivities(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   const accentStyle = isSolo ? S.btnSolo : S.btnP;
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
@@ -235,7 +235,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     }
   }, [trip._cachedItin, trip._cachedTaste]);
 
-  const runGenerateItinerary = async (descOverride) => {
+  const runGenerateItinerary = async () => {
     setStep('loading');
     try {
       const { generateItinerary } = await import('../../api');
@@ -249,7 +249,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         departureSlot: form.departureSlot,
         firstActivitySlot: firstActivitySlot(),
         arrival: form.arrival,
-        customDescription: descOverride ?? customDesc,
       });
       setItin(result.itinerary);
       setSources(result.sources || []);
@@ -301,46 +300,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
       {iTab === 'planner' && (
         <div>
-        {/* Description / customize box */}
-          <div style={{ marginBottom: '1rem' }}>
-            {!showDescBox && step === 'result' && (
-              <button
-                style={{ ...S.btn, width: '100%', justifyContent: 'center', fontSize: 13, color: isSolo ? '#534AB7' : '#0F6E56', background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}` }}
-                onClick={() => setShowDescBox(true)}>
-                ✏️ Customize & regenerate itinerary
-              </button>
-            )}
-            {(showDescBox || step === 'error' || (!trip._cachedItin && step !== 'loading')) && (
-              <div style={{ ...S.card, border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, background: isSolo ? '#fdfcff' : '#f9fffe' }}>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: isSolo ? '#534AB7' : '#0F6E56', marginBottom: 4 }}>
-                  ✏️ Customize your itinerary
-                </div>
-                <div style={{ fontSize: 12, color: '#6b6b68', marginBottom: 10 }}>
-                  Describe what you want — pace, priorities, special interests. Leave blank for a balanced itinerary.
-                </div>
-                <textarea
-                  style={{ ...S.input, resize: 'none', minHeight: 80, lineHeight: 1.55, fontSize: 13 }}
-                  value={customDesc}
-                  onChange={e => setCustomDesc(e.target.value)}
-                  placeholder={`e.g. "Focus on heritage sites and street food. Avoid malls. We prefer a relaxed morning pace."`}
-                />
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button
-                    style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), flex: 1, justifyContent: 'center', padding: '10px', fontSize: 13 }}
-                    onClick={() => {
-                      setShowDescBox(false);
-                      onCacheUpdate?.({ _cachedItin: null });
-                      runGenerateItinerary(customDesc);
-                    }}>
-                    🗺️ Generate itinerary
-                  </button>
-                  {step === 'result' && (
-                    <button style={S.btn} onClick={() => setShowDescBox(false)}>✕</button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
           {step === 'loading' && (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
@@ -409,6 +368,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   const dateLabel = form.arrival ? formatTripDate(form.arrival, dayIndex) : `Day ${d.day}`;
                   const isArrivalDay = dayIndex === 0;
                   const isDepartureDay = dayIndex === (itin.days.length - 1);
+                  const dayTotalCount = (d.activities || []).length;
+                  const dayDoneCount = (d.activities || []).filter((_, ai) => doneActivities.has(`day-${d.day}-act-${ai}`)).length;
                   return (
                     <div key={d.day} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
                       <div style={{ background: headerBg, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -436,6 +397,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                             </div>
                           )}
                           {d.estimatedCost && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{d.estimatedCost}</div>}
+                          {dayDoneCount > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>✓ {dayDoneCount}/{dayTotalCount}</span>}
                         </div>
                       </div>
                       {d.weather?.tip && (
@@ -454,9 +416,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                           const showPhoto = a.type === 'attraction' || a.type === 'food' || a.type === 'experience' || a.type === 'shopping';
                           const currentDelay = showPhoto ? photoIndex++ * 600 : 0;
                           const isLast = i === d.activities.length - 1;
+                          const doneKey = `day-${d.day}-act-${i}`;
+                          const isDone = doneActivities.has(doneKey);
                           return (
                             <div key={i}>
-                              <div style={{ display: 'flex', gap: 12, padding: '10px 0' }}>
+                              <div style={{ display: 'flex', gap: 12, padding: '10px 0', opacity: isDone ? 0.45 : 1, transition: 'opacity .25s' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 14 }}>
                                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: a.mustDo ? accentColor : '#D3D1C7', marginTop: 4, flexShrink: 0, border: a.mustDo ? `2px solid ${accentColor}33` : 'none', boxSizing: 'border-box' }} />
                                   {!isLast && <div style={{ width: 1, flex: 1, background: 'rgba(0,0,0,0.06)', marginTop: 3 }} />}
@@ -471,7 +435,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                     <div style={{ flex: 1 }}>
                                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                                         <span style={{ fontSize: 16 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
-                                        <span style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{a.name}</span>
+                                        <span style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#a8a8a5' : '#1a1a18', textDecoration: isDone ? 'line-through' : 'none' }}>{a.name}</span>
                                         {a.mustDo && (
                                           <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
                                         )}
@@ -512,6 +476,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                     </div>
                                   </div>
                                 </div>
+                                <button onClick={() => toggleActivity(doneKey)} style={{ flexShrink: 0, alignSelf: 'flex-start', marginTop: 6, width: 28, height: 28, borderRadius: '50%', border: isDone ? `2px solid ${accentColor}` : '1.5px solid rgba(0,0,0,0.15)', background: isDone ? accentColor : '#fff', color: isDone ? '#fff' : '#a8a8a5', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>{isDone ? '✓' : '○'}</button>
                               </div>
                               {/* Travel connector to next activity */}
                               {!isLast && a.travelToNext && (

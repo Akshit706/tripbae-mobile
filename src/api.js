@@ -43,6 +43,8 @@ export const joinTrip  = (shareCode, nickname) =>
   apiFetch('/trips/join', { method: 'POST', body: { shareCode, nickname } });
 export const deleteTrip = (id)       => apiFetch(`/trips/${id}`, { method: 'DELETE' });
 export const updateTrip = (id, data) => apiFetch(`/trips/${id}`, { method: 'PATCH', body: data });
+// Persist generated itinerary/taste to DB so all group members see it
+export const saveAiCache = (id, data) => apiFetch(`/trips/${id}/ai-cache`, { method: 'PATCH', body: data });
 
 // Expenses
 export const addExpense    = (tripId, data)   => apiFetch(`/trips/${tripId}/expenses`, { method: 'POST', body: data });
