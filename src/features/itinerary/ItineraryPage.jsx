@@ -479,6 +479,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                         <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>🕐 Open {a.openingHours}</div>
                                       )}
                                       {a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 4, lineHeight: 1.55, fontStyle: 'italic' }}>{a.note}</div>}
+                                      {a.headsUp && (
+                                        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginTop: 6, background: '#FFFBF0', border: '0.5px solid #FAC775', borderRadius: 8, padding: '5px 8px' }}>
+                                          <span style={{ fontSize: 12, flexShrink: 0 }}>⚠️</span>
+                                          <span style={{ fontSize: 11, color: '#7A4F00', lineHeight: 1.5 }}>{a.headsUp}</span>
+                                        </div>
+                                      )}
                                       <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
                                         {a.duration && <span style={{ fontSize: 11, color: '#a8a8a5' }}>⏱ {a.duration}</span>}
                                         {a.cost && <span style={{ fontSize: 11, color: '#a8a8a5' }}>💰 {a.cost}</span>}
