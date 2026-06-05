@@ -463,10 +463,21 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                           <span style={{ fontSize: 11, color: '#7A4F00', lineHeight: 1.5 }}>{a.headsUp}</span>
                                         </div>
                                       )}
-                                      <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap' }}>
+                                      <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
                                         {a.duration && <span style={{ fontSize: 11, color: '#a8a8a5' }}>⏱ {a.duration}</span>}
                                         {a.cost && <span style={{ fontSize: 11, color: '#a8a8a5' }}>💰 {a.cost}</span>}
                                         {a.area && <span style={{ fontSize: 11, color: '#a8a8a5' }}>📍 {a.area}</span>}
+                                        {a.type !== 'hotel' && a.type !== 'transport' && (
+                                          <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#378ADD', background: '#E6F1FB', border: '0.5px solid #B8D4F0', borderRadius: 7, padding: '2px 8px', textDecoration: 'none', fontWeight: 600, marginLeft: 'auto', flexShrink: 0 }}
+                                          >
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                            Maps
+                                          </a>
+                                        )}
                                       </div>
                                       {showPhoto && (
                                         <div style={{ marginTop: 10 }}>
