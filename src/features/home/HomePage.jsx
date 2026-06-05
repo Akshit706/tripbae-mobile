@@ -10,22 +10,22 @@ import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
 import { fetchPlacePhotos } from '../../api';
 
 const HERO_TAGLINES = [
-{ icon: '🌿', line: 'Rishikesh, fix me!', place: 'Rishikesh' },
-{ icon: '🐘', line: 'Coorg said "stay"', place: 'Coorg' },
-{ icon: '🌊', line: 'Goa, off-season vibes?', place: 'Goa' },
-{ icon: '🎭', line: "Vienna's old town", place: 'Vienna' },
-{ icon: '📵', line: 'Spiti, no signal!', place: 'Spiti' },
-{ icon: '🎒', line: 'Kasol, lost again?', place: 'Kasol' },
-{ icon: '🏔️', line: 'Ladakh called again!', place: 'Ladakh' },
-{ icon: '🌿', line: 'Meghalaya, clouds live here', place: 'Meghalaya' },
-{ icon: '☕', line: 'Hidden cafes, Lisbon', place: 'Lisbon' },
-{ icon: '🌴', line: 'Andamans, who needs wifi?', place: 'Andamans' },
-{ icon: '🏯', line: 'Jaipur, dress accordingly!', place: 'Jaipur' },
-{ icon: '🌸', line: 'Cherry blossoms, Tokyo', place: 'Tokyo' },
-{ icon: '🚂', line: 'Darjeeling, sip slowly.', place: 'Darjeeling' },
-{ icon: '🌊', line: 'Sunrise surf, Bali', place: 'Bali' },
-{ icon: '🍵', line: 'Munnar stole me', place: 'Munnar' },
-{ icon: '🛺', line: 'Varanasi never sleeps!', place: 'Varanasi' },
+{ icon: '🌿', line: 'Rishikesh, fix me!' },
+{ icon: '🐘', line: 'Coorg said "stay"' },
+{ icon: '🌊', line: 'Goa, off-season vibes?' },
+{ icon: '🎭', line: "Vienna's old town" },
+{ icon: '📵', line: 'Spiti, no signal!' },
+{ icon: '🎒', line: 'Kasol, lost again?' },
+{ icon: '🏔️', line: 'Ladakh called again!' },
+{ icon: '🌿', line: 'Meghalaya, clouds live here' },
+{ icon: '☕', line: 'Hidden cafes, Lisbon' },
+{ icon: '🌴', line: 'Andamans, who needs wifi?' },
+{ icon: '🏯', line: 'Jaipur, dress accordingly!' },
+{ icon: '🌸', line: 'Cherry blossoms, Tokyo' },
+{ icon: '🚂', line: 'Darjeeling, sip slowly.' },
+{ icon: '🌊', line: 'Sunrise surf, Bali' },
+{ icon: '🍵', line: 'Munnar stole me' },
+{ icon: '🛺', line: 'Varanasi never sleeps!' },
 ];
 
 const HERO_GREETINGS = {
@@ -483,7 +483,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     <div style={{ margin: '-1rem -0.95rem', fontFamily: "'Inter', 'DM Sans', sans-serif", minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&display=swap');
         @keyframes float { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-5px)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
@@ -558,7 +557,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                   : 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both',
               }}
             >
-              {(() => { const { line, place } = HERO_TAGLINES[tagIdx]; if (!place || !line.includes(place)) return line; const pi = line.indexOf(place); return <>{line.slice(0, pi)}<span style={{ fontFamily: "'DM Serif Display', Georgia, serif", fontStyle: 'italic', fontSize: '1.28em', letterSpacing: '-0.5px', lineHeight: 1 }}>{place}</span>{line.slice(pi + place.length)}</>; })()}
+              {HERO_TAGLINES[tagIdx].line}
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
