@@ -117,9 +117,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         {/* <button style={{ ...S.btn, fontSize: 12, flexShrink: 0 }} onClick={() => { setStep('idle'); setData(null); setDoneItems(new Set()); }}>↺</button> */}
       </div>
       <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" dest={dest} startIndex={0} />
-      <PlacePhotosStrip queries={[`${dest} food`]} style={{ marginBottom: '1rem' }} />
       <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" dest={dest} startIndex={4} />
-      <PlacePhotosStrip queries={[`${dest} landmarks`]} style={{ marginBottom: '1rem' }} />
       <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" dest={dest} startIndex={8} />
       {data.tip && <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '.75rem 1rem', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: '1rem', fontSize: 12, color: isSolo ? '#26215C' : '#085041', lineHeight: 1.5 }}>💡 <span><strong>Local tip:</strong> {data.tip}</span></div>}
     </div>
@@ -351,10 +349,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 </div>
               )}
 
-              <PlacePhotosStrip
-                queries={[form.dest, `${form.dest} landmarks`, `${form.dest} travel`]}
-                style={{ marginBottom: '1rem' }}
-              />
+
 
               {/* Reliability disclaimer */}
               <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#F8F8F6', border: '0.5px solid #E0DED8', borderRadius: 10, padding: '10px 12px', marginBottom: '1rem', fontSize: 11, color: '#6b6b68', lineHeight: 1.6 }}>
