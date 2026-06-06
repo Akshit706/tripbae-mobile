@@ -106,8 +106,8 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   const [dest, setDest] = useState(destination || '');
   const [doneItems, setDoneItems] = useState(new Set());
   const [lightboxUrl, setLightboxUrl] = useState(null);
+  const [expandedItems, setExpandedItems] = useState(new Set());
 
-  // Sync if parent finishes loading after mount
   useEffect(() => {
     if (autoStep && autoStep !== step) setStep(autoStep);
     if (autoData && !data) setData(autoData);
@@ -129,7 +129,8 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     }
   };
 
-  const toggleDone = (key) => setDoneItems(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+  const toggleDone = key => setDoneItems(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+  const toggleExpand = key => setExpandedItems(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   const renderStars = (rating) => {
     if (!rating) return null;
@@ -144,59 +145,152 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
       else stars.push('☆');
     }
     return (
-      <span style={{ fontSize: 11, letterSpacing: 1 }}>
+      <span style={{ fontSize: 12, letterSpacing: 1 }}>
         <span style={{ color: '#E6A817' }}>{stars.slice(0, full + (half ? 1 : 0)).join('')}</span>
         <span style={{ color: '#D3D1C7' }}>{stars.slice(full + (half ? 1 : 0)).join('')}</span>
-        <span style={{ color: '#a8a8a5', marginLeft: 3 }}>{r.toFixed(1)}</span>
+        <span style={{ fontFamily: "'DM Sans',sans-serif", color: D.muted, marginLeft: 4, fontSize: 11 }}>{r.toFixed(1)}</span>
       </span>
     );
   };
 
-  const tagBg = t => {
-    if (['must-try','must-do','iconic'].includes(t)) return { bg: '#FAECE7', color: '#993C1D' };
-    if (['heritage','scenic','culture','offbeat'].includes(t)) return { bg: '#E6F1FB', color: '#378ADD' };
-    return { bg: '#FAEEDA', color: '#854F0B' };
+  const tastTagBg = t => {
+    const tl = t.toLowerCase();
+    if (['must-try','must-do','iconic','legendary','signature'].includes(tl)) return { bg: D.goldTint, color: D.gold };
+    if (['heritage','traditional','authentic','artisan'].includes(tl)) return { bg: D.blueTint, color: '#2563AB' };
+    if (['street food','casual','quick bite'].includes(tl)) return { bg: D.coralTint, color: D.coral };
+    if (['vegetarian','vegan'].includes(tl)) return { bg: D.sageTint, color: '#3A7A42' };
+    return { bg: D.neutral, color: D.muted };
   };
+
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
-  const Sec = ({ icon, title, items, iconBg, secKey, dest, startIndex = 0, photoSuffix = 'photo' }) => {    const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
+
+  /* ── Premium item card ── */
+  const TasteCard = ({ item, secKey, index, photoSuffix, startIndex }) => {
+    const key = `${secKey}-${index}`;
+    const isDone = doneItems.has(key);
+    const isExpanded = expandedItems.has(key);
+    const descLong = (item.desc || '').length > 130;
+
     return (
-      <div style={{ marginBottom: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{icon}</div>
-          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: .4, textTransform: 'uppercase', color: '#6b6b68' }}>{title}</span>
-          <span style={{ fontSize: 11, color: '#a8a8a5' }}>{items.length} picks</span>
-          {doneCount > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: accentColor, background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '2px 8px', marginLeft: 'auto' }}>✓ {doneCount}/{items.length} done</span>}
-        </div>
-        {items.map((item, i) => {
-          const key = `${secKey}-${i}`;
-          const isDone = doneItems.has(key);
-          return (
-            <div key={i} style={{ ...S.card, display: 'flex', gap: 14, alignItems: 'flex-start', opacity: isDone ? 0.45 : 1, transition: 'all .25s' }}>
-              <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0, filter: isDone ? 'grayscale(1)' : 'none' }}>{item.emoji}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 3, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? '#a8a8a5' : '#1a1a18' }}>{item.name}</div>
-                {/* Rating + price + best time row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 5 }}>
-                  {item.rating && renderStars(item.rating)}
-                  {item.priceRange && (
-                    <span style={{ fontSize: 11, color: '#5a3a0a', background: '#FAEEDA', borderRadius: 6, padding: '1px 7px', fontWeight: 600 }}>{item.priceRange}</span>
-                  )}
-                  {item.bestTime && (
-                    <span style={{ fontSize: 11, color: '#0F6E56', background: '#E1F5EE', borderRadius: 6, padding: '1px 7px', fontWeight: 600 }}>Best: {item.bestTime}</span>
-                  )}
-                </div>
-                <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{item.desc}</div>
-                <div style={{ margin: '10px 0 4px', cursor: 'zoom-in' }} onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}>
-                  <PlacePhoto query={`${item.name} ${dest} ${photoSuffix}`} style={{ height: 110 }} delay={(startIndex + i) * 600} />
-                </div>
-                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 7 }}>
-                  {(item.tags || []).map(t => { const c = tagBg(t); return <span key={t} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, textTransform: 'uppercase', letterSpacing: .3, background: isDone ? '#F1EFE8' : c.bg, color: isDone ? '#a8a8a5' : c.color }}>{t}</span>; })}
-                </div>
-              </div>
-              <button onClick={() => toggleDone(key)} style={{ flexShrink: 0, width: 32, height: 32, borderRadius: '50%', border: isDone ? `2px solid ${accentColor}` : '1.5px solid rgba(0,0,0,0.15)', background: isDone ? accentColor : '#fff', color: isDone ? '#fff' : '#a8a8a5', fontSize: 16, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>{isDone ? '✓' : '○'}</button>
+      <div
+        className="itin-card-enter"
+        style={{
+          background: D.surface,
+          borderRadius: 16,
+          overflow: 'hidden',
+          marginBottom: 12,
+          boxShadow: '0 2px 8px rgba(28,20,16,0.06)',
+          border: `0.5px solid ${D.border}`,
+          opacity: isDone ? 0.45 : 1,
+          transition: 'opacity .25s',
+          animationDelay: `${index * 70}ms`,
+        }}
+      >
+        {/* Photo at top — full width, clickable */}
+        <div
+          style={{ position: 'relative', height: 160, cursor: 'zoom-in', overflow: 'hidden', background: D.neutral }}
+          onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}
+        >
+          <PlacePhoto
+            query={`${item.name} ${dest} ${photoSuffix}`}
+            style={{ height: 160, borderRadius: 0 }}
+            delay={(startIndex + index) * 500}
+          />
+          {/* bottom gradient on photo */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 45%, rgba(28,20,16,0.55) 100%)', pointerEvents: 'none' }} />
+          {/* emoji badge */}
+          <div style={{ position: 'absolute', top: 10, left: 10, width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+            {item.emoji || '🍽'}
+          </div>
+          {/* done overlay tick */}
+          {isDone && (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: '#fff' }}>✓</div>
             </div>
-          );
-        })}
+          )}
+          {/* name overlaid on photo gradient */}
+          <div style={{ position: 'absolute', bottom: 10, left: 12, right: 44, pointerEvents: 'none' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', lineHeight: 1.2, textShadow: '0 1px 4px rgba(0,0,0,0.4)', fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none' }}>
+              {item.name}
+            </div>
+          </div>
+          {/* done button over photo */}
+          <button
+            onClick={e => { e.stopPropagation(); toggleDone(key); }}
+            style={{ position: 'absolute', bottom: 10, right: 10, width: 30, height: 30, borderRadius: '50%', border: isDone ? `2px solid ${accentColor}` : '1.5px solid rgba(255,255,255,0.5)', background: isDone ? accentColor : 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+          >{isDone ? '✓' : '○'}</button>
+        </div>
+
+        {/* Card body */}
+        <div style={{ padding: '12px 14px 13px' }}>
+          {/* Rating + price + best time */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 7 }}>
+            {item.rating && renderStars(item.rating)}
+            {item.priceRange && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: D.gold, background: D.goldTint, borderRadius: 999, padding: '2px 8px' }}>{item.priceRange}</span>
+            )}
+            {item.bestTime && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#0F6E56', background: D.sageTint, borderRadius: 999, padding: '2px 8px' }}>🕐 {item.bestTime}</span>
+            )}
+          </div>
+
+          {/* Description with expand */}
+          <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, marginBottom: 8 }}>
+            {isExpanded || !descLong ? item.desc : `${item.desc.slice(0, 130)}…`}
+            {descLong && (
+              <span
+                onClick={() => toggleExpand(key)}
+                style={{ color: D.gold, fontWeight: 600, cursor: 'pointer', marginLeft: 4, fontSize: 12 }}
+              >
+                {isExpanded ? ' less' : ' more'}
+              </span>
+            )}
+          </div>
+
+          {/* Tags */}
+          {(item.tags || []).length > 0 && (
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 2 }}>
+              {item.tags.map(t => {
+                const c = tastTagBg(t);
+                return (
+                  <span key={t} style={{ fontSize: 10, fontWeight: 700, letterSpacing: .6, padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase', background: isDone ? D.neutral : c.bg, color: isDone ? D.muted : c.color }}>
+                    {t}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /* ── Section block with editorial header ── */
+  const Sec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac }) => {
+    const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
+    if (!items.length) return null;
+    return (
+      <div style={{ marginBottom: '1.75rem' }}>
+        {/* Section header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: accentBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0, boxShadow: '0 2px 8px rgba(28,20,16,0.08)' }}>{icon}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: D.espresso, letterSpacing: -0.1, textTransform: 'uppercase', fontFamily: "'Sora',sans-serif" }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>{subtitle}</div>}
+          </div>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+            <span style={{ fontSize: 11, color: D.muted }}>{items.length} picks</span>
+            {doneCount > 0 && (
+              <span style={{ fontSize: 11, fontWeight: 700, background: isSolo ? '#EEEDFE' : D.sageTint, color: isSolo ? '#534AB7' : D.sage, borderRadius: 999, padding: '2px 9px' }}>
+                ✓ {doneCount}/{items.length}
+              </span>
+            )}
+          </div>
+        </div>
+        {/* Cards */}
+        {items.map((item, i) => (
+          <TasteCard key={i} item={item} secKey={secKey} index={i} photoSuffix={photoSuffix} startIndex={startIndex} />
+        ))}
       </div>
     );
   };
@@ -204,38 +298,115 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   if (step === 'loading') return <Spinner text={`Discovering local flavours of ${dest}…`} solo={isSolo} />;
 
   if (step === 'result' && data) return (
-    <div>
+    <div style={{ background: D.bg, paddingBottom: '1.5rem' }}>
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
-      <div style={{ background: 'linear-gradient(135deg,#fff9f0,#fff0e5)', border: '0.5px solid #FAC775', borderRadius: 14, padding: '1.1rem 1.25rem', marginBottom: '1.25rem', display: 'flex', gap: 14, alignItems: 'center' }}>
-        <div style={{ fontSize: 36 }}>🗺️</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#854F0B', marginBottom: 3 }}>{data.headline}</div>
-          <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{data.tagline}</div>
+
+      {/* ── Hero banner ── */}
+      <div style={{
+        position: 'relative', minHeight: 140, borderRadius: 16, overflow: 'hidden',
+        background: 'linear-gradient(135deg, #2C1810 0%, #8B5E3C 50%, #C9913A 100%)',
+        marginBottom: '1.25rem', boxShadow: '0 4px 20px rgba(28,20,16,0.18)',
+      }}>
+        <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 130, opacity: 0.06, lineHeight: 1 }}>🍜</div>
+        <div style={{ position: 'relative', zIndex: 1, padding: '1.25rem 1.25rem 1rem' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6, fontFamily: "'DM Sans',sans-serif" }}>
+            LOCAL TASTE GUIDE
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: -0.3, marginBottom: 5, fontFamily: "'Sora',sans-serif" }}>
+            {data.headline}
+          </div>
+          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.6 }}>{data.tagline}</div>
+          {/* Stats row */}
+          <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+            {[
+              { n: (data.dishes||[]).length, label: 'dishes' },
+              { n: (data.places||[]).length, label: 'places' },
+              { n: (data.experiences||[]).length, label: 'experiences' },
+            ].map(({ n, label }) => n > 0 && (
+              <div key={label} style={{ background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '4px 12px', display: 'flex', gap: 5, alignItems: 'center' }}>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{n}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{label}</span>
+              </div>
+            ))}
+          </div>
         </div>
-        {/* <button style={{ ...S.btn, fontSize: 12, flexShrink: 0 }} onClick={() => { setStep('idle'); setData(null); setDoneItems(new Set()); }}>↺</button> */}
       </div>
-      <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" dest={dest} startIndex={0} photoSuffix="food dish restaurant" />
-      <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" dest={dest} startIndex={4} photoSuffix="tourist attraction landmark" />
-      <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" dest={dest} startIndex={8} photoSuffix="travel experience" />
-      {data.tip && <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '.75rem 1rem', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: '1rem', fontSize: 12, color: isSolo ? '#26215C' : '#085041', lineHeight: 1.5 }}>💡 <span><strong>Local tip:</strong> {data.tip}</span></div>}
+
+      {/* ── Sections ── */}
+      <Sec
+        icon="🍴" title="Must-Eat Dishes" subtitle="Iconic plates you can't leave without trying"
+        items={data.dishes || []} secKey="dishes" startIndex={0} photoSuffix="food dish restaurant"
+        accentBg="#FAEEDA" accentColor={D.gold}
+      />
+      <Sec
+        icon="📍" title="Unmissable Places" subtitle="The landmarks and streets that define this city"
+        items={data.places || []} secKey="places" startIndex={5} photoSuffix="tourist attraction landmark"
+        accentBg={D.blueTint} accentColor="#2563AB"
+      />
+      <Sec
+        icon="✨" title="Local Experiences" subtitle="Things to do that no guidebook will tell you"
+        items={data.experiences || []} secKey="exp" startIndex={10} photoSuffix="travel experience"
+        accentBg="#EEEDFE" accentColor="#534AB7"
+      />
+
+      {/* ── Insider tip ── */}
+      {data.tip && (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: D.surface, border: `0.5px solid ${D.border}`, borderLeft: `3px solid ${D.gold}`, borderRadius: 12, padding: '12px 14px', boxShadow: '0 2px 8px rgba(28,20,16,0.06)' }}>
+          <span style={{ fontSize: 20, flexShrink: 0 }}>💡</span>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: D.gold, textTransform: 'uppercase', letterSpacing: .8, marginBottom: 4, fontFamily: "'DM Sans',sans-serif" }}>Insider Tip</div>
+            <div style={{ fontSize: 13, color: D.secondary, lineHeight: 1.65 }}>{data.tip}</div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
+  /* ── Idle / entry state ── */
   return (
-    <div>
-      <div style={{ background: 'linear-gradient(135deg,#FAEEDA,#FAECE7)', border: '0.5px solid #FAC775', borderRadius: 14, padding: '1.5rem', marginBottom: '1.25rem', textAlign: 'center' }}>
-        <div style={{ fontSize: 40, marginBottom: 10 }}>🍽️</div>
-        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Local Taste Guide</div>
-        <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.6 }}>Discover what to eat, where to go, and what to do like a local.</div>
+    <div style={{ background: D.bg }}>
+      {/* Hero entry card */}
+      <div style={{
+        position: 'relative', borderRadius: 18, overflow: 'hidden', marginBottom: '1.25rem',
+        background: 'linear-gradient(135deg, #1C1410 0%, #8B5E3C 60%, #C9913A 100%)',
+        padding: '2rem 1.5rem', textAlign: 'center', boxShadow: '0 4px 20px rgba(28,20,16,0.18)',
+      }}>
+        <div style={{ position: 'absolute', top: -30, right: -30, fontSize: 150, opacity: 0.05, lineHeight: 1 }}>🍜</div>
+        <div style={{ fontSize: 44, marginBottom: 12 }}>🍽️</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 6, fontFamily: "'Sora',sans-serif", letterSpacing: -0.3 }}>Local Taste Guide</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.68)', lineHeight: 1.65, maxWidth: 280, margin: '0 auto 0' }}>
+          Iconic dishes, legendary spots, and local secrets — curated by AI, verified by taste.
+        </div>
       </div>
-      <div style={S.card}>
-        <label style={S.label}>Destination</label>
-        <input style={S.input} value={dest} onChange={e => setDest(e.target.value)} onKeyDown={e => e.key === 'Enter' && generate()} placeholder="e.g. Jaipur, Rajasthan" />
-        <button style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), width: '100%', justifyContent: 'center', marginTop: 12, padding: '11px', fontSize: 14, borderRadius: 12 }} onClick={generate} disabled={!dest.trim()}>✨ Discover local flavours</button>
+
+      {/* Input card */}
+      <div style={{ background: D.surface, borderRadius: 16, padding: '1.1rem 1.25rem', marginBottom: '1rem', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}` }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Where are you headed?</div>
+        <input
+          style={{ width: '100%', border: `1.5px solid ${D.border}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: "'DM Sans',sans-serif", color: D.espresso, background: D.bg, outline: 'none', boxSizing: 'border-box' }}
+          value={dest}
+          onChange={e => setDest(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && generate()}
+          placeholder="e.g. Jaipur, Rajasthan"
+        />
+        <button
+          style={{ width: '100%', marginTop: 10, padding: '12px', fontSize: 14, fontWeight: 700, borderRadius: 12, border: 'none', cursor: dest.trim() ? 'pointer' : 'not-allowed', fontFamily: "'DM Sans',sans-serif", background: dest.trim() ? (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : `linear-gradient(135deg,${D.gold},#A8731E)`) : D.neutral, color: dest.trim() ? '#fff' : D.muted, transition: 'all .2s', opacity: dest.trim() ? 1 : 0.6 }}
+          onClick={generate}
+          disabled={!dest.trim()}
+        >
+          ✨ Discover local flavours
+        </button>
       </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-        {['Jaipur','Udaipur','Goa','Varanasi','Mumbai','Coorg','Hampi'].map(c => (
-          <button key={c} style={{ ...S.btn, fontSize: 12, padding: '5px 12px', borderRadius: 20 }} onClick={() => setDest(c)}>{c}</button>
+
+      {/* Quick-pick chips */}
+      <div style={{ fontSize: 10, fontWeight: 700, color: D.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Popular destinations</div>
+      <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+        {['Jaipur', 'Udaipur', 'Goa', 'Varanasi', 'Mumbai', 'Coorg', 'Hampi'].map(c => (
+          <button
+            key={c}
+            onClick={() => setDest(c)}
+            style={{ fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 999, border: `0.5px solid ${D.border}`, background: D.surface, color: D.secondary, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 1px 4px rgba(28,20,16,0.05)' }}
+          >{c}</button>
         ))}
       </div>
     </div>
