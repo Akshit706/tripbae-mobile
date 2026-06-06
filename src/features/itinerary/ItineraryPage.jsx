@@ -562,16 +562,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     travelNotes: trip.travelNotes || '',
   });
 
-  const [heroPhotoUrl, setHeroPhotoUrl] = useState(trip._heroPhoto || null);
-  // Generic travel landscape as instant fallback — replaced once real photo resolves
-  const HERO_FALLBACK = 'https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?w=800&q=80&fit=crop';
-  const heroDisplay = heroPhotoUrl || HERO_FALLBACK;
+  const [heroPhotoUrl, setHeroPhotoUrl] = useState(null);
 
   useEffect(() => {
-    // Only fetch if home page didn't already cache a photo for this destination
-    if (heroPhotoUrl || !form.dest) return;
+    if (!form.dest) return;
     import('../../api').then(({ fetchPlacePhotos }) => {
-      fetchPlacePhotos(form.dest)
+      fetchPlacePhotos(`${form.dest} city travel landscape`)
         .then(data => { if (data.urls?.[0]) setHeroPhotoUrl(data.urls[0]); })
         .catch(() => {});
     });
@@ -741,7 +737,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 {/* photo layer */}
                 <div style={{
                   position: 'absolute', inset: 0,
-                  backgroundImage: `url(${heroDisplay})`,
+                  backgroundImage: heroPhotoUrl ? `url(${heroPhotoUrl})` : 'linear-gradient(135deg, #1C1410 0%, #3A2010 50%, #C9913A 100%)',
                   backgroundSize: 'cover', backgroundPosition: 'center',
                   filter: 'brightness(0.9)',
                   transition: 'background-image 0.5s ease',

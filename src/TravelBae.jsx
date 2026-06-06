@@ -254,8 +254,6 @@ export default function App() {
   const [tripLoading, setTripLoading] = useState(false);
   const [newTripModal, setNewTripModal] = useState(null);
   const [tab, setTab] = useState('main');
-  // Cache of destination → photo URL fetched by trip cards — reused for itinerary hero
-  const tripPhotoCache = useRef({});
   const [profileOpen, setProfileOpen] = useState(false);
   const [sharedFlight, setSharedFlight] = useState(null);
   const [sharedFlightActive, setSharedFlightActive] = useState(false);
@@ -321,7 +319,6 @@ export default function App() {
             ...d.trip,
             _cachedItin:  d.trip.cachedItinerary  ?? localTrip?._cachedItin  ?? null,
             _cachedTaste: d.trip.cachedTaste      ?? localTrip?._cachedTaste ?? null,
-            _heroPhoto:   tripPhotoCache.current[d.trip.destination] ?? null,
           });
           setMyNickname(d.myNickname);
         })
@@ -488,11 +485,6 @@ export default function App() {
     startSharedFlight(tripId, originRect);
     setActiveTrip(tripId);
     setTab('main');
-    // Inject already-fetched hero photo so ItineraryPage doesn't need another API call
-    const trip = trips.find(t => t.id === tripId);
-    if (trip?.destination && tripPhotoCache.current[trip.destination]) {
-      setActiveTripData(prev => prev ? { ...prev, _heroPhoto: tripPhotoCache.current[trip.destination] } : prev);
-    }
   };
 
   const handleShareCodeDismiss = () => {
@@ -907,7 +899,6 @@ export default function App() {
                 onMarkComplete={handleMarkComplete}
                 onMarkActive={handleMarkActive}
                 profileName={profile.name}
-                onPhotoLoaded={(dest, url) => { tripPhotoCache.current[dest] = url; }}
               /></div>
         )}
 
