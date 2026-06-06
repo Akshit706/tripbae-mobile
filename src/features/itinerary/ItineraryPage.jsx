@@ -143,6 +143,8 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   const [doneItems, setDoneItems] = useState(new Set());
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [expandedItems, setExpandedItems] = useState(new Set());
+  const secRefs = { dishes: useRef(null), places: useRef(null), exp: useRef(null) };
+  const scrollTo = (key) => secRefs[key]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   useEffect(() => {
     if (autoStep && autoStep !== step) setStep(autoStep);
@@ -355,12 +357,12 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   };
 
   /* ── Section block with editorial header ── */
-  const Sec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac }) => {
+  const Sec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac, sectionRef }) => {
     const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
     const pct = items.length ? Math.round((doneCount / items.length) * 100) : 0;
     if (!items.length) return null;
     return (
-      <div style={{ marginBottom: '1.9rem' }}>
+      <div ref={sectionRef} style={{ marginBottom: '1.9rem', scrollMarginTop: 12 }}>
         {/* Section header card */}
         <div className="itin-sec-header" style={{
           display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
@@ -418,17 +420,26 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
             {data.headline}
           </div>
           <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.6 }}>{data.tagline}</div>
-          {/* Stats row */}
+          {/* Stats row — clickable scroll anchors */}
           <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
             {[
-              { n: (data.dishes||[]).length, label: 'dishes' },
-              { n: (data.places||[]).length, label: 'places' },
-              { n: (data.experiences||[]).length, label: 'experiences' },
-            ].map(({ n, label }) => n > 0 && (
-              <div key={label} style={{ background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '4px 12px', display: 'flex', gap: 5, alignItems: 'center' }}>
+              { n: (data.dishes||[]).length, label: 'dishes', key: 'dishes' },
+              { n: (data.places||[]).length, label: 'places', key: 'places' },
+              { n: (data.experiences||[]).length, label: 'experiences', key: 'exp' },
+            ].map(({ n, label, key }) => n > 0 && (
+              <button
+                key={key}
+                onClick={() => scrollTo(key)}
+                style={{ background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '4px 12px', display: 'flex', gap: 5, alignItems: 'center', cursor: 'pointer', transition: 'background 0.15s ease' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.13)'}
+              >
                 <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{n}</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{label}</span>
-              </div>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>{label}</span>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.6 }}>
+                  <path d="M5 2L5 8M5 8L2.5 5.5M5 8L7.5 5.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
             ))}
           </div>
         </div>
@@ -438,17 +449,17 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
       <Sec
         icon="🍴" title="Must-Eat Dishes" subtitle="Iconic plates you can't leave without trying"
         items={data.dishes || []} secKey="dishes" startIndex={0} photoSuffix="food dish restaurant"
-        accentBg="#FAEEDA" accentColor={D.gold}
+        accentBg="#FAEEDA" accentColor={D.gold} sectionRef={secRefs.dishes}
       />
       <Sec
         icon="📍" title="Unmissable Places" subtitle="The landmarks and streets that define this city"
         items={data.places || []} secKey="places" startIndex={5} photoSuffix="tourist attraction landmark"
-        accentBg={D.blueTint} accentColor="#2563AB"
+        accentBg={D.blueTint} accentColor="#2563AB" sectionRef={secRefs.places}
       />
       <Sec
         icon="✨" title="Local Experiences" subtitle="Things to do that no guidebook will tell you"
         items={data.experiences || []} secKey="exp" startIndex={10} photoSuffix="travel experience"
-        accentBg="#EEEDFE" accentColor="#534AB7"
+        accentBg="#EEEDFE" accentColor="#534AB7" sectionRef={secRefs.exp}
       />
 
       {/* ── Insider tip ── */}
