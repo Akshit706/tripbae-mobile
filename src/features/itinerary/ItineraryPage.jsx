@@ -60,7 +60,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     return { bg: '#FAEEDA', color: '#854F0B' };
   };
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
-  const Sec = ({ icon, title, items, iconBg, secKey, dest, startIndex = 0 }) => {
+  const Sec = ({ icon, title, items, iconBg, secKey, dest, startIndex = 0, photoSuffix = 'photo' }) => {
     const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
     return (
       <div style={{ marginBottom: '1.25rem' }}>
@@ -90,7 +90,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
                 </div>
                 <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{item.desc}</div>
                 <div style={{ margin: '10px 0 4px' }}>
-                  <PlacePhoto query={`${item.name} ${dest} photo`} style={{ height: 110 }} delay={(startIndex + i) * 600} />
+                  <PlacePhoto query={`${item.name} ${dest} ${photoSuffix}`} style={{ height: 110 }} delay={(startIndex + i) * 600} />
                 </div>
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 7 }}>
                   {(item.tags || []).map(t => { const c = tagBg(t); return <span key={t} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, textTransform: 'uppercase', letterSpacing: .3, background: isDone ? '#F1EFE8' : c.bg, color: isDone ? '#a8a8a5' : c.color }}>{t}</span>; })}
@@ -116,9 +116,9 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         </div>
         {/* <button style={{ ...S.btn, fontSize: 12, flexShrink: 0 }} onClick={() => { setStep('idle'); setData(null); setDoneItems(new Set()); }}>↺</button> */}
       </div>
-      <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" dest={dest} startIndex={0} />
-      <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" dest={dest} startIndex={4} />
-      <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" dest={dest} startIndex={8} />
+      <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" dest={dest} startIndex={0} photoSuffix="food dish restaurant" />
+      <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" dest={dest} startIndex={4} photoSuffix="tourist attraction landmark" />
+      <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" dest={dest} startIndex={8} photoSuffix="travel experience" />
       {data.tip && <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '.75rem 1rem', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: '1rem', fontSize: 12, color: isSolo ? '#26215C' : '#085041', lineHeight: 1.5 }}>💡 <span><strong>Local tip:</strong> {data.tip}</span></div>}
     </div>
   );
@@ -487,7 +487,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                       </div>
                                       {showPhoto && (
                                         <div style={{ marginTop: 10 }}>
-                                          <PlacePhoto query={`${a.name} ${form.dest}`} style={{ height: 120 }} delay={currentDelay} />
+                                          <PlacePhoto query={`${a.name} ${form.dest} ${ a.type === 'food' ? 'restaurant dish food' : a.type === 'experience' ? 'travel experience' : a.type === 'shopping' ? 'market shopping' : 'tourist attraction landmark' }`} style={{ height: 120 }} delay={currentDelay} />
                                         </div>
                                       )}
                                     </div>
