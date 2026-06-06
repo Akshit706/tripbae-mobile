@@ -24,6 +24,28 @@ const D = {
   cardShadow:'0 2px 14px rgba(28,20,16,0.07)',
 };
 
+/* ── Lightbox ─────────────────────────────────────────────── */
+function Lightbox({ url, onClose }) {
+  if (!url) return null;
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, cursor: 'zoom-out' }}
+    >
+      <img
+        src={url}
+        alt=""
+        onClick={e => e.stopPropagation()}
+        style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 14, objectFit: 'contain', boxShadow: '0 8px 48px rgba(0,0,0,0.6)' }}
+      />
+      <button
+        onClick={onClose}
+        style={{ position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+      >✕</button>
+    </div>
+  );
+}
+
 /* Tag colour resolver */
 function tagStyle(tag, mustDo) {
   if (mustDo || ['must do','must-do','must-try','iconic'].includes(tag.toLowerCase()))
@@ -43,6 +65,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   const [data, setData] = useState(autoData || null);
   const [dest, setDest] = useState(destination || '');
   const [doneItems, setDoneItems] = useState(new Set());
+  const [lightboxUrl, setLightboxUrl] = useState(null);
 
   // Sync if parent finishes loading after mount
   useEffect(() => {
@@ -95,8 +118,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     return { bg: '#FAEEDA', color: '#854F0B' };
   };
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
-  const Sec = ({ icon, title, items, iconBg, secKey, dest, startIndex = 0, photoSuffix = 'photo' }) => {
-    const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
+  const Sec = ({ icon, title, items, iconBg, secKey, dest, startIndex = 0, photoSuffix = 'photo' }) => {    const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
     return (
       <div style={{ marginBottom: '1.25rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
@@ -124,7 +146,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
                   )}
                 </div>
                 <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{item.desc}</div>
-                <div style={{ margin: '10px 0 4px' }}>
+                <div style={{ margin: '10px 0 4px', cursor: 'zoom-in' }} onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}>
                   <PlacePhoto query={`${item.name} ${dest} ${photoSuffix}`} style={{ height: 110 }} delay={(startIndex + i) * 600} />
                 </div>
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 7 }}>
@@ -143,6 +165,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
 
   if (step === 'result' && data) return (
     <div>
+      <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
       <div style={{ background: 'linear-gradient(135deg,#fff9f0,#fff0e5)', border: '0.5px solid #FAC775', borderRadius: 14, padding: '1.1rem 1.25rem', marginBottom: '1.25rem', display: 'flex', gap: 14, alignItems: 'center' }}>
         <div style={{ fontSize: 36 }}>🗺️</div>
         <div style={{ flex: 1 }}>
@@ -319,14 +342,21 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   );
 
   const ITABS = [{ id: 'planner', label: '🗺️ Day Planner' }, { id: 'taste', label: '🍜 Local Taste' }];
+  const [lightboxUrl, setLightboxUrl] = useState(null);
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 0, background: D.surface, border: `0.5px solid ${D.border}`, borderRadius: 14, padding: 3, marginBottom: '1.1rem', boxShadow: '0 1px 6px rgba(28,20,16,0.05)' }}>
+      <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+
+      {/* ── Underline tab switcher (Club-style) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', borderBottom: '1.5px solid rgba(28,20,16,0.1)', marginBottom: '1rem' }}>
         {ITABS.map(t => (
           <button key={t.id} onClick={() => setITab(t.id)}
-            style={{ flex: 1, padding: '9px 8px', fontSize: 12, fontWeight: 600, borderRadius: 11, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: iTab === t.id ? (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : D.gold) : 'transparent', color: iTab === t.id ? '#fff' : D.muted, transition: 'all .15s' }}>
-            {t.label}
+            style={{ ...S.navTab, ...(iTab === t.id ? S.navTabActive : {}), position: 'relative', padding: '9px 2px 10px', fontSize: 12, borderRadius: 0 }}>
+            <span style={{ fontWeight: iTab === t.id ? 700 : 500, fontSize: 12 }}>{t.label}</span>
+            {iTab === t.id && (
+              <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: isSolo ? '#7F77DD' : D.gold }} />
+            )}
           </button>
         ))}
       </div>
@@ -435,30 +465,23 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   return (
                     <div key={d.day} style={{ marginBottom: '1.5rem' }}>
 
-                      {/* Day header: gold left border, muted date cap, italic serif theme */}
-                      <div style={{ display: 'flex', alignItems: 'stretch', background: 'rgba(250,248,244,0.97)', borderRadius: 12, padding: '10px 14px', marginBottom: 10, boxShadow: '0 1px 6px rgba(28,20,16,0.05)' }}>
-                        <div style={{ width: 3, borderRadius: 2, background: D.gold, marginRight: 12, flexShrink: 0 }} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-                            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.1, textTransform: 'uppercase', color: D.muted }}>{dateLabel}</span>
-                            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                              {d.weather && (
-                                <span style={{ fontSize: 12, color: D.coral }}>{weatherIcon} {d.weather.high}°<span style={{ color: D.muted }}>/{d.weather.low}°</span></span>
-                              )}
-                              {isArrivalDay && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: D.blueTint, color: '#2563AB' }}>✈ Arrives</span>}
-                              {isDepartureDay && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 999, background: D.coralTint, color: D.coral }}>🛫 Departs</span>}
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
-                            <div style={{ fontSize: 15, fontStyle: 'italic', color: D.espresso, fontFamily: "'Georgia',serif", letterSpacing: -0.1, flex: 1 }}>{d.title || d.theme}</div>
-                            <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
-                              {d.estimatedCost && (
-                                <span style={{ fontSize: 11, fontWeight: 600, background: D.goldTint, color: D.gold, borderRadius: 999, padding: '2px 9px' }}>{d.estimatedCost}</span>
-                              )}
-                              {dayDoneCount > 0 && (
-                                <span style={{ fontSize: 10, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 999, padding: '2px 9px' }}>✓ {dayDoneCount}/{dayTotalCount}</span>
-                              )}
-                            </div>
+                      {/* ── Day header ── */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, padding: '0 2px' }}>
+                        {/* Day number badge */}
+                        <div style={{ width: 42, height: 42, borderRadius: 12, background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : `linear-gradient(135deg,${D.gold},#A8731E)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 3px 10px ${isSolo ? 'rgba(127,119,221,0.35)' : 'rgba(201,145,58,0.35)'}` }}>
+                          <span style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: .5, lineHeight: 1 }}>Day</span>
+                          <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>{d.day}</span>
+                        </div>
+                        {/* Theme + date + chips */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 14.5, fontWeight: 700, color: D.espresso, lineHeight: 1.2, marginBottom: 4, fontFamily: "'Sora',sans-serif" }}>{d.title || d.theme}</div>
+                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: D.muted, letterSpacing: .4 }}>{dateLabel}</span>
+                            {d.weather && <span style={{ fontSize: 10, background: D.coralTint, color: D.coral, borderRadius: 999, padding: '1px 7px', fontWeight: 600 }}>{weatherIcon} {d.weather.high}°/{d.weather.low}°</span>}
+                            {isArrivalDay && <span style={{ fontSize: 9, fontWeight: 700, background: D.blueTint, color: '#2563AB', borderRadius: 999, padding: '1px 6px' }}>✈ Arrives</span>}
+                            {isDepartureDay && <span style={{ fontSize: 9, fontWeight: 700, background: D.coralTint, color: D.coral, borderRadius: 999, padding: '1px 6px' }}>🛫 Departs</span>}
+                            {d.estimatedCost && <span style={{ fontSize: 10, fontWeight: 600, background: D.goldTint, color: D.gold, borderRadius: 999, padding: '1px 7px' }}>{d.estimatedCost}</span>}
+                            {dayDoneCount > 0 && <span style={{ fontSize: 10, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 999, padding: '1px 7px' }}>✓ {dayDoneCount}/{dayTotalCount}</span>}
                           </div>
                         </div>
                       </div>
@@ -563,7 +586,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                                 {/* Row 6: photo */}
                                 {showPhoto && (
-                                  <div style={{ marginBottom: 8 }}>
+                                  <div style={{ marginBottom: 8, cursor: 'zoom-in' }} onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}>
                                     <PlacePhoto
                                       query={`${a.name} ${form.dest} ${a.type === 'food' ? 'restaurant dish food' : a.type === 'experience' ? 'travel experience' : a.type === 'shopping' ? 'market shopping' : 'tourist attraction landmark'}`}
                                       style={{ height: 140, borderRadius: 10 }}
