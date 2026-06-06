@@ -304,7 +304,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [form, setForm] = useState({
     groupName: '', destination: '', arrival: today, departure: '',
     arrivalSlot: 'morning', departureSlot: 'morning',
-    createdBy: profileName || '', budget: '',
+    createdBy: profileName || '', budget: '', travelNotes: '',
   });
 
   useEffect(() => {
@@ -357,10 +357,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         isSolo: isSoloMode,
         people: isSoloMode ? 1 : 2,
         budget: form.budget ? parseFloat(form.budget) : null,
+        travelNotes: form.travelNotes || null,
         nickname: (profileName || form.createdBy || 'Me').trim(),
       });
       setShowCreate(false);
-      setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '' });
+      setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '', travelNotes: '' });
     } catch (err) {
       alert('Could not create trip: ' + err.message);
     }
@@ -733,6 +734,21 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 <input style={{ ...S.input, fontSize: 15, padding: '13px 14px 13px 30px' }} type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
               </div>
               <div style={{ fontSize: 12, color: '#b0b0aa', marginTop: 5 }}>Total trip budget for the group</div>
+            </div>
+
+            {/* Travel Notes */}
+            <div style={{ marginBottom: '2.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase' }}>Trip Notes</div>
+                <span style={{ fontSize: 11, color: '#c8c8c4', fontStyle: 'italic' }}>optional</span>
+              </div>
+              <textarea
+                style={{ ...S.input, fontSize: 14, padding: '12px 14px', resize: 'none', minHeight: 80, lineHeight: 1.55, fontFamily: 'inherit' }}
+                value={form.travelNotes}
+                onChange={e => setForm(f => ({ ...f, travelNotes: e.target.value }))}
+                placeholder={isSoloMode ? 'e.g. I prefer slow travel, love street food, have bad knees so skip strenuous treks...' : 'e.g. Group of 6 with 2 elderly grandparents, kids aged 8 & 12, prefer vegetarian food, no alcohol...'}
+              />
+              <div style={{ fontSize: 12, color: '#b0b0aa', marginTop: 5 }}>Gemini reads this to personalise your itinerary — mention ages, preferences, dietary needs, mobility, anything special</div>
             </div>
           </div>
 

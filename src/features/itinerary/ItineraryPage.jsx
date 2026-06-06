@@ -559,7 +559,19 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     departureSlot: trip.departureSlot || 'morning',
     budget: trip.budget ? String(trip.budget) : '',
     people: String(normalizeMembers(trip.members).length || 1),
+    travelNotes: trip.travelNotes || '',
   });
+
+  const [heroPhotoUrl, setHeroPhotoUrl] = useState(null);
+
+  useEffect(() => {
+    if (!form.dest) return;
+    import('../../api').then(({ fetchPlacePhotos }) => {
+      fetchPlacePhotos(`${form.dest} city landscape aerial skyline travel`)
+        .then(data => { if (data.urls?.[0]) setHeroPhotoUrl(data.urls[0]); })
+        .catch(() => {});
+    });
+  }, [form.dest]);
 
   const days = form.arrival && form.departure
     ? Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000))
@@ -629,6 +641,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         departureSlot: form.departureSlot,
         firstActivitySlot: firstActivitySlot(),
         arrival: form.arrival,
+        travelNotes: form.travelNotes || '',
       });
       setItin(result.itinerary);
       setSources(result.sources || []);
@@ -724,9 +737,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 {/* photo layer */}
                 <div style={{
                   position: 'absolute', inset: 0,
-                  backgroundImage: `url(https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800)`,
+                  backgroundImage: heroPhotoUrl ? `url(${heroPhotoUrl})` : 'linear-gradient(135deg, #1C1410 0%, #4A2E1A 50%, #C9913A 100%)',
                   backgroundSize: 'cover', backgroundPosition: 'center',
                   filter: 'brightness(0.9)',
+                  transition: 'background-image 0.5s ease',
                 }} />
                 {/* gradient overlay */}
                 <div style={{

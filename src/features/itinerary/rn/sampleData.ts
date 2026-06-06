@@ -1,0 +1,120 @@
+// Udaipur Day 1 — sample data matching ItineraryData shape
+// Use this to render ItineraryScreen without real API data
+
+export const UDAIPUR_SAMPLE = {
+  tripTitle: 'Udaipur — City of Lakes',
+  destination: 'Udaipur, Rajasthan',
+  totalBudget: '₹28,000',
+  arrivalWindow: 'Arriving Dec 14',
+  departureWindow: 'Departing Dec 19',
+  heroPhoto: undefined as string | undefined, // triggers gradient fallback
+  tips: [
+    'Hire a local guide for City Palace — stories you won\'t find on any placard',
+    'Book the Jagmandir boat at sunset, not sunrise — the light is warmer',
+    'Hathi Pol antique shops open 10 AM–7 PM only; closed Sundays',
+    'Auto-rickshaws quote 3× to tourists — always negotiate to half the opening price',
+    'Rajasthani thalis are best at lunch — portions are enormous and service is frantic',
+  ],
+  days: [
+    {
+      date: 'Saturday, Dec 14',
+      theme: 'Arrival & Old City First Impressions',
+      tempHigh: 28,
+      tempLow: 14,
+      budget: '₹4,200',
+      localTip: 'Head straight to Gangaur Ghat before checking in — empty in early afternoon and purely magical.',
+      activities: [
+        {
+          time: '02:00 PM',
+          endTime: '03:00 PM',
+          name: 'Hotel Check-in & Freshen Up',
+          type: 'hotel',
+          description:
+            'Drop your bags, take a cold shower, and breathe. The 600-year-old city will still be there in an hour. Most heritage havelis in the old city have a rooftop — head up for your first lake view before stepping out.',
+          duration: '1 hour',
+          cost: 'Included in stay',
+          icon: '🏨',
+          mustDo: false,
+          location: 'Udaipur Old City',
+          tags: ['Check-in', 'Rest'],
+        },
+        {
+          time: '03:30 PM',
+          endTime: '06:00 PM',
+          name: 'City Palace Complex',
+          type: 'attraction',
+          tags: ['Heritage', 'Moderate'],
+          hours: '9:30 AM – 5:30 PM',
+          hoursVerified: true,
+          description:
+            'The largest palace complex in Rajasthan, built over 400 years by 22 different maharajas. The rooftop Mor Chowk has some of the finest mosaic work in the country. Allow at least 2.5 hours — the audio guide here is genuinely excellent.',
+          duration: '2.5 hours',
+          cost: '₹300 per person',
+          location: 'City Palace Road, Old City',
+          photo:
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Udaipur_City_Palace_01.jpg/1200px-Udaipur_City_Palace_01.jpg',
+          mapsUrl: 'https://maps.google.com/?q=City+Palace+Udaipur',
+          warning: 'Entry closes at 5:30 PM sharp — last tickets sold at 5:00 PM. Book online to skip the queue.',
+          icon: '🏰',
+          mustDo: true,
+        },
+        {
+          time: '06:30 PM',
+          endTime: '07:30 PM',
+          name: 'Gangaur Ghat at Sunset',
+          type: 'experience',
+          tags: ['Scenic', 'Easy'],
+          description:
+            'The most beautiful of Udaipur\'s ghats — wide marble terracing that steps down into Lake Pichola. At golden hour the lake turns hammered copper. Sit at the bottom steps, let the hawkers walk past, and just watch the light change.',
+          duration: '1 hour',
+          cost: 'Free',
+          location: 'Gangaur Ghat, Pichola Lake',
+          photo:
+            'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Gangaur_Ghat%2C_Udaipur.jpg/1200px-Gangaur_Ghat%2C_Udaipur.jpg',
+          mapsUrl: 'https://maps.google.com/?q=Gangaur+Ghat+Udaipur',
+          icon: '🌅',
+          mustDo: true,
+        },
+        {
+          time: '08:00 PM',
+          endTime: '09:00 PM',
+          name: 'Hathi Pol Bazaar',
+          type: 'shopping',
+          tags: ['Cultural', 'Easy', 'Evening'],
+          description:
+            'The old city\'s most atmospheric market street. Narrow lanes lit with string lights, artisans doing marble inlay in open workshops, stalls selling miniature Rajput paintings and silver jewellery. Don\'t buy from the first stall.',
+          duration: '1 hour',
+          cost: 'Free to browse',
+          location: 'Hathi Pol, Old City',
+          mapsUrl: 'https://maps.google.com/?q=Hathi+Pol+Bazaar+Udaipur',
+          icon: '🛍️',
+          mustDo: false,
+        },
+        {
+          time: '09:30 PM',
+          endTime: '10:30 PM',
+          name: 'Natraj Dining Hall',
+          type: 'food',
+          tags: ['Local Institution', 'Budget'],
+          hours: '11:00 AM – 11:00 PM',
+          hoursVerified: true,
+          description:
+            'A no-frills Rajasthani thali institution that has been serving the same meal since 1958 — unlimited dal baati churma, gatte ki sabzi, and buttermilk so cold it hurts. Marble floors, fluorescent lights, and possibly the best ₹180 you\'ll spend in India.',
+          duration: '1 hour',
+          cost: '₹180 per person',
+          location: 'City Station Road, Udaipur',
+          mapsUrl: 'https://maps.google.com/?q=Natraj+Dining+Hall+Udaipur',
+          warning: 'Cash only. No reservations. Queue is normal — it moves fast.',
+          icon: '🍽️',
+          mustDo: true,
+        },
+      ],
+      transits: [
+        { after: 0, mode: 'auto' as const,  duration: '10 min' },
+        { after: 1, mode: 'walk' as const,  duration: '8 min'  },
+        { after: 2, mode: 'walk' as const,  duration: '12 min' },
+        { after: 3, mode: 'auto' as const,  duration: '7 min'  },
+      ],
+    },
+  ],
+};
