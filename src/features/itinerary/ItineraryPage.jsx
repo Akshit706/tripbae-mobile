@@ -254,8 +254,12 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           </div>
           {/* done overlay tick */}
           {isDone && (
-            <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: 48, height: 48, borderRadius: '50%', background: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, color: '#fff' }}>✓</div>
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.48)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(1px)' }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: '2px solid rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <polyline points="4,12 9,17 20,7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
             </div>
           )}
           {/* name overlaid on photo gradient */}
@@ -267,8 +271,33 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           {/* done button over photo */}
           <button
             onClick={e => { e.stopPropagation(); toggleDone(key); }}
-            style={{ position: 'absolute', bottom: 10, right: 10, width: 30, height: 30, borderRadius: '50%', border: isDone ? `2px solid ${accentColor}` : '1.5px solid rgba(255,255,255,0.5)', background: isDone ? accentColor : 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
-          >{isDone ? '✓' : '○'}</button>
+            style={{
+              position: 'absolute', bottom: 10, right: 10,
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: isDone ? '5px 11px 5px 8px' : '5px 10px',
+              borderRadius: 999,
+              border: isDone ? 'none' : '1.5px solid rgba(255,255,255,0.6)',
+              background: isDone ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(8px)',
+              cursor: 'pointer',
+              transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+              boxShadow: isDone ? '0 2px 10px rgba(0,0,0,0.15)' : 'none',
+            }}
+          >
+            {isDone ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <circle cx="6.5" cy="6.5" r="6.5" fill={accentColor}/>
+                  <polyline points="3.5,6.5 5.5,8.5 9.5,4.5" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span style={{ fontSize: 11, fontWeight: 700, color: accentColor, fontFamily: "'DM Sans',sans-serif" }}>Done</span>
+              </>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5"/>
+              </svg>
+            )}
+          </button>
         </div>
 
         {/* Card body */}
@@ -869,8 +898,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                     </div>
                                     {/* done overlay */}
                                     {isDone && (
-                                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: '#fff' }}>✓</div>
+                                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.48)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(1px)' }}>
+                                        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: '2px solid rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                            <polyline points="4,12 9,17 20,7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                          </svg>
+                                        </div>
                                       </div>
                                     )}
                                   </div>
@@ -955,8 +988,26 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                               {/* Done toggle */}
                               <button
                                 onClick={() => toggleActivity(doneKey)}
-                                style={{ flexShrink: 0, alignSelf: 'flex-start', marginTop: 4, marginLeft: 6, width: 28, height: 28, borderRadius: '50%', border: isDone ? `2px solid ${accentColor}` : `1.5px solid ${D.border}`, background: isDone ? accentColor : D.surface, color: isDone ? '#fff' : D.muted, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}
-                              >{isDone ? '✓' : '○'}</button>
+                                style={{
+                                  flexShrink: 0, alignSelf: 'flex-start', marginTop: 6, marginLeft: 6,
+                                  width: 28, height: 28, borderRadius: '50%',
+                                  border: isDone ? 'none' : `1.5px solid ${D.border}`,
+                                  background: isDone ? accentColor : D.surface,
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  boxShadow: isDone ? `0 2px 8px ${accentColor}55` : 'none',
+                                  transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+                                }}
+                              >
+                                {isDone ? (
+                                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                    <polyline points="2.5,6.5 5.5,9.5 10.5,3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                ) : (
+                                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <circle cx="6" cy="6" r="5" stroke={D.border} strokeWidth="1.5"/>
+                                  </svg>
+                                )}
+                              </button>
                             </div>
 
                             {/* Transit chip */}
