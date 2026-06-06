@@ -408,7 +408,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                       )}
                       <div style={{ padding: '10px 16px' }}>
                         {(d.activities || []).map((a, i) => {
-                          const showPhoto = a.type === 'attraction' || a.type === 'food' || a.type === 'experience' || a.type === 'shopping';
+                          const showPhoto = a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel';
                           const currentDelay = showPhoto ? photoIndex++ * 600 : 0;
                           const isLast = i === d.activities.length - 1;
                           const doneKey = `day-${d.day}-act-${i}`;
