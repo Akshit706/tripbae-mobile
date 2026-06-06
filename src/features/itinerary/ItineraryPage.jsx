@@ -3,6 +3,7 @@ import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 import { PlacePhoto, PlacePhotosStrip } from '../media/PlaceMedia';
+import RecommendationsPage from './RecommendationsPage';
 
 /* ── Premium design tokens ─────────────────────────────────── */
 const D = {
@@ -678,7 +679,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     </div>
   );
 
-  const ITABS = [{ id: 'planner', label: '🗺️ Day Planner' }, { id: 'taste', label: '🍜 Local Taste' }];
+  const ITABS = [
+    { id: 'planner', label: '🗺️ Day Planner' },
+    { id: 'taste',   label: '🍜 Local Taste' },
+    { id: 'nearby',  label: '🏨 Nearby' },
+  ];
   const [lightboxUrl, setLightboxUrl] = useState(null);
 
   return (
@@ -686,7 +691,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
 
       {/* ── Underline tab switcher (Club-style) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', borderBottom: '1.5px solid rgba(28,20,16,0.1)', marginBottom: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1.5px solid rgba(28,20,16,0.1)', marginBottom: '1rem' }}>
         {ITABS.map(t => (
           <button key={t.id} onClick={() => setITab(t.id)}
             style={{ ...S.navTab, ...(iTab === t.id ? S.navTabActive : {}), position: 'relative', padding: '9px 2px 10px', fontSize: 12, borderRadius: 0 }}>
@@ -1081,6 +1086,13 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           autoData={localTasteData}
           autoStep={localTasteStep}
           onRetry={runGenerateLocalTaste}
+        />
+      )}
+
+      {iTab === 'nearby' && (
+        <RecommendationsPage
+          destination={form.dest}
+          isSolo={isSolo}
         />
       )}
     </div>

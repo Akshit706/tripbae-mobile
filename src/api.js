@@ -96,6 +96,13 @@ export const generateLocalTaste = (data) => {
   return dedupedFetch(key, () => apiFetch('/ai/local-taste', { method: 'POST', body: data }));
 };
 
+export const fetchRecommendations = (destination) => {
+  const key = `recs:${destination.toLowerCase()}`;
+  return dedupedFetch(key, () =>
+    apiFetch(`/ai/recommendations?destination=${encodeURIComponent(destination)}`)
+  );
+};
+
 // Club
 export const getClubHub = (tripId, { latitude, longitude, radius, vibe, activeOnly } = {}) => {
   let path = `/trips/${tripId}/club`;
