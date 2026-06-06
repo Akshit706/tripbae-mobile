@@ -78,10 +78,24 @@ if (typeof document !== 'undefined' && !document.getElementById('itinerary-style
       background-size: 800px 100%;
       animation: shimmer 1.4s ease-in-out infinite;
     }
-    .itin-photo-card:hover { transform: scale(1.012); box-shadow: 0 8px 32px rgba(28,20,16,0.13) !important; }
-    .itin-photo-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
-    .itin-action-pill:hover { transform: scale(1.04); filter: brightness(0.97); }
+    @keyframes checkPop {
+      0%   { transform: scale(0.4); opacity: 0; }
+      60%  { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes sectionIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .itin-photo-card:hover { transform: translateY(-2px) scale(1.008); box-shadow: 0 10px 36px rgba(28,20,16,0.14) !important; }
+    .itin-photo-card { transition: transform 0.22s cubic-bezier(0.34,1.3,0.64,1), box-shadow 0.22s ease; }
+    .itin-action-pill:hover { transform: scale(1.05); filter: brightness(0.96); }
     .itin-action-pill { transition: transform 0.15s ease, filter 0.15s ease; }
+    .itin-done-btn { transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+    .itin-done-btn.checked { animation: checkPop 0.28s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .itin-sec-header { animation: sectionIn 0.32s ease both; }
+    .itin-taste-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(28,20,16,0.12) !important; }
+    .itin-taste-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
   `;
   document.head.appendChild(el);
 }
@@ -209,7 +223,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
 
     return (
       <div
-        className="itin-card-enter"
+        className="itin-card-enter itin-taste-card"
         style={{
           background: D.surface,
           borderRadius: 16,
@@ -311,21 +325,34 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   /* ── Section block with editorial header ── */
   const Sec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac }) => {
     const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
+    const pct = items.length ? Math.round((doneCount / items.length) * 100) : 0;
     if (!items.length) return null;
     return (
-      <div style={{ marginBottom: '1.75rem' }}>
-        {/* Section header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 12, background: accentBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0, boxShadow: '0 2px 8px rgba(28,20,16,0.08)' }}>{icon}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: D.espresso, letterSpacing: -0.1, textTransform: 'uppercase', fontFamily: "'Sora',sans-serif" }}>{title}</div>
-            {subtitle && <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>{subtitle}</div>}
+      <div style={{ marginBottom: '1.9rem' }}>
+        {/* Section header card */}
+        <div className="itin-sec-header" style={{
+          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
+          background: D.surface, borderRadius: 16, padding: '12px 14px',
+          boxShadow: '0 2px 12px rgba(28,20,16,0.07)', border: `0.5px solid ${D.border}`,
+          borderLeft: `4px solid ${ac}`,
+        }}>
+          <div style={{ width: 42, height: 42, borderRadius: 13, background: accentBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, boxShadow: `0 3px 10px ${accentBg}` }}>{icon}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: D.espresso, letterSpacing: -0.2, fontFamily: "'Sora',sans-serif", lineHeight: 1.1 }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 11, color: D.muted, marginTop: 2, lineHeight: 1.3 }}>{subtitle}</div>}
+            {/* Progress bar */}
+            {items.length > 0 && (
+              <div style={{ marginTop: 7, height: 3, borderRadius: 99, background: D.neutral, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: ac, borderRadius: 99, transition: 'width 0.4s ease' }} />
+              </div>
+            )}
           </div>
-          <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-            <span style={{ fontSize: 11, color: D.muted }}>{items.length} picks</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
+            <span style={{ fontSize: 18, fontWeight: 800, color: ac, fontFamily: "'Sora',sans-serif", lineHeight: 1 }}>{items.length}</span>
+            <span style={{ fontSize: 10, color: D.muted, textTransform: 'uppercase', letterSpacing: .5 }}>picks</span>
             {doneCount > 0 && (
-              <span style={{ fontSize: 11, fontWeight: 700, background: isSolo ? '#EEEDFE' : D.sageTint, color: isSolo ? '#534AB7' : D.sage, borderRadius: 999, padding: '2px 9px' }}>
-                ✓ {doneCount}/{items.length}
+              <span style={{ fontSize: 10, fontWeight: 700, background: isSolo ? '#EEEDFE' : D.sageTint, color: isSolo ? '#534AB7' : D.sage, borderRadius: 999, padding: '2px 7px', marginTop: 2 }}>
+                ✓ {doneCount}
               </span>
             )}
           </div>
@@ -787,6 +814,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                           ...(a.mustDo ? ['MUST DO'] : []),
                           ...(a.energyLevel && ENERGY_CONFIG[a.energyLevel] ? [ENERGY_CONFIG[a.energyLevel].label] : []),
                         ];
+                        const typeAccent = a.type === 'food' ? D.coral : a.type === 'experience' ? '#7F77DD' : a.type === 'shopping' ? D.sage : a.mustDo ? D.gold : D.border;
 
                         return (
                           <div key={i}>
@@ -811,7 +839,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                               {/* ── PHOTO-FIRST activity card ── */}
                               <div
                                 className="itin-card-enter itin-photo-card"
-                                style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}`, minWidth: 0, animationDelay: `${i * 60}ms` }}
+                                style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}`, borderLeft: showPhoto ? `0.5px solid ${D.border}` : `3px solid ${typeAccent}`, minWidth: 0, animationDelay: `${i * 60}ms` }}
                               >
                                 {/* Photo at top (non-hotel/transport only) */}
                                 {showPhoto && (
