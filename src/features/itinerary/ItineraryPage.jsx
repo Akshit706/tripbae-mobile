@@ -231,8 +231,9 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           marginBottom: 12,
           boxShadow: '0 2px 8px rgba(28,20,16,0.06)',
           border: `0.5px solid ${D.border}`,
-          opacity: isDone ? 0.45 : 1,
-          transition: 'opacity .25s',
+          opacity: isDone ? 0.5 : 1,
+          filter: isDone ? 'grayscale(0.5) blur(0.4px)' : 'none',
+          transition: 'opacity 0.3s ease, filter 0.3s ease',
           animationDelay: `${index * 70}ms`,
         }}
       >
@@ -247,11 +248,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
             delay={(startIndex + index) * 500}
           />
           {/* bottom gradient on photo */}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 45%, rgba(28,20,16,0.55) 100%)', pointerEvents: 'none' }} />
-          {/* emoji badge */}
-          <div style={{ position: 'absolute', top: 10, left: 10, width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-            {item.emoji || '🍽'}
-          </div>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 35%, rgba(28,20,16,0.72) 100%)', pointerEvents: 'none' }} />
           {/* done overlay tick */}
           {isDone && (
             <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.48)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(1px)' }}>
@@ -262,10 +259,23 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
               </div>
             </div>
           )}
-          {/* name overlaid on photo gradient */}
-          <div style={{ position: 'absolute', bottom: 10, left: 12, right: 44, pointerEvents: 'none' }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', lineHeight: 1.2, textShadow: '0 1px 4px rgba(0,0,0,0.4)', fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none' }}>
-              {item.name}
+          {/* name + veg dot overlaid on photo gradient */}
+          <div style={{ position: 'absolute', bottom: 10, left: 12, right: 52, pointerEvents: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 1px 6px rgba(0,0,0,0.55)', fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none', flex: 1 }}>
+                {item.name}
+              </span>
+              {secKey === 'dishes' && (() => {
+                const str = ((item.tags||[]).join(' ')+' '+(item.desc||'')+' '+(item.name||'')).toLowerCase();
+                const veg = /\bveg\b|vegetarian|paneer|sabzi|dal |aloo|gobi|palak|chole|rajma|dosa|idli|dhokla|poha|chaat|lassi/.test(str) && !/non.?veg|chicken|mutton|lamb|fish|prawn|seafood|\begg\b|keema|kebab|crab|lobster/.test(str);
+                const nonVeg = /non.?veg|chicken|mutton|lamb|fish|prawn|seafood|\begg\b|keema|rogan|kebab|crab|lobster/.test(str);
+                if (!veg && !nonVeg) return null;
+                return (
+                  <div style={{ width: 16, height: 16, borderRadius: 3, border: `2px solid ${veg ? '#4CAF50' : '#EF5350'}`, background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: veg ? '#2E7D32' : '#C62828' }} />
+                  </div>
+                );
+              })()}
             </div>
           </div>
           {/* done button over photo */}
@@ -302,13 +312,6 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
 
         {/* Card body */}
         <div style={{ padding: '12px 14px 13px' }}>
-          {/* Dish name row with veg/nonveg dot (dishes only) */}
-          {secKey === 'dishes' && (
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: isDone ? D.muted : D.espresso, fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.2 }}>{item.name}</span>
-              <VegDot item={item} />
-            </div>
-          )}
           {/* Rating + price + best time */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 7 }}>
             {item.rating && renderStars(item.rating)}
