@@ -1,6 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { supabase } from '../../supabase';
-import { addPhoto, deletePhoto } from '../../api';
+import { addPhoto, deletePhoto, imagekitAuth } from '../../api';
 import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Avatar } from '../shared/ui';
@@ -38,26 +37,33 @@ function PhotosPage({ trip, myNickname }) {
   const processFiles = async (files) => {
     setUploading(true);
     setUploadProgress(0);
+    let auth = null;
+    try { auth = await imagekitAuth(); } catch (e) { console.error('IK auth failed', e); setUploading(false); return; }
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const fileName = `${trip.id}/${me}/${Date.now()}-${file.name}`;
-
-      const { error } = await supabase.storage
-        .from('trip-photos')
-        .upload(fileName, file);
-
-      if (error) { console.error('Upload error:', error.message); continue; }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from('trip-photos')
-        .getPublicUrl(fileName);
-
+      const safeFile = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const fileName = `${trip.id}_${me}_${Date.now()}_${safeFile}`;
+      const form = new FormData();
+      form.append('file', file);
+      form.append('fileName', fileName);
+      form.append('folder', `/tb-photos/user/${trip.id}`);
+      form.append('useUniqueFileName', 'false');
+      form.append('publicKey',  auth.publicKey);
+      form.append('signature',  auth.signature);
+      form.append('expire',     String(auth.expire));
+      form.append('token',      auth.token);
       try {
-        const res = await addPhoto(trip.id, publicUrl);
-        setAllPhotos(p => [...p, res.photo || { id: Date.now() + Math.random(), url: publicUrl, uploader: me }]);
-      } catch {
-        setAllPhotos(p => [...p, { id: Date.now() + Math.random(), url: publicUrl, uploader: me }]);
-      }
+        const uploadRes = await fetch('https://upload.imagekit.io/api/v1/files/upload', { method: 'POST', body: form });
+        const uploadData = await uploadRes.json();
+        if (!uploadData.url) { console.error('IK upload error', uploadData); continue; }
+        const publicUrl = uploadData.url;
+        try {
+          const res = await addPhoto(trip.id, publicUrl);
+          setAllPhotos(p => [...p, res.photo || { id: Date.now() + Math.random(), url: publicUrl, uploader: me }]);
+        } catch {
+          setAllPhotos(p => [...p, { id: Date.now() + Math.random(), url: publicUrl, uploader: me }]);
+        }
+      } catch (e) { console.error('Upload error:', e.message); }
       setUploadProgress(Math.round(((i + 1) / files.length) * 100));
     }
     setUploading(false);
@@ -75,11 +81,7 @@ function PhotosPage({ trip, myNickname }) {
 
   /* ── delete (single) ── */
   const doDeleteSingle = async (photo) => {
-    const fileName = `${trip.id}/${me}/${photo.url.split('/').pop()}`;
-    await supabase.storage.from('trip-photos').remove([fileName]);
-    
-    await deletePhoto(trip.id, photo.id); // ← replaces the silent try/catch fetch
-
+    await deletePhoto(trip.id, photo.id);
     setAllPhotos(p => p.filter(x => x.id !== photo.id));
     setSelected(s => { const n = new Set(s); n.delete(photo.id); return n; });
     setPendingDeletePhoto(null);
@@ -90,9 +92,7 @@ function PhotosPage({ trip, myNickname }) {
   const doDeleteBulk = async () => {
     const toDelete = folderPhotos.filter(p => selected.has(p.id));
     for (const photo of toDelete) {
-      const fileName = `${trip.id}/${me}/${photo.url.split('/').pop()}`;
-      await supabase.storage.from('trip-photos').remove([fileName]);
-      await deletePhoto(trip.id, photo.id); // ← same fix
+      await deletePhoto(trip.id, photo.id);
     }
     const deletedIds = new Set(toDelete.map(p => p.id));
     setAllPhotos(p => p.filter(x => !deletedIds.has(x.id)));
