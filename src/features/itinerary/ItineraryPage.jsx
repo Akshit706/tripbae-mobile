@@ -21,8 +21,48 @@ const D = {
   secondary: '#5C504A',
   divider:   'rgba(28,20,16,0.06)',
   border:    'rgba(28,20,16,0.08)',
-  cardShadow:'0 2px 14px rgba(28,20,16,0.07)',
+  cardShadow:'0 2px 8px rgba(28,20,16,0.06)',
 };
+
+/* Determine if an activity time slot is currently active */
+function isActiveSlot(time, endTime) {
+  if (!time || !endTime) return false;
+  const parse = t => {
+    const [tp, period] = t.trim().split(' ');
+    const [h, m] = tp.split(':').map(Number);
+    let hrs = h;
+    if (period === 'PM' && h !== 12) hrs += 12;
+    if (period === 'AM' && h === 12) hrs = 0;
+    return hrs * 60 + (m || 0);
+  };
+  const now = new Date();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  return cur >= parse(time) && cur <= parse(endTime);
+}
+
+/* ── CSS keyframe injection (pulse dot + card entry) ──────── */
+if (typeof document !== 'undefined' && !document.getElementById('itinerary-styles')) {
+  const el = document.createElement('style');
+  el.id = 'itinerary-styles';
+  el.textContent = `
+    @keyframes dotPulse {
+      0%,100% { transform: scale(1);   opacity: 1; }
+      50%      { transform: scale(1.6); opacity: 0.8; }
+    }
+    @keyframes glowPulse {
+      0%,100% { transform: scale(1);   opacity: 0.25; }
+      50%      { transform: scale(1.9); opacity: 0; }
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .itin-card-enter { animation: cardIn 0.3s ease both; }
+    .itin-dot-active  { animation: dotPulse 1.4s ease-in-out infinite; }
+    .itin-dot-glow    { animation: glowPulse 1.4s ease-in-out infinite; }
+  `;
+  document.head.appendChild(el);
+}
 
 /* ── Lightbox ─────────────────────────────────────────────── */
 function Lightbox({ url, onClose }) {
@@ -386,59 +426,72 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           )}
 
           {step === 'result' && itin && (
-            <div style={{ background: D.bg, paddingBottom: '2rem' }}>
+            <div style={{ background: D.bg, paddingBottom: '2.5rem' }}>
 
-              {/* ── Hero card ──────────────────────────────────────── */}
+              {/* ── Hero: destination photo + gradient overlay ─── */}
               <div style={{
-                background: `linear-gradient(160deg, ${isSolo ? '#2C2460' : '#1C3028'} 0%, ${isSolo ? '#7F77DD' : '#1D9E75'} 100%)`,
-                borderRadius: 18,
-                padding: '1.5rem',
-                marginBottom: '1rem',
                 position: 'relative',
+                minHeight: 220,
+                borderRadius: 18,
                 overflow: 'hidden',
+                marginBottom: '1.25rem',
+                boxShadow: '0 4px 24px rgba(28,20,16,0.18)',
               }}>
-                {/* watermark glyph */}
-                <div style={{ position: 'absolute', top: -18, right: -18, fontSize: 120, opacity: 0.05, lineHeight: 1 }}>✈</div>
-                {/* arrival / departure pills */}
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 14 }}>
-                  <span style={{ background: 'rgba(255,255,255,0.15)', border: '0.5px solid rgba(255,255,255,0.25)', borderRadius: 999, padding: '4px 11px', fontSize: 11, color: '#fff', fontWeight: 500 }}>
-                    ✈️ {SLOT_LABELS[form.arrivalSlot]}
-                  </span>
-                  <span style={{ background: 'rgba(255,255,255,0.15)', border: '0.5px solid rgba(255,255,255,0.25)', borderRadius: 999, padding: '4px 11px', fontSize: 11, color: '#fff', fontWeight: 500 }}>
-                    🛬 {SLOT_LABELS[form.departureSlot]}
-                  </span>
-                </div>
-                {/* title */}
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#fff', letterSpacing: -0.3, lineHeight: 1.3, marginBottom: 6, fontFamily: "'Sora',sans-serif" }}>
-                  {itin.headline || `${days}-Day ${form.dest} Itinerary`}
-                </div>
-                {itin.summary && (
-                  <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.65, marginBottom: 14 }}>{itin.summary}</div>
-                )}
-                {/* budget + best time */}
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {itin.totalEstimatedCost && (
-                    <span style={{ background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#F5D9A8', fontWeight: 600 }}>
-                      🔥 {itin.totalEstimatedCost}
+                {/* photo layer */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  backgroundImage: `url(https://images.unsplash.com/photo-1599661046289-e31897846e41?w=800)`,
+                  backgroundSize: 'cover', backgroundPosition: 'center',
+                  filter: 'brightness(0.9)',
+                }} />
+                {/* gradient overlay */}
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(to bottom, transparent 0%, rgba(10,8,6,0.2) 40%, rgba(10,8,6,0.88) 100%)',
+                }} />
+                {/* content sits above layers */}
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: 220, padding: '1.25rem 1.25rem 1.25rem' }}>
+                  {/* arrival / departure pills — top of content area */}
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 'auto', paddingTop: 14 }}>
+                    <span style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.30)', borderRadius: 999, padding: '4px 11px', fontSize: 11, color: '#fff', fontWeight: 500, backdropFilter: 'blur(6px)' }}>
+                      ✈️ {SLOT_LABELS[form.arrivalSlot]}
                     </span>
-                  )}
-                  {itin.bestTimeToVisit && (
-                    <span style={{ background: 'rgba(255,255,255,0.10)', borderRadius: 999, padding: '4px 12px', fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>
-                      🗓 {itin.bestTimeToVisit}
+                    <span style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.30)', borderRadius: 999, padding: '4px 11px', fontSize: 11, color: '#fff', fontWeight: 500, backdropFilter: 'blur(6px)' }}>
+                      🛬 {SLOT_LABELS[form.departureSlot]}
                     </span>
+                  </div>
+                  {/* title */}
+                  <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: -0.4, lineHeight: 1.25, marginBottom: 5, fontFamily: "'Sora',sans-serif", textShadow: '0 1px 8px rgba(0,0,0,0.4)', marginTop: 40 }}>
+                    {itin.headline || `${days}-Day ${form.dest} Itinerary`}
+                  </div>
+                  {itin.summary && (
+                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginBottom: 12 }}>{itin.summary}</div>
                   )}
+                  {/* budget + best time */}
+                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                    {itin.totalEstimatedCost && (
+                      <span style={{ background: 'rgba(255,255,255,0.15)', border: '0.5px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#F5D9A8', fontWeight: 700 }}>
+                        🔥 {itin.totalEstimatedCost}
+                      </span>
+                    )}
+                    {itin.bestTimeToVisit && (
+                      <span style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '4px 12px', fontSize: 11, color: 'rgba(255,255,255,0.70)' }}>
+                        🗓 {itin.bestTimeToVisit}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              {/* ── Quick tips: horizontal scroll pills ─────────── */}
+              {/* ── Quick tips: labelled horizontal scroll ───────── */}
               {itin.quickTips?.length > 0 && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: 'uppercase', letterSpacing: .8, marginBottom: 8, paddingLeft: 2 }}>💡 Quick Tips</div>
-                  <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                <div style={{ marginBottom: '1.25rem', marginTop: 4 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: D.muted, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8, paddingLeft: 2, fontFamily: "'DM Sans',sans-serif" }}>QUICK TIPS</div>
+                  <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, paddingLeft: 0 }}>
                     {itin.quickTips.map((tip, i) => (
-                      <div key={i} style={{ flexShrink: 0, background: D.coralTint, borderRadius: 12, padding: '8px 13px', maxWidth: 220, display: 'flex', gap: 7, alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: 13, flexShrink: 0 }}>💡</span>
-                        <span style={{ fontSize: 12, color: D.coral, lineHeight: 1.5 }}>{tip}</span>
+                      <div key={i} style={{ flexShrink: 0, background: '#FDF0EE', border: '0.5px solid #F5C4B3', borderRadius: 20, padding: '8px 14px', maxWidth: 230, display: 'flex', gap: 6, alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: 13, flexShrink: 0, lineHeight: 1.4 }}>💡</span>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: '#C9533A', lineHeight: 1.5, fontFamily: "'DM Sans',sans-serif" }}>{tip}</span>
                       </div>
                     ))}
                   </div>
@@ -465,24 +518,32 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   return (
                     <div key={d.day} style={{ marginBottom: '1.5rem' }}>
 
-                      {/* ── Day header ── */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10, padding: '0 2px' }}>
-                        {/* Day number badge */}
-                        <div style={{ width: 42, height: 42, borderRadius: 12, background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : `linear-gradient(135deg,${D.gold},#A8731E)`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 3px 10px ${isSolo ? 'rgba(127,119,221,0.35)' : 'rgba(201,145,58,0.35)'}` }}>
-                          <span style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.75)', textTransform: 'uppercase', letterSpacing: .5, lineHeight: 1 }}>Day</span>
-                          <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>{d.day}</span>
-                        </div>
-                        {/* Theme + date + chips */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 14.5, fontWeight: 700, color: D.espresso, lineHeight: 1.2, marginBottom: 4, fontFamily: "'Sora',sans-serif" }}>{d.title || d.theme}</div>
+                      {/* ── Day header: left gold bar + italic serif theme ── */}
+                      <div style={{ display: 'flex', alignItems: 'stretch', background: D.surface, borderRadius: 12, marginBottom: 10, overflow: 'hidden', boxShadow: '0 2px 8px rgba(28,20,16,0.06)' }}>
+                        {/* 3px gold left accent */}
+                        <div style={{ width: 3, background: D.gold, flexShrink: 0 }} />
+                        <div style={{ flex: 1, padding: '10px 12px' }}>
+                          {/* top row: date label left, temp + badges right */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                            <span style={{ fontSize: 11, fontWeight: 500, color: D.muted, letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>{dateLabel}</span>
+                            <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                              {d.weather && <span style={{ fontSize: 11, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>{weatherIcon} <span style={{ color: D.coral }}>{d.weather.high}°</span>/{d.weather.low}°</span>}
+                              {d.estimatedCost && <span style={{ fontSize: 10, fontWeight: 600, background: D.goldTint, color: D.gold, borderRadius: 999, padding: '1px 7px' }}>{d.estimatedCost}</span>}
+                            </div>
+                          </div>
+                          {/* theme in italic serif */}
+                          <div style={{ fontSize: 16, fontStyle: 'italic', color: D.espresso, fontFamily: "'Georgia',serif", lineHeight: 1.3, marginBottom: 5 }}>{d.title || d.theme}</div>
+                          {/* badge row */}
                           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                            <span style={{ fontSize: 10, fontWeight: 600, color: D.muted, letterSpacing: .4 }}>{dateLabel}</span>
-                            {d.weather && <span style={{ fontSize: 10, background: D.coralTint, color: D.coral, borderRadius: 999, padding: '1px 7px', fontWeight: 600 }}>{weatherIcon} {d.weather.high}°/{d.weather.low}°</span>}
                             {isArrivalDay && <span style={{ fontSize: 9, fontWeight: 700, background: D.blueTint, color: '#2563AB', borderRadius: 999, padding: '1px 6px' }}>✈ Arrives</span>}
                             {isDepartureDay && <span style={{ fontSize: 9, fontWeight: 700, background: D.coralTint, color: D.coral, borderRadius: 999, padding: '1px 6px' }}>🛫 Departs</span>}
-                            {d.estimatedCost && <span style={{ fontSize: 10, fontWeight: 600, background: D.goldTint, color: D.gold, borderRadius: 999, padding: '1px 7px' }}>{d.estimatedCost}</span>}
-                            {dayDoneCount > 0 && <span style={{ fontSize: 10, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 999, padding: '1px 7px' }}>✓ {dayDoneCount}/{dayTotalCount}</span>}
+                            {dayDoneCount > 0 && <span style={{ fontSize: 9, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 999, padding: '1px 7px' }}>✓ {dayDoneCount}/{dayTotalCount} done</span>}
                           </div>
+                        </div>
+                        {/* Day number badge on right */}
+                        <div style={{ width: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isSolo ? 'linear-gradient(160deg,#7F77DD,#534AB7)' : `linear-gradient(160deg,${D.gold},#A8731E)`, flexShrink: 0 }}>
+                          <span style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: .5, lineHeight: 1 }}>Day</span>
+                          <span style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>{d.day}</span>
                         </div>
                       </div>
 
@@ -506,7 +567,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         const isLast   = i === d.activities.length - 1;
                         const doneKey  = `day-${d.day}-act-${i}`;
                         const isDone   = doneActivities.has(doneKey);
-                        const dotColor = a.mustDo ? D.gold : '#D3CFC8';
+                        const isActive = isActiveSlot(a.time, a.endTime);
+                        const dotColor = isActive ? D.gold : (a.mustDo ? D.gold : '#D3CFC8');
                         const allTags  = [
                           ...(a.mustDo ? ['MUST DO'] : []),
                           ...(a.energyLevel && ENERGY_CONFIG[a.energyLevel] ? [ENERGY_CONFIG[a.energyLevel].label] : []),
@@ -524,16 +586,21 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                               </div>
 
                               {/* Connector */}
-                              <div style={{ width: 18, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 5 }}>
-                                <div style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, flexShrink: 0, zIndex: 1, boxShadow: a.mustDo ? `0 0 0 3px ${D.goldTint}` : 'none' }} />
-                                {!isLast && <div style={{ width: 1.5, flex: 1, background: D.divider, marginTop: 3 }} />}
+                              <div style={{ width: 20, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 5 }}>
+                                <div style={{ position: 'relative', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  {/* glow ring — only for active slot */}
+                                  {isActive && <div className="itin-dot-glow" style={{ position: 'absolute', width: 20, height: 20, borderRadius: '50%', background: 'rgba(201,145,58,0.22)' }} />}
+                                  {/* the dot itself */}
+                                  <div className={isActive ? 'itin-dot-active' : ''} style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, zIndex: 1, boxShadow: (isActive || a.mustDo) ? `0 0 0 3px ${D.goldTint}` : 'none' }} />
+                                </div>
+                                {!isLast && <div style={{ width: 1.5, flex: 1, background: D.divider, marginTop: 1 }} />}
                               </div>
 
                               {/* Activity card */}
-                              <div style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 14, padding: '13px 14px', boxShadow: D.cardShadow, border: `0.5px solid ${D.border}`, minWidth: 0 }}>
+                              <div className="itin-card-enter" style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 14, padding: '14px 14px 12px', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}`, minWidth: 0, animationDelay: `${i * 60}ms` }}>
 
                                 {/* Row 1: name + category icon */}
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 7 }}>
                                   <div style={{ flex: 1, minWidth: 0 }}>
                                     <span style={{ fontSize: 14.5, fontWeight: 700, color: isDone ? D.muted : D.espresso, textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.3 }}>{a.name}</span>
                                   </div>
@@ -542,7 +609,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                                 {/* Row 2: tags */}
                                 {allTags.length > 0 && (
-                                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 7 }}>
+                                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
                                     {allTags.map((tag, ti) => {
                                       const ts = tagStyle(tag, tag === 'MUST DO');
                                       return (
@@ -554,7 +621,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                                 {/* Row 3: opening hours */}
                                 {a.openingHours && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
                                     <span style={{ fontSize: 11 }}>🕐</span>
                                     <span style={{ fontSize: 11.5, color: D.muted }}>Open {a.openingHours}</span>
                                     {a.hoursSource === 'verified'  && <span style={{ fontSize: 9, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 4, padding: '1px 5px' }}>✓ verified</span>}
@@ -564,20 +631,20 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                                 {/* Row 4: note / description */}
                                 {(a.note || a.description) && (
-                                  <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.6, marginBottom: 7 }}>{a.note || a.description}</div>
+                                  <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.6, marginBottom: 6 }}>{a.note || a.description}</div>
                                 )}
 
                                 {/* Row 4b: headsUp warning */}
                                 {a.headsUp && (
-                                  <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', background: '#FFFBF0', border: `0.5px solid #FAC775`, borderRadius: 8, padding: '6px 9px', marginBottom: 7 }}>
-                                    <span style={{ fontSize: 12, flexShrink: 0 }}>⚠️</span>
+                                  <div style={{ display: 'flex', gap: 5, alignItems: 'flex-start', background: '#FFFBF0', border: `0.5px solid #FAC775`, borderRadius: 6, padding: '8px 10px', marginBottom: 6 }}>
+                                    <span style={{ fontSize: 14, flexShrink: 0, lineHeight: 1.2 }}>⚠️</span>
                                     <span style={{ fontSize: 11, color: '#7A4F00', lineHeight: 1.5 }}>{a.headsUp}</span>
                                   </div>
                                 )}
 
                                 {/* Row 5: meta — duration, cost, area */}
                                 {(a.duration || a.cost || a.area) && (
-                                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+                                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 7 }}>
                                     {a.duration && <span style={{ fontSize: 11, color: D.muted }}>⏱ {a.duration}</span>}
                                     {a.cost && <span style={{ fontSize: 11, color: D.gold, fontWeight: 600 }}>🔥 {a.cost}</span>}
                                     {a.area && <span style={{ fontSize: 11, color: D.muted }}>📍 {a.area}</span>}
@@ -586,10 +653,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                                 {/* Row 6: photo */}
                                 {showPhoto && (
-                                  <div style={{ marginBottom: 8, cursor: 'zoom-in' }} onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}>
+                                  <div style={{ marginTop: 10, cursor: 'zoom-in' }} onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}>
                                     <PlacePhoto
                                       query={`${a.name} ${form.dest} ${a.type === 'food' ? 'restaurant dish food' : a.type === 'experience' ? 'travel experience' : a.type === 'shopping' ? 'market shopping' : 'tourist attraction landmark'}`}
-                                      style={{ height: 140, borderRadius: 10 }}
+                                      style={{ height: 130, borderRadius: 8 }}
                                       delay={currentDelay}
                                     />
                                   </div>
@@ -627,10 +694,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                             {/* Transit chip */}
                             {!isLast && a.travelToNext && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '2px 0 4px 26px' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '8px 0 8px 20px' }}>
                                 <div style={{ flex: 1, height: 1, background: D.divider }} />
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: D.neutral, borderRadius: 999, padding: '3px 10px', fontSize: 11, color: D.muted, flexShrink: 0 }}>
-                                  🚶 {a.travelToNext}
+                                  <span style={{ fontSize: 13 }}>🚶</span> {a.travelToNext}
                                 </div>
                                 <div style={{ flex: 1, height: 1, background: D.divider }} />
                               </div>
