@@ -40,7 +40,7 @@ function isActiveSlot(time, endTime) {
   return cur >= parse(time) && cur <= parse(endTime);
 }
 
-/* ── CSS keyframe injection (pulse dot + card entry) ──────── */
+/* ── CSS keyframe injection (pulse dot + card entry + shimmer) ── */
 if (typeof document !== 'undefined' && !document.getElementById('itinerary-styles')) {
   const el = document.createElement('style');
   el.id = 'itinerary-styles';
@@ -54,12 +54,34 @@ if (typeof document !== 'undefined' && !document.getElementById('itinerary-style
       50%      { transform: scale(1.9); opacity: 0; }
     }
     @keyframes cardIn {
-      from { opacity: 0; transform: translateY(14px); }
+      from { opacity: 0; transform: translateY(18px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .itin-card-enter { animation: cardIn 0.3s ease both; }
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    @keyframes floatBadge {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-3px); }
+    }
+    @keyframes fadeSlideUp {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .itin-card-enter { animation: cardIn 0.38s cubic-bezier(0.34,1.3,0.64,1) both; }
     .itin-dot-active  { animation: dotPulse 1.4s ease-in-out infinite; }
     .itin-dot-glow    { animation: glowPulse 1.4s ease-in-out infinite; }
+    .itin-float       { animation: floatBadge 3s ease-in-out infinite; }
+    .itin-shimmer     {
+      background: linear-gradient(90deg,#f0ede8 25%,#e8e4dc 50%,#f0ede8 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+    }
+    .itin-photo-card:hover { transform: scale(1.012); box-shadow: 0 8px 32px rgba(28,20,16,0.13) !important; }
+    .itin-photo-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .itin-action-pill:hover { transform: scale(1.04); filter: brightness(0.97); }
+    .itin-action-pill { transition: transform 0.15s ease, filter 0.15s ease; }
   `;
   document.head.appendChild(el);
 }
@@ -164,6 +186,20 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
 
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
 
+  /* ── Veg / Non-veg dot ── */
+  const VegDot = ({ item }) => {
+    const str = ((item.tags || []).join(' ') + ' ' + (item.desc || '') + ' ' + (item.name || '')).toLowerCase();
+    const isVeg    = /\bveg\b|vegetarian|paneer|sabzi|dal |aloo|gobi|palak|chole|rajma|dosa|idli|pongal|dhokla|poha|chaat|lassi/.test(str);
+    const isNonVeg = /non.?veg|chicken|mutton|lamb|fish|prawn|seafood|\begg\b|keema|rogan|kebab|tandoori chicken|crab|lobster/.test(str);
+    if (!isVeg && !isNonVeg) return null;
+    const veg = isVeg && !isNonVeg;
+    return (
+      <div title={veg ? 'Vegetarian' : 'Non-vegetarian'} style={{ width: 16, height: 16, borderRadius: 3, border: `2px solid ${veg ? '#2E7D32' : '#C62828'}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 4 }}>
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: veg ? '#2E7D32' : '#C62828' }} />
+      </div>
+    );
+  };
+
   /* ── Premium item card ── */
   const TasteCard = ({ item, secKey, index, photoSuffix, startIndex }) => {
     const key = `${secKey}-${index}`;
@@ -223,6 +259,13 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
 
         {/* Card body */}
         <div style={{ padding: '12px 14px 13px' }}>
+          {/* Dish name row with veg/nonveg dot (dishes only) */}
+          {secKey === 'dishes' && (
+            <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+              <span style={{ fontSize: 14, fontWeight: 700, color: isDone ? D.muted : D.espresso, fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.2 }}>{item.name}</span>
+              <VegDot item={item} />
+            </div>
+          )}
           {/* Rating + price + best time */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 7 }}>
             {item.rating && renderStars(item.rating)}
@@ -748,112 +791,137 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         return (
                           <div key={i}>
                             {/* Timeline row */}
-                            <div style={{ display: 'flex', gap: 0, opacity: isDone ? 0.42 : 1, transition: 'opacity .25s' }}>
+                            <div style={{ display: 'flex', gap: 0, opacity: isDone ? 0.42 : 1, transition: 'opacity .3s' }}>
 
                               {/* Time + dot column */}
-                              <div style={{ width: 58, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingRight: 10, paddingTop: 3 }}>
-                                <span style={{ fontSize: 12, fontWeight: 600, color: D.espresso, lineHeight: 1 }}>{a.time}</span>
+                              <div style={{ width: 52, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingRight: 10, paddingTop: 5 }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: D.espresso, lineHeight: 1, fontFamily: "'DM Sans',sans-serif" }}>{a.time}</span>
                                 {a.endTime && <span style={{ fontSize: 10, color: D.muted, marginTop: 2 }}>{a.endTime}</span>}
                               </div>
 
                               {/* Connector */}
-                              <div style={{ width: 20, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 5 }}>
+                              <div style={{ width: 20, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 7 }}>
                                 <div style={{ position: 'relative', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  {/* glow ring — only for active slot */}
                                   {isActive && <div className="itin-dot-glow" style={{ position: 'absolute', width: 20, height: 20, borderRadius: '50%', background: 'rgba(201,145,58,0.22)' }} />}
-                                  {/* the dot itself */}
                                   <div className={isActive ? 'itin-dot-active' : ''} style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, zIndex: 1, boxShadow: (isActive || a.mustDo) ? `0 0 0 3px ${D.goldTint}` : 'none' }} />
                                 </div>
                                 {!isLast && <div style={{ width: 1.5, flex: 1, background: D.divider, marginTop: 1 }} />}
                               </div>
 
-                              {/* Activity card */}
-                              <div className="itin-card-enter" style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 14, padding: '14px 14px 12px', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}`, minWidth: 0, animationDelay: `${i * 60}ms` }}>
-
-                                {/* Row 1: name + category icon */}
-                                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 7 }}>
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <span style={{ fontSize: 14.5, fontWeight: 700, color: isDone ? D.muted : D.espresso, textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.3 }}>{a.name}</span>
-                                  </div>
-                                  <span style={{ fontSize: 18, flexShrink: 0, marginTop: 1 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
-                                </div>
-
-                                {/* Row 2: tags */}
-                                {allTags.length > 0 && (
-                                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 6 }}>
-                                    {allTags.map((tag, ti) => {
-                                      const ts = tagStyle(tag, tag === 'MUST DO');
-                                      return (
-                                        <span key={ti} style={{ fontSize: 10, fontWeight: 700, letterSpacing: .7, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 999, background: ts.bg, color: ts.color }}>{tag}</span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-
-                                {/* Row 3: opening hours */}
-                                {a.openingHours && (
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-                                    <span style={{ fontSize: 11 }}>🕐</span>
-                                    <span style={{ fontSize: 11.5, color: D.muted }}>Open {a.openingHours}</span>
-                                    {a.hoursSource === 'verified'  && <span style={{ fontSize: 9, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 4, padding: '1px 5px' }}>✓ verified</span>}
-                                    {a.hoursSource === 'estimated' && <span style={{ fontSize: 9, fontStyle: 'italic', background: '#F4F3FF', color: '#7A6FCF', borderRadius: 4, padding: '1px 5px' }}>est.</span>}
-                                  </div>
-                                )}
-
-                                {/* Row 4: note / description */}
-                                {(a.note || a.description) && (
-                                  <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.6, marginBottom: 6 }}>{a.note || a.description}</div>
-                                )}
-
-                                {/* Row 4b: headsUp warning */}
-                                {a.headsUp && (
-                                  <div style={{ display: 'flex', gap: 5, alignItems: 'flex-start', background: '#FFFBF0', border: `0.5px solid #FAC775`, borderRadius: 6, padding: '8px 10px', marginBottom: 6 }}>
-                                    <span style={{ fontSize: 14, flexShrink: 0, lineHeight: 1.2 }}>⚠️</span>
-                                    <span style={{ fontSize: 11, color: '#7A4F00', lineHeight: 1.5 }}>{a.headsUp}</span>
-                                  </div>
-                                )}
-
-                                {/* Row 5: meta — duration, cost, area */}
-                                {(a.duration || a.cost || a.area) && (
-                                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 7 }}>
-                                    {a.duration && <span style={{ fontSize: 11, color: D.muted }}>⏱ {a.duration}</span>}
-                                    {a.cost && <span style={{ fontSize: 11, color: D.gold, fontWeight: 600 }}>🔥 {a.cost}</span>}
-                                    {a.area && <span style={{ fontSize: 11, color: D.muted }}>📍 {a.area}</span>}
-                                  </div>
-                                )}
-
-                                {/* Row 6: photo */}
+                              {/* ── PHOTO-FIRST activity card ── */}
+                              <div
+                                className="itin-card-enter itin-photo-card"
+                                style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}`, minWidth: 0, animationDelay: `${i * 60}ms` }}
+                              >
+                                {/* Photo at top (non-hotel/transport only) */}
                                 {showPhoto && (
-                                  <div style={{ marginTop: 10, cursor: 'zoom-in' }} onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}>
+                                  <div
+                                    style={{ position: 'relative', height: 150, overflow: 'hidden', cursor: 'zoom-in', background: D.neutral }}
+                                    onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}
+                                  >
                                     <PlacePhoto
                                       query={`${a.name} ${form.dest} ${a.type === 'food' ? 'restaurant dish food' : a.type === 'experience' ? 'travel experience' : a.type === 'shopping' ? 'market shopping' : 'tourist attraction landmark'}`}
-                                      style={{ height: 130, borderRadius: 8 }}
+                                      style={{ height: 150, borderRadius: 0 }}
                                       delay={currentDelay}
                                     />
+                                    {/* gradient on photo */}
+                                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(28,20,16,0.62) 100%)', pointerEvents: 'none' }} />
+                                    {/* activity type badge top-left */}
+                                    <div className="itin-float" style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.92)', borderRadius: 10, padding: '3px 9px', display: 'flex', alignItems: 'center', gap: 4, backdropFilter: 'blur(4px)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
+                                      <span style={{ fontSize: 14 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
+                                      <span style={{ fontSize: 10, fontWeight: 700, color: D.espresso, textTransform: 'uppercase', letterSpacing: .5, fontFamily: "'DM Sans',sans-serif" }}>{a.type}</span>
+                                    </div>
+                                    {/* mustDo gold badge top-right */}
+                                    {a.mustDo && (
+                                      <div style={{ position: 'absolute', top: 10, right: 10, background: D.gold, borderRadius: 999, padding: '3px 9px', fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: .6, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 8px rgba(201,145,58,0.45)' }}>★ Must Do</div>
+                                    )}
+                                    {/* name + time overlaid */}
+                                    <div style={{ position: 'absolute', bottom: 10, left: 12, right: 12, pointerEvents: 'none' }}>
+                                      <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 1px 6px rgba(0,0,0,0.5)', fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none' }}>{a.name}</div>
+                                    </div>
+                                    {/* done overlay */}
+                                    {isDone && (
+                                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: accentColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: '#fff' }}>✓</div>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
 
-                                {/* Row 7: action pills */}
-                                {a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel' && (
-                                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                                    <a
-                                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
-                                      target="_blank" rel="noreferrer"
-                                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#2563AB', background: D.blueTint, borderRadius: 999, padding: '5px 13px', textDecoration: 'none', fontWeight: 600, border: 'none' }}
-                                    >
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                      Maps
-                                    </a>
-                                    <a
-                                      href={`https://www.google.com/search?q=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
-                                      target="_blank" rel="noreferrer"
-                                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: D.secondary, background: D.neutral, borderRadius: 999, padding: '5px 13px', textDecoration: 'none', fontWeight: 600, border: 'none' }}
-                                    >
-                                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                      Know more
-                                    </a>
-                                  </div>
-                                )}
+                                {/* Card body */}
+                                <div style={{ padding: '11px 13px 12px' }}>
+                                  {/* Name row for hotel/transport (no photo) */}
+                                  {!showPhoto && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                                      <span style={{ fontSize: 18 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
+                                      <span style={{ fontSize: 14, fontWeight: 700, color: isDone ? D.muted : D.espresso, textDecoration: isDone ? 'line-through' : 'none', fontFamily: "'Sora',sans-serif" }}>{a.name}</span>
+                                    </div>
+                                  )}
+
+                                  {/* Tags */}
+                                  {allTags.length > 0 && (
+                                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 7 }}>
+                                      {allTags.map((tag, ti) => {
+                                        const ts = tagStyle(tag, tag === 'MUST DO');
+                                        return <span key={ti} style={{ fontSize: 10, fontWeight: 700, letterSpacing: .7, textTransform: 'uppercase', padding: '2px 9px', borderRadius: 999, background: ts.bg, color: ts.color }}>{tag}</span>;
+                                      })}
+                                    </div>
+                                  )}
+
+                                  {/* Opening hours */}
+                                  {a.openingHours && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                                      <span style={{ fontSize: 11 }}>🕐</span>
+                                      <span style={{ fontSize: 11.5, color: D.muted }}>Open {a.openingHours}</span>
+                                      {a.hoursSource === 'verified'  && <span style={{ fontSize: 9, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 4, padding: '1px 5px' }}>✓ verified</span>}
+                                      {a.hoursSource === 'estimated' && <span style={{ fontSize: 9, fontStyle: 'italic', background: '#F4F3FF', color: '#7A6FCF', borderRadius: 4, padding: '1px 5px' }}>est.</span>}
+                                    </div>
+                                  )}
+
+                                  {/* Description */}
+                                  {(a.note || a.description) && (
+                                    <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, marginBottom: 7 }}>{a.note || a.description}</div>
+                                  )}
+
+                                  {/* Heads-up warning */}
+                                  {a.headsUp && (
+                                    <div style={{ display: 'flex', gap: 5, alignItems: 'flex-start', background: '#FFFBF0', border: '0.5px solid #FAC775', borderRadius: 6, padding: '7px 10px', marginBottom: 7 }}>
+                                      <span style={{ fontSize: 14, flexShrink: 0, lineHeight: 1.2 }}>⚠️</span>
+                                      <span style={{ fontSize: 11, color: '#7A4F00', lineHeight: 1.5 }}>{a.headsUp}</span>
+                                    </div>
+                                  )}
+
+                                  {/* Meta row */}
+                                  {(a.duration || a.cost || a.area) && (
+                                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 9 }}>
+                                      {a.duration && <span style={{ fontSize: 11, color: D.muted }}>⏱ {a.duration}</span>}
+                                      {a.cost && <span style={{ fontSize: 11, color: D.gold, fontWeight: 700 }}>🔥 {a.cost}</span>}
+                                      {a.area && <span style={{ fontSize: 11, color: D.muted }}>📍 {a.area}</span>}
+                                    </div>
+                                  )}
+
+                                  {/* Action pills */}
+                                  {a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel' && (
+                                    <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                                      <a className="itin-action-pill"
+                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
+                                        target="_blank" rel="noreferrer"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#2563AB', background: D.blueTint, borderRadius: 999, padding: '6px 14px', textDecoration: 'none', fontWeight: 600, border: 'none', fontFamily: "'DM Sans',sans-serif" }}
+                                      >
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                        Maps
+                                      </a>
+                                      <a className="itin-action-pill"
+                                        href={`https://www.google.com/search?q=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
+                                        target="_blank" rel="noreferrer"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: D.secondary, background: D.neutral, borderRadius: 999, padding: '6px 14px', textDecoration: 'none', fontWeight: 600, border: 'none', fontFamily: "'DM Sans',sans-serif" }}
+                                      >
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        Know more
+                                      </a>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
 
                               {/* Done toggle */}
