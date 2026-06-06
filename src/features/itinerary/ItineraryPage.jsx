@@ -567,7 +567,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   useEffect(() => {
     if (!form.dest) return;
     import('../../api').then(({ fetchPlacePhotos }) => {
-      fetchPlacePhotos(form.dest)
+      fetchPlacePhotos(`${form.dest} city travel landscape`)
         .then(data => { if (data.urls?.[0]) setHeroPhotoUrl(data.urls[0]); })
         .catch(() => {});
     });
