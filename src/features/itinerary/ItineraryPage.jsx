@@ -468,15 +468,26 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                         {a.cost && <span style={{ fontSize: 11, color: '#a8a8a5' }}>💰 {a.cost}</span>}
                                         {a.area && <span style={{ fontSize: 11, color: '#a8a8a5' }}>📍 {a.area}</span>}
                                         {a.type !== 'hotel' && a.type !== 'transport' && (
-                                          <a
-                                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#378ADD', background: '#E6F1FB', border: '0.5px solid #B8D4F0', borderRadius: 7, padding: '2px 8px', textDecoration: 'none', fontWeight: 600, marginLeft: 'auto', flexShrink: 0 }}
-                                          >
-                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                            Maps
-                                          </a>
+                                          <>
+                                            <a
+                                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#378ADD', background: '#E6F1FB', border: '0.5px solid #B8D4F0', borderRadius: 7, padding: '2px 8px', textDecoration: 'none', fontWeight: 600, marginLeft: 'auto', flexShrink: 0 }}
+                                            >
+                                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                              Maps
+                                            </a>
+                                            <a
+                                              href={`https://www.google.com/search?q=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
+                                              target="_blank"
+                                              rel="noreferrer"
+                                              style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#6b6b68', background: '#F1EFE8', border: '0.5px solid #D3D1C7', borderRadius: 7, padding: '2px 8px', textDecoration: 'none', fontWeight: 600, flexShrink: 0 }}
+                                            >
+                                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                              Know more
+                                            </a>
+                                          </>
                                         )}
                                       </div>
                                       {showPhoto && (
