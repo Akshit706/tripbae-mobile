@@ -35,7 +35,7 @@ const HERO_GREETINGS = {
   night: ['Night owl travels', 'Stars out, bags ready', 'Late night routes', 'Moon & destinations', 'Plotting after dark'],
 };
 
-function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, setConfirmComplete, setConfirmDelete }) {
+function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, setConfirmComplete, setConfirmDelete, onPhotoLoaded }) {
   const [photos, setPhotos] = useState([]);
   const [photoIdx, setPhotoIdx] = useState(0);
   const touchStartX = useRef(null);
@@ -47,7 +47,10 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
       .then(data => {
         if (cancelled) return;
         const urls = (data.urls || []).slice(0, 3);
-        if (urls.length) setPhotos(urls);
+        if (urls.length) {
+          setPhotos(urls);
+          onPhotoLoaded?.(trip.destination, urls[0]);
+        }
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -218,7 +221,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
   );
 }
 
-function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive, profileName }) {
+function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive, profileName, onPhotoLoaded }) {
   const [showCreate, setShowCreate] = useState(false);
   const [showJoin, setShowJoin] = useState(false);
   const [showPast, setShowPast] = useState(false);
@@ -846,6 +849,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           setMenuOpen={setMenuOpen}
           setConfirmComplete={setConfirmComplete}
           setConfirmDelete={setConfirmDelete}
+          onPhotoLoaded={onPhotoLoaded}
         />
       ))}
 

@@ -562,10 +562,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     travelNotes: trip.travelNotes || '',
   });
 
-  const [heroPhotoUrl, setHeroPhotoUrl] = useState(null);
+  const [heroPhotoUrl, setHeroPhotoUrl] = useState(trip._heroPhoto || null);
 
   useEffect(() => {
-    if (!form.dest) return;
+    // Only fetch if home page didn't already cache a photo for this destination
+    if (heroPhotoUrl || !form.dest) return;
     import('../../api').then(({ fetchPlacePhotos }) => {
       fetchPlacePhotos(`${form.dest} city landscape aerial skyline travel`)
         .then(data => { if (data.urls?.[0]) setHeroPhotoUrl(data.urls[0]); })
