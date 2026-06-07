@@ -463,17 +463,17 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
             The food. The streets. The moments.
           </div>
           {/* Stat buttons — click to switch active tab */}
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ display:'flex', gap:8, marginTop:14 }}>
             {[
-              { n: (data.dishes||[]).length, label: 'Dishes', key: 'dishes' },
-              { n: (data.places||[]).length, label: 'Places', key: 'places' },
-              { n: (data.experiences||[]).length, label: 'Exp', key: 'exp' },
+              { n: (data.dishes||[]).length,      label:'dishes',      key:'dishes' },
+              { n: (data.places||[]).length,      label:'places',      key:'places' },
+              { n: (data.experiences||[]).length, label:'experiences', key:'exp' },
             ].map(({ n, label, key }) => n > 0 && (
               <button key={key} onClick={() => switchTasteTab(key)}
-                style={{ flex:1, background: activeTab === key ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)', border: activeTab === key ? '1.5px solid rgba(255,255,255,0.55)' : '0.5px solid rgba(255,255,255,0.14)', borderRadius: 12, padding: '7px 6px', display: 'flex', flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent:'center', cursor: 'pointer', transition: 'all 0.2s ease', backdropFilter: 'blur(6px)' }}
+                style={{ flex:1, background: activeTab === key ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.13)', border: activeTab === key ? '1.5px solid rgba(255,255,255,0.65)' : '0.5px solid rgba(255,255,255,0.22)', backdropFilter:'blur(6px)', borderRadius:999, padding:'5px 8px', display:'flex', gap:5, alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'all 0.2s ease' }}
               >
-                <span style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1, fontFamily: "'Sora',sans-serif" }}>{n}</span>
-                <span style={{ fontSize: 10, fontWeight: 600, color: activeTab === key ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)', letterSpacing: 0.2 }}>{label}</span>
+                <span style={{ fontSize:13, fontWeight:800, color:'#fff' }}>{n}</span>
+                <span style={{ fontSize:11, color: activeTab === key ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)' }}>{label}</span>
               </button>
             ))}
           </div>

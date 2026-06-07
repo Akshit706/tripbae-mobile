@@ -576,13 +576,18 @@ function PhotosPage({ trip, myNickname }) {
         </div>
       ) : (
         <div className="pg">
-          {folderPhotos.map((p, idx) => (
+          {folderPhotos.map((p, idx) => {
+            // ImageKit on-the-fly resize for grid thumbnails — much faster to load
+            const thumbUrl = p.url && p.url.includes('ik.imagekit.io')
+              ? p.url.replace(/(\/[^/?]+)(\?.*)?$/, '/tr:w-300,h-300,q-75,fo-auto$1$2')
+              : p.url;
+            return (
             <div
               key={p.id}
               className={`pc ${selected.has(p.id) ? 'sel' : ''}`}
               onClick={() => toggle(p.id)}
             >
-              <img src={p.url} alt="" loading="lazy" onError={e => { e.target.style.display = 'none'; }} />
+              <img src={thumbUrl} alt="" loading="lazy" onError={e => { e.target.style.display = 'none'; }} />
 
               {/* Checkmark */}
               <div className="pck">{selected.has(p.id) ? '✓' : ''}</div>
@@ -603,7 +608,8 @@ function PhotosPage({ trip, myNickname }) {
                 </button>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
