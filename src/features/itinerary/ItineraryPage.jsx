@@ -4,6 +4,7 @@ import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 import { PlacePhoto, PlacePhotosStrip } from '../media/PlaceMedia';
 import RecommendationsPage from './RecommendationsPage';
+import { fetchRecommendations } from '../../api';
 
 /* ── Premium design tokens ─────────────────────────────────── */
 const D = {
@@ -668,6 +669,16 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     }
   };
 
+  // Pre-fetch nearby data on mount so the tab opens instantly
+  useEffect(() => {
+    if (!form.dest) return;
+    let cancelled = false;
+    fetchRecommendations(form.dest)
+      .then(result => { if (!cancelled) { setNearbyData(result); setNearbyStep('result'); } })
+      .catch(() => { if (!cancelled) setNearbyStep('error'); });
+    return () => { cancelled = true; };
+  }, [form.dest]);
+
   const handleRedo = () => {
     onCacheUpdate?.({ _cachedItin: null });
     setShowDescBox(true);
@@ -684,7 +695,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     { id: 'taste',   label: '🍜 Local Taste' },
     { id: 'nearby',  label: '🏨 Nearby' },
   ];
-  const [lightboxUrl, setLightboxUrl] = useState(null);
+  const [lightboxUrl,  setLightboxUrl]  = useState(null);
+  const [nearbyData,   setNearbyData]   = useState(null);
+  const [nearbyStep,   setNearbyStep]   = useState('loading');
 
   return (
     <div>
@@ -1093,6 +1106,14 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         <RecommendationsPage
           destination={form.dest}
           isSolo={isSolo}
+          autoData={nearbyData}
+          autoStep={nearbyStep}
+          onRetry={() => {
+            setNearbyStep('loading'); setNearbyData(null);
+            fetchRecommendations(form.dest)
+              .then(r => { setNearbyData(r); setNearbyStep('result'); })
+              .catch(() => setNearbyStep('error'));
+          }}
         />
       )}
     </div>

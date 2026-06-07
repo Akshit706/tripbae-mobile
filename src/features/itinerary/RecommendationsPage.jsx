@@ -509,33 +509,53 @@ function LoadingSkeleton() {
 ════════════════════════════════════════ */
 const INIT_FILTERS = { stayType:'all', priceLevel:'all', minRating:0, hospCat:'all', rentalType:'all' };
 
-export default function RecommendationsPage({ destination, isSolo }) {
-  const [step, setStep]             = useState('loading');
-  const [data, setData]             = useState(null);
-  const [nTab, setNTab]             = useState('stays');
-  const [filters,     setFilters]   = useState(INIT_FILTERS);
+export default function RecommendationsPage({ destination, isSolo, autoData, autoStep, onRetry }) {
+  const [step, setStep]               = useState(autoStep || 'loading');
+  const [data, setData]               = useState(autoData || null);
+  const [filters,     setFilters]     = useState(INIT_FILTERS);
   const [filterDraft, setFilterDraft] = useState(INIT_FILTERS);
-  const [filterSection, setFilterSection] = useState(null); // 'stays'|'healthcare'|'rentals'|null
+  const [filterSection, setFilterSection] = useState(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const fetchedFor = useRef(null);
   const ac = isSolo ? '#7F77DD' : D.gold;
+  const staysRef      = useRef(null);
+  const healthcareRef = useRef(null);
+  const rentalsRef    = useRef(null);
+  const scrollToSec = (key) => {
+    const m = { stays: staysRef, healthcare: healthcareRef, rentals: rentalsRef };
+    m[key]?.current?.scrollIntoView({ behavior:'smooth', block:'start' });
+  };
 
+  // Sync with pre-fetched data from parent (ItineraryPage)
   useEffect(() => {
+    if (autoStep !== undefined && autoStep !== step) setStep(autoStep);
+    if (autoData && !data) setData(autoData);
+  }, [autoStep, autoData]);
+
+  // Scroll-to-top button visibility
+  useEffect(() => {
+    const handler = () => setShowScrollTop(window.scrollY > 220);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  // Internal fetch fallback when parent doesn't pass autoStep
+  useEffect(() => {
+    if (autoStep !== undefined) return;
     if (!destination || fetchedFor.current === destination) return;
     fetchedFor.current = destination;
     let cancelled = false;
     setStep('loading'); setData(null);
-    (async () => {
-      try {
-        const result = await fetchRecommendations(destination);
-        if (!cancelled) { setData(result); setStep('result'); }
-      } catch (err) {
-        if (!cancelled) { console.error('[RECS]', err); setStep('error'); }
-      }
-    })();
+    fetchRecommendations(destination)
+      .then(result => { if (!cancelled) { setData(result); setStep('result'); } })
+      .catch(err => { if (!cancelled) { console.error('[RECS]', err); setStep('error'); } });
     return () => { cancelled = true; };
-  }, [destination]);
+  }, [destination, autoStep]);
 
-  const retry = () => { fetchedFor.current = null; setStep('loading'); setData(null); };
+  const retry = () => {
+    if (onRetry) { onRetry(); return; }
+    fetchedFor.current = null; setStep('loading'); setData(null);
+  };
 
   if (step === 'loading') return <LoadingSkeleton />;
 
@@ -563,105 +583,102 @@ export default function RecommendationsPage({ destination, isSolo }) {
   const filteredHospitals = filters.hospCat    === 'all' ? hospitals : hospitals.filter(h => h.category === filters.hospCat);
   const filteredRentals   = filters.rentalType === 'all' ? rentals   : rentals.filter(r => r.type === filters.rentalType);
 
-  // Filter active counts per section (for badge on filter button)
-  const stayFilterCount    = [filters.stayType!=='all', filters.priceLevel!=='all', filters.minRating>0].filter(Boolean).length;
-  const hospFilterCount    = filters.hospCat    !== 'all' ? 1 : 0;
-  const rentalFilterCount  = filters.rentalType !== 'all' ? 1 : 0;
+  const stayFilterCount   = [filters.stayType!=='all', filters.priceLevel!=='all', filters.minRating>0].filter(Boolean).length;
+  const hospFilterCount   = filters.hospCat    !== 'all' ? 1 : 0;
+  const rentalFilterCount = filters.rentalType !== 'all' ? 1 : 0;
 
-  const openFilter = (section) => { setFilterDraft(filters); setFilterSection(section); };
+  const openFilter   = (section) => { setFilterDraft(filters); setFilterSection(section); };
   const applyFilters = () => { setFilters(filterDraft); setFilterSection(null); };
   const resetFilters = () => setFilterDraft(INIT_FILTERS);
 
-  const STAY_ICON   = <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>;
-  const HOSP_ICON   = <><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></>;
-  const RENTAL_ICON = <><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></>;
-  const NEARBY_TABS  = [
-    { id:'stays',      svgIcon: STAY_ICON,   label:'Stays' },
-    { id:'healthcare', svgIcon: HOSP_ICON,   label:'Healthcare' },
-    { id:'rentals',    svgIcon: RENTAL_ICON, label:'Rentals' },
-  ];
-  const tabCounts = { stays: hotels.length, healthcare: hospitals.length, rentals: rentals.length };
-
   return (
-    <div style={{ background:D.bg, paddingBottom:'2.5rem' }}>
+    <div style={{ background:D.bg, paddingBottom:'2.5rem', position:'relative' }}>
 
-      {/* ── Hero ── */}
+      {/* ── Hero banner ── */}
       <div style={{
-        position:'relative', borderRadius:20, overflow:'hidden',
+        position:'relative', minHeight:140, borderRadius:16, overflow:'hidden',
         background:'linear-gradient(135deg,#0D1B2A 0%,#1A3A5C 55%,#2563AB 100%)',
-        marginBottom:'1rem', padding:'1.2rem 1.4rem 1.1rem',
-        boxShadow:'0 6px 28px rgba(13,27,42,0.25)',
+        marginBottom:'1.25rem', boxShadow:'0 4px 20px rgba(13,27,42,0.18)',
       }}>
-        <div style={{ position:'absolute',top:-30,right:-30,fontSize:160,opacity:0.05,lineHeight:1 }}>🗺️</div>
-        <div style={{ position:'relative', zIndex:1 }}>
-          <div style={{ fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:1.8,marginBottom:6,fontFamily:"'DM Sans',sans-serif" }}>NEARBY IN {disp.toUpperCase()}</div>
-          <div style={{ fontSize:20,fontWeight:900,color:'#fff',lineHeight:1.2,letterSpacing:-0.4,fontFamily:"'Sora',sans-serif" }}>
+        <div style={{ position:'absolute',top:-20,right:-20,fontSize:130,opacity:0.06,lineHeight:1 }}>🗺️</div>
+        <div style={{ position:'relative', zIndex:1, padding:'1.25rem 1.25rem 1rem' }}>
+          <div style={{ fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:1.8,marginBottom:6,fontFamily:"'DM Sans',sans-serif" }}>
+            NEARBY IN {disp.toUpperCase()}
+          </div>
+          <div style={{ fontSize:20,fontWeight:800,color:'#fff',lineHeight:1.2,letterSpacing:-0.3,marginBottom:5,fontFamily:"'Sora',sans-serif" }}>
             Your complete <span style={{ color:'#93C5FD' }}>city guide</span>
           </div>
-          <div style={{ fontSize:12,color:'rgba(255,255,255,0.58)',lineHeight:1.6,marginTop:5 }}>
-            Stays · Healthcare · Rentals — cached in Supabase, shared across all users
+          <div style={{ fontSize:12,color:'rgba(255,255,255,0.58)',lineHeight:1.6 }}>
+            Stays · Healthcare · Rentals — all in one place
+          </div>
+          {/* Stat buttons — click to scroll to section */}
+          <div style={{ display:'flex', gap:8, marginTop:14, flexWrap:'wrap' }}>
+            {[
+              { n: hotels.length,    label:'stays',      key:'stays' },
+              { n: hospitals.length, label:'healthcare', key:'healthcare' },
+              { n: rentals.length,   label:'rentals',    key:'rentals' },
+            ].map(({ n, label, key }) => n > 0 && (
+              <button
+                key={key}
+                onClick={() => scrollToSec(key)}
+                style={{ background:'rgba(255,255,255,0.13)', border:'0.5px solid rgba(255,255,255,0.22)', backdropFilter:'blur(6px)', borderRadius:999, padding:'4px 12px', display:'flex', gap:5, alignItems:'center', cursor:'pointer', transition:'background 0.15s ease' }}
+                onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.25)'}
+                onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.13)'}
+              >
+                <span style={{ fontSize:13, fontWeight:800, color:'#fff' }}>{n}</span>
+                <span style={{ fontSize:11, color:'rgba(255,255,255,0.75)' }}>{label}</span>
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity:0.6 }}>
+                  <path d="M5 2L5 8M5 8L2.5 5.5M5 8L7.5 5.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* ── Sub-tab bar (Stays / Healthcare / Rentals) ── */}
-      <div style={{
-        display:'grid', gridTemplateColumns:'repeat(3,1fr)',
-        background:D.surface, borderBottom:`1.5px solid ${D.border}`,
-        borderRadius:'14px 14px 0 0', marginBottom:'1.2rem',
-        boxShadow:'0 2px 8px rgba(28,20,16,0.05)',
-        overflow:'hidden',
-      }}>
-        {NEARBY_TABS.map((t, idx) => {
-          const isActive = nTab === t.id;
-          const tabAc = t.id==='stays' ? D.gold : t.id==='healthcare' ? '#B91C1C' : '#1D4ED8';
-          const tabAbg = t.id==='stays' ? D.goldTint : t.id==='healthcare' ? '#FEE2E2' : D.blueTint;
-          const cnt    = tabCounts[t.id] || 0;
-          const hasFilt = t.id==='stays' ? stayFilterCount>0 : t.id==='healthcare' ? hospFilterCount>0 : rentalFilterCount>0;
-          return (
-            <button key={t.id} onClick={()=>setNTab(t.id)}
-              style={{
-                position:'relative', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-                padding:'10px 4px 10px', border:'none', background: isActive ? tabAbg+'44' : 'transparent', cursor:'pointer',
-                borderLeft: idx > 0 ? `1px solid ${D.border}` : 'none',
-                transition:'background .15s ease',
-              }}
-            >
-              <div style={{ position:'relative', marginBottom:3 }}>
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={isActive ? tabAc : '#AAA5A0'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:'block' }}>
-                  {t.svgIcon}
-                </svg>
-                {hasFilt && <span style={{ position:'absolute',top:-3,right:-5,width:7,height:7,borderRadius:'50%',background:tabAc,border:'1.5px solid #fff' }} />}
-              </div>
-              <span style={{ fontSize:10.5, fontWeight: isActive ? 800 : 500, color: isActive ? tabAc : '#AAA5A0', fontFamily:"'DM Sans',sans-serif", letterSpacing:0.1 }}>
-                {t.label}
-                {cnt > 0 && <span style={{ marginLeft:3, fontSize:9, fontWeight:600, opacity:0.65 }}>({cnt})</span>}
-              </span>
-              {isActive && <span style={{ position:'absolute',bottom:0,left:'18%',right:'18%',height:2.5,borderRadius:'99px 99px 0 0',background:tabAc }} />}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Active section ── */}
-      {nTab === 'stays' && (
+      {/* ── Stays ── */}
+      <div ref={staysRef} style={{ scrollMarginTop:12 }}>
         <StaysSection hotels={hotels} destination={destination} filtered={filteredHotels}
           onOpenFilter={()=>openFilter('stays')} filterCount={stayFilterCount} />
-      )}
-      {nTab === 'healthcare' && (
+      </div>
+
+      {/* ── Healthcare ── */}
+      <div ref={healthcareRef} style={{ scrollMarginTop:12 }}>
         <HealthcareSection hospitals={hospitals} shown={filteredHospitals}
           onOpenFilter={()=>openFilter('healthcare')} filterCount={hospFilterCount} />
-      )}
-      {nTab === 'rentals' && (
+      </div>
+
+      {/* ── Rentals ── */}
+      <div ref={rentalsRef} style={{ scrollMarginTop:12 }}>
         <RentalsSection rentals={rentals} shown={filteredRentals}
           onOpenFilter={()=>openFilter('rentals')} filterCount={rentalFilterCount} />
-      )}
+      </div>
 
       {!data?.fromCache && (
         <div style={{ display:'flex',gap:9,alignItems:'flex-start',background:D.surface,border:`0.5px solid ${D.border}`,borderLeft:`3px solid ${ac}`,borderRadius:12,padding:'11px 13px',fontSize:11.5,color:D.muted,lineHeight:1.6,marginTop:12 }}>
           <span style={{ fontSize:16,flexShrink:0 }}>✅</span>
-          <span>Fresh data fetched and saved to Supabase for {disp}. Every user opening this destination loads instantly.</span>
+          <span>Fresh data for {disp} saved to Supabase — every user loads this instantly.</span>
         </div>
+      )}
+
+      {/* ── Scroll-to-top button (appears after scrolling down) ── */}
+      {showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top:0, behavior:'smooth' })}
+          style={{
+            position:'fixed', bottom:'5.8rem', right:'1rem', zIndex:90,
+            width:38, height:38, borderRadius:'50%',
+            background:'rgba(255,255,255,0.92)', backdropFilter:'blur(10px)',
+            border:'1px solid rgba(0,0,0,0.1)',
+            boxShadow:'0 4px 16px rgba(0,0,0,0.15)',
+            cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+            padding:0, animation:'rFadeIn 0.25s ease both',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="18 15 12 9 6 15"/>
+          </svg>
+        </button>
       )}
 
       <FilterModal
