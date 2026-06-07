@@ -1,8 +1,8 @@
 // src/features/itinerary/RecommendationsPage.jsx
 // Premium "Nearby" tab — Stays · Healthcare · Rentals
-// Full fetch-from-DB, ImageKit images, rich filters, motion UX
 import { useState, useEffect, useRef } from 'react';
 import { PlacePhoto } from '../media/PlaceMedia';
+import { fetchRecommendations } from '../../api';  // eager import — eliminates dynamic-import delay
 
 /* ── Design tokens ── */
 const D = {
@@ -234,14 +234,12 @@ function SecHeader({ icon, title, subtitle, count, ac, abg, onFilter, filterCoun
       boxShadow:D.shadowMd, border:`0.5px solid ${D.border}`,
       borderLeft:`4px solid ${ac}`,
     }}>
-      <div style={{ width:44,height:44,borderRadius:14,background:abg,display:'flex',alignItems:'center',justifyContent:'center',fontSize:23,flexShrink:0 }}>{icon}</div>
+      <div style={{ width:40,height:40,borderRadius:12,background:abg,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0 }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={ac} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+      </div>
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:14.5,fontWeight:800,color:D.espresso,fontFamily:"'Sora',sans-serif",lineHeight:1.1 }}>{title}</div>
         {subtitle && <div style={{ fontSize:11,color:D.muted,marginTop:2,lineHeight:1.3 }}>{subtitle}</div>}
-      </div>
-      <div className="r-stat-num" style={{ flexShrink:0, textAlign:'right', marginRight: onFilter ? 6 : 0 }}>
-        <div style={{ fontSize:22,fontWeight:900,color:ac,fontFamily:"'Sora',sans-serif",lineHeight:1 }}>{count}</div>
-        <div style={{ fontSize:9,color:D.muted,textTransform:'uppercase',letterSpacing:.5 }}>found</div>
       </div>
       {onFilter && (
         <button onClick={onFilter} style={{ position:'relative',flexShrink:0,width:34,height:34,borderRadius:11,border:`1.5px solid ${filterCount>0 ? ac : 'rgba(28,20,16,0.12)'}`,background:filterCount>0 ? abg : '#FAFAF8',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',padding:0 }}>
@@ -263,11 +261,12 @@ function SecHeader({ icon, title, subtitle, count, ac, abg, onFilter, filterCoun
 function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount }) {
   const [imgErrors, setImgErrors] = useState(new Set());
   if (!hotels.length) return null;
+  const STAYS_ICON = <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>;
 
   return (
     <div style={{ marginBottom:'1.5rem' }}>
-      <SecHeader icon="🛏️" title="Where to Stay" subtitle="Every option — from dorms to palaces"
-        count={filtered.length} ac={D.gold} abg={D.goldTint} onFilter={onOpenFilter} filterCount={filterCount} />
+      <SecHeader icon={STAYS_ICON} title="Where to Stay" subtitle="Hotels · Hostels · Guesthouses · Resorts"
+        ac={D.gold} abg={D.goldTint} onFilter={onOpenFilter} filterCount={filterCount} />
 
       {!filtered.length && (
         <div style={{ textAlign:'center', padding:'2.5rem 1rem', color:D.muted, fontSize:13 }}>
@@ -309,9 +308,8 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
                 )}
                 {/* gradient overlay */}
                 <div style={{ position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 30%,rgba(10,8,6,0.78) 100%)',pointerEvents:'none' }} />
-                {/* stay type badge top-left */}
+        {/* Stay type badge on hotel card — text only, no emoji */}
                 <div style={{ position:'absolute',top:10,left:10,background:'rgba(255,255,255,0.92)',borderRadius:10,padding:'3px 9px',display:'flex',alignItems:'center',gap:4,backdropFilter:'blur(6px)',boxShadow:'0 2px 8px rgba(0,0,0,0.10)' }}>
-                  <span style={{ fontSize:12 }}>{stCfg.icon}</span>
                   <span style={{ fontSize:10,fontWeight:700,color:stCfg.color,fontFamily:"'DM Sans',sans-serif",textTransform:'uppercase',letterSpacing:.5 }}>{stCfg.label}</span>
                 </div>
                 {/* price badge top-right */}
@@ -356,11 +354,12 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
 ════════════════════════════════════════ */
 function HealthcareSection({ hospitals, shown, onOpenFilter, filterCount }) {
   if (!hospitals.length) return null;
+  const HOSP_ICON = <><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></>;
 
   return (
     <div style={{ marginBottom:'1.5rem' }}>
-      <SecHeader icon="🏥" title="Healthcare" subtitle="Hospitals · Clinics · Pharmacies · Emergency"
-        count={shown.length} ac="#B91C1C" abg="#FEE2E2" onFilter={onOpenFilter} filterCount={filterCount} />
+      <SecHeader icon={HOSP_ICON} title="Healthcare" subtitle="Hospitals · Clinics · Pharmacies · Emergency"
+        ac="#B91C1C" abg="#FEE2E2" onFilter={onOpenFilter} filterCount={filterCount} />
 
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
         {shown.map((h, i) => {
@@ -435,11 +434,12 @@ function HealthcareSection({ hospitals, shown, onOpenFilter, filterCount }) {
 ════════════════════════════════════════ */
 function RentalsSection({ rentals, shown, onOpenFilter, filterCount }) {
   if (!rentals.length) return null;
+  const RENTAL_ICON = <><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></>;
 
   return (
     <div style={{ marginBottom:'1.5rem' }}>
-      <SecHeader icon="🚗" title="Rentals" subtitle="Cars · Bikes · Scooters to explore freely"
-        count={shown.length} ac="#1D4ED8" abg={D.blueTint} onFilter={onOpenFilter} filterCount={filterCount} />
+      <SecHeader icon={RENTAL_ICON} title="Rentals" subtitle="Cars · Bikes · Scooters to explore freely"
+        ac="#1D4ED8" abg={D.blueTint} onFilter={onOpenFilter} filterCount={filterCount} />
 
       <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
         {shown.map((r, i) => {
@@ -508,11 +508,6 @@ function LoadingSkeleton() {
    MAIN COMPONENT
 ════════════════════════════════════════ */
 const INIT_FILTERS = { stayType:'all', priceLevel:'all', minRating:0, hospCat:'all', rentalType:'all' };
-const NEARBY_TABS  = [
-  { id:'stays',      icon:'🛏️', label:'Stays' },
-  { id:'healthcare', icon:'🏥', label:'Healthcare' },
-  { id:'rentals',    icon:'🚗', label:'Rentals' },
-];
 
 export default function RecommendationsPage({ destination, isSolo }) {
   const [step, setStep]             = useState('loading');
@@ -531,7 +526,6 @@ export default function RecommendationsPage({ destination, isSolo }) {
     setStep('loading'); setData(null);
     (async () => {
       try {
-        const { fetchRecommendations } = await import('../../api');
         const result = await fetchRecommendations(destination);
         if (!cancelled) { setData(result); setStep('result'); }
       } catch (err) {
@@ -578,7 +572,14 @@ export default function RecommendationsPage({ destination, isSolo }) {
   const applyFilters = () => { setFilters(filterDraft); setFilterSection(null); };
   const resetFilters = () => setFilterDraft(INIT_FILTERS);
 
-  // Tab counts for badge dots
+  const STAY_ICON   = <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>;
+  const HOSP_ICON   = <><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></>;
+  const RENTAL_ICON = <><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></>;
+  const NEARBY_TABS  = [
+    { id:'stays',      svgIcon: STAY_ICON,   label:'Stays' },
+    { id:'healthcare', svgIcon: HOSP_ICON,   label:'Healthcare' },
+    { id:'rentals',    svgIcon: RENTAL_ICON, label:'Rentals' },
+  ];
   const tabCounts = { stays: hotels.length, healthcare: hospitals.length, rentals: rentals.length };
 
   return (
@@ -614,26 +615,29 @@ export default function RecommendationsPage({ destination, isSolo }) {
         {NEARBY_TABS.map((t, idx) => {
           const isActive = nTab === t.id;
           const tabAc = t.id==='stays' ? D.gold : t.id==='healthcare' ? '#B91C1C' : '#1D4ED8';
-          const cnt   = tabCounts[t.id] || 0;
+          const tabAbg = t.id==='stays' ? D.goldTint : t.id==='healthcare' ? '#FEE2E2' : D.blueTint;
+          const cnt    = tabCounts[t.id] || 0;
           const hasFilt = t.id==='stays' ? stayFilterCount>0 : t.id==='healthcare' ? hospFilterCount>0 : rentalFilterCount>0;
           return (
             <button key={t.id} onClick={()=>setNTab(t.id)}
               style={{
                 position:'relative', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-                padding:'10px 4px 10px', border:'none', background:'transparent', cursor:'pointer',
+                padding:'10px 4px 10px', border:'none', background: isActive ? tabAbg+'44' : 'transparent', cursor:'pointer',
                 borderLeft: idx > 0 ? `1px solid ${D.border}` : 'none',
                 transition:'background .15s ease',
               }}
             >
-              <span style={{ fontSize:16, lineHeight:1, filter: isActive ? 'none' : 'grayscale(80%) opacity(0.55)', marginBottom:3, position:'relative' }}>
-                {t.icon}
+              <div style={{ position:'relative', marginBottom:3 }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={isActive ? tabAc : '#AAA5A0'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display:'block' }}>
+                  {t.svgIcon}
+                </svg>
                 {hasFilt && <span style={{ position:'absolute',top:-3,right:-5,width:7,height:7,borderRadius:'50%',background:tabAc,border:'1.5px solid #fff' }} />}
-              </span>
-              <span style={{ fontSize:10.5, fontWeight: isActive ? 800 : 500, color: isActive ? tabAc : D.muted, fontFamily:"'DM Sans',sans-serif", letterSpacing:0.1 }}>
+              </div>
+              <span style={{ fontSize:10.5, fontWeight: isActive ? 800 : 500, color: isActive ? tabAc : '#AAA5A0', fontFamily:"'DM Sans',sans-serif", letterSpacing:0.1 }}>
                 {t.label}
-                {cnt > 0 && <span style={{ marginLeft:4, fontSize:9, color: isActive ? tabAc : D.muted, fontWeight:700, opacity:0.75 }}>({cnt})</span>}
+                {cnt > 0 && <span style={{ marginLeft:3, fontSize:9, fontWeight:600, opacity:0.65 }}>({cnt})</span>}
               </span>
-              {isActive && <span style={{ position:'absolute',bottom:0,left:'14%',right:'14%',height:2.5,borderRadius:'99px 99px 0 0',background:tabAc }} />}
+              {isActive && <span style={{ position:'absolute',bottom:0,left:'18%',right:'18%',height:2.5,borderRadius:'99px 99px 0 0',background:tabAc }} />}
             </button>
           );
         })}

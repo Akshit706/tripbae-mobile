@@ -255,7 +255,7 @@ const S = {
   navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', fontSize: 12, fontWeight: 500, color: '#5D6A7B', cursor: 'pointer', background: 'rgba(255,255,255,0.56)', border: '1px solid rgba(23,37,84,0.08)', borderRadius: 999, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' },
   navTabActive: { color: '#0F6E56', background: 'linear-gradient(135deg,#E6FFF4,#F2FFFA)', border: '1px solid rgba(29,158,117,0.32)', fontWeight: 700 },
   soloNavTabActive: { color: '#534AB7', background: 'linear-gradient(135deg,#F0EDFF,#F7F3FF)', border: '1px solid rgba(127,119,221,0.3)', fontWeight: 700 },
-  page: { padding: '1rem 0.95rem', flex: 1, paddingBottom: '6.25rem', animation: 'tbPageIn .45s cubic-bezier(.2,.7,.2,1)' },
+  page: { padding: '1rem 0.95rem', flex: 1, paddingBottom: '5.5rem', animation: 'tbPageIn .45s cubic-bezier(.2,.7,.2,1)' },
   btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999, fontSize: 13, fontWeight: 600, border: '1px solid rgba(25,37,67,0.12)', background: 'linear-gradient(180deg,#ffffff,#f6fafe)', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s ease, border-color .22s ease, background .22s ease', boxShadow: '0 8px 18px rgba(0,0,0,0.06)', position: 'relative', overflow: 'hidden' },
   btnP: { background: 'linear-gradient(135deg,#28B88A,#0F6E56)', color: '#fff', border: '0.5px solid rgba(15,110,86,0.68)', boxShadow: '0 10px 22px rgba(15,110,86,0.24)' },
   btnSolo: { background: 'linear-gradient(135deg,#7F77DD,#534AB7)', color: '#fff', border: 'none' },
@@ -870,45 +870,36 @@ export default function App() {
         ) : null}
       </div>
 
-      {/* Nav Tabs */}
+      {/* Bottom Nav Bar */}
       {activeTrip && (
-        <div className="tb-nav-ribbon" style={{ ...S.navTabs }}>
+        <div style={{
+          position:'fixed', bottom:0, left:0, right:0, zIndex:100,
+          background:'rgba(255,255,255,0.92)', backdropFilter:'blur(16px)',
+          borderTop:'1px solid rgba(0,0,0,0.07)',
+          paddingBottom:'env(safe-area-inset-bottom, 12px)',
+        }}>
           <div style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))`,
-            gap: 0,
-            width: '100%',
-            borderBottom: '1px solid rgba(15,23,42,0.12)',
-            background: '#fff',
+            display:'grid',
+            gridTemplateColumns:`repeat(${tabs.length}, 1fr)`,
           }}>
-            {tabs.map((t, idx) => {
+            {tabs.map((t) => {
               const isActive = tab === t.id;
-              const activeStyle = isSolo ? S.soloNavTabActive : S.navTabActive;
-              const accentColor = '#111827';
+              const activeColor = isSolo ? '#534AB7' : '#0F6E56';
               return (
                 <button
                   key={t.id}
                   onClick={() => handleTabChange(t.id)}
-                  className="tb-nav-pill tb-tab-entrance"
                   style={{
-                    ...S.navTab,
-                    ...(isActive ? activeStyle : {}),
-                    animationDelay: `${idx * 35}ms`,
-                    position: 'relative',
-                    width: '100%',
-                    minWidth: 0,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: 0,
-                    borderLeft: idx > 0 ? '1px solid rgba(15,23,42,0.04)' : 'none',
-                    boxShadow: 'none',
+                    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                    padding:'10px 4px 8px', border:'none', background:'transparent', cursor:'pointer',
+                    position:'relative', gap:2,
                   }}
                 >
-                  <span style={{ fontSize: 15, lineHeight: 1, filter: isActive ? 'none' : 'grayscale(100%) opacity(0.68)' }}>{t.icon}</span>
-                  <span style={{ fontSize: tabs.length > 4 ? 8.6 : 9.5, maxWidth: '100%', width: '100%', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center', padding: '0 2px', letterSpacing: 0.12 }}>{t.label}</span>
-                  {isActive && <span style={{ position: 'absolute', bottom: 0, left: '16%', right: '16%', height: 2.5, borderRadius: 99, background: accentColor, opacity: 0.9 }} />}
+                  <span style={{ fontSize:20, lineHeight:1, filter: isActive ? 'none' : 'grayscale(100%) opacity(0.5)' }}>{t.icon}</span>
+                  <span style={{ fontSize:9.5, fontWeight: isActive ? 700 : 400, color: isActive ? activeColor : '#8d8c87', fontFamily:"'DM Sans',sans-serif", letterSpacing:0.1 }}>{t.label}</span>
+                  {isActive && (
+                    <span style={{ width:4,height:4,borderRadius:'50%',background:activeColor,marginTop:1 }} />
+                  )}
                 </button>
               );
             })}
