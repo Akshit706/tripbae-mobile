@@ -153,7 +153,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   const [filters, setFilters] = useState({ section: 'all', minRating: 0 });
   const [filterDraft, setFilterDraft] = useState({ section: 'all', minRating: 0 });
   const secRefs = { dishes: useRef(null), places: useRef(null), exp: useRef(null) };
-  const scrollTo = (key) => secRefs[key]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const scrollTo = (key) => secRefs[key]?.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
 
   useEffect(() => {
     const handler = () => {
@@ -385,7 +385,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   };
 
   /* ── Section block with editorial header ── */
-  const Sec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac, sectionRef }) => {
+  const Sec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac, sectionRef, onFilter, filterCount: secFilterCount = 0 }) => {
     const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
     const pct = items.length ? Math.round((doneCount / items.length) * 100) : 0;
     if (!items.length) return null;
@@ -418,6 +418,16 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
               </span>
             )}
           </div>
+          {onFilter && (
+            <button onClick={onFilter} style={{ position: 'relative', flexShrink: 0, width: 32, height: 32, borderRadius: 10, border: `1.5px solid ${secFilterCount > 0 ? ac : D.border}`, background: secFilterCount > 0 ? accentBg : '#FAFAF8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, marginLeft: 4 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={secFilterCount > 0 ? ac : '#888'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              {secFilterCount > 0 && (
+                <span style={{ position: 'absolute', top: -5, right: -5, width: 15, height: 15, borderRadius: '50%', background: ac, color: '#fff', fontSize: 8, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>{secFilterCount}</span>
+              )}
+            </button>
+          )}
         </div>
         {/* Cards */}
         {items.map((item, i) => (
@@ -483,38 +493,27 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
       }}>
         <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 130, opacity: 0.06, lineHeight: 1 }}>🍜</div>
         <div style={{ position: 'relative', zIndex: 1, padding: '1.25rem 1.25rem 1rem' }}>
-          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, fontFamily: "'DM Sans',sans-serif" }}>
-              LOCAL TASTE GUIDE
-            </div>
-            <button onClick={() => { setFilterDraft(filters); setFilterOpen(true); }}
-              style={{ position:'relative', width:30,height:30,borderRadius:9,border:`1.5px solid ${filterCount>0?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.3)'}`,background:filterCount>0?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.08)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',padding:0,flexShrink:0 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
-              </svg>
-              {filterCount > 0 && (
-                <span style={{ position:'absolute',top:-5,right:-5,width:15,height:15,borderRadius:'50%',background:D.gold,color:'#fff',fontSize:8,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid #fff' }}>{filterCount}</span>
-              )}
-            </button>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6, fontFamily: "'DM Sans',sans-serif" }}>
+            LOCAL TASTE GUIDE
           </div>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: -0.3, marginBottom: 4, fontFamily: "'Sora',sans-serif" }}>
             Food &amp; culture of <span style={{ color: '#F5D9A8' }}>{destination}</span>
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.58)', lineHeight: 1.6, marginBottom: 14 }}>
-            Iconic dishes, legendary spots &amp; experiences — curated from top food guides
+            The food. The streets. The moments.
           </div>
           {/* Stat buttons — full width, click to scroll */}
           <div style={{ display: 'flex', gap: 8 }}>
             {[
-              { n: (data.dishes||[]).length, label: 'dishes', key: 'dishes' },
-              { n: (data.places||[]).length, label: 'places', key: 'places' },
-              { n: (data.experiences||[]).length, label: 'exp', key: 'exp' },
+              { n: (data.dishes||[]).length, label: 'Dishes', key: 'dishes' },
+              { n: (data.places||[]).length, label: 'Places', key: 'places' },
+              { n: (data.experiences||[]).length, label: 'Experiences', key: 'exp' },
             ].map(({ n, label, key }) => n > 0 && (
               <button key={key} onClick={() => scrollTo(key)}
-                style={{ flex:1, background: activeSection === key ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.13)', border: activeSection === key ? '1.5px solid rgba(255,255,255,0.65)' : '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '5px 8px', display: 'flex', gap: 5, alignItems: 'center', justifyContent:'center', cursor: 'pointer', transition: 'all 0.2s ease' }}
+                style={{ flex:1, background: activeSection === key ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)', border: activeSection === key ? '1.5px solid rgba(255,255,255,0.55)' : '0.5px solid rgba(255,255,255,0.14)', borderRadius: 12, padding: '7px 6px', display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', justifyContent:'center', cursor: 'pointer', transition: 'all 0.2s ease', backdropFilter: 'blur(6px)' }}
               >
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{n}</span>
-                <span style={{ fontSize: 11, color: activeSection === key ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)' }}>{label}</span>
+                <span style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1, fontFamily: "'Sora',sans-serif" }}>{n}</span>
+                <span style={{ fontSize: 9.5, fontWeight: 600, color: activeSection === key ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)', letterSpacing: 0.3, textTransform: 'uppercase' }}>{label}</span>
               </button>
             ))}
           </div>
@@ -528,6 +527,8 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           items={(data.dishes || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
           secKey="dishes" startIndex={0} photoSuffix="food dish restaurant"
           accentBg="#FAEEDA" accentColor={D.gold} sectionRef={secRefs.dishes}
+          onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
+          filterCount={filters.minRating > 0 ? 1 : 0}
         />
       )}
       {(filters.section === 'all' || filters.section === 'places') && (
@@ -536,6 +537,8 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           items={(data.places || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
           secKey="places" startIndex={5} photoSuffix="tourist attraction landmark"
           accentBg={D.blueTint} accentColor="#2563AB" sectionRef={secRefs.places}
+          onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
+          filterCount={filters.minRating > 0 ? 1 : 0}
         />
       )}
       {(filters.section === 'all' || filters.section === 'exp') && (
@@ -544,6 +547,8 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           items={(data.experiences || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
           secKey="exp" startIndex={10} photoSuffix="travel experience"
           accentBg="#EEEDFE" accentColor="#534AB7" sectionRef={secRefs.exp}
+          onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
+          filterCount={filters.minRating > 0 ? 1 : 0}
         />
       )}
 
@@ -761,6 +766,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     }
   };
 
+  useEffect(() => {
+    const handler = () => setShowPlannerScrollTop(window.scrollY > 240);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
+
   // Pre-fetch nearby data on mount so the tab opens instantly
   useEffect(() => {
     if (!form.dest) return;
@@ -787,9 +798,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     { id: 'taste',   label: '🍜 Local Taste' },
     { id: 'nearby',  label: '🏨 Nearby' },
   ];
-  const [lightboxUrl,  setLightboxUrl]  = useState(null);
-  const [nearbyData,   setNearbyData]   = useState(null);
-  const [nearbyStep,   setNearbyStep]   = useState('loading');
+  const [lightboxUrl,        setLightboxUrl]        = useState(null);
+  const [nearbyData,         setNearbyData]         = useState(null);
+  const [nearbyStep,         setNearbyStep]         = useState('loading');
+  const [showPlannerScrollTop, setShowPlannerScrollTop] = useState(false);
 
   return (
     <div>
@@ -850,24 +862,29 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                     {days} day{days > 1 ? 's' : ''} in <span style={{ color: '#F5D9A8' }}>{form.dest}</span>
                   </div>
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.58)', lineHeight: 1.6, marginBottom: 14 }}>
-                    AI-planned activities, timed slots &amp; local tips — sourced from top travel guides
+                    Every hour considered. Every detail placed.
                   </div>
-                  {/* Stat row */}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '5px 8px', display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{days}</span>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>days</span>
-                    </div>
-                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '5px 8px', display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{(itin.days || []).reduce((a, d) => a + (d.activities || []).length, 0)}</span>
-                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>activities</span>
-                    </div>
-                    {itin.totalEstimatedCost && (
-                      <div style={{ flex: 1, background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '5px 8px', display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#F5D9A8' }}>{itin.totalEstimatedCost}</span>
+                  {/* Inline stats */}
+                  {(() => {
+                    const totalActs = (itin.days || []).reduce((a, d) => a + (d.activities || []).length, 0);
+                    const mustSees  = (itin.days || []).reduce((a, d) => a + (d.activities || []).filter(act => act.mustDo).length, 0);
+                    return (
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{days}</span>
+                        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Days</span>
+                        <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)', margin: '0 2px' }}>·</span>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{totalActs}</span>
+                        <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Activities</span>
+                        {mustSees > 0 && (
+                          <>
+                            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)', margin: '0 2px' }}>·</span>
+                            <span style={{ fontSize: 14, fontWeight: 800, color: '#F5D9A8', fontFamily: "'Sora',sans-serif" }}>{mustSees}</span>
+                            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Must-Sees</span>
+                          </>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -886,11 +903,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 </div>
               )}
 
-              {/* ── Disclaimer ───────────────────────────────────── */}
-              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', background: D.surface, border: `0.5px solid ${D.border}`, borderRadius: 10, padding: '9px 12px', marginBottom: '1.25rem', fontSize: 11, color: D.muted, lineHeight: 1.6, boxShadow: D.cardShadow }}>
-                <span style={{ flexShrink: 0 }}>ℹ️</span>
-                <span>Hours marked <strong style={{ color: D.sage }}>✓ verified</strong> come from sourced publications; <strong style={{ color: '#7A6FCF' }}>est.</strong> are safe estimates — always confirm. Prices are approximate.</span>
-              </div>
+
 
               {/* ── Day sections ─────────────────────────────────── */}
               {(() => {
@@ -1053,7 +1066,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                       <span style={{ fontSize: 11 }}>🕐</span>
                                       <span style={{ fontSize: 11.5, color: D.muted }}>Open {a.openingHours}</span>
                                       {a.hoursSource === 'verified'  && <span style={{ fontSize: 9, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 4, padding: '1px 5px' }}>✓ verified</span>}
-                                      {a.hoursSource === 'estimated' && <span style={{ fontSize: 9, fontStyle: 'italic', background: '#F4F3FF', color: '#7A6FCF', borderRadius: 4, padding: '1px 5px' }}>est.</span>}
+                                      {a.hoursSource === 'estimated' && <span style={{ fontSize: 9, fontStyle: 'italic', background: '#F4F3FF', color: '#7A6FCF', borderRadius: 4, padding: '1px 5px' }}>Estimated</span>}
                                     </div>
                                   )}
 
@@ -1145,6 +1158,25 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   );
                 });
               })()}
+
+              {/* Scroll-to-top in Day Planner */}
+              {showPlannerScrollTop && (
+                <button
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  style={{
+                    position: 'fixed', bottom: '5.8rem', right: '1rem', zIndex: 90,
+                    width: 38, height: 38, borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: 0, animation: 'rFadeIn 0.25s ease both',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                </button>
+              )}
 
               {sources.length > 0 && (
                 <div style={{ background: D.surface, border: `0.5px solid ${D.border}`, borderRadius: 12, padding: '12px 14px', marginTop: 4, boxShadow: D.cardShadow }}>

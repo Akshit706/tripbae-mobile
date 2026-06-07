@@ -524,7 +524,7 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
   const rentalsRef    = useRef(null);
   const scrollToSec = (key) => {
     const m = { stays: staysRef, healthcare: healthcareRef, rentals: rentalsRef };
-    m[key]?.current?.scrollIntoView({ behavior:'smooth', block:'start' });
+    m[key]?.current?.scrollIntoView({ behavior:'instant', block:'start' });
   };
 
   // Sync with pre-fetched data from parent (ItineraryPage)
