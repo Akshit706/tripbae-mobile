@@ -25,6 +25,7 @@ if (typeof document !== 'undefined' && !document.getElementById('recs-v2-styles'
     @keyframes rPulse24  { 0%,100%{box-shadow:0 0 0 0 rgba(185,28,28,0.4)} 50%{box-shadow:0 0 0 6px rgba(185,28,28,0)} }
     @keyframes rBounce   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
     @keyframes rCountUp  { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
+    @keyframes rSheetIn  { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
     .r-card { animation: rSlideUp 0.38s cubic-bezier(0.34,1.2,0.64,1) both; }
     .r-card:nth-child(2) { animation-delay:50ms }
     .r-card:nth-child(3) { animation-delay:100ms }
@@ -46,6 +47,7 @@ if (typeof document !== 'undefined' && !document.getElementById('recs-v2-styles'
     .r-hosp-card:active { transform: scale(0.98); }
     .r-bounce { animation: rBounce 2s ease-in-out infinite; }
     .r-fade { animation: rFadeIn 0.4s ease both; }
+    .r-sheet-in { animation: rSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both; }
   `;
   document.head.appendChild(el);
 }
@@ -117,8 +119,7 @@ const RENTAL_CFG = {
   bike:    { icon:'🏍️', label:'Bike',    bg:D.sageTint,  color:'#166534' },
   scooter: { icon:'🛵', label:'Scooter', bg:D.goldTint,  color:'#92400E' },
   cycle:   { icon:'🚲', label:'Cycle',   bg:'#F4F3FF',   color:'#534AB7' },
-};
-
+};const RATINGS = [{v:0,l:'Any'},{v:3,l:'3+'},{v:3.5,l:'3.5+'},{v:4,l:'4+'},{v:4.5,l:'4.5+'}];
 /* ── FilterChip ── */
 function FilterChip({ label, active, onClick, bg, color }) {
   const defaultBg    = active ? (bg || D.goldTint) : D.surface;
@@ -135,6 +136,94 @@ function FilterChip({ label, active, onClick, bg, color }) {
         whiteSpace:'nowrap',
       }}
     >{label}</button>
+  );
+}
+
+/* ── ModalChip ── */
+function ModalChip({ label, active, onClick, bg, color }) {
+  return (
+    <button onClick={onClick} className="r-chip"
+      style={{
+        fontSize:12, fontWeight:700, padding:'7px 14px', borderRadius:999,
+        border:`1.5px solid ${active ? (color||D.gold) : 'rgba(28,20,16,0.13)'}`,
+        background: active ? (bg || D.goldTint) : '#FAFAF8',
+        color: active ? (color || D.gold) : '#7A7470',
+        cursor:'pointer', fontFamily:"'DM Sans',sans-serif", whiteSpace:'nowrap',
+      }}
+    >{label}</button>
+  );
+}
+
+/* ── Filter section label ── */
+function FilterLabel({ children }) {
+  return (
+    <div style={{ fontSize:10,fontWeight:800,color:'#6B6B68',textTransform:'uppercase',letterSpacing:'0.07em',marginBottom:8 }}>
+      {children}
+    </div>
+  );
+}
+
+/* ── Filter Modal (Club Discover style) ── */
+function FilterModal({ open, onClose, hotels, hospitals, rentals, draft, setDraft, onApply, onReset }) {
+  if (!open) return null;
+  const availStayTypes = ['hotel','hostel','guesthouse','resort'].filter(t => hotels.some(h => h.stayType === t));
+  const availHospCats  = ['hospital','emergency','clinic','pharmacy'].filter(c => hospitals.some(h => h.category === c));
+  const availRentTypes = ['car','bike','scooter','cycle'].filter(t => rentals.some(r => r.type === t));
+  return (
+    <div
+      style={{ position:'fixed',inset:0,background:'rgba(14,16,24,0.45)',zIndex:600,display:'flex',alignItems:'flex-end',justifyContent:'center',animation:'rFadeIn .2s ease-out both' }}
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="r-sheet-in" style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem 2rem',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',maxHeight:'85vh',overflowY:'auto' }}>
+        <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16 }}>
+          <div>
+            <div style={{ fontFamily:"'Sora',sans-serif",fontSize:16,fontWeight:800 }}>Filter Results</div>
+            <div style={{ fontSize:12,color:'#6b6b68',marginTop:2 }}>Adjust what's shown in each section</div>
+          </div>
+          <button onClick={onClose} style={{ width:30,height:30,borderRadius:'50%',border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'#6b6b68',padding:0 }}>✕</button>
+        </div>
+        {/* Stays */}
+        <div style={{ background:'#FDFCFA',borderRadius:16,padding:'13px 14px',marginBottom:10,border:'1px solid rgba(28,20,16,0.07)' }}>
+          <FilterLabel>🛏️  Where to stay</FilterLabel>
+          <div style={{ fontSize:11,color:D.muted,marginBottom:6 }}>Stay type</div>
+          <div style={{ display:'flex',gap:6,flexWrap:'wrap',marginBottom:12 }}>
+            <ModalChip label="All Stays" active={draft.stayType==='all'} onClick={()=>setDraft(f=>({...f,stayType:'all'}))} bg={D.goldTint} color={D.gold} />
+            {availStayTypes.map(t => { const c=STAY_CFG[t]||STAY_CFG.hotel; return <ModalChip key={t} label={c.icon+' '+c.label+'s'} active={draft.stayType===t} onClick={()=>setDraft(f=>({...f,stayType:t}))} bg={c.bg} color={c.color} />; })}
+          </div>
+          <div style={{ fontSize:11,color:D.muted,marginBottom:6 }}>Price range</div>
+          <div style={{ display:'flex',gap:6,flexWrap:'wrap',marginBottom:12 }}>
+            <ModalChip label="Any price" active={draft.priceLevel==='all'} onClick={()=>setDraft(f=>({...f,priceLevel:'all'}))} bg={D.neutral} color={D.muted} />
+            {['budget','mid','luxury'].map(p => { const c=PRICE_CFG[p]; return <ModalChip key={p} label={c.icon+' '+c.label} active={draft.priceLevel===p} onClick={()=>setDraft(f=>({...f,priceLevel:p}))} bg={c.bg} color={c.color} />; })}
+          </div>
+          <div style={{ fontSize:11,color:D.muted,marginBottom:6 }}>Minimum rating</div>
+          <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+            {RATINGS.map(f => <ModalChip key={f.v} label={f.v===0?'Any':'★ '+f.l} active={draft.minRating===f.v} onClick={()=>setDraft(p=>({...p,minRating:f.v}))} bg='#FEF9EE' color='#92400E' />)}
+          </div>
+        </div>
+        {/* Healthcare */}
+        <div style={{ background:'#FDFCFA',borderRadius:16,padding:'13px 14px',marginBottom:10,border:'1px solid rgba(28,20,16,0.07)' }}>
+          <FilterLabel>🏥  Healthcare</FilterLabel>
+          <div style={{ fontSize:11,color:D.muted,marginBottom:6 }}>Category</div>
+          <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+            <ModalChip label="All" active={draft.hospCat==='all'} onClick={()=>setDraft(f=>({...f,hospCat:'all'}))} bg="#FEE2E2" color="#B91C1C" />
+            {availHospCats.map(c => { const cfg=CAT_CFG[c]||CAT_CFG.clinic; return <ModalChip key={c} label={cfg.icon+' '+cfg.label} active={draft.hospCat===c} onClick={()=>setDraft(f=>({...f,hospCat:c}))} bg={cfg.bg} color={cfg.color} />; })}
+          </div>
+        </div>
+        {/* Rentals */}
+        <div style={{ background:'#FDFCFA',borderRadius:16,padding:'13px 14px',marginBottom:16,border:'1px solid rgba(28,20,16,0.07)' }}>
+          <FilterLabel>🚗  Rentals</FilterLabel>
+          <div style={{ fontSize:11,color:D.muted,marginBottom:6 }}>Vehicle type</div>
+          <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+            <ModalChip label="All" active={draft.rentalType==='all'} onClick={()=>setDraft(f=>({...f,rentalType:'all'}))} bg={D.blueTint} color="#1D4ED8" />
+            {availRentTypes.map(t => { const c=RENTAL_CFG[t]||RENTAL_CFG.car; return <ModalChip key={t} label={c.icon+' '+c.label+'s'} active={draft.rentalType===t} onClick={()=>setDraft(f=>({...f,rentalType:t}))} bg={c.bg} color={c.color} />; })}
+          </div>
+        </div>
+        <div style={{ display:'flex',gap:8 }}>
+          <button onClick={onReset} style={{ flex:1,padding:'12px',fontSize:13,fontWeight:700,borderRadius:14,border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif",color:'#444' }}>Reset</button>
+          <button onClick={onApply} style={{ flex:2,padding:'12px',fontSize:13,fontWeight:700,borderRadius:14,border:'none',background:'linear-gradient(135deg,#C9913A,#A8731E)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif",color:'#fff' }}>Apply Filters</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -163,20 +252,8 @@ function SecHeader({ icon, title, subtitle, count, ac, abg }) {
 /* ════════════════════════════════════════
    STAYS SECTION
 ════════════════════════════════════════ */
-function StaysSection({ hotels, destination, sectionRef }) {
-  const [stayFilter,  setStayFilter]  = useState('all');
-  const [priceFilter, setPriceFilter] = useState('all');
-  const [minRating,   setMinRating]   = useState(0);
-  const [imgErrors,   setImgErrors]   = useState(new Set());
-
-  const availTypes = ['hotel','hostel','guesthouse','resort'].filter(t => hotels.some(h=>h.stayType===t));
-
-  const filtered = hotels.filter(h => {
-    if (stayFilter  !== 'all' && h.stayType   !== stayFilter)  return false;
-    if (priceFilter !== 'all' && h.priceLevel  !== priceFilter) return false;
-    if (minRating > 0 && (!h.rating || h.rating < minRating))  return false;
-    return true;
-  });
+function StaysSection({ hotels, destination, sectionRef, filtered }) {
+  const [imgErrors, setImgErrors] = useState(new Set());
 
   if (!hotels.length) return null;
 
@@ -184,32 +261,6 @@ function StaysSection({ hotels, destination, sectionRef }) {
     <div ref={sectionRef} style={{ marginBottom:'2.5rem', scrollMarginTop: 12 }}>
       <SecHeader icon="🛏️" title="Where to Stay" subtitle="Every option — from dorms to palaces"
         count={filtered.length} ac={D.gold} abg={D.goldTint} />
-
-      {/* Stay type filters */}
-      <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:3, marginBottom:8 }}>
-        <FilterChip label="All Stays" active={stayFilter==='all'} onClick={()=>setStayFilter('all')} bg={D.goldTint} color={D.gold} />
-        {availTypes.map(t => {
-          const c = STAY_CFG[t]||STAY_CFG.hotel;
-          return <FilterChip key={t} label={c.icon+' '+c.label+'s'} active={stayFilter===t} onClick={()=>setStayFilter(t)} bg={c.bg} color={c.color} />;
-        })}
-      </div>
-
-      {/* Price level filters */}
-      <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:3, marginBottom:8 }}>
-        <FilterChip label="Any Price" active={priceFilter==='all'} onClick={()=>setPriceFilter('all')} bg={D.neutral} color={D.muted} />
-        {['budget','mid','luxury'].map(p => {
-          const c = PRICE_CFG[p];
-          return <FilterChip key={p} label={c.icon+' '+c.label} active={priceFilter===p} onClick={()=>setPriceFilter(p)} bg={c.bg} color={c.color} />;
-        })}
-      </div>
-
-      {/* Rating filters */}
-      <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:3, marginBottom:14, alignItems:'center' }}>
-        <span style={{ fontSize:10,fontWeight:700,color:D.muted,textTransform:'uppercase',letterSpacing:.6,flexShrink:0 }}>Min ★</span>
-        {[{v:0,l:'Any'},{v:3,l:'3+'},{v:3.5,l:'3.5+'},{v:4,l:'4+'},{v:4.5,l:'4.5+'}].map(f=>(
-          <FilterChip key={f.v} label={f.l} active={minRating===f.v} onClick={()=>setMinRating(f.v)} bg='#FEF9EE' color='#92400E' />
-        ))}
-      </div>
 
       {!filtered.length && (
         <div style={{ textAlign:'center', padding:'2.5rem 1rem', color:D.muted, fontSize:13 }}>
@@ -296,27 +347,13 @@ function StaysSection({ hotels, destination, sectionRef }) {
 /* ════════════════════════════════════════
    HOSPITALS SECTION
 ════════════════════════════════════════ */
-function HealthcareSection({ hospitals, sectionRef }) {
-  const [catFilter, setCatFilter] = useState('all');
-
-  const availCats = ['hospital','emergency','clinic','pharmacy'].filter(c => hospitals.some(h=>h.category===c));
-  const shown = catFilter === 'all' ? hospitals : hospitals.filter(h=>h.category===catFilter);
-
+function HealthcareSection({ hospitals, sectionRef, shown }) {
   if (!hospitals.length) return null;
 
   return (
     <div ref={sectionRef} style={{ marginBottom:'2.5rem', scrollMarginTop: 12 }}>
       <SecHeader icon="🏥" title="Healthcare" subtitle="Hospitals · Clinics · Pharmacies · Emergency"
         count={shown.length} ac="#B91C1C" abg="#FEE2E2" />
-
-      {/* Category filter */}
-      <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:3, marginBottom:14 }}>
-        <FilterChip label="All" active={catFilter==='all'} onClick={()=>setCatFilter('all')} bg="#FEE2E2" color="#B91C1C" />
-        {availCats.map(c => {
-          const cfg = CAT_CFG[c]||CAT_CFG.clinic;
-          return <FilterChip key={c} label={cfg.icon+' '+cfg.label} active={catFilter===c} onClick={()=>setCatFilter(c)} bg={cfg.bg} color={cfg.color} />;
-        })}
-      </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
         {shown.map((h, i) => {
@@ -389,25 +426,13 @@ function HealthcareSection({ hospitals, sectionRef }) {
 /* ════════════════════════════════════════
    RENTALS SECTION
 ════════════════════════════════════════ */
-function RentalsSection({ rentals, sectionRef }) {
-  const [typeFilter, setTypeFilter] = useState('all');
-  const availTypes = ['car','bike','scooter','cycle'].filter(t=>rentals.some(r=>r.type===t));
-  const shown = typeFilter==='all' ? rentals : rentals.filter(r=>r.type===typeFilter);
-
+function RentalsSection({ rentals, sectionRef, shown }) {
   if (!rentals.length) return null;
 
   return (
     <div ref={sectionRef} style={{ marginBottom:'2rem', scrollMarginTop: 12 }}>
       <SecHeader icon="🚗" title="Rentals" subtitle="Cars · Bikes · Scooters to explore freely"
         count={shown.length} ac="#1D4ED8" abg={D.blueTint} />
-
-      <div style={{ display:'flex', gap:6, overflowX:'auto', paddingBottom:3, marginBottom:14 }}>
-        <FilterChip label="All" active={typeFilter==='all'} onClick={()=>setTypeFilter('all')} bg={D.blueTint} color="#1D4ED8" />
-        {availTypes.map(t => {
-          const c = RENTAL_CFG[t]||RENTAL_CFG.car;
-          return <FilterChip key={t} label={c.icon+' '+c.label+'s'} active={typeFilter===t} onClick={()=>setTypeFilter(t)} bg={c.bg} color={c.color} />;
-        })}
-      </div>
 
       <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
         {shown.map((r, i) => {
@@ -456,19 +481,16 @@ function RentalsSection({ rentals, sectionRef }) {
 /* ════════════════════════════════════════
    LOADING SKELETON
 ════════════════════════════════════════ */
-function LoadingSkeleton({ destination }) {
+function LoadingSkeleton() {
   return (
     <div style={{ background:D.bg, paddingBottom:'2rem' }}>
-      {/* Shimmer hero */}
       <div className="r-shimmer" style={{ borderRadius:18, height:140, marginBottom:'1.5rem' }} />
-      {/* Hotel skeletons */}
       <div className="r-shimmer" style={{ borderRadius:16,height:20,width:'55%',marginBottom:12 }} />
       <div style={{ display:'flex',gap:8,marginBottom:10,overflowX:'hidden' }}>
         {[1,2,3].map(i=><div key={i} className="r-shimmer" style={{ borderRadius:999,height:30,width:80,flexShrink:0 }} />)}
       </div>
       {[1,2,3].map(i=><HotelSkeleton key={i} />)}
       <div style={{ height:20 }} />
-      {/* Hospital skeletons */}
       <div className="r-shimmer" style={{ borderRadius:16,height:20,width:'45%',marginBottom:12,marginTop:24 }} />
       {[1,2].map(i=><HospSkeleton key={i} />)}
     </div>
@@ -478,14 +500,19 @@ function LoadingSkeleton({ destination }) {
 /* ════════════════════════════════════════
    MAIN COMPONENT
 ════════════════════════════════════════ */
+const INIT_FILTERS = { stayType:'all', priceLevel:'all', minRating:0, hospCat:'all', rentalType:'all' };
+
 export default function RecommendationsPage({ destination, isSolo }) {
-  const [step, setStep] = useState('loading');
-  const [data, setData] = useState(null);
+  const [step, setStep]         = useState('loading');
+  const [data, setData]         = useState(null);
+  const [filters,     setFilters]     = useState(INIT_FILTERS);
+  const [filterDraft, setFilterDraft] = useState(INIT_FILTERS);
+  const [filterOpen,  setFilterOpen]  = useState(false);
   const fetchedFor = useRef(null);
   const ac = isSolo ? '#7F77DD' : D.gold;
-  const staysRef    = useRef(null);
-  const hospRef     = useRef(null);
-  const rentalsRef  = useRef(null);
+  const staysRef   = useRef(null);
+  const hospRef    = useRef(null);
+  const rentalsRef = useRef(null);
   const scrollTo = (ref) => ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   useEffect(() => {
@@ -493,7 +520,6 @@ export default function RecommendationsPage({ destination, isSolo }) {
     fetchedFor.current = destination;
     let cancelled = false;
     setStep('loading'); setData(null);
-
     (async () => {
       try {
         const { fetchRecommendations } = await import('../../api');
@@ -508,7 +534,7 @@ export default function RecommendationsPage({ destination, isSolo }) {
 
   const retry = () => { fetchedFor.current = null; setStep('loading'); setData(null); };
 
-  if (step === 'loading') return <LoadingSkeleton destination={destination} />;
+  if (step === 'loading') return <LoadingSkeleton />;
 
   if (step === 'error') return (
     <div style={{ textAlign:'center', padding:'4rem 1.5rem' }}>
@@ -524,25 +550,82 @@ export default function RecommendationsPage({ destination, isSolo }) {
   const { hotels=[], hospitals=[], rentals=[] } = data||{};
   const disp = destination.charAt(0).toUpperCase() + destination.slice(1);
 
+  // Computed filtered arrays
+  const filteredHotels = hotels.filter(h => {
+    if (filters.stayType   !== 'all' && h.stayType   !== filters.stayType)   return false;
+    if (filters.priceLevel !== 'all' && h.priceLevel !== filters.priceLevel)  return false;
+    if (filters.minRating  > 0 && (!h.rating || h.rating < filters.minRating)) return false;
+    return true;
+  });
+  const filteredHospitals = filters.hospCat    === 'all' ? hospitals : hospitals.filter(h => h.category === filters.hospCat);
+  const filteredRentals   = filters.rentalType === 'all' ? rentals   : rentals.filter(r => r.type === filters.rentalType);
+
+  const activeCount = [
+    filters.stayType !== 'all', filters.priceLevel !== 'all', filters.minRating > 0,
+    filters.hospCat !== 'all',  filters.rentalType !== 'all',
+  ].filter(Boolean).length;
+
+  const filterSummary = [
+    filters.stayType   !== 'all' ? (STAY_CFG[filters.stayType]?.label  || filters.stayType)+'s'      : null,
+    filters.priceLevel !== 'all' ? PRICE_CFG[filters.priceLevel]?.label                               : null,
+    filters.minRating  > 0       ? '★ '+filters.minRating+'+'                                         : null,
+    filters.hospCat    !== 'all' ? (CAT_CFG[filters.hospCat]?.label    || filters.hospCat)             : null,
+    filters.rentalType !== 'all' ? (RENTAL_CFG[filters.rentalType]?.label||filters.rentalType)+'s'     : null,
+  ].filter(Boolean).join(' · ');
+
+  const applyFilters = () => { setFilters(filterDraft); setFilterOpen(false); };
+  const resetFilters = () => setFilterDraft(INIT_FILTERS);
+
   return (
     <div style={{ background:D.bg, paddingBottom:'2.5rem' }}>
       {/* ── Hero ── */}
       <div style={{
         position:'relative', borderRadius:20, overflow:'hidden',
         background:'linear-gradient(135deg,#0D1B2A 0%,#1A3A5C 55%,#2563AB 100%)',
-        marginBottom:'1.5rem', padding:'1.4rem 1.4rem 1.2rem',
+        marginBottom:'1.2rem', padding:'1.4rem 1.4rem 1.2rem',
         boxShadow:'0 6px 28px rgba(13,27,42,0.25)',
       }}>
         <div style={{ position:'absolute',top:-30,right:-30,fontSize:160,opacity:0.05,lineHeight:1 }}>🗺️</div>
         <div style={{ position:'relative', zIndex:1 }}>
           <div style={{ fontSize:10,fontWeight:700,color:'rgba(255,255,255,0.55)',textTransform:'uppercase',letterSpacing:1.8,marginBottom:7,fontFamily:"'DM Sans',sans-serif" }}>NEARBY IN {disp.toUpperCase()}</div>
-          <div style={{ fontSize:21,fontWeight:900,color:'#fff',lineHeight:1.2,letterSpacing:-0.4,marginBottom:6,fontFamily:"'Sora',sans-serif" }}>
-            Your complete <span style={{ color:'#93C5FD' }}>city guide</span>
+          {/* Title row with filter button */}
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:10, marginBottom:5 }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:21,fontWeight:900,color:'#fff',lineHeight:1.2,letterSpacing:-0.4,fontFamily:"'Sora',sans-serif" }}>
+                Your complete <span style={{ color:'#93C5FD' }}>city guide</span>
+              </div>
+              <div style={{ fontSize:12,color:'rgba(255,255,255,0.62)',lineHeight:1.65,marginTop:4 }}>
+                Stays · Healthcare · Rentals — cached in Supabase
+              </div>
+            </div>
+            {/* Filter button */}
+            <button
+              onClick={() => { setFilterDraft(filters); setFilterOpen(true); }}
+              style={{
+                flexShrink:0, display:'flex', alignItems:'center', gap:5, padding:'7px 13px', borderRadius:999,
+                background: activeCount > 0 ? 'rgba(201,145,58,0.9)' : 'rgba(255,255,255,0.15)',
+                border:'0.5px solid rgba(255,255,255,0.3)', backdropFilter:'blur(8px)', cursor:'pointer',
+              }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              <span style={{ fontSize:12,fontWeight:700,color:'#fff' }}>Filter</span>
+              {activeCount > 0 && (
+                <span style={{ width:17,height:17,borderRadius:'50%',background:'#fff',color:'#C9913A',fontSize:10,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center' }}>
+                  {activeCount}
+                </span>
+              )}
+            </button>
           </div>
-          <div style={{ fontSize:12,color:'rgba(255,255,255,0.62)',lineHeight:1.65,marginBottom:16 }}>
-            Stays · Healthcare · Rentals — cached monthly, loaded instantly
-          </div>
-          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          {/* Active filter summary */}
+          {filterSummary && (
+            <div style={{ fontSize:11,color:'rgba(255,255,255,0.5)',fontFamily:"'DM Sans',sans-serif",marginBottom:10 }}>
+              Showing: {filterSummary}
+            </div>
+          )}
+          {/* Stat scroll buttons */}
+          <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop: filterSummary ? 0 : 12 }}>
             {[
               {n:hotels.length,    label:'stays',   icon:'🛏️', ref:staysRef},
               {n:hospitals.length, label:'clinics',  icon:'🏥', ref:hospRef},
@@ -567,16 +650,23 @@ export default function RecommendationsPage({ destination, isSolo }) {
         </div>
       </div>
 
-      <StaysSection     hotels={hotels}       destination={destination} sectionRef={staysRef} />
-      <HealthcareSection hospitals={hospitals} sectionRef={hospRef} />
-      <RentalsSection   rentals={rentals}     sectionRef={rentalsRef} />
+      <StaysSection      hotels={hotels}     destination={destination} sectionRef={staysRef}   filtered={filteredHotels} />
+      <HealthcareSection hospitals={hospitals}               sectionRef={hospRef}     shown={filteredHospitals} />
+      <RentalsSection    rentals={rentals}                   sectionRef={rentalsRef}   shown={filteredRentals} />
 
       {!data?.fromCache && (
         <div style={{ display:'flex',gap:9,alignItems:'flex-start',background:D.surface,border:`0.5px solid ${D.border}`,borderLeft:`3px solid ${ac}`,borderRadius:12,padding:'11px 13px',fontSize:11.5,color:D.muted,lineHeight:1.6 }}>
           <span style={{ fontSize:16,flexShrink:0 }}>✅</span>
-          <span>Fresh data fetched and saved for {disp}. Every user opening this destination will load instantly for the next 30 days.</span>
+          <span>Fresh data fetched and saved to Supabase for {disp}. Every user opening this destination loads instantly.</span>
         </div>
       )}
+
+      <FilterModal
+        open={filterOpen} onClose={()=>setFilterOpen(false)}
+        hotels={hotels} hospitals={hospitals} rentals={rentals}
+        draft={filterDraft} setDraft={setFilterDraft}
+        onApply={applyFilters} onReset={resetFilters}
+      />
     </div>
   );
 }
