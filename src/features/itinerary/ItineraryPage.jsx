@@ -260,7 +260,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           <PlacePhoto
             query={`${item.name} ${dest} ${photoSuffix}`}
             style={{ height: 160, borderRadius: 0 }}
-            delay={(startIndex + index) * 500}
+            delay={index * 60}
           />
           {/* bottom gradient on photo */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 35%, rgba(28,20,16,0.72) 100%)', pointerEvents: 'none' }} />
