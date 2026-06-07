@@ -110,7 +110,35 @@ function SoloAvatar({ initials, size = 26 }) {
   );
 }
 
-function Spinner({ text, solo }) {
+function Spinner({ text, solo, variant }) {
+  // trips list skeleton
+  if (variant === 'trips') {
+    return (
+      <div style={{ padding: '1rem 0.95rem' }}>
+        {[1,2,3].map(i => (
+          <div key={i} className="tb-shimmer" style={{ height: 96, borderRadius: 18, marginBottom: 12, opacity: 1 - i * 0.15 }} />
+        ))}
+        <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+          <div className="tb-shimmer" style={{ height: 44, flex: 1, borderRadius: 14 }} />
+          <div className="tb-shimmer" style={{ height: 44, flex: 1, borderRadius: 14 }} />
+        </div>
+      </div>
+    );
+  }
+  // single trip skeleton
+  if (variant === 'trip') {
+    return (
+      <div style={{ padding: '1rem 0.95rem' }}>
+        <div className="tb-shimmer" style={{ height: 180, borderRadius: 18, marginBottom: 14 }} />
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {[80,100,70,90].map((w,i) => <div key={i} className="tb-shimmer" style={{ height: 32, width: w, borderRadius: 999 }} />)}
+        </div>
+        {[1,2,3,4].map(i => (
+          <div key={i} className="tb-shimmer" style={{ height: 72, borderRadius: 14, marginBottom: 10, opacity: 1 - i * 0.12 }} />
+        ))}
+      </div>
+    );
+  }
   return (
     <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
       <div style={solo ? S.soloSpinner : S.spinner} />
@@ -672,6 +700,8 @@ export default function App() {
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
+        @keyframes tbShimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
+        .tb-shimmer{background:linear-gradient(90deg,#f0ede8 25%,#e4e0d8 50%,#f0ede8 75%);background-size:1200px 100%;animation:tbShimmer 1.4s ease-in-out infinite;border-radius:8px}
         @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
         @keyframes tbPageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         @keyframes tbCardIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
@@ -889,7 +919,7 @@ export default function App() {
       <div className="tb-page-shell" style={S.page}>
         {!activeTrip && (
           tripsLoading
-            ? <Spinner text="Loading your trips…" />
+            ? <Spinner variant="trips" />
             : <div key={viewKey} className={`tb-view-enter tb-view-${viewDirection}`}><HomePageFeature
                 trips={trips}
                 onOpenTrip={handleOpenTrip}
@@ -904,7 +934,7 @@ export default function App() {
 
         {activeTrip && (
           tripLoading || !activeTripData
-            ? <Spinner text="Loading trip…" />
+            ? <Spinner variant="trip" />
             : (
               <div key={viewKey} className={`tb-view-enter tb-view-${viewDirection}`} style={{ animation: 'tbPageIn .35s cubic-bezier(.2,.7,.2,1)' }}>
                 {isSolo ? (

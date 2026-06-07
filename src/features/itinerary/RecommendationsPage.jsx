@@ -2,6 +2,7 @@
 // Premium "Nearby" tab — Stays · Healthcare · Rentals
 // Full fetch-from-DB, ImageKit images, rich filters, motion UX
 import { useState, useEffect, useRef } from 'react';
+import { PlacePhoto } from '../media/PlaceMedia';
 
 /* ── Design tokens ── */
 const D = {
@@ -162,7 +163,7 @@ function SecHeader({ icon, title, subtitle, count, ac, abg }) {
 /* ════════════════════════════════════════
    STAYS SECTION
 ════════════════════════════════════════ */
-function StaysSection({ hotels, destination }) {
+function StaysSection({ hotels, destination, sectionRef }) {
   const [stayFilter,  setStayFilter]  = useState('all');
   const [priceFilter, setPriceFilter] = useState('all');
   const [minRating,   setMinRating]   = useState(0);
@@ -180,7 +181,7 @@ function StaysSection({ hotels, destination }) {
   if (!hotels.length) return null;
 
   return (
-    <div style={{ marginBottom:'2.5rem' }}>
+    <div ref={sectionRef} style={{ marginBottom:'2.5rem', scrollMarginTop: 12 }}>
       <SecHeader icon="🛏️" title="Where to Stay" subtitle="Every option — from dorms to palaces"
         count={filtered.length} ac={D.gold} abg={D.goldTint} />
 
@@ -242,9 +243,11 @@ function StaysSection({ hotels, destination }) {
                     style={{ width:'100%',height:'100%',objectFit:'cover',display:'block' }}
                     onError={()=>setImgErrors(p=>{const n=new Set(p);n.add(h.id||h.name);return n;})} />
                 ) : (
-                  <div style={{ width:'100%',height:'100%',background:`linear-gradient(135deg,${stCfg.bg},${D.neutral})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:48 }}>
-                    {stCfg.icon}
-                  </div>
+                  <PlacePhoto
+                    query={`${h.name} ${destination} ${stCfg.label} exterior`}
+                    style={{ height:160, borderRadius:0 }}
+                    delay={i * 250}
+                  />
                 )}
                 {/* gradient overlay */}
                 <div style={{ position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 30%,rgba(10,8,6,0.78) 100%)',pointerEvents:'none' }} />
@@ -293,7 +296,7 @@ function StaysSection({ hotels, destination }) {
 /* ════════════════════════════════════════
    HOSPITALS SECTION
 ════════════════════════════════════════ */
-function HealthcareSection({ hospitals }) {
+function HealthcareSection({ hospitals, sectionRef }) {
   const [catFilter, setCatFilter] = useState('all');
 
   const availCats = ['hospital','emergency','clinic','pharmacy'].filter(c => hospitals.some(h=>h.category===c));
@@ -302,7 +305,7 @@ function HealthcareSection({ hospitals }) {
   if (!hospitals.length) return null;
 
   return (
-    <div style={{ marginBottom:'2.5rem' }}>
+    <div ref={sectionRef} style={{ marginBottom:'2.5rem', scrollMarginTop: 12 }}>
       <SecHeader icon="🏥" title="Healthcare" subtitle="Hospitals · Clinics · Pharmacies · Emergency"
         count={shown.length} ac="#B91C1C" abg="#FEE2E2" />
 
@@ -386,7 +389,7 @@ function HealthcareSection({ hospitals }) {
 /* ════════════════════════════════════════
    RENTALS SECTION
 ════════════════════════════════════════ */
-function RentalsSection({ rentals }) {
+function RentalsSection({ rentals, sectionRef }) {
   const [typeFilter, setTypeFilter] = useState('all');
   const availTypes = ['car','bike','scooter','cycle'].filter(t=>rentals.some(r=>r.type===t));
   const shown = typeFilter==='all' ? rentals : rentals.filter(r=>r.type===typeFilter);
@@ -394,7 +397,7 @@ function RentalsSection({ rentals }) {
   if (!rentals.length) return null;
 
   return (
-    <div style={{ marginBottom:'2rem' }}>
+    <div ref={sectionRef} style={{ marginBottom:'2rem', scrollMarginTop: 12 }}>
       <SecHeader icon="🚗" title="Rentals" subtitle="Cars · Bikes · Scooters to explore freely"
         count={shown.length} ac="#1D4ED8" abg={D.blueTint} />
 
@@ -480,6 +483,10 @@ export default function RecommendationsPage({ destination, isSolo }) {
   const [data, setData] = useState(null);
   const fetchedFor = useRef(null);
   const ac = isSolo ? '#7F77DD' : D.gold;
+  const staysRef    = useRef(null);
+  const hospRef     = useRef(null);
+  const rentalsRef  = useRef(null);
+  const scrollTo = (ref) => ref?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   useEffect(() => {
     if (!destination || fetchedFor.current === destination) return;
@@ -537,27 +544,32 @@ export default function RecommendationsPage({ destination, isSolo }) {
           </div>
           <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
             {[
-              {n:hotels.length,    label:'stays',   icon:'🛏️'},
-              {n:hospitals.length, label:'clinics',  icon:'🏥'},
-              {n:rentals.length,   label:'rentals',  icon:'🚗'},
+              {n:hotels.length,    label:'stays',   icon:'🛏️', ref:staysRef},
+              {n:hospitals.length, label:'clinics',  icon:'🏥', ref:hospRef},
+              {n:rentals.length,   label:'rentals',  icon:'🚗', ref:rentalsRef},
             ].filter(s=>s.n>0).map(s=>(
-              <div key={s.label} className="r-stat-num" style={{
-                background:'rgba(255,255,255,0.12)', border:'0.5px solid rgba(255,255,255,0.2)',
-                backdropFilter:'blur(8px)', borderRadius:999, padding:'5px 13px',
-                display:'flex', gap:5, alignItems:'center',
-              }}>
+              <button key={s.label} onClick={()=>scrollTo(s.ref)}
+                className="r-stat-num r-chip"
+                style={{
+                  background:'rgba(255,255,255,0.13)', border:'0.5px solid rgba(255,255,255,0.22)',
+                  backdropFilter:'blur(8px)', borderRadius:999, padding:'5px 14px',
+                  display:'flex', gap:5, alignItems:'center', cursor:'pointer',
+                }}>
                 <span style={{ fontSize:13 }}>{s.icon}</span>
                 <span style={{ fontSize:14,fontWeight:900,color:'#fff' }}>{s.n}</span>
-                <span style={{ fontSize:11,color:'rgba(255,255,255,0.72)' }}>{s.label}</span>
-              </div>
+                <span style={{ fontSize:11,color:'rgba(255,255,255,0.75)' }}>{s.label}</span>
+                <svg width="9" height="9" viewBox="0 0 10 10" fill="none" style={{opacity:0.6}}>
+                  <path d="M5 2L5 8M5 8L2.5 5.5M5 8L7.5 5.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
             ))}
           </div>
         </div>
       </div>
 
-      <StaysSection     hotels={hotels}       destination={destination} />
-      <HealthcareSection hospitals={hospitals} />
-      <RentalsSection   rentals={rentals} />
+      <StaysSection     hotels={hotels}       destination={destination} sectionRef={staysRef} />
+      <HealthcareSection hospitals={hospitals} sectionRef={hospRef} />
+      <RentalsSection   rentals={rentals}     sectionRef={rentalsRef} />
 
       {!data?.fromCache && (
         <div style={{ display:'flex',gap:9,alignItems:'flex-start',background:D.surface,border:`0.5px solid ${D.border}`,borderLeft:`3px solid ${ac}`,borderRadius:12,padding:'11px 13px',fontSize:11.5,color:D.muted,lineHeight:1.6 }}>
