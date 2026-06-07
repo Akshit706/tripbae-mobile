@@ -602,17 +602,25 @@ export default function App() {
 
 
 
+  const TAB_ICONS = {
+    split:    (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,
+    contacts: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+    explore:  (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
+    photos:   (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+    club:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+    expenses: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  };
   const groupTabs = [
-    { id: 'main',      icon: '💳', label: 'Split' },
-    { id: 'contacts', icon: '📒', label: 'Contacts' },
-    { id: 'itinerary',icon: '🗺️', label: 'Itinerary' },
-    { id: 'photos',   icon: '📸', label: 'Photos' },
-    { id: 'club',     icon: '🧭', label: 'Club' },
+    { id: 'main',      iconKey: 'split',    label: 'Split' },
+    { id: 'contacts',  iconKey: 'contacts', label: 'Contacts' },
+    { id: 'itinerary', iconKey: 'explore',  label: 'Explore' },
+    { id: 'photos',    iconKey: 'photos',   label: 'Photos' },
+    { id: 'club',      iconKey: 'club',     label: 'Club' },
   ];
   const soloTabs = [
-    { id: 'main',      icon: '💰', label: 'Expenses' },
-    { id: 'itinerary', icon: '🗺️', label: 'Itinerary' },
-    { id: 'club',      icon: '🧭', label: 'Club' },
+    { id: 'main',      iconKey: 'expenses', label: 'Expenses' },
+    { id: 'itinerary', iconKey: 'explore',  label: 'Explore' },
+    { id: 'club',      iconKey: 'club',     label: 'Club' },
   ];
   const tabs = isSolo ? soloTabs : groupTabs;
   const [viewDirection, setViewDirection] = useState('forward');
@@ -895,7 +903,7 @@ export default function App() {
                     position:'relative', gap:2,
                   }}
                 >
-                  <span style={{ fontSize:20, lineHeight:1, filter: isActive ? 'none' : 'grayscale(100%) opacity(0.5)' }}>{t.icon}</span>
+                  <span style={{ display:'flex', alignItems:'center', justifyContent:'center', opacity: isActive ? 1 : 0.45 }}>{TAB_ICONS[t.iconKey]?.(isActive ? activeColor : '#6b6b68')}</span>
                   <span style={{ fontSize:9.5, fontWeight: isActive ? 700 : 400, color: isActive ? activeColor : '#8d8c87', fontFamily:"'DM Sans',sans-serif", letterSpacing:0.1 }}>{t.label}</span>
                   {isActive && (
                     <span style={{ width:4,height:4,borderRadius:'50%',background:activeColor,marginTop:1 }} />

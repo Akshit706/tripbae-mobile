@@ -611,8 +611,8 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
           <div style={{ fontSize:12,color:'rgba(255,255,255,0.58)',lineHeight:1.6 }}>
             Stays · Healthcare · Rentals — all in one place
           </div>
-          {/* Stat buttons — click to scroll to section */}
-          <div style={{ display:'flex', gap:8, marginTop:14, flexWrap:'wrap' }}>
+          {/* Stat buttons — full width, click to scroll to section */}
+          <div style={{ display:'flex', gap:8, marginTop:14 }}>
             {[
               { n: hotels.length,    label:'stays',      key:'stays' },
               { n: hospitals.length, label:'healthcare', key:'healthcare' },
@@ -621,15 +621,12 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
               <button
                 key={key}
                 onClick={() => scrollToSec(key)}
-                style={{ background:'rgba(255,255,255,0.13)', border:'0.5px solid rgba(255,255,255,0.22)', backdropFilter:'blur(6px)', borderRadius:999, padding:'4px 12px', display:'flex', gap:5, alignItems:'center', cursor:'pointer', transition:'background 0.15s ease' }}
+                style={{ flex:1, background:'rgba(255,255,255,0.13)', border:'0.5px solid rgba(255,255,255,0.22)', backdropFilter:'blur(6px)', borderRadius:999, padding:'5px 8px', display:'flex', gap:5, alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.15s ease' }}
                 onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.25)'}
                 onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.13)'}
               >
                 <span style={{ fontSize:13, fontWeight:800, color:'#fff' }}>{n}</span>
                 <span style={{ fontSize:11, color:'rgba(255,255,255,0.75)' }}>{label}</span>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity:0.6 }}>
-                  <path d="M5 2L5 8M5 8L2.5 5.5M5 8L7.5 5.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
               </button>
             ))}
           </div>

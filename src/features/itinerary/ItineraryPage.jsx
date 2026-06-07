@@ -4,7 +4,7 @@ import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 import { PlacePhoto, PlacePhotosStrip } from '../media/PlaceMedia';
 import RecommendationsPage from './RecommendationsPage';
-import { fetchRecommendations } from '../../api';
+import { fetchRecommendations, generateLocalTaste } from '../../api';
 
 /* ── Premium design tokens ─────────────────────────────────── */
 const D = {
@@ -71,6 +71,8 @@ if (typeof document !== 'undefined' && !document.getElementById('itinerary-style
       from { opacity:0; transform:translateY(10px); }
       to   { opacity:1; transform:translateY(0); }
     }
+    @keyframes rSheetIn { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes rFadeIn  { from{opacity:0} to{opacity:1} }
     .itin-card-enter { animation: cardIn 0.38s cubic-bezier(0.34,1.3,0.64,1) both; }
     .itin-dot-active  { animation: dotPulse 1.4s ease-in-out infinite; }
     .itin-dot-glow    { animation: glowPulse 1.4s ease-in-out infinite; }
@@ -145,8 +147,18 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   const [doneItems, setDoneItems] = useState(new Set());
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [expandedItems, setExpandedItems] = useState(new Set());
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({ section: 'all', minRating: 0 });
+  const [filterDraft, setFilterDraft] = useState({ section: 'all', minRating: 0 });
   const secRefs = { dishes: useRef(null), places: useRef(null), exp: useRef(null) };
   const scrollTo = (key) => secRefs[key]?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  useEffect(() => {
+    const handler = () => setShowScrollTop(window.scrollY > 220);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
 
   useEffect(() => {
     if (autoStep && autoStep !== step) setStep(autoStep);
@@ -403,9 +415,51 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
 
   if (step === 'loading') return <Spinner text={`Discovering local flavours of ${dest}…`} solo={isSolo} />;
 
+  const filterCount = (filters.section !== 'all' ? 1 : 0) + (filters.minRating > 0 ? 1 : 0);
+  const TASTE_RATINGS = [{v:0,l:'Any'},{v:3,l:'3+'},{v:3.5,l:'3.5+'},{v:4,l:'4+'},{v:4.5,l:'4.5+'}];
+
   if (step === 'result' && data) return (
-    <div style={{ background: D.bg, paddingBottom: '1.5rem' }}>
+    <div style={{ background: D.bg, paddingBottom: '1.5rem', position: 'relative' }}>
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+
+      {/* ── Filter Modal ── */}
+      {filterOpen && (
+        <div style={{ position:'fixed',inset:0,background:'rgba(14,16,24,0.45)',zIndex:600,display:'flex',alignItems:'flex-end',justifyContent:'center' }}
+          onClick={e => { if (e.target === e.currentTarget) setFilterOpen(false); }}>
+          <div style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem 2rem',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',animation:'rSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both' }}>
+            <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16 }}>
+              <div style={{ fontFamily:"'Sora',sans-serif",fontSize:16,fontWeight:800 }}>Filter Local Taste</div>
+              <button onClick={() => setFilterOpen(false)} style={{ width:30,height:30,borderRadius:'50%',border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'#6b6b68',padding:0 }}>✕</button>
+            </div>
+            <div style={{ background:'#FDFCFA',borderRadius:16,padding:'13px 14px',marginBottom:12,border:'1px solid rgba(28,20,16,0.07)' }}>
+              <div style={{ fontSize:11,color:D.muted,marginBottom:6,fontWeight:600 }}>Section</div>
+              <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+                {[{v:'all',l:'All'},{v:'dishes',l:'Dishes'},{v:'places',l:'Places'},{v:'exp',l:'Experiences'}].map(s => (
+                  <button key={s.v} onClick={() => setFilterDraft(f => ({...f,section:s.v}))}
+                    style={{ fontSize:12,fontWeight:700,padding:'7px 14px',borderRadius:999,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",border:`1.5px solid ${filterDraft.section===s.v?D.gold:'rgba(28,20,16,0.13)'}`,background:filterDraft.section===s.v?D.goldTint:'#FAFAF8',color:filterDraft.section===s.v?D.gold:'#7A7470' }}>
+                    {s.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ background:'#FDFCFA',borderRadius:16,padding:'13px 14px',marginBottom:16,border:'1px solid rgba(28,20,16,0.07)' }}>
+              <div style={{ fontSize:11,color:D.muted,marginBottom:6,fontWeight:600 }}>Min rating</div>
+              <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+                {TASTE_RATINGS.map(f => (
+                  <button key={f.v} onClick={() => setFilterDraft(p => ({...p,minRating:f.v}))}
+                    style={{ fontSize:12,fontWeight:700,padding:'7px 14px',borderRadius:999,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",border:`1.5px solid ${filterDraft.minRating===f.v?D.gold:'rgba(28,20,16,0.13)'}`,background:filterDraft.minRating===f.v?D.goldTint:'#FAFAF8',color:filterDraft.minRating===f.v?D.gold:'#7A7470' }}>
+                    {f.v===0?'Any':'★ '+f.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display:'flex',gap:8 }}>
+              <button onClick={() => setFilterDraft({section:'all',minRating:0})} style={{ flex:1,padding:'12px',fontSize:13,fontWeight:700,borderRadius:14,border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif",color:'#444' }}>Reset</button>
+              <button onClick={() => { setFilters(filterDraft); setFilterOpen(false); }} style={{ flex:2,padding:'12px',fontSize:13,fontWeight:700,borderRadius:14,border:'none',background:`linear-gradient(135deg,${D.gold},#A8731E)`,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",color:'#fff' }}>Apply</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Hero banner ── */}
       <div style={{
@@ -415,54 +469,71 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
       }}>
         <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 130, opacity: 0.06, lineHeight: 1 }}>🍜</div>
         <div style={{ position: 'relative', zIndex: 1, padding: '1.25rem 1.25rem 1rem' }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 6, fontFamily: "'DM Sans',sans-serif" }}>
-            LOCAL TASTE GUIDE
+          <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, fontFamily: "'DM Sans',sans-serif" }}>
+              LOCAL TASTE GUIDE
+            </div>
+            <button onClick={() => { setFilterDraft(filters); setFilterOpen(true); }}
+              style={{ position:'relative', width:30,height:30,borderRadius:9,border:`1.5px solid ${filterCount>0?'rgba(255,255,255,0.7)':'rgba(255,255,255,0.3)'}`,background:filterCount>0?'rgba(255,255,255,0.22)':'rgba(255,255,255,0.08)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',padding:0,flexShrink:0 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              {filterCount > 0 && (
+                <span style={{ position:'absolute',top:-5,right:-5,width:15,height:15,borderRadius:'50%',background:D.gold,color:'#fff',fontSize:8,fontWeight:900,display:'flex',alignItems:'center',justifyContent:'center',border:'2px solid #fff' }}>{filterCount}</span>
+              )}
+            </button>
           </div>
-          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: -0.3, marginBottom: 5, fontFamily: "'Sora',sans-serif" }}>
-            {data.headline}
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: -0.3, marginBottom: 4, fontFamily: "'Sora',sans-serif" }}>
+            Food &amp; culture of <span style={{ color: '#F5D9A8' }}>{destination}</span>
           </div>
-          <div style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.72)', lineHeight: 1.6 }}>{data.tagline}</div>
-          {/* Stats row — clickable scroll anchors */}
-          <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.58)', lineHeight: 1.6, marginBottom: 14 }}>
+            Iconic dishes, legendary spots &amp; experiences — curated from top food guides
+          </div>
+          {/* Stat buttons — full width, click to scroll */}
+          <div style={{ display: 'flex', gap: 8 }}>
             {[
               { n: (data.dishes||[]).length, label: 'dishes', key: 'dishes' },
               { n: (data.places||[]).length, label: 'places', key: 'places' },
-              { n: (data.experiences||[]).length, label: 'experiences', key: 'exp' },
+              { n: (data.experiences||[]).length, label: 'exp', key: 'exp' },
             ].map(({ n, label, key }) => n > 0 && (
-              <button
-                key={key}
-                onClick={() => scrollTo(key)}
-                style={{ background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '4px 12px', display: 'flex', gap: 5, alignItems: 'center', cursor: 'pointer', transition: 'background 0.15s ease' }}
+              <button key={key} onClick={() => scrollTo(key)}
+                style={{ flex:1, background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '5px 8px', display: 'flex', gap: 5, alignItems: 'center', justifyContent:'center', cursor: 'pointer', transition: 'background 0.15s ease' }}
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.25)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.13)'}
               >
                 <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{n}</span>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>{label}</span>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.6 }}>
-                  <path d="M5 2L5 8M5 8L2.5 5.5M5 8L7.5 5.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── Sections ── */}
-      <Sec
-        icon="🍴" title="Must-Eat Dishes" subtitle="Iconic plates you can't leave without trying"
-        items={data.dishes || []} secKey="dishes" startIndex={0} photoSuffix="food dish restaurant"
-        accentBg="#FAEEDA" accentColor={D.gold} sectionRef={secRefs.dishes}
-      />
-      <Sec
-        icon="📍" title="Unmissable Places" subtitle="The landmarks and streets that define this city"
-        items={data.places || []} secKey="places" startIndex={5} photoSuffix="tourist attraction landmark"
-        accentBg={D.blueTint} accentColor="#2563AB" sectionRef={secRefs.places}
-      />
-      <Sec
-        icon="✨" title="Local Experiences" subtitle="Things to do that no guidebook will tell you"
-        items={data.experiences || []} secKey="exp" startIndex={10} photoSuffix="travel experience"
-        accentBg="#EEEDFE" accentColor="#534AB7" sectionRef={secRefs.exp}
-      />
+      {/* ── Sections (filtered) ── */}
+      {(filters.section === 'all' || filters.section === 'dishes') && (
+        <Sec
+          icon="🍴" title="Must-Eat Dishes" subtitle="Iconic plates you can't leave without trying"
+          items={(data.dishes || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
+          secKey="dishes" startIndex={0} photoSuffix="food dish restaurant"
+          accentBg="#FAEEDA" accentColor={D.gold} sectionRef={secRefs.dishes}
+        />
+      )}
+      {(filters.section === 'all' || filters.section === 'places') && (
+        <Sec
+          icon="📍" title="Unmissable Places" subtitle="The landmarks and streets that define this city"
+          items={(data.places || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
+          secKey="places" startIndex={5} photoSuffix="tourist attraction landmark"
+          accentBg={D.blueTint} accentColor="#2563AB" sectionRef={secRefs.places}
+        />
+      )}
+      {(filters.section === 'all' || filters.section === 'exp') && (
+        <Sec
+          icon="✨" title="Local Experiences" subtitle="Things to do that no guidebook will tell you"
+          items={(data.experiences || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
+          secKey="exp" startIndex={10} photoSuffix="travel experience"
+          accentBg="#EEEDFE" accentColor="#534AB7" sectionRef={secRefs.exp}
+        />
+      )}
 
       {/* ── Insider tip ── */}
       {data.tip && (
@@ -473,6 +544,25 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
             <div style={{ fontSize: 13, color: D.secondary, lineHeight: 1.65 }}>{data.tip}</div>
           </div>
         </div>
+      )}
+
+      {/* ── Scroll-to-top button ── */}
+      {showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          style={{
+            position: 'fixed', bottom: '5.8rem', right: '1rem', zIndex: 90,
+            width: 38, height: 38, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 0, animation: 'rFadeIn 0.25s ease both',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="18 15 12 9 6 15"/>
+          </svg>
+        </button>
       )}
     </div>
   );
@@ -564,17 +654,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     travelNotes: trip.travelNotes || '',
   });
 
-  const [heroPhotoUrl, setHeroPhotoUrl] = useState(null);
-
-  useEffect(() => {
-    if (!form.dest) return;
-    import('../../api').then(({ fetchPlacePhotos }) => {
-      fetchPlacePhotos(`${form.dest} city travel landscape`)
-        .then(data => { if (data.urls?.[0]) setHeroPhotoUrl(data.urls[0]); })
-        .catch(() => {});
-    });
-  }, [form.dest]);
-
   const days = form.arrival && form.departure
     ? Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000))
     : 1;
@@ -621,11 +700,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       setLocalTasteStep('result');
     }
 
-    // Only generate what's missing
+    // Generate what's missing
     if (!hasGenerated.current) {
       hasGenerated.current = true;
       if (!trip._cachedItin) runGenerateItinerary();
-      if (!trip._cachedTaste) runGenerateLocalTaste();
+      // Always fetch local taste — backend uses Supabase shared cache (instant if cached)
+      runGenerateLocalTaste();
     }
   }, [trip._cachedItin, trip._cachedTaste]);
 
@@ -656,16 +736,16 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   };
 
   const runGenerateLocalTaste = async () => {
-    setLocalTasteStep('loading');
+    // Don't flash spinner if we already have data — refresh silently
+    if (!localTasteData) setLocalTasteStep('loading');
     try {
-      const { generateLocalTaste } = await import('../../api');
       const r = await generateLocalTaste({ destination: form.dest });
       setLocalTasteData(r);
       setLocalTasteStep('result');
-      // ── Save back to parent ──
-      onCacheUpdate?.({ _cachedTaste: r });
+      // Local taste is now Supabase-cached on the backend (destination_taste table).
+      // No longer saving per-trip — Supabase is the single source of truth.
     } catch {
-      setLocalTasteStep('error');
+      if (!localTasteData) setLocalTasteStep('error');
     }
   };
 
@@ -743,57 +823,37 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           {step === 'result' && itin && (
             <div style={{ background: D.bg, paddingBottom: '2.5rem' }}>
 
-              {/* ── Hero: destination photo + gradient overlay ─── */}
+              {/* ── Hero ── */}
               <div style={{
-                position: 'relative',
-                minHeight: 220,
-                borderRadius: 18,
-                overflow: 'hidden',
-                marginBottom: '1.25rem',
-                boxShadow: '0 4px 24px rgba(28,20,16,0.18)',
+                position: 'relative', minHeight: 140, borderRadius: 16, overflow: 'hidden',
+                background: 'linear-gradient(135deg, #1C1410 0%, #4A2C10 50%, #C9913A 100%)',
+                marginBottom: '1.25rem', boxShadow: '0 4px 20px rgba(28,20,16,0.18)',
               }}>
-                {/* photo layer */}
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  backgroundImage: heroPhotoUrl ? `url(${heroPhotoUrl})` : 'linear-gradient(135deg, #1C1410 0%, #3A2010 50%, #C9913A 100%)',
-                  backgroundSize: 'cover', backgroundPosition: 'center',
-                  filter: 'brightness(0.9)',
-                  transition: 'background-image 0.5s ease',
-                }} />
-                {/* gradient overlay */}
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  background: 'linear-gradient(to bottom, transparent 0%, rgba(10,8,6,0.2) 40%, rgba(10,8,6,0.88) 100%)',
-                }} />
-                {/* content sits above layers */}
-                <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', minHeight: 220, padding: '1.25rem 1.25rem 1.25rem' }}>
-                  {/* arrival / departure pills — top of content area */}
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 'auto', paddingTop: 14 }}>
-                    <span style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.30)', borderRadius: 999, padding: '4px 11px', fontSize: 11, color: '#fff', fontWeight: 500, backdropFilter: 'blur(6px)' }}>
-                      ✈️ {SLOT_LABELS[form.arrivalSlot]}
-                    </span>
-                    <span style={{ background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.30)', borderRadius: 999, padding: '4px 11px', fontSize: 11, color: '#fff', fontWeight: 500, backdropFilter: 'blur(6px)' }}>
-                      🛬 {SLOT_LABELS[form.departureSlot]}
-                    </span>
+                <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 130, opacity: 0.06, lineHeight: 1 }}>🗺️</div>
+                <div style={{ position: 'relative', zIndex: 1, padding: '1.25rem 1.25rem 1rem' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6, fontFamily: "'DM Sans',sans-serif" }}>
+                    DAY-BY-DAY PLANNER
                   </div>
-                  {/* title */}
-                  <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: -0.4, lineHeight: 1.25, marginBottom: 5, fontFamily: "'Sora',sans-serif", textShadow: '0 1px 8px rgba(0,0,0,0.4)', marginTop: 40 }}>
-                    {itin.headline || `${days}-Day ${form.dest} Itinerary`}
+                  <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: -0.3, marginBottom: 5, fontFamily: "'Sora',sans-serif" }}>
+                    {days} day{days > 1 ? 's' : ''} in <span style={{ color: '#F5D9A8' }}>{form.dest}</span>
                   </div>
-                  {itin.summary && (
-                    <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginBottom: 12 }}>{itin.summary}</div>
-                  )}
-                  {/* budget + best time */}
-                  <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.58)', lineHeight: 1.6, marginBottom: 14 }}>
+                    AI-planned activities, timed slots &amp; local tips — sourced from top travel guides
+                  </div>
+                  {/* Stat row */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '5px 8px', display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{days}</span>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>days</span>
+                    </div>
+                    <div style={{ flex: 1, background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '5px 8px', display: 'flex', gap: 5, alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>{(itin.days || []).reduce((a, d) => a + (d.activities || []).length, 0)}</span>
+                      <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)' }}>activities</span>
+                    </div>
                     {itin.totalEstimatedCost && (
-                      <span style={{ background: 'rgba(255,255,255,0.15)', border: '0.5px solid rgba(255,255,255,0.25)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '4px 12px', fontSize: 12, color: '#F5D9A8', fontWeight: 700 }}>
-                        🔥 {itin.totalEstimatedCost}
-                      </span>
-                    )}
-                    {itin.bestTimeToVisit && (
-                      <span style={{ background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '4px 12px', fontSize: 11, color: 'rgba(255,255,255,0.70)' }}>
-                        🗓 {itin.bestTimeToVisit}
-                      </span>
+                      <div style={{ flex: 1, background: 'rgba(255,255,255,0.13)', border: '0.5px solid rgba(255,255,255,0.22)', backdropFilter: 'blur(6px)', borderRadius: 999, padding: '5px 8px', display: 'flex', gap: 4, alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#F5D9A8' }}>{itin.totalEstimatedCost}</span>
+                      </div>
                     )}
                   </div>
                 </div>
