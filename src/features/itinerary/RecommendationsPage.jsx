@@ -516,6 +516,7 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
   const [filterDraft, setFilterDraft] = useState(INIT_FILTERS);
   const [filterSection, setFilterSection] = useState(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [activeSection, setActiveSection] = useState(null);
   const fetchedFor = useRef(null);
   const ac = isSolo ? '#7F77DD' : D.gold;
   const staysRef      = useRef(null);
@@ -532,9 +533,22 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
     if (autoData && !data) setData(autoData);
   }, [autoStep, autoData]);
 
-  // Scroll-to-top button visibility
+  // Scroll-to-top + active section tracking
   useEffect(() => {
-    const handler = () => setShowScrollTop(window.scrollY > 220);
+    const handler = () => {
+      setShowScrollTop(window.scrollY > 220);
+      const entries = [
+        { key: 'stays',      ref: staysRef },
+        { key: 'healthcare', ref: healthcareRef },
+        { key: 'rentals',    ref: rentalsRef },
+      ];
+      let current = null;
+      for (const s of entries) {
+        if (!s.ref.current) continue;
+        if (s.ref.current.getBoundingClientRect().top <= window.innerHeight * 0.5) current = s.key;
+      }
+      setActiveSection(current);
+    };
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
   }, []);
@@ -621,12 +635,10 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
               <button
                 key={key}
                 onClick={() => scrollToSec(key)}
-                style={{ flex:1, background:'rgba(255,255,255,0.13)', border:'0.5px solid rgba(255,255,255,0.22)', backdropFilter:'blur(6px)', borderRadius:999, padding:'5px 8px', display:'flex', gap:5, alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'background 0.15s ease' }}
-                onMouseEnter={e => e.currentTarget.style.background='rgba(255,255,255,0.25)'}
-                onMouseLeave={e => e.currentTarget.style.background='rgba(255,255,255,0.13)'}
+                style={{ flex:1, background: activeSection === key ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.13)', border: activeSection === key ? '1.5px solid rgba(255,255,255,0.65)' : '0.5px solid rgba(255,255,255,0.22)', backdropFilter:'blur(6px)', borderRadius:999, padding:'5px 8px', display:'flex', gap:5, alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'all 0.2s ease' }}
               >
                 <span style={{ fontSize:13, fontWeight:800, color:'#fff' }}>{n}</span>
-                <span style={{ fontSize:11, color:'rgba(255,255,255,0.75)' }}>{label}</span>
+                <span style={{ fontSize:11, color: activeSection === key ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)' }}>{label}</span>
               </button>
             ))}
           </div>
