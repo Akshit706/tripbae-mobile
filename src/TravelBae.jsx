@@ -871,7 +871,7 @@ export default function App() {
       </div>
 
       {/* Nav Tabs */}
-      {activeTrip && activeTripData && (
+      {activeTrip && (
         <div className="tb-nav-ribbon" style={{ ...S.navTabs }}>
           <div style={{
             display: 'grid',
