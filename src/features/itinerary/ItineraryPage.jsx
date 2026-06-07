@@ -462,18 +462,18 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.58)', lineHeight: 1.6, marginBottom: 14 }}>
             The food. The streets. The moments.
           </div>
-          {/* Stat buttons — full width, click to scroll */}
+          {/* Stat buttons — click to switch active tab */}
           <div style={{ display: 'flex', gap: 8 }}>
             {[
               { n: (data.dishes||[]).length, label: 'Dishes', key: 'dishes' },
               { n: (data.places||[]).length, label: 'Places', key: 'places' },
-              { n: (data.experiences||[]).length, label: 'Experiences', key: 'exp' },
+              { n: (data.experiences||[]).length, label: 'Exp', key: 'exp' },
             ].map(({ n, label, key }) => n > 0 && (
-              <button key={key} onClick={() => scrollTo(key)}
-                style={{ flex:1, background: activeSection === key ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)', border: activeSection === key ? '1.5px solid rgba(255,255,255,0.55)' : '0.5px solid rgba(255,255,255,0.14)', borderRadius: 12, padding: '7px 6px', display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', justifyContent:'center', cursor: 'pointer', transition: 'all 0.2s ease', backdropFilter: 'blur(6px)' }}
+              <button key={key} onClick={() => switchTasteTab(key)}
+                style={{ flex:1, background: activeTab === key ? 'rgba(255,255,255,0.22)' : 'rgba(0,0,0,0.18)', border: activeTab === key ? '1.5px solid rgba(255,255,255,0.55)' : '0.5px solid rgba(255,255,255,0.14)', borderRadius: 12, padding: '7px 6px', display: 'flex', flexDirection: 'row', gap: 5, alignItems: 'center', justifyContent:'center', cursor: 'pointer', transition: 'all 0.2s ease', backdropFilter: 'blur(6px)' }}
               >
                 <span style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1, fontFamily: "'Sora',sans-serif" }}>{n}</span>
-                <span style={{ fontSize: 9.5, fontWeight: 600, color: activeSection === key ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)', letterSpacing: 0.3, textTransform: 'uppercase' }}>{label}</span>
+                <span style={{ fontSize: 10, fontWeight: 600, color: activeTab === key ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.55)', letterSpacing: 0.2 }}>{label}</span>
               </button>
             ))}
           </div>
@@ -731,7 +731,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
   const handleRedo = () => {
     onCacheUpdate?.({ _cachedItin: null });
-    setShowDescBox(true);
   };
 
   const SlotBadge = ({ slot, label }) => (
@@ -741,9 +740,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   );
 
   const ITABS = [
-    { id: 'planner', label: '🗺️ Day Planner' },
-    { id: 'taste',   label: '🍜 Local Life' },
-    { id: 'nearby',  label: '🏨 Nearby' },
+    { id: 'planner', label: 'Day Planner' },
+    { id: 'taste',   label: 'Local Life' },
+    { id: 'nearby',  label: 'Nearby' },
   ];
   const [lightboxUrl,        setLightboxUrl]        = useState(null);
   const [nearbyData,         setNearbyData]         = useState(null);
@@ -756,15 +755,25 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
       {/* ── Underline tab switcher (Club-style) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1.5px solid rgba(28,20,16,0.1)', marginBottom: '1rem' }}>
-        {ITABS.map(t => (
-          <button key={t.id} onClick={() => setITab(t.id)}
-            style={{ ...S.navTab, ...(iTab === t.id ? S.navTabActive : {}), position: 'relative', padding: '9px 2px 10px', fontSize: 12, borderRadius: 0 }}>
-            <span style={{ fontWeight: iTab === t.id ? 700 : 500, fontSize: 12 }}>{t.label}</span>
-            {iTab === t.id && (
-              <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: isSolo ? '#7F77DD' : D.gold }} />
-            )}
-          </button>
-        ))}
+        {ITABS.map(t => {
+          const tabIcons = {
+            planner: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            taste:   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>,
+            nearby:  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+          };
+          return (
+            <button key={t.id} onClick={() => setITab(t.id)}
+              style={{ ...S.navTab, ...(iTab === t.id ? S.navTabActive : {}), position: 'relative', padding: '9px 2px 10px', fontSize: 12, borderRadius: 0 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: iTab === t.id ? 700 : 500, fontSize: 12 }}>
+                {tabIcons[t.id]}
+                {t.label}
+              </span>
+              {iTab === t.id && (
+                <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: isSolo ? '#7F77DD' : D.gold }} />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {iTab === 'planner' && (
