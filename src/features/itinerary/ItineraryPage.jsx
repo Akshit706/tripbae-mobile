@@ -152,6 +152,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   const [filterDraft, setFilterDraft] = useState({ minRating: 0 });
   const [activeTab, setActiveTab] = useState('dishes');
   const [tabDir, setTabDir] = useState('right');
+  const [showScrollTop, setShowScrollTop] = useState(false);
   const TASTE_TAB_ORDER = ['dishes', 'places', 'exp'];
   const switchTasteTab = (key) => {
     const dir = TASTE_TAB_ORDER.indexOf(key) > TASTE_TAB_ORDER.indexOf(activeTab) ? 'right' : 'left';
@@ -163,6 +164,12 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     if (autoStep && autoStep !== step) setStep(autoStep);
     if (autoData && !data) setData(autoData);
   }, [autoStep, autoData]);
+
+  useEffect(() => {
+    const handler = () => setShowScrollTop(window.scrollY > 300);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
 
   const generate = async () => {
     if (!dest.trim()) return;
@@ -526,6 +533,25 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
             <div style={{ fontSize: 13, color: D.secondary, lineHeight: 1.65 }}>{data.tip}</div>
           </div>
         </div>
+      )}
+
+      {/* Scroll-to-top */}
+      {showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          style={{
+            position: 'fixed', bottom: '5.8rem', right: '1rem', zIndex: 90,
+            width: 38, height: 38, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 0, animation: 'rFadeIn 0.25s ease both',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="18 15 12 9 6 15"/>
+          </svg>
+        </button>
       )}
 
     </div>
