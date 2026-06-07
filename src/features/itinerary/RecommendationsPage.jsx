@@ -25,7 +25,9 @@ if (typeof document !== 'undefined' && !document.getElementById('recs-v2-styles'
     @keyframes rPulse24  { 0%,100%{box-shadow:0 0 0 0 rgba(185,28,28,0.4)} 50%{box-shadow:0 0 0 6px rgba(185,28,28,0)} }
     @keyframes rBounce   { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
     @keyframes rCountUp  { from{opacity:0;transform:scale(0.8)} to{opacity:1;transform:scale(1)} }
-    @keyframes rSheetIn  { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes rSheetIn   { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes rSlideRight { from{opacity:0;transform:translateX(28px)} to{opacity:1;transform:translateX(0)} }
+    @keyframes rSlideLeft  { from{opacity:0;transform:translateX(-28px)} to{opacity:1;transform:translateX(0)} }
     .r-card { animation: rSlideUp 0.38s cubic-bezier(0.34,1.2,0.64,1) both; }
     .r-card:nth-child(2) { animation-delay:50ms }
     .r-card:nth-child(3) { animation-delay:100ms }
@@ -515,16 +517,15 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
   const [filters,     setFilters]     = useState(INIT_FILTERS);
   const [filterDraft, setFilterDraft] = useState(INIT_FILTERS);
   const [filterSection, setFilterSection] = useState(null);
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const [activeSection, setActiveSection] = useState(null);
+  const [activeTab, setActiveTab]     = useState('stays');
+  const [tabDir, setTabDir]           = useState('right');
   const fetchedFor = useRef(null);
   const ac = isSolo ? '#7F77DD' : D.gold;
-  const staysRef      = useRef(null);
-  const healthcareRef = useRef(null);
-  const rentalsRef    = useRef(null);
-  const scrollToSec = (key) => {
-    const m = { stays: staysRef, healthcare: healthcareRef, rentals: rentalsRef };
-    m[key]?.current?.scrollIntoView({ behavior:'instant', block:'start' });
+  const TAB_ORDER = ['stays', 'healthcare', 'rentals'];
+  const switchTab = (key) => {
+    const dir = TAB_ORDER.indexOf(key) > TAB_ORDER.indexOf(activeTab) ? 'right' : 'left';
+    setTabDir(dir);
+    setActiveTab(key);
   };
 
   // Sync with pre-fetched data from parent (ItineraryPage)
@@ -532,26 +533,6 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
     if (autoStep !== undefined && autoStep !== step) setStep(autoStep);
     if (autoData && !data) setData(autoData);
   }, [autoStep, autoData]);
-
-  // Scroll-to-top + active section tracking
-  useEffect(() => {
-    const handler = () => {
-      setShowScrollTop(window.scrollY > 220);
-      const entries = [
-        { key: 'stays',      ref: staysRef },
-        { key: 'healthcare', ref: healthcareRef },
-        { key: 'rentals',    ref: rentalsRef },
-      ];
-      let current = null;
-      for (const s of entries) {
-        if (!s.ref.current) continue;
-        if (s.ref.current.getBoundingClientRect().top <= window.innerHeight * 0.5) current = s.key;
-      }
-      setActiveSection(current);
-    };
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
-  }, []);
 
   // Internal fetch fallback when parent doesn't pass autoStep
   useEffect(() => {
@@ -634,33 +615,25 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
             ].map(({ n, label, key }) => n > 0 && (
               <button
                 key={key}
-                onClick={() => scrollToSec(key)}
-                style={{ flex:1, background: activeSection === key ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.13)', border: activeSection === key ? '1.5px solid rgba(255,255,255,0.65)' : '0.5px solid rgba(255,255,255,0.22)', backdropFilter:'blur(6px)', borderRadius:999, padding:'5px 8px', display:'flex', gap:5, alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'all 0.2s ease' }}
+                onClick={() => switchTab(key)}
+                style={{ flex:1, background: activeTab === key ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.13)', border: activeTab === key ? '1.5px solid rgba(255,255,255,0.65)' : '0.5px solid rgba(255,255,255,0.22)', backdropFilter:'blur(6px)', borderRadius:999, padding:'5px 8px', display:'flex', gap:5, alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'all 0.2s ease' }}
               >
                 <span style={{ fontSize:13, fontWeight:800, color:'#fff' }}>{n}</span>
-                <span style={{ fontSize:11, color: activeSection === key ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)' }}>{label}</span>
+                <span style={{ fontSize:11, color: activeTab === key ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)' }}>{label}</span>
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* ── Stays ── */}
-      <div ref={staysRef} style={{ scrollMarginTop:12 }}>
-        <StaysSection hotels={hotels} destination={destination} filtered={filteredHotels}
-          onOpenFilter={()=>openFilter('stays')} filterCount={stayFilterCount} />
-      </div>
-
-      {/* ── Healthcare ── */}
-      <div ref={healthcareRef} style={{ scrollMarginTop:12 }}>
-        <HealthcareSection hospitals={hospitals} shown={filteredHospitals}
-          onOpenFilter={()=>openFilter('healthcare')} filterCount={hospFilterCount} />
-      </div>
-
-      {/* ── Rentals ── */}
-      <div ref={rentalsRef} style={{ scrollMarginTop:12 }}>
-        <RentalsSection rentals={rentals} shown={filteredRentals}
-          onOpenFilter={()=>openFilter('rentals')} filterCount={rentalFilterCount} />
+      {/* ── Active section (tab-switched with slide animation) ── */}
+      <div key={activeTab} style={{ animation: `${tabDir === 'right' ? 'rSlideRight' : 'rSlideLeft'} 0.25s cubic-bezier(0.2,0.7,0.2,1) both` }}>
+        {activeTab === 'stays' && <StaysSection hotels={hotels} destination={destination} filtered={filteredHotels}
+          onOpenFilter={()=>openFilter('stays')} filterCount={stayFilterCount} />}
+        {activeTab === 'healthcare' && <HealthcareSection hospitals={hospitals} shown={filteredHospitals}
+          onOpenFilter={()=>openFilter('healthcare')} filterCount={hospFilterCount} />}
+        {activeTab === 'rentals' && <RentalsSection rentals={rentals} shown={filteredRentals}
+          onOpenFilter={()=>openFilter('rentals')} filterCount={rentalFilterCount} />}
       </div>
 
       {!data?.fromCache && (
@@ -668,26 +641,6 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
           <span style={{ fontSize:16,flexShrink:0 }}>✅</span>
           <span>Fresh data for {disp} saved to Supabase — every user loads this instantly.</span>
         </div>
-      )}
-
-      {/* ── Scroll-to-top button (appears after scrolling down) ── */}
-      {showScrollTop && (
-        <button
-          onClick={() => window.scrollTo({ top:0, behavior:'smooth' })}
-          style={{
-            position:'fixed', bottom:'5.8rem', right:'1rem', zIndex:90,
-            width:38, height:38, borderRadius:'50%',
-            background:'rgba(255,255,255,0.92)', backdropFilter:'blur(10px)',
-            border:'1px solid rgba(0,0,0,0.1)',
-            boxShadow:'0 4px 16px rgba(0,0,0,0.15)',
-            cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
-            padding:0, animation:'rFadeIn 0.25s ease both',
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="18 15 12 9 6 15"/>
-          </svg>
-        </button>
       )}
 
       <FilterModal

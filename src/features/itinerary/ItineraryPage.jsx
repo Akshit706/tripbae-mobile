@@ -147,32 +147,17 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   const [doneItems, setDoneItems] = useState(new Set());
   const [lightboxUrl, setLightboxUrl] = useState(null);
   const [expandedItems, setExpandedItems] = useState(new Set());
-  const [showScrollTop, setShowScrollTop] = useState(false);
-  const [activeSection, setActiveSection] = useState(null);
   const [filterOpen, setFilterOpen] = useState(false);
-  const [filters, setFilters] = useState({ section: 'all', minRating: 0 });
-  const [filterDraft, setFilterDraft] = useState({ section: 'all', minRating: 0 });
-  const secRefs = { dishes: useRef(null), places: useRef(null), exp: useRef(null) };
-  const scrollTo = (key) => secRefs[key]?.current?.scrollIntoView({ behavior: 'instant', block: 'start' });
-
-  useEffect(() => {
-    const handler = () => {
-      setShowScrollTop(window.scrollY > 220);
-      const entries = [
-        { key: 'dishes', ref: secRefs.dishes },
-        { key: 'places', ref: secRefs.places },
-        { key: 'exp',    ref: secRefs.exp },
-      ];
-      let current = null;
-      for (const s of entries) {
-        if (!s.ref.current) continue;
-        if (s.ref.current.getBoundingClientRect().top <= window.innerHeight * 0.5) current = s.key;
-      }
-      setActiveSection(current);
-    };
-    window.addEventListener('scroll', handler, { passive: true });
-    return () => window.removeEventListener('scroll', handler);
-  }, []);
+  const [filters, setFilters] = useState({ minRating: 0 });
+  const [filterDraft, setFilterDraft] = useState({ minRating: 0 });
+  const [activeTab, setActiveTab] = useState('dishes');
+  const [tabDir, setTabDir] = useState('right');
+  const TASTE_TAB_ORDER = ['dishes', 'places', 'exp'];
+  const switchTasteTab = (key) => {
+    const dir = TASTE_TAB_ORDER.indexOf(key) > TASTE_TAB_ORDER.indexOf(activeTab) ? 'right' : 'left';
+    setTabDir(dir);
+    setActiveTab(key);
+  };
 
   useEffect(() => {
     if (autoStep && autoStep !== step) setStep(autoStep);
@@ -387,40 +372,26 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   /* ── Section block with editorial header ── */
   const Sec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac, sectionRef, onFilter, filterCount: secFilterCount = 0 }) => {
     const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
-    const pct = items.length ? Math.round((doneCount / items.length) * 100) : 0;
     if (!items.length) return null;
     return (
-      <div ref={sectionRef} style={{ marginBottom: '1.9rem', scrollMarginTop: 12 }}>
-        {/* Section header card */}
+      <div style={{ marginBottom: '1.9rem' }}>
+        {/* Section header — matches Nearby style */}
         <div className="itin-sec-header" style={{
           display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
           background: D.surface, borderRadius: 16, padding: '12px 14px',
           boxShadow: '0 2px 12px rgba(28,20,16,0.07)', border: `0.5px solid ${D.border}`,
           borderLeft: `4px solid ${ac}`,
         }}>
-          <div style={{ width: 42, height: 42, borderRadius: 13, background: accentBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, boxShadow: `0 3px 10px ${accentBg}` }}>{icon}</div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 14, fontWeight: 800, color: D.espresso, letterSpacing: -0.2, fontFamily: "'Sora',sans-serif", lineHeight: 1.1 }}>{title}</div>
-            {subtitle && <div style={{ fontSize: 11, color: D.muted, marginTop: 2, lineHeight: 1.3 }}>{subtitle}</div>}
-            {/* Progress bar */}
-            {items.length > 0 && (
-              <div style={{ marginTop: 7, height: 3, borderRadius: 99, background: D.neutral, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${pct}%`, background: ac, borderRadius: 99, transition: 'width 0.4s ease' }} />
-              </div>
-            )}
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: accentBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={ac} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
-            <span style={{ fontSize: 18, fontWeight: 800, color: ac, fontFamily: "'Sora',sans-serif", lineHeight: 1 }}>{items.length}</span>
-            <span style={{ fontSize: 10, color: D.muted, textTransform: 'uppercase', letterSpacing: .5 }}>picks</span>
-            {doneCount > 0 && (
-              <span style={{ fontSize: 10, fontWeight: 700, background: isSolo ? '#EEEDFE' : D.sageTint, color: isSolo ? '#534AB7' : D.sage, borderRadius: 999, padding: '2px 7px', marginTop: 2 }}>
-                ✓ {doneCount}
-              </span>
-            )}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.1 }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 11, color: D.muted, marginTop: 2, lineHeight: 1.3 }}>{subtitle}</div>}
           </div>
           {onFilter && (
-            <button onClick={onFilter} style={{ position: 'relative', flexShrink: 0, width: 32, height: 32, borderRadius: 10, border: `1.5px solid ${secFilterCount > 0 ? ac : D.border}`, background: secFilterCount > 0 ? accentBg : '#FAFAF8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, marginLeft: 4 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={secFilterCount > 0 ? ac : '#888'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <button onClick={onFilter} style={{ position: 'relative', flexShrink: 0, width: 34, height: 34, borderRadius: 11, border: `1.5px solid ${secFilterCount > 0 ? ac : 'rgba(28,20,16,0.12)'}`, background: secFilterCount > 0 ? accentBg : '#FAFAF8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={secFilterCount > 0 ? ac : '#888'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
               </svg>
               {secFilterCount > 0 && (
@@ -437,9 +408,9 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     );
   };
 
-  if (step === 'loading') return <Spinner text={`Discovering local flavours of ${dest}…`} solo={isSolo} />;
+  if (step === 'loading') return <Spinner text={`Discovering the local life of ${dest}…`} solo={isSolo} />;
 
-  const filterCount = (filters.section !== 'all' ? 1 : 0) + (filters.minRating > 0 ? 1 : 0);
+  const filterCount = filters.minRating > 0 ? 1 : 0;
   const TASTE_RATINGS = [{v:0,l:'Any'},{v:3,l:'3+'},{v:3.5,l:'3.5+'},{v:4,l:'4+'},{v:4.5,l:'4.5+'}];
 
   if (step === 'result' && data) return (
@@ -452,19 +423,8 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           onClick={e => { if (e.target === e.currentTarget) setFilterOpen(false); }}>
           <div style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem 2rem',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',animation:'rSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both' }}>
             <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16 }}>
-              <div style={{ fontFamily:"'Sora',sans-serif",fontSize:16,fontWeight:800 }}>Filter Local Taste</div>
+              <div style={{ fontFamily:"'Sora',sans-serif",fontSize:16,fontWeight:800 }}>Filter Local Life</div>
               <button onClick={() => setFilterOpen(false)} style={{ width:30,height:30,borderRadius:'50%',border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'#6b6b68',padding:0 }}>✕</button>
-            </div>
-            <div style={{ background:'#FDFCFA',borderRadius:16,padding:'13px 14px',marginBottom:12,border:'1px solid rgba(28,20,16,0.07)' }}>
-              <div style={{ fontSize:11,color:D.muted,marginBottom:6,fontWeight:600 }}>Section</div>
-              <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
-                {[{v:'all',l:'All'},{v:'dishes',l:'Dishes'},{v:'places',l:'Places'},{v:'exp',l:'Experiences'}].map(s => (
-                  <button key={s.v} onClick={() => setFilterDraft(f => ({...f,section:s.v}))}
-                    style={{ fontSize:12,fontWeight:700,padding:'7px 14px',borderRadius:999,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",border:`1.5px solid ${filterDraft.section===s.v?D.gold:'rgba(28,20,16,0.13)'}`,background:filterDraft.section===s.v?D.goldTint:'#FAFAF8',color:filterDraft.section===s.v?D.gold:'#7A7470' }}>
-                    {s.l}
-                  </button>
-                ))}
-              </div>
             </div>
             <div style={{ background:'#FDFCFA',borderRadius:16,padding:'13px 14px',marginBottom:16,border:'1px solid rgba(28,20,16,0.07)' }}>
               <div style={{ fontSize:11,color:D.muted,marginBottom:6,fontWeight:600 }}>Min rating</div>
@@ -478,7 +438,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
               </div>
             </div>
             <div style={{ display:'flex',gap:8 }}>
-              <button onClick={() => setFilterDraft({section:'all',minRating:0})} style={{ flex:1,padding:'12px',fontSize:13,fontWeight:700,borderRadius:14,border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif",color:'#444' }}>Reset</button>
+              <button onClick={() => setFilterDraft({minRating:0})} style={{ flex:1,padding:'12px',fontSize:13,fontWeight:700,borderRadius:14,border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif",color:'#444' }}>Reset</button>
               <button onClick={() => { setFilters(filterDraft); setFilterOpen(false); }} style={{ flex:2,padding:'12px',fontSize:13,fontWeight:700,borderRadius:14,border:'none',background:`linear-gradient(135deg,${D.gold},#A8731E)`,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",color:'#fff' }}>Apply</button>
             </div>
           </div>
@@ -494,10 +454,10 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 130, opacity: 0.06, lineHeight: 1 }}>🍜</div>
         <div style={{ position: 'relative', zIndex: 1, padding: '1.25rem 1.25rem 1rem' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6, fontFamily: "'DM Sans',sans-serif" }}>
-            LOCAL TASTE GUIDE
+            LOCAL LIFE GUIDE
           </div>
           <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: -0.3, marginBottom: 4, fontFamily: "'Sora',sans-serif" }}>
-            Food &amp; culture of <span style={{ color: '#F5D9A8' }}>{destination}</span>
+            Local life in <span style={{ color: '#F5D9A8' }}>{destination}</span>
           </div>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.58)', lineHeight: 1.6, marginBottom: 14 }}>
             The food. The streets. The moments.
@@ -520,37 +480,42 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         </div>
       </div>
 
-      {/* ── Sections (filtered) ── */}
-      {(filters.section === 'all' || filters.section === 'dishes') && (
-        <Sec
-          icon="🍴" title="Must-Eat Dishes" subtitle="Iconic plates you can't leave without trying"
-          items={(data.dishes || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
-          secKey="dishes" startIndex={0} photoSuffix="food dish restaurant"
-          accentBg="#FAEEDA" accentColor={D.gold} sectionRef={secRefs.dishes}
-          onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
-          filterCount={filters.minRating > 0 ? 1 : 0}
-        />
-      )}
-      {(filters.section === 'all' || filters.section === 'places') && (
-        <Sec
-          icon="📍" title="Unmissable Places" subtitle="The landmarks and streets that define this city"
-          items={(data.places || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
-          secKey="places" startIndex={5} photoSuffix="tourist attraction landmark"
-          accentBg={D.blueTint} accentColor="#2563AB" sectionRef={secRefs.places}
-          onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
-          filterCount={filters.minRating > 0 ? 1 : 0}
-        />
-      )}
-      {(filters.section === 'all' || filters.section === 'exp') && (
-        <Sec
-          icon="✨" title="Local Experiences" subtitle="Things to do that no guidebook will tell you"
-          items={(data.experiences || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
-          secKey="exp" startIndex={10} photoSuffix="travel experience"
-          accentBg="#EEEDFE" accentColor="#534AB7" sectionRef={secRefs.exp}
-          onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
-          filterCount={filters.minRating > 0 ? 1 : 0}
-        />
-      )}
+      {/* ── Active section (tab-switched with animation) ── */}
+      <div key={activeTab} style={{ animation: `${tabDir === 'right' ? 'rSlideRight' : 'rSlideLeft'} 0.25s cubic-bezier(0.2,0.7,0.2,1) both` }}>
+        {activeTab === 'dishes' && (
+          <Sec
+            icon={<><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></>}
+            title="Must-Eat Dishes" subtitle="Iconic plates you can't leave without trying"
+            items={(data.dishes || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
+            secKey="dishes" startIndex={0} photoSuffix="food dish restaurant"
+            accentBg="#FAEEDA" accentColor={D.gold}
+            onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
+            filterCount={filters.minRating > 0 ? 1 : 0}
+          />
+        )}
+        {activeTab === 'places' && (
+          <Sec
+            icon={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>}
+            title="Unmissable Places" subtitle="The landmarks and streets that define this city"
+            items={(data.places || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
+            secKey="places" startIndex={5} photoSuffix="tourist attraction landmark"
+            accentBg={D.blueTint} accentColor="#2563AB"
+            onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
+            filterCount={filters.minRating > 0 ? 1 : 0}
+          />
+        )}
+        {activeTab === 'exp' && (
+          <Sec
+            icon={<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>}
+            title="Local Experiences" subtitle="Things to do that no guidebook will tell you"
+            items={(data.experiences || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
+            secKey="exp" startIndex={10} photoSuffix="travel experience"
+            accentBg="#EEEDFE" accentColor="#534AB7"
+            onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
+            filterCount={filters.minRating > 0 ? 1 : 0}
+          />
+        )}
+      </div>
 
       {/* ── Insider tip ── */}
       {data.tip && (
@@ -563,24 +528,6 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         </div>
       )}
 
-      {/* ── Scroll-to-top button ── */}
-      {showScrollTop && (
-        <button
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          style={{
-            position: 'fixed', bottom: '5.8rem', right: '1rem', zIndex: 90,
-            width: 38, height: 38, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 0, animation: 'rFadeIn 0.25s ease both',
-          }}
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="18 15 12 9 6 15"/>
-          </svg>
-        </button>
-      )}
     </div>
   );
 
@@ -595,9 +542,9 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
       }}>
         <div style={{ position: 'absolute', top: -30, right: -30, fontSize: 150, opacity: 0.05, lineHeight: 1 }}>🍜</div>
         <div style={{ fontSize: 44, marginBottom: 12 }}>🍽️</div>
-        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 6, fontFamily: "'Sora',sans-serif", letterSpacing: -0.3 }}>Local Taste Guide</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 6, fontFamily: "'Sora',sans-serif", letterSpacing: -0.3 }}>Local Life Guide</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.68)', lineHeight: 1.65, maxWidth: 280, margin: '0 auto 0' }}>
-          Iconic dishes, legendary spots, and local secrets — curated by AI, verified by taste.
+          Dishes, places, and experiences that define this city.
         </div>
       </div>
 
@@ -616,7 +563,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           onClick={generate}
           disabled={!dest.trim()}
         >
-          ✨ Discover local flavours
+          ✨ Discover local life
         </button>
       </div>
 
@@ -795,7 +742,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
   const ITABS = [
     { id: 'planner', label: '🗺️ Day Planner' },
-    { id: 'taste',   label: '🍜 Local Taste' },
+    { id: 'taste',   label: '🍜 Local Life' },
     { id: 'nearby',  label: '🏨 Nearby' },
   ];
   const [lightboxUrl,        setLightboxUrl]        = useState(null);
@@ -869,7 +816,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                     const totalActs = (itin.days || []).reduce((a, d) => a + (d.activities || []).length, 0);
                     const mustSees  = (itin.days || []).reduce((a, d) => a + (d.activities || []).filter(act => act.mustDo).length, 0);
                     return (
-                      <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                         <span style={{ fontSize: 14, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{days}</span>
                         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Days</span>
                         <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)', margin: '0 2px' }}>·</span>
