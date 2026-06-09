@@ -22,121 +22,189 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
   el.id = 'photos-v2-styles';
   el.textContent = `
     @keyframes phPageIn   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-    @keyframes phCardIn   { from{opacity:0;transform:translateY(14px) scale(.97)} to{opacity:1;transform:translateY(0) scale(1)} }
     @keyframes phFadeIn   { from{opacity:0} to{opacity:1} }
-    @keyframes phPopIn    { from{opacity:0;transform:scale(0.88) translateY(20px)} 60%{transform:scale(1.02)} to{opacity:1;transform:scale(1) translateY(0)} }
-    @keyframes phSlideUp  { from{transform:translateY(100%)} to{transform:translateY(0)} }
+    @keyframes phPopIn    { from{opacity:0;transform:scale(0.9) translateY(16px)} 60%{transform:scale(1.02)} to{opacity:1;transform:scale(1) translateY(0)} }
+    @keyframes phSlideUp  { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
     @keyframes phSpin     { to{transform:rotate(360deg)} }
-    @keyframes phShimmer  { 0%{background-position:-600px 0} 100%{background-position:600px 0} }
-    @keyframes phBob      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+    @keyframes phBob      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
 
-    .ph-root { font-family:'DM Sans',sans-serif; background:#FAF8F4; color:#1C1410; min-height:100vh; padding-bottom:7rem; animation:phPageIn .35s ease both; }
+    .ph-root {
+      font-family:'DM Sans',sans-serif; background:#FAF8F4; color:#1C1410;
+      min-height:100vh; padding-bottom:8rem; animation:phPageIn .3s ease both;
+    }
 
-    /* folder tabs */
-    .ph-tabs { display:flex; gap:8px; overflow-x:auto; padding:.9rem 1rem; scrollbar-width:none; }
-    .ph-tabs::-webkit-scrollbar { display:none; }
-    .ph-tab { display:flex; flex-direction:column; align-items:center; gap:5px; cursor:pointer; flex-shrink:0; min-width:60px; }
-    .ph-tab-avatar {
-      width:56px; height:48px; border-radius:14px; position:relative;
+    /* ── Album header hero ── */
+    .ph-hero {
+      background:linear-gradient(160deg,#FFFFFF 0%,#F5F2EC 100%);
+      border-bottom:1px solid rgba(28,20,16,0.07);
+      padding:1rem 1rem .85rem;
+    }
+    .ph-hero-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem; }
+    .ph-hero-title {
+      display:flex; align-items:center; gap:9px;
+    }
+    .ph-hero-icon {
+      width:36px; height:36px; border-radius:11px;
+      background:linear-gradient(135deg,#1D9E75,#0F6E56);
       display:flex; align-items:center; justify-content:center;
-      background:#F0EDE8; border:2px solid transparent;
-      font-size:13px; font-weight:700; color:${D.muted};
+      box-shadow:0 4px 12px rgba(29,158,117,0.28); flex-shrink:0;
+    }
+    .ph-hero-name { font-family:'Sora',sans-serif; font-size:17px; font-weight:800; color:#1C1410; line-height:1.1; }
+    .ph-hero-sub { font-size:11px; color:#8A7E76; margin-top:1px; }
+    .ph-hero-count {
+      font-family:'Sora',sans-serif; font-size:22px; font-weight:800; color:#1C1410; line-height:1;
+      text-align:right;
+    }
+    .ph-hero-count span { display:block; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:500; color:#8A7E76; margin-top:1px; text-align:right; }
+
+    /* encryption / privacy box */
+    .ph-enc-box {
+      display:flex; align-items:center; gap:10px;
+      background:#EBF3EC; border:1px solid rgba(122,158,126,0.3);
+      border-radius:12px; padding:9px 13px; margin-top:.75rem;
+    }
+    .ph-enc-icon {
+      width:32px; height:32px; border-radius:9px;
+      background:#fff; border:1px solid rgba(122,158,126,0.25);
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    }
+    .ph-enc-text { flex:1; }
+    .ph-enc-label { font-size:12px; font-weight:700; color:#166534; line-height:1.2; }
+    .ph-enc-desc { font-size:11px; color:#5C504A; margin-top:2px; line-height:1.4; }
+
+    /* ── member tabs ── */
+    .ph-tabs {
+      display:flex; gap:8px; overflow-x:auto; padding:.85rem 1rem .75rem;
+      scrollbar-width:none; background:#FAF8F4;
+      border-bottom:1px solid rgba(28,20,16,0.06);
+    }
+    .ph-tabs::-webkit-scrollbar { display:none; }
+    .ph-tab {
+      display:flex; align-items:center; gap:7px; flex-shrink:0; cursor:pointer;
+      padding:7px 13px 7px 8px;
+      background:#F0EDE8; border:1.5px solid transparent; border-radius:99px;
       transition:all .2s;
     }
-    .ph-tab:hover .ph-tab-avatar { border-color:rgba(29,158,117,0.3); transform:translateY(-2px); }
-    .ph-tab.active .ph-tab-avatar {
-      background:linear-gradient(135deg,${D.green},${D.greenDeep});
-      border-color:transparent; color:#fff;
-      box-shadow:0 5px 18px rgba(29,158,117,0.32);
-      transform:translateY(-2px);
+    .ph-tab:hover { background:#E8E4DE; }
+    .ph-tab.active {
+      background:linear-gradient(135deg,#E6FFF4,#EBF3EC);
+      border-color:rgba(29,158,117,0.35);
     }
-    .ph-tab-badge {
-      position:absolute; top:-5px; right:-5px;
-      background:${D.green}; color:#fff; font-size:8px; font-weight:800;
-      min-width:16px; height:16px; border-radius:8px;
+    .ph-tab-avatar {
+      width:28px; height:28px; border-radius:50%; position:relative;
+      background:#D8D4CE;
       display:flex; align-items:center; justify-content:center;
-      padding:0 3px; border:2px solid #FAF8F4;
+      font-size:11px; font-weight:800; color:#5C504A;
+      flex-shrink:0; overflow:visible;
     }
-    .ph-tab-label { font-size:10px; font-weight:600; color:${D.muted}; max-width:62px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:color .2s; }
-    .ph-tab.active .ph-tab-label { color:${D.green}; font-weight:700; }
+    .ph-tab.active .ph-tab-avatar { background:linear-gradient(135deg,#1D9E75,#0F6E56); color:#fff; }
+    .ph-tab-badge {
+      position:absolute; top:-4px; right:-4px;
+      background:#1D9E75; color:#fff; font-size:8px; font-weight:800;
+      min-width:15px; height:15px; border-radius:8px;
+      display:flex; align-items:center; justify-content:center;
+      padding:0 3px; border:1.5px solid #FAF8F4;
+    }
+    .ph-tab-label { font-size:12px; font-weight:600; color:#5C504A; white-space:nowrap; }
+    .ph-tab.active .ph-tab-label { color:#0F6E56; font-weight:700; }
 
-    /* upload zone */
+    /* ── folder content area ── */
+    .ph-folder-wrap { padding:.9rem 1rem 0; }
+
+    /* folder headline */
+    .ph-folder-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; }
+    .ph-folder-name { font-family:'Sora',sans-serif; font-size:15px; font-weight:800; color:#1C1410; }
+    .ph-folder-count { font-size:11.5px; color:#8A7E76; margin-top:1px; }
+
+    /* upload card */
     .ph-upload {
-      margin:.5rem 1rem 1rem; border-radius:18px; padding:1.75rem 1.25rem;
-      text-align:center; cursor:pointer; position:relative; overflow:hidden;
-      background:#FFFDF8; border:1.5px dashed rgba(28,20,16,0.14);
-      transition:all .25s;
+      display:block; width:100%; border-radius:18px; overflow:hidden;
+      background:#FFFFFF; border:1.5px dashed rgba(28,20,16,0.13);
+      cursor:pointer; text-align:center; position:relative;
+      transition:border-color .25s, background .25s;
+      box-shadow:0 2px 12px rgba(28,20,16,0.05);
+      margin-bottom:1rem;
     }
-    .ph-upload:hover, .ph-upload.drag { border-color:${D.green}; background:#F0FBF6; }
-    .ph-upload-icon { margin-bottom:10px; opacity:.7; animation:phBob 3s ease-in-out infinite; }
-    .ph-upload-title { font-size:14px; font-weight:600; color:${D.secondary}; margin-bottom:4px; }
-    .ph-upload-sub { font-size:12px; color:${D.muted}; }
-    .ph-upload-badge {
-      display:inline-flex; align-items:center; gap:5px; margin-top:10px;
-      background:${D.sageTint}; border:1px solid rgba(122,158,126,0.3);
-      color:${D.sage}; font-size:11px; font-weight:700; border-radius:99px; padding:4px 12px;
+    .ph-upload:hover, .ph-upload.drag {
+      border-color:#1D9E75; background:#F4FBF8;
+    }
+    .ph-upload-inner { padding:1.75rem 1.25rem 1.5rem; }
+    .ph-upload-icon { margin-bottom:10px; animation:phBob 3.5s ease-in-out infinite; display:inline-block; }
+    .ph-upload-cta {
+      display:inline-flex; align-items:center; gap:7px;
+      background:linear-gradient(135deg,#1D9E75,#0F6E56);
+      color:#fff; font-size:13px; font-weight:700; font-family:'DM Sans',sans-serif;
+      border-radius:99px; padding:9px 20px; margin-bottom:8px;
+      box-shadow:0 4px 14px rgba(29,158,117,0.3);
+    }
+    .ph-upload-sub { font-size:11.5px; color:#8A7E76; }
+    .ph-upload-who {
+      display:inline-flex; align-items:center; gap:5px; margin-top:8px;
+      background:#EBF3EC; border:1px solid rgba(122,158,126,0.3);
+      color:#166534; font-size:11px; font-weight:700; border-radius:99px; padding:4px 12px;
     }
     .ph-upload-overlay {
-      position:absolute; inset:0; background:rgba(250,248,244,0.88);
-      backdrop-filter:blur(4px); display:flex; flex-direction:column;
-      align-items:center; justify-content:center; gap:8px; border-radius:16px;
+      position:absolute; inset:0; background:rgba(250,248,244,0.9);
+      backdrop-filter:blur(3px); display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:9px; border-radius:16px;
     }
-    .ph-spinner { width:28px; height:28px; border:2.5px solid rgba(29,158,117,0.2); border-top-color:${D.green}; border-radius:50%; animation:phSpin .7s linear infinite; }
-    .ph-upload-progress-text { font-size:12px; font-weight:700; color:${D.green}; }
+    .ph-spinner { width:28px; height:28px; border:2.5px solid rgba(29,158,117,0.2); border-top-color:#1D9E75; border-radius:50%; animation:phSpin .65s linear infinite; }
+    .ph-upload-progress-text { font-size:12px; font-weight:700; color:#1D9E75; }
 
-    /* viewer banner (others' folder) */
+    /* viewer banner */
     .ph-viewer-banner {
-      margin:.5rem 1rem 1rem; background:${D.surface}; border-radius:16px;
-      padding:12px 16px; display:flex; align-items:center; gap:12px;
-      border:0.5px solid ${D.border}; box-shadow:0 2px 8px rgba(28,20,16,0.05);
+      background:#FFFFFF; border-radius:16px;
+      padding:12px 15px; display:flex; align-items:center; gap:12px;
+      border:1px solid rgba(28,20,16,0.08); box-shadow:0 2px 8px rgba(28,20,16,0.05);
+      margin-bottom:1rem;
     }
     .ph-viewer-avatar {
       width:38px; height:38px; border-radius:50%;
-      background:linear-gradient(135deg,${D.neutral},#E8E4DE);
+      background:linear-gradient(135deg,#F4F2EE,#E8E4DE);
       display:flex; align-items:center; justify-content:center;
-      font-size:13px; font-weight:700; color:${D.secondary}; flex-shrink:0;
+      font-size:13px; font-weight:700; color:#5C504A; flex-shrink:0;
+      border:1.5px solid rgba(28,20,16,0.08);
     }
-    .ph-viewer-text { font-size:13px; color:${D.muted}; line-height:1.5; }
-    .ph-viewer-text strong { color:${D.espresso}; }
+    .ph-viewer-text { font-size:13px; color:#8A7E76; line-height:1.5; }
+    .ph-viewer-text strong { color:#1C1410; }
 
-    /* photo grid */
+    /* ── photo grid ── */
     .ph-grid {
       display:grid;
-      grid-template-columns:repeat(auto-fill,minmax(110px,1fr));
-      gap:4px; padding:0 1rem;
+      grid-template-columns:repeat(3,1fr);
+      gap:3px; padding:0;
     }
     .ph-cell {
-      position:relative; border-radius:10px; overflow:hidden;
-      aspect-ratio:1; cursor:pointer; background:${D.neutral};
-      border:2.5px solid transparent; transition:transform .2s, box-shadow .2s;
+      position:relative; overflow:hidden;
+      aspect-ratio:1; cursor:pointer; background:#F4F2EE;
+      border:2px solid transparent; transition:opacity .18s;
     }
-    .ph-cell:hover { transform:scale(1.02); box-shadow:0 8px 24px rgba(28,20,16,0.15); }
-    .ph-cell.sel { border-color:${D.green}; box-shadow:0 0 0 2px rgba(29,158,117,0.25); }
-    .ph-cell img { width:100%; height:100%; object-fit:cover; display:block; transition:filter .2s; }
+    .ph-cell.sel { border-color:#1D9E75; }
+    .ph-cell img { width:100%; height:100%; object-fit:cover; display:block; }
     .ph-cell:hover img { filter:brightness(.88); }
     .ph-check {
       position:absolute; top:6px; right:6px; width:20px; height:20px; border-radius:50%;
-      background:rgba(255,255,255,0.75); border:1.5px solid rgba(28,20,16,0.18);
+      background:rgba(255,255,255,0.8); border:1.5px solid rgba(28,20,16,0.2);
       display:flex; align-items:center; justify-content:center; z-index:3;
-      transition:all .15s; backdrop-filter:blur(2px);
+      transition:all .15s; backdrop-filter:blur(3px);
     }
-    .ph-cell.sel .ph-check { background:${D.green}; border-color:${D.green}; }
+    .ph-cell.sel .ph-check { background:#1D9E75; border-color:#1D9E75; }
     .ph-expand {
       position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-      opacity:0; transition:opacity .2s; pointer-events:none; z-index:2;
+      opacity:0; transition:opacity .18s; pointer-events:none; z-index:2;
     }
     .ph-cell:hover .ph-expand { opacity:1; pointer-events:all; }
     .ph-expand-btn {
-      background:rgba(255,255,255,0.82); backdrop-filter:blur(6px);
+      background:rgba(255,255,255,0.88); backdrop-filter:blur(6px);
       border-radius:50%; width:34px; height:34px;
       display:flex; align-items:center; justify-content:center;
       border:1px solid rgba(28,20,16,0.1); transition:transform .15s;
-      box-shadow:0 2px 8px rgba(0,0,0,0.12);
+      box-shadow:0 2px 8px rgba(0,0,0,0.1);
     }
-    .ph-expand-btn:hover { transform:scale(1.1); }
+    .ph-expand-btn:hover { transform:scale(1.08); }
     .ph-del-btn {
       position:absolute; top:6px; left:6px; width:26px; height:26px; border-radius:50%;
-      background:rgba(255,255,255,0.82); border:1px solid rgba(28,20,16,0.1);
+      background:rgba(255,255,255,0.88); border:1px solid rgba(28,20,16,0.1);
       display:flex; align-items:center; justify-content:center; z-index:3;
       opacity:0; cursor:pointer; transition:all .15s; backdrop-filter:blur(4px);
     }
@@ -144,38 +212,38 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-del-btn:hover { background:#FAECE7 !important; border-color:rgba(232,113,90,0.4) !important; }
 
     /* empty state */
-    .ph-empty { text-align:center; padding:4rem 1.25rem; color:${D.muted}; }
-    .ph-empty-title { font-size:15px; font-weight:700; color:${D.secondary}; margin-bottom:5px; }
-    .ph-empty-sub { font-size:13px; color:${D.muted}; }
+    .ph-empty { text-align:center; padding:3.5rem 1.25rem 2rem; }
+    .ph-empty-title { font-size:15px; font-weight:700; color:#5C504A; margin-bottom:5px; }
+    .ph-empty-sub { font-size:13px; color:#8A7E76; }
 
     /* selection action bar */
     .ph-action-bar {
       position:fixed; bottom:0; left:50%; transform:translateX(-50%);
       width:100%; max-width:880px;
-      background:rgba(255,255,255,0.96); backdrop-filter:blur(20px);
+      background:rgba(255,255,255,0.97); backdrop-filter:blur(20px);
       border-top:1px solid rgba(28,20,16,0.08);
       padding:12px 1rem; display:flex; align-items:center; gap:8px; z-index:190;
-      animation:phSlideUp .2s ease-out;
+      animation:phSlideUp .22s ease both;
     }
-    .ph-action-label { flex:1; font-size:13px; color:${D.muted}; }
-    .ph-action-label strong { color:${D.espresso}; font-size:14px; }
+    .ph-action-label { flex:1; font-size:13px; color:#8A7E76; }
+    .ph-action-label strong { color:#1C1410; font-size:14px; }
     .ph-btn-ghost {
-      background:${D.neutral}; border:1px solid ${D.border};
-      color:${D.secondary}; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:600;
+      background:#F4F2EE; border:1px solid rgba(28,20,16,0.1);
+      color:#5C504A; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:600;
       padding:8px 14px; border-radius:10px; cursor:pointer; transition:all .15s;
     }
     .ph-btn-ghost:hover { background:#EDE9E4; }
     .ph-btn-primary {
-      background:linear-gradient(135deg,${D.green},${D.greenDeep}); border:none;
+      background:linear-gradient(135deg,#1D9E75,#0F6E56); border:none;
       color:#fff; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700;
       padding:8px 16px; border-radius:10px; cursor:pointer;
       display:flex; align-items:center; gap:6px;
       box-shadow:0 4px 14px rgba(29,158,117,0.3);
     }
-    .ph-btn-primary:hover { transform:translateY(-1px); box-shadow:0 6px 18px rgba(29,158,117,0.38); }
+    .ph-btn-primary:hover { transform:translateY(-1px); }
     .ph-btn-danger {
       background:#FDF0EE; border:1px solid rgba(232,113,90,0.3);
-      color:${D.coral}; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700;
+      color:#E8715A; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700;
       padding:8px 16px; border-radius:10px; cursor:pointer;
       display:flex; align-items:center; gap:6px;
     }
@@ -191,7 +259,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
 
     /* confirm dialog */
     .ph-conf-overlay {
-      position:fixed; inset:0; background:rgba(28,20,16,0.45);
+      position:fixed; inset:0; background:rgba(28,20,16,0.48);
       backdrop-filter:blur(6px); z-index:700;
       display:flex; align-items:center; justify-content:center; padding:1.5rem;
       animation:phFadeIn .15s ease;
@@ -202,13 +270,13 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       box-shadow:0 24px 80px rgba(28,20,16,0.2);
       animation:phPopIn .3s cubic-bezier(0.34,1.3,0.64,1) both;
     }
-    .ph-conf-title { font-family:'Sora',sans-serif; font-size:17px; font-weight:800; color:${D.espresso}; margin-bottom:8px; text-align:center; }
-    .ph-conf-sub { font-size:13px; color:${D.muted}; text-align:center; line-height:1.6; margin-bottom:22px; }
-    .ph-conf-sub strong { color:${D.secondary}; }
+    .ph-conf-title { font-family:'Sora',sans-serif; font-size:17px; font-weight:800; color:#1C1410; margin-bottom:8px; text-align:center; }
+    .ph-conf-sub { font-size:13px; color:#8A7E76; text-align:center; line-height:1.6; margin-bottom:22px; }
+    .ph-conf-sub strong { color:#5C504A; }
     .ph-conf-actions { display:flex; gap:10px; }
     .ph-conf-cancel {
-      flex:1; background:${D.neutral}; border:1px solid ${D.border};
-      color:${D.secondary}; font-size:14px; font-family:'DM Sans',sans-serif; font-weight:600;
+      flex:1; background:#F4F2EE; border:1px solid rgba(28,20,16,0.1);
+      color:#5C504A; font-size:14px; font-family:'DM Sans',sans-serif; font-weight:600;
       padding:11px; border-radius:13px; cursor:pointer;
     }
     .ph-conf-cancel:hover { background:#EDE9E4; }
@@ -421,10 +489,8 @@ function PhotosPage({ trip, myNickname }) {
       {showWelcome && (
         <div className="ph-welcome-overlay" onClick={dismissWelcome}>
           <div className="ph-welcome-box" onClick={e => e.stopPropagation()}>
-            {/* gold top band */}
             <div style={{ height: 4, background: `linear-gradient(90deg,${D.green},${D.greenDeep})` }} />
             <div style={{ padding: '1.5rem' }}>
-              {/* Icon */}
               <div style={{ width: 52, height: 52, borderRadius: 17, background: `linear-gradient(135deg,${D.green},${D.greenDeep})`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 6px 20px rgba(29,158,117,0.3)' }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
@@ -436,7 +502,6 @@ function PhotosPage({ trip, myNickname }) {
               <div style={{ fontSize: 13.5, color: D.secondary, lineHeight: 1.7, marginBottom: 16 }}>
                 Upload your photos here and <strong style={{ color: D.espresso }}>every trip member gets instant access</strong> — no WhatsApp groups, no Drives, no third-party apps needed.
               </div>
-              {/* Feature row */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 20 }}>
                 {[
                   { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.green} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, text: 'Photos are private — only your trip group can view them' },
@@ -460,7 +525,46 @@ function PhotosPage({ trip, myNickname }) {
         </div>
       )}
 
-      {/* ── Folder tabs ── */}
+      {/* ── Album hero header ── */}
+      <div className="ph-hero">
+        <div className="ph-hero-top">
+          <div className="ph-hero-title">
+            <div className="ph-hero-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+              </svg>
+            </div>
+            <div>
+              <div className="ph-hero-name">Trip Album</div>
+              <div className="ph-hero-sub">{memberNames.length} member{memberNames.length !== 1 ? 's' : ''} · shared space</div>
+            </div>
+          </div>
+          {totalPhotos > 0 && (
+            <div className="ph-hero-count">
+              {totalPhotos}
+              <span>{totalPhotos === 1 ? 'photo' : 'photos'}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Encryption / privacy box */}
+        <div className="ph-enc-box">
+          <div className="ph-enc-icon">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+          </div>
+          <div className="ph-enc-text">
+            <div className="ph-enc-label">Private &amp; secure</div>
+            <div className="ph-enc-desc">Photos are stored privately — only members of this trip can view or download them.</div>
+          </div>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7A9E7E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+      </div>
+
+      {/* ── Member folder tabs ── */}
       <div className="ph-tabs">
         {memberNames.map(m => {
           const count = (byMember[m] || []).length;
@@ -471,79 +575,80 @@ function PhotosPage({ trip, myNickname }) {
               onClick={() => { setActiveFolder(m); setSelected(new Set()); }}>
               <div className="ph-tab-avatar">
                 {isMe
-                  ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  : <span style={{ fontSize: 13, fontWeight: 700 }}>{initials(m)}</span>
+                  ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  : <span>{initials(m)}</span>
                 }
                 {count > 0 && <span className="ph-tab-badge">{count}</span>}
               </div>
-              <span className="ph-tab-label">{isMe ? 'Mine' : m}</span>
+              <span className="ph-tab-label">{isMe ? 'My folder' : m}</span>
             </div>
           );
         })}
       </div>
 
-      {/* thin divider */}
-      <div style={{ height: 1, background: D.divider, margin: '0 1rem .75rem' }} />
+      {/* ── Folder content ── */}
+      <div className="ph-folder-wrap">
 
-      {/* ── Section header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 1rem .75rem' }}>
-        <div>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: D.espresso, lineHeight: 1.2 }}>
-            {isMyFolder ? 'Your photos' : `${activeFolder}'s photos`}
-          </div>
-          <div style={{ fontSize: 11, color: D.muted, marginTop: 2 }}>
-            {folderPhotos.length} photo{folderPhotos.length !== 1 ? 's' : ''}
-            {totalPhotos > folderPhotos.length && ` · ${totalPhotos} total in trip`}
+        {/* Folder header row */}
+        <div className="ph-folder-header">
+          <div>
+            <div className="ph-folder-name">{isMyFolder ? 'Your photos' : `${activeFolder}'s photos`}</div>
+            <div className="ph-folder-count">
+              {folderPhotos.length} photo{folderPhotos.length !== 1 ? 's' : ''}
+              {totalPhotos > folderPhotos.length && ` · ${totalPhotos} total`}
+            </div>
           </div>
         </div>
-        {/* Privacy pill */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: D.sageTint, border: '1px solid rgba(122,158,126,0.25)', borderRadius: 999, padding: '4px 11px' }}>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={D.sage} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          <span style={{ fontSize: 10, fontWeight: 700, color: D.sage }}>Trip-only</span>
-        </div>
-      </div>
 
-      {/* ── Upload zone or viewer banner ── */}
-      {isMyFolder ? (
-        <label
-          className={`ph-upload ${dragging ? 'drag' : ''}`}
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={handleDrop}
-        >
-          <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
-          {uploading && (
-            <div className="ph-upload-overlay">
-              <div className="ph-spinner" />
-              <div className="ph-upload-progress-text">Uploading… {uploadProgress}%</div>
-              <div style={{ width: '60%', height: 4, background: 'rgba(28,20,16,0.08)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${uploadProgress}%`, background: D.green, borderRadius: 4, transition: 'width .3s' }} />
+        {/* Upload zone (my folder) or viewer banner (others) */}
+        {isMyFolder ? (
+          <label
+            className={`ph-upload ${dragging ? 'drag' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            onDragLeave={() => setDragging(false)}
+            onDrop={handleDrop}
+          >
+            <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
+            {uploading && (
+              <div className="ph-upload-overlay">
+                <div className="ph-spinner" />
+                <div className="ph-upload-progress-text">Uploading… {uploadProgress}%</div>
+                <div style={{ width: '60%', height: 4, background: 'rgba(28,20,16,0.08)', borderRadius: 4, overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${uploadProgress}%`, background: D.green, borderRadius: 4, transition: 'width .3s' }} />
+                </div>
+              </div>
+            )}
+            <div className="ph-upload-inner">
+              <div className="ph-upload-icon">
+                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke={dragging ? D.green : D.muted} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
+                  {dragging
+                    ? <><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="8" x2="12" y2="16"/></>
+                    : <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>
+                  }
+                </svg>
+              </div>
+              <div className="ph-upload-cta">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                </svg>
+                {dragging ? 'Release to upload' : 'Add photos'}
+              </div>
+              <div className="ph-upload-sub">JPG · PNG · HEIC · WebP</div>
+              <div className="ph-upload-who">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                {me}
               </div>
             </div>
-          )}
-          <div className="ph-upload-icon">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              {dragging
-                ? <><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="8" x2="12" y2="16"/></>
-                : <><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></>
-              }
-            </svg>
+          </label>
+        ) : (
+          <div className="ph-viewer-banner">
+            <div className="ph-viewer-avatar">{initials(activeFolder)}</div>
+            <div className="ph-viewer-text">
+              Viewing <strong>{activeFolder}'s</strong> album — tap any photo to select, then download.
+            </div>
           </div>
-          <div className="ph-upload-title">{dragging ? 'Release to upload' : 'Drop photos or tap to pick'}</div>
-          <div className="ph-upload-sub">JPG · PNG · HEIC · WebP — uploaded to ImageKit</div>
-          <div className="ph-upload-badge">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            {me}
-          </div>
-        </label>
-      ) : (
-        <div className="ph-viewer-banner">
-          <div className="ph-viewer-avatar">{initials(activeFolder)}</div>
-          <div className="ph-viewer-text">
-            Viewing <strong>{activeFolder}'s</strong> album — tap any photo to select, then download.
-          </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* ── Photo grid ── */}
       {folderPhotos.length === 0 ? (
@@ -568,17 +673,14 @@ function PhotosPage({ trip, myNickname }) {
             return (
               <div key={p.id} className={`ph-cell ${selected.has(p.id) ? 'sel' : ''}`} onClick={() => toggle(p.id)}>
                 <img src={thumbUrl} alt="" loading="lazy" onError={e => { e.target.style.display = 'none'; }} />
-                {/* Checkmark */}
                 <div className="ph-check">
                   {selected.has(p.id) && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                 </div>
-                {/* Expand */}
                 <div className="ph-expand" onClick={(e) => { e.stopPropagation(); openLightbox(idx); }}>
                   <div className="ph-expand-btn">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.secondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
                   </div>
                 </div>
-                {/* Delete — my folder only */}
                 {isMyFolder && (
                   <button className="ph-del-btn" onClick={(e) => askDeleteSingle(p, e)} title="Delete">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={D.coral} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
