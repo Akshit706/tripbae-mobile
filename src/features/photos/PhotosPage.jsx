@@ -1,10 +1,8 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { addPhoto, deletePhoto, imagekitAuth } from '../../api';
 import { normalizeMembers } from '../shared/constants';
-import { S } from '../shared/styles';
-import { Avatar } from '../shared/ui';
 
-/* ── Design tokens — match app theme ── */
+/* ── Design tokens ── */
 const D = {
   bg: '#FAF8F4', surface: '#FFFFFF', espresso: '#1C1410',
   gold: '#C9913A', goldTint: '#FDF3E3',
@@ -16,192 +14,208 @@ const D = {
   green: '#1D9E75', greenDeep: '#0F6E56',
 };
 
+/* ── Avatar colour palette (matches app) ── */
+const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
+function mcolor(name) {
+  const code = Math.abs(Array.from(name || '?').reduce((a, c) => a + c.charCodeAt(0), 0));
+  return MCOLORS[code % MCOLORS.length];
+}
+
 /* ── Inject CSS ── */
 if (typeof document !== 'undefined' && !document.getElementById('photos-v2-styles')) {
   const el = document.createElement('style');
   el.id = 'photos-v2-styles';
   el.textContent = `
-    @keyframes phPageIn   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes phPageIn   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
     @keyframes phFadeIn   { from{opacity:0} to{opacity:1} }
     @keyframes phPopIn    { from{opacity:0;transform:scale(0.9) translateY(16px)} 60%{transform:scale(1.02)} to{opacity:1;transform:scale(1) translateY(0)} }
     @keyframes phSlideUp  { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
     @keyframes phSpin     { to{transform:rotate(360deg)} }
-    @keyframes phBob      { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+    @keyframes phPulse    { 0%,100%{opacity:.7} 50%{opacity:1} }
 
     .ph-root {
       font-family:'DM Sans',sans-serif; background:#FAF8F4; color:#1C1410;
       min-height:100vh; padding-bottom:8rem; animation:phPageIn .3s ease both;
     }
 
-    /* ── Album header hero ── */
+    /* ── Hero banner ── */
     .ph-hero {
-      background:linear-gradient(160deg,#FFFFFF 0%,#F5F2EC 100%);
-      border-bottom:1px solid rgba(28,20,16,0.07);
-      padding:1rem 1rem .85rem;
+      background:linear-gradient(145deg,#0F6E56 0%,#1D9E75 55%,#22B584 100%);
+      padding:1.1rem 1rem 1rem; position:relative; overflow:hidden;
     }
-    .ph-hero-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:.6rem; }
-    .ph-hero-title {
-      display:flex; align-items:center; gap:9px;
+    .ph-hero::before {
+      content:''; position:absolute; top:-40px; right:-30px;
+      width:140px; height:140px; border-radius:50%;
+      background:rgba(255,255,255,0.07); pointer-events:none;
     }
+    .ph-hero::after {
+      content:''; position:absolute; bottom:-50px; left:-20px;
+      width:110px; height:110px; border-radius:50%;
+      background:rgba(255,255,255,0.05); pointer-events:none;
+    }
+    .ph-hero-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:.7rem; }
+    .ph-hero-left { display:flex; align-items:center; gap:10px; }
     .ph-hero-icon {
-      width:36px; height:36px; border-radius:11px;
-      background:linear-gradient(135deg,#1D9E75,#0F6E56);
-      display:flex; align-items:center; justify-content:center;
-      box-shadow:0 4px 12px rgba(29,158,117,0.28); flex-shrink:0;
+      width:40px; height:40px; border-radius:13px;
+      background:rgba(255,255,255,0.18); border:1.5px solid rgba(255,255,255,0.25);
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+      backdrop-filter:blur(4px);
     }
-    .ph-hero-name { font-family:'Sora',sans-serif; font-size:17px; font-weight:800; color:#1C1410; line-height:1.1; }
-    .ph-hero-sub { font-size:11px; color:#8A7E76; margin-top:1px; }
-    .ph-hero-count {
-      font-family:'Sora',sans-serif; font-size:22px; font-weight:800; color:#1C1410; line-height:1;
+    .ph-hero-title { font-family:'Sora',sans-serif; font-size:18px; font-weight:800; color:#fff; line-height:1.1; }
+    .ph-hero-sub { font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px; }
+    .ph-hero-stat {
       text-align:right;
     }
-    .ph-hero-count span { display:block; font-family:'DM Sans',sans-serif; font-size:10px; font-weight:500; color:#8A7E76; margin-top:1px; text-align:right; }
+    .ph-hero-stat-num { font-family:'Sora',sans-serif; font-size:26px; font-weight:800; color:#fff; line-height:1; }
+    .ph-hero-stat-label { font-size:10px; color:rgba(255,255,255,0.65); margin-top:2px; }
 
-    /* encryption / privacy box */
-    .ph-enc-box {
-      display:flex; align-items:center; gap:10px;
-      background:#EBF3EC; border:1px solid rgba(122,158,126,0.3);
-      border-radius:12px; padding:9px 13px; margin-top:.75rem;
+    /* encryption strip */
+    .ph-enc-strip {
+      display:flex; align-items:center; gap:9px;
+      background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22);
+      border-radius:10px; padding:8px 12px;
+      backdrop-filter:blur(4px);
     }
-    .ph-enc-icon {
-      width:32px; height:32px; border-radius:9px;
-      background:#fff; border:1px solid rgba(122,158,126,0.25);
+    .ph-enc-strip-icon {
+      width:26px; height:26px; border-radius:8px;
+      background:rgba(255,255,255,0.2);
       display:flex; align-items:center; justify-content:center; flex-shrink:0;
     }
-    .ph-enc-text { flex:1; }
-    .ph-enc-label { font-size:12px; font-weight:700; color:#166534; line-height:1.2; }
-    .ph-enc-desc { font-size:11px; color:#5C504A; margin-top:2px; line-height:1.4; }
+    .ph-enc-strip-text { flex:1; }
+    .ph-enc-strip-label { font-size:11.5px; font-weight:700; color:#fff; }
+    .ph-enc-strip-desc { font-size:10.5px; color:rgba(255,255,255,0.72); margin-top:1px; line-height:1.35; }
 
     /* ── member tabs ── */
     .ph-tabs {
-      display:flex; gap:8px; overflow-x:auto; padding:.85rem 1rem .75rem;
+      display:flex; gap:10px; overflow-x:auto; padding:.9rem 1rem .8rem;
       scrollbar-width:none; background:#FAF8F4;
-      border-bottom:1px solid rgba(28,20,16,0.06);
+      border-bottom:1px solid rgba(28,20,16,0.07);
     }
     .ph-tabs::-webkit-scrollbar { display:none; }
+
     .ph-tab {
-      display:flex; align-items:center; gap:7px; flex-shrink:0; cursor:pointer;
-      padding:7px 13px 7px 8px;
-      background:#F0EDE8; border:1.5px solid transparent; border-radius:99px;
-      transition:all .2s;
+      display:flex; flex-direction:column; align-items:center; gap:5px;
+      flex-shrink:0; cursor:pointer; min-width:62px;
     }
-    .ph-tab:hover { background:#E8E4DE; }
-    .ph-tab.active {
-      background:linear-gradient(135deg,#E6FFF4,#EBF3EC);
-      border-color:rgba(29,158,117,0.35);
+    .ph-tab-ring {
+      width:52px; height:52px; border-radius:50%; position:relative;
+      border:2.5px solid transparent; transition:all .2s;
+      flex-shrink:0;
     }
-    .ph-tab-avatar {
-      width:28px; height:28px; border-radius:50%; position:relative;
-      background:#D8D4CE;
+    .ph-tab.active .ph-tab-ring {
+      border-color:#1D9E75;
+      box-shadow:0 0 0 3px rgba(29,158,117,0.15);
+    }
+    .ph-tab-av {
+      width:100%; height:100%; border-radius:50%;
       display:flex; align-items:center; justify-content:center;
-      font-size:11px; font-weight:800; color:#5C504A;
-      flex-shrink:0; overflow:visible;
+      font-family:'Sora',sans-serif; font-size:16px; font-weight:800; color:#fff;
+      overflow:hidden;
     }
-    .ph-tab.active .ph-tab-avatar { background:linear-gradient(135deg,#1D9E75,#0F6E56); color:#fff; }
+    .ph-tab-av img { width:100%; height:100%; object-fit:cover; }
     .ph-tab-badge {
-      position:absolute; top:-4px; right:-4px;
+      position:absolute; bottom:-2px; right:-2px;
       background:#1D9E75; color:#fff; font-size:8px; font-weight:800;
-      min-width:15px; height:15px; border-radius:8px;
+      min-width:16px; height:16px; border-radius:8px;
       display:flex; align-items:center; justify-content:center;
-      padding:0 3px; border:1.5px solid #FAF8F4;
+      padding:0 3px; border:2px solid #FAF8F4;
     }
-    .ph-tab-label { font-size:12px; font-weight:600; color:#5C504A; white-space:nowrap; }
+    .ph-tab-label { font-size:10.5px; font-weight:600; color:#8A7E76; white-space:nowrap; transition:color .2s; }
     .ph-tab.active .ph-tab-label { color:#0F6E56; font-weight:700; }
 
-    /* ── folder content area ── */
-    .ph-folder-wrap { padding:.9rem 1rem 0; }
-
-    /* folder headline */
-    .ph-folder-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; }
-    .ph-folder-name { font-family:'Sora',sans-serif; font-size:15px; font-weight:800; color:#1C1410; }
-    .ph-folder-count { font-size:11.5px; color:#8A7E76; margin-top:1px; }
+    /* ── folder content ── */
+    .ph-folder-wrap { padding:.85rem 1rem 0; }
+    .ph-folder-header {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:.8rem;
+    }
+    .ph-folder-name { font-family:'Sora',sans-serif; font-size:16px; font-weight:800; color:#1C1410; }
+    .ph-folder-count { font-size:11px; color:#8A7E76; margin-top:2px; }
 
     /* upload card */
     .ph-upload {
-      display:block; width:100%; border-radius:18px; overflow:hidden;
-      background:#FFFFFF; border:1.5px dashed rgba(28,20,16,0.13);
-      cursor:pointer; text-align:center; position:relative;
-      transition:border-color .25s, background .25s;
-      box-shadow:0 2px 12px rgba(28,20,16,0.05);
+      display:block; width:100%; border-radius:16px; overflow:hidden;
+      background:#fff; border:1.5px dashed rgba(28,20,16,0.13);
+      cursor:pointer; position:relative;
+      transition:border-color .2s, background .2s;
+      box-shadow:0 2px 10px rgba(28,20,16,0.05);
       margin-bottom:1rem;
     }
     .ph-upload:hover, .ph-upload.drag {
       border-color:#1D9E75; background:#F4FBF8;
     }
-    .ph-upload-inner { padding:1.75rem 1.25rem 1.5rem; }
-    .ph-upload-icon { margin-bottom:10px; animation:phBob 3.5s ease-in-out infinite; display:inline-block; }
-    .ph-upload-cta {
-      display:inline-flex; align-items:center; gap:7px;
-      background:linear-gradient(135deg,#1D9E75,#0F6E56);
-      color:#fff; font-size:13px; font-weight:700; font-family:'DM Sans',sans-serif;
-      border-radius:99px; padding:9px 20px; margin-bottom:8px;
-      box-shadow:0 4px 14px rgba(29,158,117,0.3);
+    .ph-upload-inner {
+      display:flex; align-items:center; gap:14px;
+      padding:14px 16px;
     }
-    .ph-upload-sub { font-size:11.5px; color:#8A7E76; }
-    .ph-upload-who {
-      display:inline-flex; align-items:center; gap:5px; margin-top:8px;
-      background:#EBF3EC; border:1px solid rgba(122,158,126,0.3);
-      color:#166534; font-size:11px; font-weight:700; border-radius:99px; padding:4px 12px;
+    .ph-upload-left {
+      width:44px; height:44px; border-radius:13px; flex-shrink:0;
+      background:linear-gradient(135deg,#1D9E75,#0F6E56);
+      display:flex; align-items:center; justify-content:center;
+      box-shadow:0 4px 12px rgba(29,158,117,0.28);
+    }
+    .ph-upload-right { flex:1; min-width:0; }
+    .ph-upload-title { font-size:13.5px; font-weight:700; color:#1C1410; margin-bottom:2px; }
+    .ph-upload-sub { font-size:11px; color:#8A7E76; }
+    .ph-upload-arrow {
+      width:32px; height:32px; border-radius:50%;
+      background:#F4F2EE; display:flex; align-items:center; justify-content:center;
+      flex-shrink:0;
     }
     .ph-upload-overlay {
-      position:absolute; inset:0; background:rgba(250,248,244,0.9);
-      backdrop-filter:blur(3px); display:flex; flex-direction:column;
-      align-items:center; justify-content:center; gap:9px; border-radius:16px;
+      position:absolute; inset:0; background:rgba(250,248,244,0.92);
+      backdrop-filter:blur(4px); display:flex; flex-direction:column;
+      align-items:center; justify-content:center; gap:8px;
     }
-    .ph-spinner { width:28px; height:28px; border:2.5px solid rgba(29,158,117,0.2); border-top-color:#1D9E75; border-radius:50%; animation:phSpin .65s linear infinite; }
-    .ph-upload-progress-text { font-size:12px; font-weight:700; color:#1D9E75; }
+    .ph-spinner { width:26px; height:26px; border:2.5px solid rgba(29,158,117,0.18); border-top-color:#1D9E75; border-radius:50%; animation:phSpin .65s linear infinite; }
+    .ph-upload-prog-text { font-size:12px; font-weight:700; color:#1D9E75; }
 
     /* viewer banner */
     .ph-viewer-banner {
-      background:#FFFFFF; border-radius:16px;
-      padding:12px 15px; display:flex; align-items:center; gap:12px;
-      border:1px solid rgba(28,20,16,0.08); box-shadow:0 2px 8px rgba(28,20,16,0.05);
-      margin-bottom:1rem;
+      background:#fff; border-radius:16px;
+      padding:12px 14px; display:flex; align-items:center; gap:12px;
+      border:1px solid rgba(28,20,16,0.08);
+      box-shadow:0 2px 8px rgba(28,20,16,0.05); margin-bottom:1rem;
     }
-    .ph-viewer-avatar {
-      width:38px; height:38px; border-radius:50%;
-      background:linear-gradient(135deg,#F4F2EE,#E8E4DE);
+    .ph-viewer-av {
+      width:40px; height:40px; border-radius:50%; flex-shrink:0;
       display:flex; align-items:center; justify-content:center;
-      font-size:13px; font-weight:700; color:#5C504A; flex-shrink:0;
-      border:1.5px solid rgba(28,20,16,0.08);
+      font-family:'Sora',sans-serif; font-size:15px; font-weight:800; color:#fff;
+      border:2px solid rgba(255,255,255,0.5);
     }
     .ph-viewer-text { font-size:13px; color:#8A7E76; line-height:1.5; }
     .ph-viewer-text strong { color:#1C1410; }
 
     /* ── photo grid ── */
     .ph-grid {
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:3px; padding:0;
+      display:grid; grid-template-columns:repeat(3,1fr); gap:2px; padding:0;
     }
     .ph-cell {
       position:relative; overflow:hidden;
-      aspect-ratio:1; cursor:pointer; background:#F4F2EE;
-      border:2px solid transparent; transition:opacity .18s;
+      aspect-ratio:1; cursor:pointer; background:#EDE9E4;
+      border:2px solid transparent; transition:opacity .15s;
     }
     .ph-cell.sel { border-color:#1D9E75; }
-    .ph-cell img { width:100%; height:100%; object-fit:cover; display:block; }
-    .ph-cell:hover img { filter:brightness(.88); }
+    .ph-cell img { width:100%; height:100%; object-fit:cover; display:block; transition:filter .15s; }
+    .ph-cell:hover img { filter:brightness(.85); }
     .ph-check {
       position:absolute; top:6px; right:6px; width:20px; height:20px; border-radius:50%;
-      background:rgba(255,255,255,0.8); border:1.5px solid rgba(28,20,16,0.2);
+      background:rgba(255,255,255,0.82); border:1.5px solid rgba(28,20,16,0.18);
       display:flex; align-items:center; justify-content:center; z-index:3;
       transition:all .15s; backdrop-filter:blur(3px);
     }
     .ph-cell.sel .ph-check { background:#1D9E75; border-color:#1D9E75; }
     .ph-expand {
       position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-      opacity:0; transition:opacity .18s; pointer-events:none; z-index:2;
+      opacity:0; transition:opacity .15s; pointer-events:none; z-index:2;
     }
     .ph-cell:hover .ph-expand { opacity:1; pointer-events:all; }
     .ph-expand-btn {
-      background:rgba(255,255,255,0.88); backdrop-filter:blur(6px);
+      background:rgba(255,255,255,0.9); backdrop-filter:blur(6px);
       border-radius:50%; width:34px; height:34px;
       display:flex; align-items:center; justify-content:center;
-      border:1px solid rgba(28,20,16,0.1); transition:transform .15s;
-      box-shadow:0 2px 8px rgba(0,0,0,0.1);
+      border:1px solid rgba(28,20,16,0.08); box-shadow:0 2px 8px rgba(0,0,0,0.1);
     }
-    .ph-expand-btn:hover { transform:scale(1.08); }
     .ph-del-btn {
       position:absolute; top:6px; left:6px; width:26px; height:26px; border-radius:50%;
       background:rgba(255,255,255,0.88); border:1px solid rgba(28,20,16,0.1);
@@ -211,28 +225,27 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-cell:hover .ph-del-btn { opacity:1; }
     .ph-del-btn:hover { background:#FAECE7 !important; border-color:rgba(232,113,90,0.4) !important; }
 
-    /* empty state */
-    .ph-empty { text-align:center; padding:3.5rem 1.25rem 2rem; }
+    /* empty */
+    .ph-empty { text-align:center; padding:3rem 1.25rem 2rem; }
     .ph-empty-title { font-size:15px; font-weight:700; color:#5C504A; margin-bottom:5px; }
-    .ph-empty-sub { font-size:13px; color:#8A7E76; }
+    .ph-empty-sub { font-size:12.5px; color:#8A7E76; }
 
-    /* selection action bar */
+    /* action bar */
     .ph-action-bar {
       position:fixed; bottom:0; left:50%; transform:translateX(-50%);
       width:100%; max-width:880px;
       background:rgba(255,255,255,0.97); backdrop-filter:blur(20px);
       border-top:1px solid rgba(28,20,16,0.08);
       padding:12px 1rem; display:flex; align-items:center; gap:8px; z-index:190;
-      animation:phSlideUp .22s ease both;
+      animation:phSlideUp .2s ease both;
     }
     .ph-action-label { flex:1; font-size:13px; color:#8A7E76; }
     .ph-action-label strong { color:#1C1410; font-size:14px; }
     .ph-btn-ghost {
       background:#F4F2EE; border:1px solid rgba(28,20,16,0.1);
       color:#5C504A; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:600;
-      padding:8px 14px; border-radius:10px; cursor:pointer; transition:all .15s;
+      padding:8px 14px; border-radius:10px; cursor:pointer;
     }
-    .ph-btn-ghost:hover { background:#EDE9E4; }
     .ph-btn-primary {
       background:linear-gradient(135deg,#1D9E75,#0F6E56); border:none;
       color:#fff; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700;
@@ -240,22 +253,14 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       display:flex; align-items:center; gap:6px;
       box-shadow:0 4px 14px rgba(29,158,117,0.3);
     }
-    .ph-btn-primary:hover { transform:translateY(-1px); }
     .ph-btn-danger {
       background:#FDF0EE; border:1px solid rgba(232,113,90,0.3);
       color:#E8715A; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700;
       padding:8px 16px; border-radius:10px; cursor:pointer;
       display:flex; align-items:center; gap:6px;
     }
-    .ph-btn-danger:hover { background:#FAECE7; border-color:rgba(232,113,90,0.5); }
-    .ph-count-badge {
-      background:rgba(255,255,255,0.28); border-radius:99px;
-      padding:1px 7px; font-size:12px; font-weight:800;
-    }
-    .ph-del-badge {
-      background:rgba(232,113,90,0.25); border-radius:99px;
-      padding:1px 7px; font-size:12px; font-weight:800;
-    }
+    .ph-count-badge { background:rgba(255,255,255,0.28); border-radius:99px; padding:1px 7px; font-size:12px; font-weight:800; }
+    .ph-del-badge { background:rgba(232,113,90,0.25); border-radius:99px; padding:1px 7px; font-size:12px; font-weight:800; }
 
     /* confirm dialog */
     .ph-conf-overlay {
@@ -279,17 +284,15 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       color:#5C504A; font-size:14px; font-family:'DM Sans',sans-serif; font-weight:600;
       padding:11px; border-radius:13px; cursor:pointer;
     }
-    .ph-conf-cancel:hover { background:#EDE9E4; }
     .ph-conf-confirm {
       flex:1; background:linear-gradient(135deg,#E8715A,#C4513E); border:none;
       color:#fff; font-size:14px; font-family:'DM Sans',sans-serif; font-weight:700;
       padding:11px; border-radius:13px; cursor:pointer;
-      box-shadow:0 4px 14px rgba(232,113,90,0.35);
     }
 
     /* lightbox */
     .ph-lbox {
-      position:fixed; inset:0; background:rgba(10,8,6,0.95);
+      position:fixed; inset:0; background:rgba(10,8,6,0.96);
       z-index:600; display:flex; align-items:center; justify-content:center; flex-direction:column;
       animation:phFadeIn .18s ease;
     }
@@ -298,8 +301,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-lbox-btn {
       background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15);
       color:#fff; width:40px; height:40px; border-radius:50%;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; transition:all .15s;
+      display:flex; align-items:center; justify-content:center; cursor:pointer;
     }
     .ph-lbox-btn:hover { background:rgba(255,255,255,0.18); }
     .ph-lbox-btn:disabled { opacity:.2; cursor:default; }
@@ -308,10 +310,8 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       position:absolute; top:14px; right:14px;
       background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15);
       color:#fff; width:36px; height:36px; border-radius:50%;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; transition:all .15s; font-size:14px;
+      display:flex; align-items:center; justify-content:center; cursor:pointer;
     }
-    .ph-lbox-close:hover { background:rgba(255,255,255,0.18); }
 
     /* welcome popup */
     .ph-welcome-overlay {
@@ -479,7 +479,7 @@ function PhotosPage({ trip, myNickname }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [lightbox, confirmDelete, pendingDeletePhoto]);
 
-  const initials = (name) => name.slice(0, 2).toUpperCase();
+  const initials = (name) => (name || '?').slice(0, 2).toUpperCase();
   const totalPhotos = allPhotos.length;
 
   return (
@@ -514,10 +514,7 @@ function PhotosPage({ trip, myNickname }) {
                   </div>
                 ))}
               </div>
-              <button
-                onClick={dismissWelcome}
-                style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: `linear-gradient(135deg,${D.green},${D.greenDeep})`, color: '#fff', boxShadow: '0 4px 16px rgba(29,158,117,0.3)' }}
-              >
+              <button onClick={dismissWelcome} style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: `linear-gradient(135deg,${D.green},${D.greenDeep})`, color: '#fff', boxShadow: '0 4px 16px rgba(29,158,117,0.3)' }}>
                 Got it, let's upload
               </button>
             </div>
@@ -525,40 +522,40 @@ function PhotosPage({ trip, myNickname }) {
         </div>
       )}
 
-      {/* ── Album hero header ── */}
+      {/* ── Hero banner ── */}
       <div className="ph-hero">
-        <div className="ph-hero-top">
-          <div className="ph-hero-title">
+        <div className="ph-hero-row">
+          <div className="ph-hero-left">
             <div className="ph-hero-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
               </svg>
             </div>
             <div>
-              <div className="ph-hero-name">Trip Album</div>
+              <div className="ph-hero-title">Trip Album</div>
               <div className="ph-hero-sub">{memberNames.length} member{memberNames.length !== 1 ? 's' : ''} · shared space</div>
             </div>
           </div>
           {totalPhotos > 0 && (
-            <div className="ph-hero-count">
-              {totalPhotos}
-              <span>{totalPhotos === 1 ? 'photo' : 'photos'}</span>
+            <div className="ph-hero-stat">
+              <div className="ph-hero-stat-num">{totalPhotos}</div>
+              <div className="ph-hero-stat-label">{totalPhotos === 1 ? 'photo' : 'photos'}</div>
             </div>
           )}
         </div>
 
-        {/* Encryption / privacy box */}
-        <div className="ph-enc-box">
-          <div className="ph-enc-icon">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#166534" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        {/* End-to-end encryption notice */}
+        <div className="ph-enc-strip">
+          <div className="ph-enc-strip-icon">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
           </div>
-          <div className="ph-enc-text">
-            <div className="ph-enc-label">Private &amp; secure</div>
-            <div className="ph-enc-desc">Photos are stored privately — only members of this trip can view or download them.</div>
+          <div className="ph-enc-strip-text">
+            <div className="ph-enc-strip-label">End-to-end encrypted &amp; private</div>
+            <div className="ph-enc-strip-desc">Only members of this trip can view or download these photos.</div>
           </div>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7A9E7E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
         </div>
@@ -570,17 +567,17 @@ function PhotosPage({ trip, myNickname }) {
           const count = (byMember[m] || []).length;
           const isActive = activeFolder === m;
           const isMe = m === me;
+          const color = mcolor(m);
           return (
             <div key={m} className={`ph-tab ${isActive ? 'active' : ''}`}
               onClick={() => { setActiveFolder(m); setSelected(new Set()); }}>
-              <div className="ph-tab-avatar">
-                {isMe
-                  ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                  : <span>{initials(m)}</span>
-                }
+              <div className="ph-tab-ring">
+                <div className="ph-tab-av" style={{ background: color }}>
+                  {initials(m)}
+                </div>
                 {count > 0 && <span className="ph-tab-badge">{count}</span>}
               </div>
-              <span className="ph-tab-label">{isMe ? 'My folder' : m}</span>
+              <span className="ph-tab-label">{isMe ? 'You' : m}</span>
             </div>
           );
         })}
@@ -588,8 +585,6 @@ function PhotosPage({ trip, myNickname }) {
 
       {/* ── Folder content ── */}
       <div className="ph-folder-wrap">
-
-        {/* Folder header row */}
         <div className="ph-folder-header">
           <div>
             <div className="ph-folder-name">{isMyFolder ? 'Your photos' : `${activeFolder}'s photos`}</div>
@@ -600,7 +595,7 @@ function PhotosPage({ trip, myNickname }) {
           </div>
         </div>
 
-        {/* Upload zone (my folder) or viewer banner (others) */}
+        {/* Upload card (my folder) or viewer banner (others) */}
         {isMyFolder ? (
           <label
             className={`ph-upload ${dragging ? 'drag' : ''}`}
@@ -612,39 +607,38 @@ function PhotosPage({ trip, myNickname }) {
             {uploading && (
               <div className="ph-upload-overlay">
                 <div className="ph-spinner" />
-                <div className="ph-upload-progress-text">Uploading… {uploadProgress}%</div>
-                <div style={{ width: '60%', height: 4, background: 'rgba(28,20,16,0.08)', borderRadius: 4, overflow: 'hidden' }}>
+                <div className="ph-upload-prog-text">Uploading… {uploadProgress}%</div>
+                <div style={{ width: '55%', height: 4, background: 'rgba(28,20,16,0.08)', borderRadius: 4, overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${uploadProgress}%`, background: D.green, borderRadius: 4, transition: 'width .3s' }} />
                 </div>
               </div>
             )}
             <div className="ph-upload-inner">
-              <div className="ph-upload-icon">
-                <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke={dragging ? D.green : D.muted} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round">
-                  {dragging
-                    ? <><circle cx="12" cy="12" r="10"/><polyline points="16 12 12 8 8 12"/><line x1="12" y1="8" x2="12" y2="16"/></>
-                    : <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></>
-                  }
+              <div className="ph-upload-left">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
               </div>
-              <div className="ph-upload-cta">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                </svg>
-                {dragging ? 'Release to upload' : 'Add photos'}
+              <div className="ph-upload-right">
+                <div className="ph-upload-title">{dragging ? 'Release to upload' : 'Upload photos'}</div>
+                <div className="ph-upload-sub">Tap to pick · drag and drop · JPG PNG HEIC</div>
               </div>
-              <div className="ph-upload-sub">JPG · PNG · HEIC · WebP</div>
-              <div className="ph-upload-who">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                {me}
+              <div className="ph-upload-arrow">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
               </div>
             </div>
           </label>
         ) : (
           <div className="ph-viewer-banner">
-            <div className="ph-viewer-avatar">{initials(activeFolder)}</div>
+            <div className="ph-viewer-av" style={{ background: mcolor(activeFolder) }}>
+              {initials(activeFolder)}
+            </div>
             <div className="ph-viewer-text">
-              Viewing <strong>{activeFolder}'s</strong> album — tap any photo to select, then download.
+              Viewing <strong>{activeFolder}'s</strong> photos — tap to select, then download.
             </div>
           </div>
         )}
