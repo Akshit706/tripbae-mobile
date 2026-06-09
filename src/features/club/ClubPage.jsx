@@ -445,6 +445,18 @@ function ClubPage({ trip, onTripRefresh }) {
 
   const clubLocKey = (suffix) => `travelbae_club_${trip.id}_${suffix}`;
 
+  // ── Club T&C / first-time gate ──
+  const CLUB_TERMS_KEY = `travelbae_club_terms_accepted`;
+  const [showClubTerms, setShowClubTerms] = useState(() => {
+    try { return !localStorage.getItem(CLUB_TERMS_KEY); } catch { return true; }
+  });
+  const [termsChecked, setTermsChecked] = useState(false);
+  const acceptClubTerms = () => {
+    if (!termsChecked) return;
+    try { localStorage.setItem(CLUB_TERMS_KEY, '1'); } catch {}
+    setShowClubTerms(false);
+  };
+
   // ── Location (Nominatim search + optional GPS reverse-geocode) ──
   const [locQuery, setLocQuery] = useState(() => {
     try {
@@ -1208,14 +1220,86 @@ function ClubPage({ trip, onTripRefresh }) {
         }
       `}</style>
 
-      {/* ── Hero header ── */}
-      <div style={{ padding: '0 0 0', animation: 'clubPop .3s ease-out both' }}>
-        {/* Logo centered */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 2 }}>
-          <img src={bglessLogo} alt="TripBae" style={{ height: 85, width: 'auto', objectFit: 'contain', display: 'block' }} />
+      {/* ── T&C First-time gate ── */}
+      {showClubTerms && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(12,18,14,0.72)', backdropFilter: 'blur(7px)', zIndex: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem', animation: 'clubFadeIn .2s ease both' }}>
+          <div style={{ background: '#fff', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 380, boxShadow: '0 28px 80px rgba(12,18,14,0.32)', animation: 'clubSheetIn .35s cubic-bezier(0.34,1.3,0.64,1) both' }}>
+            {/* accent bar */}
+            <div style={{ height: 4, background: 'linear-gradient(90deg,#1D9E75,#0F6E56)' }} />
+            <div style={{ padding: '1.5rem 1.5rem 1.25rem' }}>
+              {/* icon */}
+              <div style={{ width: 52, height: 52, borderRadius: 17, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, boxShadow: '0 6px 20px rgba(29,158,117,0.28)' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, color: '#1C1410', marginBottom: 8, lineHeight: 1.2 }}>Welcome to Club</div>
+              <div style={{ fontSize: 12.5, color: '#5C504A', lineHeight: 1.75, marginBottom: 16 }}>
+                By joining Club, you acknowledge that all interactions with other members are <strong style={{ color: '#1C1410' }}>voluntary and at your own discretion</strong>. While we strive to maintain a safe and respectful community, we do not verify the identity, background, intentions, or conduct of users.
+                <br /><br />
+                Any communication, meetup, or relationship that occurs through or outside the platform is solely between the participating individuals. <strong style={{ color: '#1C1410' }}>You are responsible for exercising appropriate caution and judgment</strong> when interacting with others. To the maximum extent permitted by law, we are not liable for any disputes, damages, or incidents arising from user interactions, whether online or offline.
+              </div>
+              {/* checkbox */}
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '12px 14px', borderRadius: 14, background: termsChecked ? '#EBF3EC' : '#F4F2EE', border: `1.5px solid ${termsChecked ? '#1D9E75' : 'rgba(28,20,16,0.1)'}`, marginBottom: 16, transition: 'all .18s' }}>
+                <div onClick={() => setTermsChecked(v => !v)} style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${termsChecked ? '#1D9E75' : 'rgba(28,20,16,0.25)'}`, background: termsChecked ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, transition: 'all .15s', cursor: 'pointer' }}>
+                  {termsChecked && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                </div>
+                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#1C1410', lineHeight: 1.6 }}>
+                  I understand that interactions with other Club members are at my own discretion and risk, and I agree to the <span style={{ color: '#0F6E56', textDecoration: 'underline' }}>Club Terms &amp; Safety Guidelines</span>.
+                </span>
+              </label>
+              <button
+                onClick={acceptClubTerms}
+                disabled={!termsChecked}
+                style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: termsChecked ? 'pointer' : 'not-allowed', fontFamily: "'DM Sans',sans-serif", background: termsChecked ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : '#E0E0E0', color: termsChecked ? '#fff' : '#9E9E9E', boxShadow: termsChecked ? '0 4px 16px rgba(29,158,117,0.3)' : 'none', transition: 'all .2s' }}
+              >
+                I agree — enter Club
+              </button>
+            </div>
+          </div>
         </div>
-        <div style={{ textAlign: 'center', fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 500, color: '#0F6E56', lineHeight: 1.3, letterSpacing: '0.2px', marginBottom: 10, fontStyle: 'italic', opacity: 0.7 }}>
-          find your people.
+      )}
+
+      {/* ── Hero card ── */}
+      <div style={{ position: 'relative', borderRadius: 22, overflow: 'hidden', background: 'linear-gradient(155deg,#07100C 0%,#0C2518 38%,#0F4A34 70%,#1D9E75 100%)', margin: '1rem 1rem 0', boxShadow: '0 4px 32px rgba(15,110,86,0.22)', animation: 'clubPop .3s ease-out both' }}>
+        {/* dot grid */}
+        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.055) 1px,transparent 1px)', backgroundSize: '20px 20px', zIndex: 1, pointerEvents: 'none' }} />
+        {/* overlay */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(165deg,rgba(4,12,8,0.9) 0%,rgba(7,22,13,0.65) 50%,rgba(15,74,52,0.42) 100%)', zIndex: 2 }} />
+        {/* shimmer */}
+        <div style={{ position: 'absolute', top: 0, bottom: 0, width: '50%', background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.05),transparent)', zIndex: 3, animation: 'clubShine 9s ease-in-out infinite 3s', pointerEvents: 'none' }} />
+        {/* deco circle */}
+        <div style={{ position: 'absolute', top: -28, right: -18, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,0.035)', zIndex: 3, pointerEvents: 'none' }} />
+        {/* content */}
+        <div style={{ position: 'relative', zIndex: 4, padding: '1.1rem 1.15rem 1rem', textAlign: 'center' }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.36)', textTransform: 'uppercase', letterSpacing: '2.4px', marginBottom: 8 }}>✦ TRIPBAE CLUB ✦</div>
+          <img src={bglessLogo} alt="TripBae" style={{ height: 54, width: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto 4px', filter: 'brightness(0) invert(1)', opacity: 0.92 }} />
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.3px', fontStyle: 'italic', marginBottom: 12 }}>find your people.</div>
+          {/* stats row */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', flexWrap: 'nowrap', marginBottom: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.48)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 700, color: '#fff' }}>{(hub.discover || []).length}</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.46)' }}>groups nearby</span>
+            </div>
+            <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.16)', flexShrink: 0 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.48)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 700, color: '#fff' }}>{hub.chats?.length || 0}</span>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.46)' }}>{(hub.chats?.length || 0) === 1 ? 'chat' : 'chats'}</span>
+            </div>
+            {hub.incomingRequests.length > 0 && <>
+              <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.16)', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#5BE3B0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 700, color: '#5BE3B0' }}>{hub.incomingRequests.length}</span>
+                <span style={{ fontSize: 11, color: 'rgba(91,227,176,0.7)' }}>new {hub.incomingRequests.length === 1 ? 'request' : 'requests'}</span>
+              </div>
+            </>}
+          </div>
+          {/* safety note */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 10, paddingTop: 9, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5BE3B0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, display: 'block' }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span style={{ fontSize: 10.5, fontWeight: 600, color: 'rgba(255,255,255,0.52)', letterSpacing: '0.15px' }}>Community guidelines apply · interact safely</span>
+          </div>
         </div>
       </div>
 

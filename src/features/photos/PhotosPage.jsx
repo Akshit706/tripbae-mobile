@@ -116,11 +116,12 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-privacy-note {
       display:flex; align-items:center; justify-content:center; gap:5px;
       margin-top:10px; padding-top:9px;
-      border-top:1px solid rgba(255,255,255,0.1);
+      border-top:1px solid rgba(255,255,255,0.12);
     }
+    .ph-privacy-note svg { flex-shrink:0; display:block; }
     .ph-privacy-note-text {
-      font-size:10px; font-weight:600; color:rgba(255,255,255,0.42);
-      letter-spacing:0.2px;
+      font-size:10.5px; font-weight:600; color:rgba(255,255,255,0.55);
+      letter-spacing:0.15px; line-height:1.4;
     }
 
     /* ── member tabs ── */
@@ -602,10 +603,10 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
             </div>
           </div>
           <div className="ph-privacy-note">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5BE3B0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
-            <span className="ph-privacy-note-text">Your photos are protected with end-to-end encryption. Upload freely.</span>
+            <span className="ph-privacy-note-text">End-to-end encrypted · visible only to your trip group</span>
           </div>
         </div>
       </div>
