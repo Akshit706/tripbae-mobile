@@ -608,7 +608,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
         </svg>
-        <span className="ph-privacy-note-text">Only your trip group can see these photos</span>
+        <span className="ph-privacy-note-text">Your photos are protected with end-to-end encryption. Upload freely.</span>
       </div>
 
       {/* ── Member folder tabs ── */}
