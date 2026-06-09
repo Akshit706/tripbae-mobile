@@ -112,14 +112,15 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-hero-stat-lbl { font-size:11px; color:rgba(255,255,255,0.48); }
     .ph-hero-stat-div { width:1px; height:12px; background:rgba(255,255,255,0.18); flex-shrink:0; }
 
-    /* privacy note — plain bold line below hero */
+    /* privacy note — inside hero, below stats */
     .ph-privacy-note {
-      display:flex; align-items:center; justify-content:center; gap:6px;
-      padding:.6rem 1rem .3rem;
+      display:flex; align-items:center; justify-content:center; gap:5px;
+      margin-top:10px; padding-top:9px;
+      border-top:1px solid rgba(255,255,255,0.1);
     }
     .ph-privacy-note-text {
-      font-size:11px; font-weight:600; color:#6B5E54;
-      letter-spacing:0.1px;
+      font-size:10px; font-weight:600; color:rgba(255,255,255,0.42);
+      letter-spacing:0.2px;
     }
 
     /* ── member tabs ── */
@@ -600,15 +601,13 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
               <span className="ph-hero-stat-lbl">{memberNames.length === 1 ? 'member' : 'members'}</span>
             </div>
           </div>
+          <div className="ph-privacy-note">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span className="ph-privacy-note-text">Your photos are protected with end-to-end encryption. Upload freely.</span>
+          </div>
         </div>
-      </div>
-
-      {/* ── Privacy note ── */}
-      <div className="ph-privacy-note">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-        </svg>
-        <span className="ph-privacy-note-text">Your photos are protected with end-to-end encryption. Upload freely.</span>
       </div>
 
       {/* ── Member folder tabs ── */}
