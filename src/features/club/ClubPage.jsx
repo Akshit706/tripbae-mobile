@@ -321,92 +321,114 @@ function buildCompatibility(myProfile, myTrip, item) {
 
 function ClubDiscoveryCard({ item, compatibility, alreadySent, distKm, onOpen }) {
   const activeNow = isRecentlyActive(item.updatedAt);
-  const avatar = item.photoUrl || item.trip?.coverUrl || null;
-  const moodLine = getGroupMoodLine(item);
-  const cardBg = 'linear-gradient(145deg,#0a2a1f 0%,#0f3d2e 55%,#0a2a1f 100%)';
+  const photos = Array.isArray(item?.photoUrls) && item.photoUrls.length > 0 ? item.photoUrls : [item?.photoUrl].filter(Boolean);
+  const coverPhoto = photos[0] || item?.trip?.coverUrl || null;
+  const tags = Array.isArray(item?.coverTags) ? item.coverTags.slice(0, 4) : [];
+  const vibeColors = {
+    party: { bg: '#FF2D55', glow: 'rgba(255,45,85,0.35)' },
+    adventure: { bg: '#00C7A8', glow: 'rgba(0,199,168,0.35)' },
+    foodie: { bg: '#FF6B35', glow: 'rgba(255,107,53,0.35)' },
+    culture: { bg: '#7C3AED', glow: 'rgba(124,58,237,0.35)' },
+    chill: { bg: '#3B82F6', glow: 'rgba(59,130,246,0.35)' },
+    mixed: { bg: '#1D9E75', glow: 'rgba(29,158,117,0.35)' },
+  };
+  const vc = vibeColors[item.vibe || 'mixed'] || vibeColors.mixed;
 
   return (
     <button
       data-club-card="true"
       onClick={onOpen}
       style={{
-        width: '100%', textAlign: 'left', padding: 0, marginBottom: 14,
-        borderRadius: 26, overflow: 'hidden', position: 'relative',
-        background: cardBg, cursor: 'pointer',
+        width: '100%', textAlign: 'left', padding: 0,
+        marginBottom: 18, borderRadius: 28, overflow: 'hidden',
+        position: 'relative', cursor: 'pointer', border: 'none',
+        background: '#111',
+        boxShadow: `0 2px 8px rgba(0,0,0,0.06), 0 16px 48px rgba(0,0,0,0.14)`,
         animation: 'clubCardIn .45s cubic-bezier(.2,.7,.2,1) both',
-        border: 'none',
-        borderTop: '1px solid rgba(255,255,255,0.13)',
-        boxShadow: '0 4px 6px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.12), 0 24px 48px rgba(0,0,0,0.07)',
-        transition: 'transform .18s ease, box-shadow .18s ease',
+        transition: 'transform .2s ease, box-shadow .2s ease',
+        display: 'block',
       }}>
-      {/* Photo background */}
-      {avatar && (
-        <img src={avatar} alt="" style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-          opacity: 0.22, filter: 'brightness(0.42) saturate(1.1)', zIndex: 0, pointerEvents: 'none',
-        }} onError={e => { e.target.style.display = 'none'; }} />
-      )}
-      {/* Bottom scrim */}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.52) 100%)', zIndex: 1, pointerEvents: 'none' }} />
-      {/* Glow blob */}
-      <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(circle,rgba(29,158,117,0.28) 0%,transparent 70%)', pointerEvents: 'none', zIndex: 1 }} />
-      {/* Top shine */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 56, background: 'linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)', borderRadius: '26px 26px 0 0', pointerEvents: 'none', zIndex: 2 }} />
-
-      {/* Card body */}
-      <div style={{ padding: '18px 18px 0', position: 'relative', zIndex: 3 }}>
-        {/* Badges row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 11 }}>
-          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-            {compatibility && (
-              <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(29,158,117,0.18)', color: '#5DCAA5', border: '1px solid rgba(29,158,117,0.25)', boxShadow: '0 2px 8px rgba(29,158,117,0.2)' }}>
-                {compatibility.score}% match
-              </span>
-            )}
-            <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, ...(activeNow ? { background: 'rgba(29,158,117,0.18)', color: '#5DCAA5', border: '1px solid rgba(29,158,117,0.25)' } : { background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' }) }}>
-              {activeNow ? '● Active' : 'Quiet'}
-            </span>
+      {/* Photo — tall like Hinge */}
+      <div style={{ position: 'relative', height: 340, overflow: 'hidden' }}>
+        {coverPhoto ? (
+          <img src={coverPhoto} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+            onError={e => { e.target.style.display = 'none'; }} />
+        ) : (
+          <div style={{ width: '100%', height: '100%', background: moodGradient(item.vibe || 'mixed') }} />
+        )}
+        {/* gradient scrim — bottom heavy */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(0,0,0,0) 30%, rgba(0,0,0,0.72) 100%)', pointerEvents:'none' }} />
+        {/* top-left badges */}
+        <div style={{ position:'absolute', top:14, left:14, display:'flex', gap:6, flexWrap:'wrap' }}>
+          {activeNow && (
+            <span style={{ fontSize:11, fontWeight:700, padding:'5px 10px', borderRadius:99, background:'rgba(0,0,0,0.45)', color:'#4ADE80', backdropFilter:'blur(8px)', border:'1px solid rgba(74,222,128,0.3)', letterSpacing:'0.2px' }}>● Live</span>
+          )}
+          {compatibility && (
+            <span style={{ fontSize:11, fontWeight:700, padding:'5px 10px', borderRadius:99, background:'rgba(0,0,0,0.45)', color:'#fff', backdropFilter:'blur(8px)' }}>{compatibility.score}% match</span>
+          )}
+        </div>
+        {/* top-right distance */}
+        {distKm != null && (
+          <span style={{ position:'absolute', top:14, right:14, fontSize:11, fontWeight:600, color:'rgba(255,255,255,0.82)', background:'rgba(0,0,0,0.38)', backdropFilter:'blur(8px)', padding:'5px 9px', borderRadius:99 }}>
+            📍 {distanceLabel(distKm)}
+          </span>
+        )}
+        {/* bottom text over photo */}
+        <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'14px 16px 0' }}>
+          <div style={{ fontFamily:"'Sora',sans-serif", fontSize:22, fontWeight:800, color:'#fff', lineHeight:1.15, letterSpacing:'-0.3px', textShadow:'0 1px 16px rgba(0,0,0,0.6)' }}>
+            {item.trip?.groupName}
           </div>
-          {distKm != null && (
-            <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.45)', textShadow: '0 1px 4px rgba(0,0,0,0.5)', flexShrink: 0 }}>
-              {distanceLabel(distKm)}
-            </span>
-          )}
-        </div>
-
-        {/* Group name */}
-        <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.15, marginBottom: 4, fontFamily: "'Inter',sans-serif", textShadow: '0 1px 12px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4)' }}>
-          {item.trip?.groupName}
-        </div>
-        {/* Destination */}
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 12, fontWeight: 500, textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
-          📍 {item.trip?.destination}
-        </div>
-        {/* Stats row */}
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.72)', fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
-          {item.vibe && item.vibe !== 'mixed' && (
-            <span style={{ padding: '3px 9px', borderRadius: 20, fontSize: 11, fontWeight: 600, background: 'rgba(255,255,255,0.11)', color: 'rgba(255,255,255,0.88)', border: '1px solid rgba(255,255,255,0.14)' }}>
-              {item.vibe}
-            </span>
-          )}
-          <span style={{ opacity: 0.4 }}>·</span>
-          <span>{item.trip?.members?.length || 0} travelers</span>
-          {item.genderMix && item.genderMix !== 'mixed' && (
-            <><span style={{ opacity: 0.4 }}>·</span><span>{genderMixLabel(item.genderMix)}</span></>
+          {item.trip?.destination && (
+            <div style={{ fontSize:12, color:'rgba(255,255,255,0.72)', marginTop:3, fontWeight:500, textShadow:'0 1px 8px rgba(0,0,0,0.5)' }}>
+              📍 {item.trip.destination}
+            </div>
           )}
         </div>
       </div>
 
-      {/* Footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 18px', borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.18)', backdropFilter: 'blur(10px)', position: 'relative', zIndex: 3 }}>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1, marginRight: 10 }}>
-          {moodLine}
+      {/* White body — Hinge-style info cards */}
+      <div style={{ background:'#fff', padding:'14px 16px 16px' }}>
+        {/* Vibe + size row */}
+        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:10, flexWrap:'wrap' }}>
+          <span style={{ fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:99, background:vc.bg, color:'#fff', letterSpacing:'0.1px' }}>
+            {(item.vibe || 'mixed').charAt(0).toUpperCase() + (item.vibe || 'mixed').slice(1)}
+          </span>
+          <span style={{ fontSize:11, fontWeight:600, padding:'4px 10px', borderRadius:99, background:'#F3F4F6', color:'#374151' }}>
+            {item.trip?.members?.length || 0} travelers
+          </span>
+          {item.genderMix && item.genderMix !== 'mixed' && (
+            <span style={{ fontSize:11, fontWeight:600, padding:'4px 10px', borderRadius:99, background:'#F3F4F6', color:'#374151' }}>
+              {genderMixLabel(item.genderMix)}
+            </span>
+          )}
         </div>
-        {alreadySent ? (
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#FFAA80', flexShrink: 0 }}>Requested</span>
-        ) : (
-          <span style={{ fontSize: 11, fontWeight: 700, color: '#5DCAA5', flexShrink: 0 }}>Connect →</span>
+        {/* About snippet */}
+        {(item.about || item.lookingFor) && (
+          <div style={{ fontSize:13, color:'#374151', lineHeight:1.6, marginBottom:10, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
+            {item.about || item.lookingFor}
+          </div>
         )}
+        {/* Tags */}
+        {tags.length > 0 && (
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:12 }}>
+            {tags.map(tag => (
+              <span key={tag} style={{ fontSize:11, fontWeight:600, padding:'3px 8px', borderRadius:99, background:'#F0F4FF', color:'#3B5BDB' }}>#{tag}</span>
+            ))}
+          </div>
+        )}
+        {/* CTA row */}
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div style={{ fontSize:12, color:'#9CA3AF' }}>
+            {compatibility?.reasons?.[0] ? `✓ ${compatibility.reasons[0]}` : ''}
+          </div>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            {alreadySent ? (
+              <span style={{ fontSize:12, fontWeight:700, color:'#F97316', background:'#FFF7ED', padding:'7px 14px', borderRadius:99, border:'1px solid #FED7AA' }}>Requested ✓</span>
+            ) : (
+              <span style={{ fontSize:12, fontWeight:700, color:'#fff', background:vc.bg, padding:'7px 16px', borderRadius:99, boxShadow:`0 4px 14px ${vc.glow}` }}>Connect →</span>
+            )}
+          </div>
+        </div>
       </div>
     </button>
   );
@@ -1306,25 +1328,15 @@ function ClubPage({ trip, onTripRefresh }) {
             <div style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.6)', textTransform:'uppercase', letterSpacing:'2.8px', marginBottom:10 }}>✦ TRIPBAE CLUB ✦</div>
             <img src={bglessLogo} alt="TripBae" style={{ height:76, width:'auto', objectFit:'contain', display:'block', margin:'0 auto 5px', filter:'brightness(0) invert(1) drop-shadow(0 2px 14px rgba(0,0,0,0.28))', opacity:0.97 }} />
             <div style={{ fontFamily:"'Sora',sans-serif", fontSize:12.5, fontWeight:700, color:'rgba(255,255,255,0.88)', letterSpacing:'0.4px', fontStyle:'italic', marginBottom:16 }}>find your people.</div>
-            {/* stat pills */}
-            <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.35)', borderRadius:99, padding:'5px 12px', backdropFilter:'blur(8px)', animation:'clubTagPop .4s cubic-bezier(0.34,1.4,0.64,1) both .1s' }}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <span style={{ fontFamily:"'Sora',sans-serif", fontSize:12, fontWeight:800, color:'#fff' }}>{(hub.discover||[]).length}</span>
-                <span style={{ fontSize:10.5, color:'rgba(255,255,255,0.78)' }}>groups nearby</span>
-              </div>
-              <div style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.2)', border:'1px solid rgba(255,255,255,0.35)', borderRadius:99, padding:'5px 12px', backdropFilter:'blur(8px)', animation:'clubTagPop .4s cubic-bezier(0.34,1.4,0.64,1) both .2s' }}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                <span style={{ fontFamily:"'Sora',sans-serif", fontSize:12, fontWeight:800, color:'#fff' }}>{hub.chats?.length||0}</span>
-                <span style={{ fontSize:10.5, color:'rgba(255,255,255,0.78)' }}>{(hub.chats?.length||0)===1?'chat':'chats'}</span>
-              </div>
-              {hub.incomingRequests.length>0 && (
-                <div style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(255,220,80,0.3)', border:'1px solid rgba(255,220,80,0.6)', borderRadius:99, padding:'5px 12px', backdropFilter:'blur(8px)', animation:'clubTagPop .4s cubic-bezier(0.34,1.4,0.64,1) both .3s, clubPulse 2.2s ease-in-out infinite 1s' }}>
+            {/* requests pill only */}
+            {hub.incomingRequests.length > 0 && (
+              <div style={{ display:'flex', justifyContent:'center' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(255,220,80,0.3)', border:'1px solid rgba(255,220,80,0.6)', borderRadius:99, padding:'5px 14px', backdropFilter:'blur(8px)', animation:'clubTagPop .4s cubic-bezier(0.34,1.4,0.64,1) both .1s, clubPulse 2.2s ease-in-out infinite 1s' }}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-                  <span style={{ fontFamily:"'Sora',sans-serif", fontSize:12, fontWeight:800, color:'#fff' }}>{hub.incomingRequests.length} new</span>
+                  <span style={{ fontFamily:"'Sora',sans-serif", fontSize:12, fontWeight:800, color:'#fff' }}>{hub.incomingRequests.length} new {hub.incomingRequests.length === 1 ? 'request' : 'requests'}</span>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1365,127 +1377,131 @@ function ClubPage({ trip, onTripRefresh }) {
       </div>
 
       {clubView === 'profile' && (
-        <div style={{ ...premiumPanel, animation: 'clubPop .25s ease-out both' }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Build Your Discovery Card</div>
+        <div style={{ animation: 'clubPop .25s ease-out both', paddingBottom: 32 }}>
+          {/* Header */}
+          <div style={{ padding: '0 0 18px' }}>
+            <div style={{ fontFamily:"'Sora',sans-serif", fontWeight:800, fontSize:20, color:'#111827', marginBottom:4 }}>Your Discovery Card</div>
+            <div style={{ fontSize:13, color:'#6B7280' }}>This is how other groups see you. Make it real.</div>
+          </div>
 
-          <div style={{ marginBottom: 12 }}>
-            <label style={S.label}>Group Photos — add up to 3</label>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              {(profileForm.photoUrls || []).map((url, i) => (
-                <div key={i} style={{ position: 'relative' }}>
-                  <img src={url} alt={`photo ${i + 1}`} style={{ width: 82, height: 82, borderRadius: 12, objectFit: 'cover', display: 'block' }} />
-                  <button
-                    type="button"
-                    onClick={() => setProfileForm(f => ({ ...f, photoUrls: f.photoUrls.filter((_, j) => j !== i) }))}
-                    style={{ position: 'absolute', top: -7, right: -7, width: 20, height: 20, borderRadius: '50%', border: '2px solid #fff', background: '#ef4444', color: '#fff', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
-                  >✕</button>
+          {/* Photo stack — Hinge style */}
+          <div style={{ marginBottom:20 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>Group Photos · {(profileForm.photoUrls||[]).length}/3</div>
+            <div style={{ display:'flex', gap:10, overflowX:'auto', paddingBottom:4 }}>
+              {(profileForm.photoUrls||[]).map((url, i) => (
+                <div key={i} style={{ position:'relative', flexShrink:0 }}>
+                  <img src={url} alt={`photo ${i+1}`} style={{ width:120, height:160, borderRadius:18, objectFit:'cover', display:'block', boxShadow:'0 8px 24px rgba(0,0,0,0.12)' }} />
+                  <button type="button" onClick={() => setProfileForm(f => ({ ...f, photoUrls: f.photoUrls.filter((_,j) => j !== i) }))}
+                    style={{ position:'absolute', top:-8, right:-8, width:24, height:24, borderRadius:'50%', border:'2px solid #fff', background:'#EF4444', color:'#fff', fontSize:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, boxShadow:'0 2px 8px rgba(0,0,0,0.2)' }}>✕</button>
+                  {i === 0 && <div style={{ position:'absolute', bottom:8, left:8, fontSize:9, fontWeight:800, color:'#fff', background:'rgba(0,0,0,0.5)', padding:'2px 7px', borderRadius:99, backdropFilter:'blur(6px)' }}>COVER</div>}
                 </div>
               ))}
-              {(profileForm.photoUrls || []).length < 3 && (
-                <button
-                  type="button"
-                  style={{ width: 82, height: 82, borderRadius: 12, background: '#F1EFE8', border: '1.5px dashed #D3D1C7', display: 'grid', placeItems: 'center', fontSize: 24, cursor: 'pointer', color: '#9ca3af' }}
-                  onClick={() => fileRef.current?.click()}
-                >+</button>
+              {(profileForm.photoUrls||[]).length < 3 && (
+                <button type="button" onClick={() => fileRef.current?.click()}
+                  style={{ width:120, height:160, borderRadius:18, background:'#F9FAFB', border:'2px dashed #D1D5DB', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, cursor:'pointer', flexShrink:0, color:'#9CA3AF' }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  <span style={{ fontSize:11, fontWeight:600 }}>Add photo</span>
+                </button>
               )}
             </div>
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handlePhotoUpload} />
-            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Photos appear as swipeable backgrounds in your discovery card.</div>
+            <input ref={fileRef} type="file" accept="image/*" style={{ display:'none' }} onChange={handlePhotoUpload} />
+            <div style={{ fontSize:11, color:'#9CA3AF', marginTop:6 }}>First photo is your cover. Swipeable in your card.</div>
           </div>
 
-          <label style={S.label}>Title</label>
-          <input style={S.input} value={profileForm.title} onChange={e => setProfileForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. Mumbai sunset squad" />
-
-          <label style={S.label}>About your group</label>
-          <textarea style={{ ...S.input, resize: 'vertical', minHeight: 90 }} value={profileForm.about} onChange={e => setProfileForm(f => ({ ...f, about: e.target.value }))} placeholder="Tell people your group's personality in one punchy paragraph." />
-
-          <label style={S.label}>What you want to do together</label>
-          <input style={S.input} value={profileForm.lookingFor} onChange={e => setProfileForm(f => ({ ...f, lookingFor: e.target.value }))} placeholder="Street food crawl, beach walk, club night..." />
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-            <div>
-              <label style={S.label}>Vibe</label>
-              <select style={S.input} value={profileForm.vibe} onChange={e => setProfileForm(f => ({ ...f, vibe: e.target.value }))}>
-                {VIBE_OPTIONS.filter(v => v.value !== 'any').map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
-              </select>
+          {/* Hinge-style field blocks */}
+          <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {/* Title */}
+            <div style={{ background:'#fff', border:'1.5px solid #E5E7EB', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+              <div style={{ padding:'12px 16px 0', fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px' }}>Group Name</div>
+              <input style={{ width:'100%', border:'none', outline:'none', padding:'6px 16px 14px', fontSize:15, fontWeight:600, color:'#111827', background:'transparent', fontFamily:"'DM Sans',sans-serif" }}
+                value={profileForm.title} onChange={e => setProfileForm(f => ({ ...f, title: e.target.value }))} placeholder="e.g. The Goa Gobsmackers" />
             </div>
-            <div>
-              <label style={S.label}>Group mix</label>
-              <select style={S.input} value={profileForm.genderMix} onChange={e => setProfileForm(f => ({ ...f, genderMix: e.target.value }))}>
-                {GENDER_MIX_OPTIONS.filter(g => g.value !== 'any').map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
-              </select>
+            {/* About */}
+            <div style={{ background:'#fff', border:'1.5px solid #E5E7EB', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+              <div style={{ padding:'12px 16px 0', fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px' }}>About your group</div>
+              <textarea style={{ width:'100%', border:'none', outline:'none', padding:'6px 16px 14px', fontSize:14, color:'#374151', background:'transparent', resize:'vertical', minHeight:90, fontFamily:"'DM Sans',sans-serif", lineHeight:1.6 }}
+                value={profileForm.about} onChange={e => setProfileForm(f => ({ ...f, about: e.target.value }))} placeholder="Tell people who you are. Energy, vibe, what makes your group fun…" />
+            </div>
+            {/* Looking for */}
+            <div style={{ background:'#fff', border:'1.5px solid #E5E7EB', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+              <div style={{ padding:'12px 16px 0', fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px' }}>What you want to do together</div>
+              <input style={{ width:'100%', border:'none', outline:'none', padding:'6px 16px 14px', fontSize:14, color:'#374151', background:'transparent', fontFamily:"'DM Sans',sans-serif" }}
+                value={profileForm.lookingFor} onChange={e => setProfileForm(f => ({ ...f, lookingFor: e.target.value }))} placeholder="Rooftop bar, street food crawl, night market…" />
+            </div>
+            {/* Vibe + Mix */}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+              <div style={{ background:'#fff', border:'1.5px solid #E5E7EB', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+                <div style={{ padding:'12px 14px 0', fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px' }}>Vibe</div>
+                <select style={{ width:'100%', border:'none', outline:'none', padding:'6px 14px 12px', fontSize:14, color:'#374151', background:'transparent', fontFamily:"'DM Sans',sans-serif", cursor:'pointer' }}
+                  value={profileForm.vibe} onChange={e => setProfileForm(f => ({ ...f, vibe: e.target.value }))}>
+                  {VIBE_OPTIONS.filter(v => v.value !== 'any').map(v => <option key={v.value} value={v.value}>{v.label}</option>)}
+                </select>
+              </div>
+              <div style={{ background:'#fff', border:'1.5px solid #E5E7EB', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+                <div style={{ padding:'12px 14px 0', fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px' }}>Group mix</div>
+                <select style={{ width:'100%', border:'none', outline:'none', padding:'6px 14px 12px', fontSize:14, color:'#374151', background:'transparent', fontFamily:"'DM Sans',sans-serif", cursor:'pointer' }}
+                  value={profileForm.genderMix} onChange={e => setProfileForm(f => ({ ...f, genderMix: e.target.value }))}>
+                  {GENDER_MIX_OPTIONS.filter(g => g.value !== 'any').map(g => <option key={g.value} value={g.value}>{g.label}</option>)}
+                </select>
+              </div>
+            </div>
+            {/* Tags */}
+            <div style={{ background:'#fff', border:'1.5px solid #E5E7EB', borderRadius:18, overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+              <div style={{ padding:'12px 16px 0', fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px' }}>Interests (comma separated)</div>
+              <input style={{ width:'100%', border:'none', outline:'none', padding:'6px 16px 14px', fontSize:14, color:'#374151', background:'transparent', fontFamily:"'DM Sans',sans-serif" }}
+                value={profileForm.coverTagsInput} onChange={e => setProfileForm(f => ({ ...f, coverTagsInput: e.target.value }))} placeholder="late-night, photography, street-food, cycling" />
             </div>
           </div>
 
-          <label style={S.label}>Tags (comma separated)</label>
-          <input
-            style={S.input}
-            value={profileForm.coverTagsInput}
-            onChange={e => setProfileForm(f => ({ ...f, coverTagsInput: e.target.value }))}
-            placeholder="late-night, photography, budget-friendly, bike-rides"
-          />
-
-          {/* ── Location picker ── */}
-          <div style={{ marginTop: 14, background: '#F4F9FF', border: '1px solid rgba(55,138,221,0.22)', borderRadius: 14, padding: 12 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: '#378ADD', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 8 }}>📍 Your Location</div>
+          {/* Location picker */}
+          <div style={{ marginTop:14, background:'#F0F9FF', border:'1px solid rgba(55,138,221,0.2)', borderRadius:18, padding:'14px 16px' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#378ADD', textTransform:'uppercase', letterSpacing:0.4, marginBottom:8 }}>📍 Your Location</div>
             {locLabel ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <div style={{ flex: 1, fontSize: 13, fontWeight: 600, color: '#0F172A' }}>📍 {locLabel}</div>
-                <button type="button" onClick={() => { setLocLabel(''); setLocQuery(''); setMyLat(null); setMyLng(null); try { localStorage.removeItem(clubLocKey('loc_lat')); localStorage.removeItem(clubLocKey('loc_lng')); localStorage.removeItem(clubLocKey('loc_label')); } catch {} }} style={{ ...S.btn, padding: '4px 10px', fontSize: 11, color: '#6b6b68' }}>Change</button>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <div style={{ flex:1, fontSize:14, fontWeight:600, color:'#0F172A' }}>📍 {locLabel}</div>
+                <button type="button" onClick={() => { setLocLabel(''); setLocQuery(''); setMyLat(null); setMyLng(null); try { localStorage.removeItem(clubLocKey('loc_lat')); localStorage.removeItem(clubLocKey('loc_lng')); localStorage.removeItem(clubLocKey('loc_label')); } catch {} }}
+                  style={{ fontSize:12, color:'#6B7280', background:'#E5E7EB', border:'none', borderRadius:99, padding:'5px 12px', cursor:'pointer', fontWeight:600 }}>Change</button>
               </div>
             ) : (
               <>
-                <div style={{ position: 'relative', marginBottom: 8 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', borderRadius: 12, border: '1px solid rgba(0,0,0,0.12)', padding: '0 10px' }}>
-                    <span style={{ fontSize: 14 }}>🔍</span>
-                    <input
-                      style={{ ...S.input, border: 'none', background: 'transparent', flex: 1, padding: '10px 0', fontSize: 14, outline: 'none', boxShadow: 'none' }}
-                      placeholder="Type your city or locality…"
-                      value={locQuery}
-                      onChange={e => {
-                        setLocQuery(e.target.value);
-                        clearTimeout(locDebounce.current);
-                        locDebounce.current = setTimeout(() => searchLocality(e.target.value), 340);
-                      }}
-                    />
-                    {locSearching && <div style={{ width: 16, height: 16, border: '2px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', flexShrink: 0 }} />}
+                <div style={{ position:'relative', marginBottom:8 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, background:'#fff', borderRadius:12, border:'1px solid rgba(0,0,0,0.12)', padding:'0 10px' }}>
+                    <span style={{ fontSize:14 }}>🔍</span>
+                    <input style={{ border:'none', background:'transparent', flex:1, padding:'10px 0', fontSize:14, outline:'none' }}
+                      placeholder="Type your city…" value={locQuery}
+                      onChange={e => { setLocQuery(e.target.value); clearTimeout(locDebounce.current); locDebounce.current = setTimeout(() => searchLocality(e.target.value), 340); }} />
+                    {locSearching && <div style={{ width:16, height:16, border:'2px solid #E1F5EE', borderTopColor:'#1D9E75', borderRadius:'50%', animation:'clubSpin .75s linear infinite', flexShrink:0 }} />}
                   </div>
                   {locSuggestions.length > 0 && (
-                    <div style={{ position: 'absolute', left: 0, right: 0, top: '100%', background: '#fff', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.12)', zIndex: 50, overflow: 'hidden', marginTop: 4 }}>
-                      {locSuggestions.map((item, i) => {
-                        const a = item.address || {};
-                        const main = a.city || a.town || a.village || a.state_district || a.county || a.state || item.display_name.split(',')[0];
-                        const sub = [a.state, a.country].filter(Boolean).join(', ');
-                        return (
-                          <div key={item.osm_id + item.osm_type + i}
-                            onClick={() => pickLocSuggestion(item)}
-                            style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: i < locSuggestions.length - 1 ? '0.5px solid #f0f0f0' : 'none', cursor: 'pointer' }}
-                            onMouseEnter={e => e.currentTarget.style.background = '#f7f6f2'}
-                            onMouseLeave={e => e.currentTarget.style.background = '#fff'}
-                          >
-                            <span style={{ fontSize: 18, flexShrink: 0 }}>📍</span>
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ fontSize: 13, fontWeight: 600, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{main}</div>
-                              {sub && <div style={{ fontSize: 11, color: '#888' }}>{sub}</div>}
-                            </div>
+                    <div style={{ position:'absolute', left:0, right:0, top:'100%', background:'#fff', border:'1px solid rgba(0,0,0,0.1)', borderRadius:12, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', zIndex:50, overflow:'hidden', marginTop:4 }}>
+                      {locSuggestions.map((it, i) => {
+                        const a = it.address||{}; const main = a.city||a.town||a.village||a.state_district||a.county||a.state||it.display_name.split(',')[0]; const sub=[a.state,a.country].filter(Boolean).join(', ');
+                        return (<div key={it.osm_id+it.osm_type+i} onClick={() => pickLocSuggestion(it)} style={{ display:'flex', alignItems:'center', gap:10, padding:'10px 14px', borderBottom:i<locSuggestions.length-1?'0.5px solid #f0f0f0':'none', cursor:'pointer' }} onMouseEnter={e=>e.currentTarget.style.background='#f7f6f2'} onMouseLeave={e=>e.currentTarget.style.background='#fff'}>
+                          <span style={{ fontSize:18, flexShrink:0 }}>📍</span>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ fontSize:13, fontWeight:600, color:'#111', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{main}</div>
+                            {sub && <div style={{ fontSize:11, color:'#888' }}>{sub}</div>}
                           </div>
-                        );
+                        </div>);
                       })}
                     </div>
                   )}
                 </div>
                 <button type="button" onClick={detectGPS} disabled={locDetecting}
-                  style={{ ...S.btn, width: '100%', justifyContent: 'center', fontSize: 12, color: '#378ADD', borderColor: 'rgba(55,138,221,0.3)', background: '#EEF6FF', opacity: locDetecting ? 0.6 : 1 }}>
+                  style={{ width:'100%', fontSize:12, color:'#378ADD', background:'#EEF6FF', border:'1px solid rgba(55,138,221,0.25)', borderRadius:12, padding:'9px', cursor:locDetecting?'not-allowed':'pointer', fontWeight:600, opacity:locDetecting?0.6:1 }}>
                   {locDetecting ? 'Detecting…' : '🎯 Detect my location'}
                 </button>
-                {locError && <div style={{ marginTop: 6, fontSize: 11, color: '#993C1D' }}>{locError}</div>}
+                {locError && <div style={{ marginTop:6, fontSize:11, color:'#B91C1C' }}>{locError}</div>}
               </>
             )}
           </div>
 
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-            <button style={{ ...S.btn, ...S.btnP }} disabled={clubBusy} onClick={handleSaveProfile}>Save Card</button>
-            <button style={S.btn} disabled={clubBusy} onClick={() => setClubView('discover')}>Back</button>
+          {/* Save button */}
+          <div style={{ display:'flex', gap:10, marginTop:20 }}>
+            <button style={{ flex:1, padding:'14px', fontSize:15, fontWeight:800, borderRadius:18, border:'none', cursor:clubBusy?'not-allowed':'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#1D9E75,#0F6E56)', color:'#fff', boxShadow:'0 4px 18px rgba(29,158,117,0.32)', opacity:clubBusy?0.7:1 }} disabled={clubBusy} onClick={handleSaveProfile}>
+              {clubBusy ? 'Saving…' : 'Save My Card'}
+            </button>
+            <button style={{ padding:'14px 20px', fontSize:14, fontWeight:600, borderRadius:18, border:'1.5px solid #E5E7EB', cursor:'pointer', background:'#fff', color:'#374151' }} disabled={clubBusy} onClick={() => setClubView('discover')}>Back</button>
           </div>
         </div>
       )}
@@ -1519,14 +1535,17 @@ function ClubPage({ trip, onTripRefresh }) {
       {clubView === 'chats' && (
         <div style={{ animation: 'clubPop .25s ease-out both' }}>
           {(!hub.chats || hub.chats.length === 0) && (
-            <div style={{ textAlign: 'center', padding: '3rem 0' }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: '#374151', marginBottom: 4 }}>No chats yet.</div>
-              <div style={{ fontSize: 12, color: '#9ca3af' }}>Accept a request to start chatting.</div>
+            <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+              <div style={{ width:72, height:72, borderRadius:22, background:'linear-gradient(135deg,#F3F4F6,#E5E7EB)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: '#111827', marginBottom: 6 }}>No conversations yet</div>
+              <div style={{ fontSize: 13, color: '#9CA3AF', lineHeight:1.6 }}>Accept a connection request to start chatting with another group.</div>
             </div>
           )}
 
           {hub.chats?.length > 0 && !activeChat && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {hub.chats.map((chat) => {
                 const preview = chat.latestMessage?.text || 'No messages yet.';
                 const unread = unreadCountByChat[chat.id] || 0;
@@ -1534,40 +1553,27 @@ function ClubPage({ trip, onTripRefresh }) {
                 const myName = trip.groupName || '';
                 const myInitial = (myName.trim()[0] || 'A').toUpperCase();
                 const otherInitial = (otherName.trim()[0] || 'J').toUpperCase();
-                const displayTitle = [myName.split(' ')[0], otherName.split(' ')[0]].filter(Boolean).join(' & ');
+                const displayTitle = [myName.split(' ')[0], otherName.split(' ')[0]].filter(Boolean).join(' × ');
                 const timeLabel = chat.latestMessage?.createdAt ? formatChatMetaTime(chat.latestMessage.createdAt) : '';
                 return (
-                  <button
-                    key={chat.id}
-                    onClick={() => setSelectedChatId(chat.id)}
-                    style={{
-                      width: '100%', textAlign: 'left', border: 'none',
-                      background: '#fff',
-                      borderRadius: 16,
-                      padding: '14px 14px 14px 16px',
-                      cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', gap: 14,
-                      boxShadow: '0 2px 12px rgba(15,23,42,0.07)',
-                      borderLeft: `3px solid ${unread ? '#1D9E75' : '#E5E7EB'}`,
-                    }}>
-                    {/* Two overlapping circular avatar chips */}
-                    <div style={{ position: 'relative', width: 48, height: 34, flexShrink: 0 }}>
-                      <div style={{ position: 'absolute', left: 0, top: 2, width: 30, height: 30, borderRadius: '50%', background: '#1D9E75', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 800, color: '#fff', border: '2.5px solid #fff', zIndex: 2, boxShadow: '0 2px 6px rgba(29,158,117,0.28)' }}>
-                        {myInitial}
-                      </div>
-                      <div style={{ position: 'absolute', left: 18, top: 2, width: 30, height: 30, borderRadius: '50%', background: '#FF6B35', display: 'grid', placeItems: 'center', fontSize: 12, fontWeight: 800, color: '#fff', border: '2.5px solid #fff', zIndex: 1, boxShadow: '0 2px 6px rgba(255,107,53,0.28)' }}>
-                        {otherInitial}
-                      </div>
+                  <button key={chat.id} onClick={() => setSelectedChatId(chat.id)}
+                    style={{ width:'100%', textAlign:'left', border:'none', background: unread ? '#FAFFF9' : '#fff',
+                      borderRadius:16, padding:'14px 16px', cursor:'pointer', display:'flex', alignItems:'center', gap:14,
+                      boxShadow:'0 1px 4px rgba(0,0,0,0.05)', marginBottom:6 }}>
+                    {/* Avatar stack */}
+                    <div style={{ position:'relative', width:52, height:38, flexShrink:0 }}>
+                      <div style={{ position:'absolute', left:0, top:3, width:34, height:34, borderRadius:'50%', background:'linear-gradient(135deg,#1D9E75,#0F6E56)', display:'grid', placeItems:'center', fontSize:13, fontWeight:800, color:'#fff', border:'2.5px solid #fff', zIndex:2, boxShadow:'0 2px 8px rgba(29,158,117,0.28)' }}>{myInitial}</div>
+                      <div style={{ position:'absolute', left:20, top:3, width:34, height:34, borderRadius:'50%', background:'linear-gradient(135deg,#FF6B35,#E04A1F)', display:'grid', placeItems:'center', fontSize:13, fontWeight:800, color:'#fff', border:'2.5px solid #fff', zIndex:1, boxShadow:'0 2px 8px rgba(255,107,53,0.28)' }}>{otherInitial}</div>
                     </div>
                     {/* Text */}
-                    <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 8, marginBottom: 3 }}>
-                        <div style={{ fontSize: 14, fontWeight: unread ? 800 : 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{displayTitle}</div>
-                        <div style={{ fontSize: 10, color: '#D1D5DB', flexShrink: 0, fontWeight: 400 }}>{timeLabel}</div>
+                    <div style={{ minWidth:0, flex:1 }}>
+                      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', gap:8, marginBottom:3 }}>
+                        <div style={{ fontSize:14, fontWeight:unread?800:600, color:'#111827', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{displayTitle}</div>
+                        <div style={{ fontSize:11, color:'#D1D5DB', flexShrink:0, fontWeight:400 }}>{timeLabel}</div>
                       </div>
-                      <div style={{ fontSize: 12, color: unread ? '#374151' : '#9CA3AF', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontStyle: preview === 'No messages yet.' ? 'italic' : 'normal', fontWeight: unread ? 500 : 400 }}>{preview}</div>
+                      <div style={{ fontSize:13, color:unread?'#374151':'#9CA3AF', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', fontStyle:preview==='No messages yet.'?'italic':'normal', fontWeight:unread?500:400 }}>{preview}</div>
                     </div>
-                    {unread ? <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#1D9E75', flexShrink: 0, display: 'block' }} /> : null}
+                    {unread ? <span style={{ width:10, height:10, borderRadius:'50%', background:'#1D9E75', flexShrink:0, display:'block', boxShadow:'0 0 0 3px rgba(29,158,117,0.2)' }} /> : null}
                   </button>
                 );
               })}
@@ -1577,92 +1583,80 @@ function ClubPage({ trip, onTripRefresh }) {
       )}
 
       {clubView === 'chats' && activeChat && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 545, background: 'linear-gradient(160deg,#FBF8F0 0%,#EEF9F4 42%,#EEF2FF 100%)', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ position: 'sticky', top: 0, zIndex: 2, padding: '10px 14px', paddingTop: 'calc(10px + env(safe-area-inset-top, 0px))', borderBottom: '1px solid rgba(10,18,35,0.07)', background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            {/* Back + avatar stack + title */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, flex: 1 }}>
-              <button style={{ ...S.btn, marginTop: 0, padding: '7px 10px', borderRadius: 10, flexShrink: 0 }} onClick={() => setSelectedChatId(null)}>←</button>
-              {/* Stacked initials avatars */}
-              <div style={{ position: 'relative', width: 42, height: 30, flexShrink: 0 }}>
-                <div style={{ position: 'absolute', left: 0, top: 0, width: 28, height: 28, borderRadius: '50%', background: '#1D9E75', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: '#fff', border: '2.5px solid #fff', zIndex: 2, boxShadow: '0 2px 6px rgba(29,158,117,0.28)' }}>
-                  {(trip.groupName?.trim()[0] || 'M').toUpperCase()}
-                </div>
-                <div style={{ position: 'absolute', left: 14, top: 0, width: 28, height: 28, borderRadius: '50%', background: '#FF6B35', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: '#fff', border: '2.5px solid #fff', zIndex: 1, boxShadow: '0 2px 6px rgba(255,107,53,0.28)' }}>
-                  {(activeChat.otherTrip?.groupName?.trim()[0] || 'J').toUpperCase()}
-                </div>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 545, background: '#F8F9FA', display: 'flex', flexDirection: 'column' }}>
+          {/* Header */}
+          <div style={{ position:'sticky', top:0, zIndex:2, padding:'10px 14px', paddingTop:'calc(10px + env(safe-area-inset-top, 0px))', background:'#fff', borderBottom:'1px solid #F3F4F6', display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, boxShadow:'0 1px 0 rgba(0,0,0,0.06)' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, minWidth:0, flex:1 }}>
+              <button style={{ width:36, height:36, borderRadius:11, border:'1.5px solid #E5E7EB', background:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} onClick={() => setSelectedChatId(null)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <div style={{ position:'relative', width:42, height:32, flexShrink:0 }}>
+                <div style={{ position:'absolute', left:0, top:0, width:30, height:30, borderRadius:'50%', background:'linear-gradient(135deg,#1D9E75,#0F6E56)', display:'grid', placeItems:'center', fontSize:11, fontWeight:800, color:'#fff', border:'2.5px solid #fff', zIndex:2 }}>{(trip.groupName?.trim()[0]||'M').toUpperCase()}</div>
+                <div style={{ position:'absolute', left:14, top:0, width:30, height:30, borderRadius:'50%', background:'linear-gradient(135deg,#FF6B35,#E04A1F)', display:'grid', placeItems:'center', fontSize:11, fontWeight:800, color:'#fff', border:'2.5px solid #fff', zIndex:1 }}>{(activeChat.otherTrip?.groupName?.trim()[0]||'J').toUpperCase()}</div>
               </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#0F172A', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', lineHeight: 1.2 }}>
-                  {trip.groupName?.split(' ')[0]} &amp; {activeChat.otherTrip?.groupName?.split(' ')[0]}
+              <div style={{ minWidth:0 }}>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#111827', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', lineHeight:1.2 }}>
+                  {trip.groupName?.split(' ')[0]} × {activeChat.otherTrip?.groupName?.split(' ')[0]}
                 </div>
-                <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 2, fontWeight: 400 }}>Tap to view group info</div>
+                <div style={{ fontSize:11, color:'#9CA3AF', marginTop:1 }}>Club connection</div>
               </div>
             </div>
-            {/* Actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-              <div style={{ position: 'relative' }}>
-                <button
-                  style={{ ...S.btn, marginTop: 0, padding: '7px 11px', borderRadius: 10, fontSize: 17, fontWeight: 700, letterSpacing: 1, lineHeight: 1 }}
-                  onClick={() => setChatMenuOpen(o => !o)}
-                >⋯</button>
+            <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
+              <div style={{ position:'relative' }}>
+                <button style={{ width:36, height:36, borderRadius:11, border:'1.5px solid #E5E7EB', background:'#fff', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, color:'#6B7280' }} onClick={() => setChatMenuOpen(o=>!o)}>⋯</button>
                 {chatMenuOpen && (
-                  <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', borderRadius: 14, boxShadow: '0 12px 32px rgba(0,0,0,0.16)', border: '1px solid rgba(0,0,0,0.07)', zIndex: 10, overflow: 'hidden', minWidth: 162 }}>
-                    <button
-                      onClick={() => { setChatMenuOpen(false); handleDeleteChat(); }}
-                      disabled={clubBusy}
-                      style={{ display: 'block', width: '100%', textAlign: 'left', padding: '13px 16px', border: 'none', background: 'none', cursor: 'pointer', fontSize: 13, color: '#D9433A', fontWeight: 600 }}
-                    >🗑 Delete Chat</button>
+                  <div style={{ position:'absolute', top:'110%', right:0, background:'#fff', borderRadius:14, boxShadow:'0 12px 32px rgba(0,0,0,0.16)', border:'1px solid rgba(0,0,0,0.07)', zIndex:10, overflow:'hidden', minWidth:162 }}>
+                    <button onClick={() => { setChatMenuOpen(false); handleDeleteChat(); }} disabled={clubBusy} style={{ display:'block', width:'100%', textAlign:'left', padding:'13px 16px', border:'none', background:'none', cursor:'pointer', fontSize:13, color:'#EF4444', fontWeight:600 }}>🗑 Delete Chat</button>
                   </div>
                 )}
               </div>
-              <button style={{ ...S.btn, marginTop: 0, padding: '7px 11px', borderRadius: 10, fontSize: 15, lineHeight: 1 }} onClick={() => { setSelectedChatId(null); setChatMenuOpen(false); }}>✕</button>
             </div>
           </div>
 
-          <div ref={chatThreadRef} className="club-chat-thread" style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 20px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+          {/* Messages thread */}
+          <div ref={chatThreadRef} style={{ flex:1, overflowY:'auto', padding:'16px 14px 20px', display:'flex', flexDirection:'column', gap:8, background:'#F8F9FA' }}>
+            {/* Subtle dot bg */}
+            <div style={{ position:'fixed', inset:0, backgroundImage:'radial-gradient(rgba(0,0,0,0.03) 1px,transparent 1px)', backgroundSize:'20px 20px', zIndex:0, pointerEvents:'none' }} />
             {activeChat.messages?.length ? activeChat.messages.map(message => {
               const mine = message.senderTripId === trip.id;
               return (
-                <div key={message.id} style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-                  <div style={{ maxWidth: '82%', background: mine ? 'linear-gradient(150deg,#0F172A,#1E293B)' : 'linear-gradient(150deg,#FFFFFF,#EEF7F3)', color: mine ? '#fff' : '#0B3B2E', borderRadius: 20, padding: '10px 12px', boxShadow: mine ? '0 14px 24px rgba(15,23,42,0.2)' : '0 8px 18px rgba(11,59,46,0.08)' }}>
-                    <div style={{ fontSize: 10, fontWeight: 800, opacity: mine ? 0.76 : 0.7, textTransform: 'uppercase', letterSpacing: '.05em' }}>
-                      {mine ? 'Your group' : message.senderUser?.name || activeChat.otherTrip?.groupName}
+                <div key={message.id} style={{ display:'flex', justifyContent:mine?'flex-end':'flex-start', position:'relative', zIndex:1 }}>
+                  <div style={{ maxWidth:'78%' }}>
+                    {!mine && (
+                      <div style={{ fontSize:10, fontWeight:700, color:'#9CA3AF', marginBottom:3, marginLeft:4, textTransform:'uppercase', letterSpacing:'0.5px' }}>
+                        {message.senderUser?.name || activeChat.otherTrip?.groupName}
+                      </div>
+                    )}
+                    <div style={{ background:mine?'linear-gradient(135deg,#1D9E75,#0F6E56)':'#fff', color:mine?'#fff':'#111827', borderRadius:mine?'20px 20px 4px 20px':'20px 20px 20px 4px', padding:'10px 14px', boxShadow:mine?'0 4px 14px rgba(29,158,117,0.28)':'0 2px 8px rgba(0,0,0,0.08)', border:mine?'none':'1px solid #F3F4F6' }}>
+                      <div style={{ fontSize:14, lineHeight:1.55, whiteSpace:'pre-wrap' }}>{message.text}</div>
+                      <div style={{ fontSize:10, opacity:0.65, marginTop:5, textAlign:mine?'right':'left' }}>{formatChatTime(message.createdAt)}</div>
                     </div>
-                    <div style={{ fontSize: 13, lineHeight: 1.55, marginTop: 4, whiteSpace: 'pre-wrap' }}>{message.text}</div>
-                    <div style={{ fontSize: 10, opacity: mine ? 0.72 : 0.58, marginTop: 7 }}>{formatChatTime(message.createdAt)}</div>
                   </div>
                 </div>
               );
             }) : (
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1.5rem', textAlign: 'center' }}>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: '#1E293B', marginBottom: 7 }}>No messages yet.</div>
-                <div style={{ fontSize: 13, color: '#94A3B8', fontStyle: 'italic', lineHeight: 1.65 }}>Say hi. Worst case, awkward silence.</div>
+              <div style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'3rem 1.5rem', textAlign:'center', position:'relative', zIndex:1 }}>
+                <div style={{ width:64, height:64, borderRadius:20, background:'linear-gradient(135deg,#F0FDF4,#DCFCE7)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#22C55E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                </div>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:17, fontWeight:800, color:'#111827', marginBottom:6 }}>You're connected!</div>
+                <div style={{ fontSize:13, color:'#9CA3AF', fontStyle:'italic', lineHeight:1.65 }}>Say hi. First message is always the hardest.</div>
               </div>
             )}
           </div>
 
-          <div style={{ padding: 12, paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(10,18,35,0.06)', background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(16px)', boxShadow: '0 -8px 24px rgba(15,23,42,0.06)' }}>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+          {/* Input bar */}
+          <div style={{ padding:'10px 12px', paddingBottom:'calc(10px + env(safe-area-inset-bottom, 0px))', borderTop:'1px solid #F3F4F6', background:'#fff', boxShadow:'0 -4px 16px rgba(0,0,0,0.04)' }}>
+            <div style={{ display:'flex', gap:8, alignItems:'flex-end' }}>
               <textarea
-                style={{ ...S.input, resize: 'none', height: 46, minHeight: 46, maxHeight: 46, marginBottom: 0, flex: 1, borderRadius: 15, border: '1px solid rgba(15,23,42,0.1)', boxShadow: '0 8px 18px rgba(15,23,42,0.06)', overflowY: 'auto' }}
-                value={chatDraft}
-                onChange={e => setChatDraft(e.target.value)}
-                onKeyDown={handleChatKeyDown}
-                placeholder={`Message ${activeChat.otherTrip?.groupName || 'this group'}...`}
+                style={{ flex:1, resize:'none', height:44, minHeight:44, maxHeight:120, border:'1.5px solid #E5E7EB', borderRadius:16, padding:'10px 14px', fontSize:14, fontFamily:"'DM Sans',sans-serif", outline:'none', lineHeight:1.4, color:'#111827', background:'#F9FAFB', overflowY:'auto' }}
+                value={chatDraft} onChange={e => setChatDraft(e.target.value)} onKeyDown={handleChatKeyDown}
+                placeholder={`Message ${activeChat.otherTrip?.groupName || 'this group'}…`}
               />
-              <button
-                type="button"
-                onClick={openToolsChooser}
-                disabled={!activeChat}
-                aria-label="Open tools"
-                title="Open tools"
-                style={{ width: 46, height: 46, borderRadius: 14, border: '1px solid rgba(10,18,35,0.12)', background: 'linear-gradient(180deg,#FFFFFF,#EFF4FA)', display: 'grid', placeItems: 'center', cursor: activeChat ? 'pointer' : 'not-allowed', boxShadow: '0 8px 18px rgba(15,23,42,0.08)' }}
-              >
-                🧰
-              </button>
-              <button style={{ ...S.btn, ...S.btnOrange, marginTop: 0, height: 46, borderRadius: 14, padding: '0 16px' }} disabled={clubBusy || !chatDraft.trim()} onClick={handleSendChat}>Send</button>
+              <button type="button" onClick={openToolsChooser} disabled={!activeChat}
+                style={{ width:44, height:44, borderRadius:14, border:'1.5px solid #E5E7EB', background:'#F9FAFB', display:'grid', placeItems:'center', cursor:activeChat?'pointer':'not-allowed', fontSize:18 }}>🧰</button>
+              <button style={{ height:44, borderRadius:14, border:'none', background:'linear-gradient(135deg,#1D9E75,#0F6E56)', color:'#fff', fontSize:13, fontWeight:700, padding:'0 18px', cursor:'pointer', boxShadow:'0 4px 14px rgba(29,158,117,0.3)', opacity:(!chatDraft.trim()||clubBusy)?0.5:1 }} disabled={clubBusy||!chatDraft.trim()} onClick={handleSendChat}>Send</button>
             </div>
-            <div style={{ fontSize: 10, color: '#8A94A6', marginTop: 6 }}>Press Enter to send, Shift+Enter for next line.</div>
           </div>
         </div>
       )}
@@ -2276,132 +2270,115 @@ function ClubPage({ trip, onTripRefresh }) {
       )}
 
       {selectedCard && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(10,12,18,0.55)', zIndex: 520, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', animation: 'clubFadeIn .22s ease-out both' }}>
-          <div style={{ width: '100%', maxWidth: 620, maxHeight: '88vh', overflowY: 'auto', background: '#fff', borderRadius: 26, boxShadow: '0 34px 90px rgba(0,0,0,0.26)', overflow: 'hidden', animation: 'clubSheetIn .3s cubic-bezier(.2,.7,.2,1) both' }}>
-            <div style={{ background: moodGradient(selectedCard.vibe || 'mixed'), color: '#fff', position: 'relative', minHeight: 280, overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', inset: 0, background: selectedGallery[selectedMediaIndex] ? `linear-gradient(180deg, rgba(10,16,28,0.18), rgba(10,16,28,0.6)), url(${selectedGallery[selectedMediaIndex]}) center/cover` : moodGradient(selectedCard.vibe || 'mixed') }} />
-              <div style={{ position: 'absolute', right: -20, top: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.14)', animation: 'clubFloat 5.5s ease-in-out infinite' }} />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(4,7,16,0.68))' }} />
-              <div style={{ position: 'relative', padding: 18, minHeight: 280, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', maxWidth: '75%' }}>
-                    {locationEnabled && selectedCard.latitude != null && selectedCard.longitude != null && (
-                      <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>
-                        {distanceLabel(haversine(myLat, myLng, selectedCard.latitude, selectedCard.longitude))}
-                      </span>
-                    )}
-                    <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>{(selectedCard.vibe || 'mixed').toUpperCase()} vibe</span>
-                    <span style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: isRecentlyActive(selectedCard.updatedAt) ? 'rgba(103,255,186,0.25)' : 'rgba(255,255,255,0.18)', backdropFilter: 'blur(10px)' }}>{isRecentlyActive(selectedCard.updatedAt) ? 'Active Today' : 'Quiet Today'}</span>
-                  </div>
-                  <button style={{ ...S.btn, marginTop: 0, alignSelf: 'flex-start', background: 'rgba(255,255,255,0.16)', color: '#fff', border: '1px solid rgba(255,255,255,0.24)', backdropFilter: 'blur(10px)' }} onClick={() => setSelectedCard(null)}>✕</button>
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:520, display:'flex', alignItems:'flex-end', justifyContent:'center', animation:'clubFadeIn .22s ease-out both' }}>
+          <div style={{ width:'100%', maxWidth:560, maxHeight:'94vh', overflowY:'auto', background:'#fff', borderRadius:'28px 28px 0 0', boxShadow:'0 -24px 80px rgba(0,0,0,0.3)', animation:'clubSheetIn .3s cubic-bezier(.2,.7,.2,1) both' }}>
+            {/* Photo section — full width, tall */}
+            <div style={{ position:'relative', height:380, background:moodGradient(selectedCard.vibe||'mixed'), flexShrink:0 }}>
+              {selectedGallery[selectedMediaIndex] && (
+                <img src={selectedGallery[selectedMediaIndex]} alt="" style={{ position:'absolute', inset:0, width:'100%', height:'100%', objectFit:'cover', display:'block' }} />
+              )}
+              {/* Gradient scrim */}
+              <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom, rgba(0,0,0,0) 40%, rgba(0,0,0,0.78) 100%)' }} />
+              {/* Close btn */}
+              <button style={{ position:'absolute', top:14, right:14, width:36, height:36, borderRadius:12, background:'rgba(0,0,0,0.35)', backdropFilter:'blur(8px)', border:'1px solid rgba(255,255,255,0.2)', color:'#fff', fontSize:16, cursor:'pointer', display:'grid', placeItems:'center' }} onClick={() => setSelectedCard(null)}>✕</button>
+              {/* Gallery dots */}
+              {selectedGallery.length > 1 && (
+                <div style={{ position:'absolute', top:14, left:0, right:0, display:'flex', justifyContent:'center', gap:5 }}>
+                  {selectedGallery.map((_,i) => (
+                    <button key={i} onClick={() => setSelectedMediaIndex(i)}
+                      style={{ width:i===selectedMediaIndex?24:7, height:7, borderRadius:99, border:'none', background:i===selectedMediaIndex?'#fff':'rgba(255,255,255,0.45)', padding:0, cursor:'pointer', transition:'all .22s' }} />
+                  ))}
                 </div>
-
-                <div>
-                  <div style={{ position: 'relative', display: 'inline-flex', overflow: 'hidden', borderRadius: 999, marginBottom: 10 }}>
-                    <span style={{ fontSize: 10, fontWeight: 800, padding: '7px 11px', background: 'rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)', letterSpacing: '.08em', textTransform: 'uppercase' }}>
-                      travelbae club profile
-                    </span>
-                    <span style={{ position: 'absolute', inset: 0, background: 'linear-gradient(100deg, transparent 0%, rgba(255,255,255,0.36) 45%, transparent 80%)', animation: 'clubShine 3.4s ease-in-out infinite' }} />
-                  </div>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 800, lineHeight: 1.08 }}>{selectedCard.trip?.groupName}</div>
-                  <div style={{ fontSize: 14, opacity: 0.95, marginTop: 6 }}>{selectedCard.trip?.destination} • {selectedCard.trip?.members?.length || 0} travelers • {genderMixLabel(selectedCard.genderMix)}</div>
-                  <div style={{ fontSize: 14, lineHeight: 1.6, maxWidth: 420, marginTop: 10, color: 'rgba(255,255,255,0.92)' }}>{selectedCard.about || getGroupMoodLine(selectedCard)}</div>
+              )}
+              {/* Bottom identity */}
+              <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'16px 20px' }}>
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
+                  <span style={{ fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:99, background:'rgba(255,255,255,0.18)', backdropFilter:'blur(8px)', color:'#fff' }}>{(selectedCard.vibe||'mixed').toUpperCase()}</span>
+                  <span style={{ fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:99, background:isRecentlyActive(selectedCard.updatedAt)?'rgba(74,222,128,0.25)':'rgba(255,255,255,0.18)', backdropFilter:'blur(8px)', color:isRecentlyActive(selectedCard.updatedAt)?'#4ADE80':'rgba(255,255,255,0.7)' }}>{isRecentlyActive(selectedCard.updatedAt)?'● Live today':'Quiet'}</span>
+                  {locationEnabled && selectedCard.latitude!=null && selectedCard.longitude!=null && (
+                    <span style={{ fontSize:11, fontWeight:600, padding:'4px 10px', borderRadius:99, background:'rgba(255,255,255,0.18)', backdropFilter:'blur(8px)', color:'#fff' }}>📍 {distanceLabel(haversine(myLat,myLng,selectedCard.latitude,selectedCard.longitude))}</span>
+                  )}
                 </div>
-
-                {selectedGallery.length > 1 && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 14 }}>
-                    <div style={{ display: 'flex', gap: 7 }}>
-                      {selectedGallery.map((_, index) => (
-                        <button
-                          key={`gallery-dot-${index}`}
-                          onClick={() => setSelectedMediaIndex(index)}
-                          style={{ width: index === selectedMediaIndex ? 24 : 8, height: 8, borderRadius: 999, border: 'none', background: index === selectedMediaIndex ? '#fff' : 'rgba(255,255,255,0.42)', padding: 0, transition: 'all .22s ease', cursor: 'pointer' }}
-                          aria-label={`Show image ${index + 1}`}
-                        />
-                      ))}
-                    </div>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }} onClick={() => setSelectedMediaIndex((current) => (current - 1 + selectedGallery.length) % selectedGallery.length)}>Prev</button>
-                      <button style={{ ...S.btn, marginTop: 0, background: 'rgba(255,255,255,0.14)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)' }} onClick={() => setSelectedMediaIndex((current) => (current + 1) % selectedGallery.length)}>Next</button>
-                    </div>
-                  </div>
-                )}
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:26, fontWeight:800, color:'#fff', lineHeight:1.1, letterSpacing:'-0.3px', textShadow:'0 2px 16px rgba(0,0,0,0.5)' }}>{selectedCard.trip?.groupName}</div>
+                <div style={{ fontSize:13, color:'rgba(255,255,255,0.8)', marginTop:4 }}>📍 {selectedCard.trip?.destination} · {selectedCard.trip?.members?.length||0} travelers</div>
               </div>
             </div>
 
-            <div style={{ padding: 18 }}>
+            {/* Drag pill */}
+            <div style={{ display:'flex', justifyContent:'center', padding:'10px 0 0' }}>
+              <div style={{ width:36, height:4, borderRadius:99, background:'#E5E7EB' }} />
+            </div>
+
+            {/* Info body */}
+            <div style={{ padding:'12px 18px 100px' }}>
+              {/* Match ring */}
               {(() => {
-                const compatibility = buildCompatibility(hub.myProfile, trip, selectedCard);
+                const compat = buildCompatibility(hub.myProfile, trip, selectedCard);
                 return (
-                  <div style={{ background: '#F7F8FC', borderRadius: 16, padding: 14, marginBottom: 14, animation: 'clubSectionIn .35s ease-out both' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <MatchRing score={compatibility.score} />
-                        <div>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase', letterSpacing: '.04em' }}>Compatibility</div>
-                        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 24, fontWeight: 800, color: '#111827' }}>{compatibility.score}% match</div>
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-                        {compatibility.reasons.map((reason, idx) => (
-                          <span key={`modal-reason-${idx}`} style={{ fontSize: 11, fontWeight: 800, padding: '6px 10px', borderRadius: 999, background: '#E8FFF6', color: '#0B7A5A' }}>{reason}</span>
-                        ))}
+                  <div style={{ background:'linear-gradient(135deg,#F0FDF4,#DCFCE7)', border:'1px solid #BBF7D0', borderRadius:18, padding:'14px 16px', marginBottom:14, display:'flex', alignItems:'center', gap:14 }}>
+                    <MatchRing score={compat.score} />
+                    <div>
+                      <div style={{ fontSize:10, fontWeight:700, color:'#166534', textTransform:'uppercase', letterSpacing:'0.6px' }}>Compatibility</div>
+                      <div style={{ fontFamily:"'Sora',sans-serif", fontSize:22, fontWeight:800, color:'#111827' }}>{compat.score}% match</div>
+                      <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginTop:5 }}>
+                        {compat.reasons.map((r,i) => <span key={i} style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:'#D1FAE5', color:'#065F46' }}>{r}</span>)}
                       </div>
                     </div>
                   </div>
                 );
               })()}
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,minmax(0,1fr))', gap: 10, marginBottom: 12 }}>
-                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12, animation: 'clubSectionIn .4s ease-out both' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>About</div>
-                  <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{selectedCard.about || getGroupMoodLine(selectedCard)}</div>
-                </div>
-                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12, animation: 'clubSectionIn .45s ease-out both' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>Looking For</div>
-                  <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{selectedCard.lookingFor || 'Open to great plans and a smooth connection.'}</div>
-                </div>
-                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12, animation: 'clubSectionIn .5s ease-out both' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>Group Mix</div>
-                  <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{genderMixLabel(selectedCard.genderMix)}</div>
-                </div>
-                <div style={{ background: '#FAFBFE', borderRadius: 14, padding: 12, animation: 'clubSectionIn .55s ease-out both' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase' }}>Group Size</div>
-                  <div style={{ fontSize: 13, color: '#20222a', lineHeight: 1.6, marginTop: 6 }}>{selectedCard.trip?.members?.length || 0} travelers</div>
-                </div>
-              </div>
-
-              {Array.isArray(selectedCard.coverTags) && selectedCard.coverTags.length > 0 && (
-                <div style={{ marginBottom: 14, animation: 'clubSectionIn .6s ease-out both' }}>
-                  <div style={{ fontSize: 11, fontWeight: 800, color: '#6b6f7b', textTransform: 'uppercase', marginBottom: 8 }}>Interests</div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {selectedCard.coverTags.map(tag => (
-                      <span key={`modal-tag-${tag}`} style={{ fontSize: 11, fontWeight: 800, padding: '7px 10px', borderRadius: 999, background: '#EEF1FF', color: '#3946C6' }}>#{tag}</span>
-                    ))}
+              {/* Hinge-style info cards */}
+              <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:16 }}>
+                {selectedCard.about && (
+                  <div style={{ background:'#F9FAFB', border:'1.5px solid #F3F4F6', borderRadius:16, padding:'14px 16px' }}>
+                    <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:6 }}>About</div>
+                    <div style={{ fontSize:14, color:'#374151', lineHeight:1.65 }}>{selectedCard.about}</div>
+                  </div>
+                )}
+                {selectedCard.lookingFor && (
+                  <div style={{ background:'#F9FAFB', border:'1.5px solid #F3F4F6', borderRadius:16, padding:'14px 16px' }}>
+                    <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:6 }}>Looking For</div>
+                    <div style={{ fontSize:14, color:'#374151', lineHeight:1.65 }}>{selectedCard.lookingFor}</div>
+                  </div>
+                )}
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                  <div style={{ background:'#F9FAFB', border:'1.5px solid #F3F4F6', borderRadius:16, padding:'12px 14px' }}>
+                    <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:5 }}>Group mix</div>
+                    <div style={{ fontSize:14, fontWeight:600, color:'#111827' }}>{genderMixLabel(selectedCard.genderMix)}</div>
+                  </div>
+                  <div style={{ background:'#F9FAFB', border:'1.5px solid #F3F4F6', borderRadius:16, padding:'12px 14px' }}>
+                    <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:5 }}>Size</div>
+                    <div style={{ fontSize:14, fontWeight:600, color:'#111827' }}>{selectedCard.trip?.members?.length||0} travelers</div>
                   </div>
                 </div>
-              )}
+                {Array.isArray(selectedCard.coverTags) && selectedCard.coverTags.length > 0 && (
+                  <div style={{ background:'#F9FAFB', border:'1.5px solid #F3F4F6', borderRadius:16, padding:'14px 16px' }}>
+                    <div style={{ fontSize:10, fontWeight:800, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:8 }}>Interests</div>
+                    <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
+                      {selectedCard.coverTags.map(tag => <span key={tag} style={{ fontSize:12, fontWeight:600, padding:'5px 10px', borderRadius:99, background:'#EEF2FF', color:'#3730A3' }}>#{tag}</span>)}
+                    </div>
+                  </div>
+                )}
+              </div>
 
+              {/* Request form or CTA */}
               {requestFor === selectedCard.tripId ? (
-                <div style={{ marginTop: 12, animation: 'clubSectionIn .65s ease-out both' }}>
-                  <textarea
-                    style={{ ...S.input, resize: 'vertical', minHeight: 88, fontSize: 13 }}
-                    value={requestMessage}
-                    onChange={e => setRequestMessage(e.target.value)}
-                    placeholder="Say hi, mention your vibe, and suggest a plan..."
-                  />
-                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                    <button style={{ ...S.btn, ...S.btnOrange, flex: 1, marginTop: 0 }} disabled={clubBusy || !requestMessage.trim()} onClick={async () => { await handleSendRequest(); setSelectedCard(null); }}>Send Request</button>
-                    <button style={{ ...S.btn, marginTop: 0 }} onClick={() => { setRequestFor(null); setRequestMessage(''); }}>Cancel</button>
+                <div style={{ marginBottom:8 }}>
+                  <div style={{ fontSize:13, fontWeight:600, color:'#374151', marginBottom:8 }}>Write a message to introduce your group:</div>
+                  <textarea style={{ width:'100%', border:'1.5px solid #E5E7EB', borderRadius:16, padding:'12px 14px', fontSize:14, fontFamily:"'DM Sans',sans-serif", outline:'none', resize:'vertical', minHeight:90, color:'#111827', lineHeight:1.6, background:'#F9FAFB', boxSizing:'border-box' }}
+                    value={requestMessage} onChange={e => setRequestMessage(e.target.value)} placeholder="Hey! We're a group of 4 heading to Goa this weekend — want to explore together?" />
+                  <div style={{ display:'flex', gap:8, marginTop:10 }}>
+                    <button style={{ flex:1, padding:'13px', fontSize:14, fontWeight:800, borderRadius:16, border:'none', cursor:(!requestMessage.trim()||clubBusy)?'not-allowed':'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#1D9E75,#0F6E56)', color:'#fff', boxShadow:'0 4px 18px rgba(29,158,117,0.32)', opacity:(!requestMessage.trim()||clubBusy)?0.5:1 }}
+                      disabled={clubBusy||!requestMessage.trim()} onClick={async () => { await handleSendRequest(); setSelectedCard(null); }}>Send Request</button>
+                    <button style={{ padding:'13px 18px', fontSize:14, fontWeight:600, borderRadius:16, border:'1.5px solid #E5E7EB', cursor:'pointer', background:'#fff', color:'#374151' }} onClick={() => { setRequestFor(null); setRequestMessage(''); }}>Cancel</button>
                   </div>
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: 8, animation: 'clubSectionIn .65s ease-out both' }}>
-                  <button style={{ ...S.btn, ...S.btnOrange, flex: 1, marginTop: 0, opacity: selectedAlreadySent ? 0.6 : 1 }} disabled={selectedAlreadySent || clubBusy} onClick={() => setRequestFor(selectedCard.tripId)}>
-                    {selectedAlreadySent ? 'Request Sent' : 'Send Connection Request'}
-                  </button>
-                  <button style={{ ...S.btn, marginTop: 0 }} onClick={() => setSelectedCard(null)}>Back</button>
-                </div>
+                <button style={{ width:'100%', padding:'15px', fontSize:15, fontWeight:800, borderRadius:18, border:'none', cursor:selectedAlreadySent||clubBusy?'not-allowed':'pointer', fontFamily:"'DM Sans',sans-serif", background:selectedAlreadySent?'#F3F4F6':'linear-gradient(135deg,#1D9E75,#0F6E56)', color:selectedAlreadySent?'#9CA3AF':'#fff', boxShadow:selectedAlreadySent?'none':'0 4px 18px rgba(29,158,117,0.32)', opacity:clubBusy?0.7:1, transition:'all .2s' }}
+                  disabled={selectedAlreadySent||clubBusy} onClick={() => setRequestFor(selectedCard.tripId)}>
+                  {selectedAlreadySent ? 'Request Sent ✓' : '✦ Send Connection Request'}
+                </button>
               )}
             </div>
           </div>
