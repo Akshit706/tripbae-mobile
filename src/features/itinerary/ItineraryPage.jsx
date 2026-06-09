@@ -100,6 +100,15 @@ if (typeof document !== 'undefined' && !document.getElementById('itinerary-style
     .itin-sec-header { animation: sectionIn 0.32s ease both; }
     .itin-taste-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(28,20,16,0.12) !important; }
     .itin-taste-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    @keyframes tipsBulbPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,217,168,0.72), 0 2px 10px rgba(0,0,0,0.28); }
+      50%       { box-shadow: 0 0 0 10px rgba(245,217,168,0), 0 4px 18px rgba(0,0,0,0.32); }
+    }
+    .tips-bulb-btn { animation: tipsBulbPulse 2.6s ease-in-out infinite; transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background 0.2s ease !important; }
+    .tips-bulb-btn:hover { transform: scale(1.14) !important; background: rgba(255,255,255,0.26) !important; }
+    @keyframes tipsSheetIn { from { opacity:0; transform:translateY(38px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes dayHeaderIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .day-header-card { animation: dayHeaderIn 0.3s ease both; }
   `;
   document.head.appendChild(el);
 }
@@ -774,6 +783,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [nearbyData,         setNearbyData]         = useState(null);
   const [nearbyStep,         setNearbyStep]         = useState('loading');
   const [showPlannerScrollTop, setShowPlannerScrollTop] = useState(false);
+  const [showTipsPopup,      setShowTipsPopup]      = useState(false);
 
   return (
     <div>
@@ -851,7 +861,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                     const totalActs = (itin.days || []).reduce((a, d) => a + (d.activities || []).length, 0);
                     const mustSees  = (itin.days || []).reduce((a, d) => a + (d.activities || []).filter(act => act.mustDo).length, 0);
                     return (
-                      <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap', paddingRight: itin.quickTips?.length > 0 ? '2.8rem' : 0 }}>
                         <span style={{ fontSize: 14, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{days}</span>
                         <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)' }}>Days</span>
                         <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.28)', margin: '0 2px' }}>·</span>
@@ -868,19 +878,90 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                     );
                   })()}
                 </div>
+
+                {/* ── Glowing tips bulb — bottom-right of hero ── */}
+                {itin.quickTips?.length > 0 && (
+                  <button
+                    className="tips-bulb-btn"
+                    onClick={() => setShowTipsPopup(true)}
+                    title={`${itin.quickTips.length} trip tips`}
+                    style={{
+                      position: 'absolute', bottom: 12, right: 12, zIndex: 2,
+                      width: 38, height: 38, borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.13)',
+                      backdropFilter: 'blur(8px)',
+                      border: '1.5px solid rgba(255,255,255,0.30)',
+                      cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      padding: 0,
+                    }}
+                  >
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F5D9A8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="9" y1="18" x2="15" y2="18"/>
+                      <line x1="10" y1="22" x2="14" y2="22"/>
+                      <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+                    </svg>
+                  </button>
+                )}
               </div>
 
-              {/* ── Quick tips: labelled horizontal scroll ───────── */}
-              {itin.quickTips?.length > 0 && (
-                <div style={{ marginBottom: '1.25rem', marginTop: 4 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: D.muted, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 8, paddingLeft: 2, fontFamily: "'DM Sans',sans-serif" }}>QUICK TIPS</div>
-                  <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4, paddingLeft: 0 }}>
-                    {itin.quickTips.map((tip, i) => (
-                      <div key={i} style={{ flexShrink: 0, background: '#FDF0EE', border: '0.5px solid #F5C4B3', borderRadius: 20, padding: '8px 14px', maxWidth: 230, display: 'flex', gap: 6, alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: 13, flexShrink: 0, lineHeight: 1.4 }}>💡</span>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: '#C9533A', lineHeight: 1.5, fontFamily: "'DM Sans',sans-serif" }}>{tip}</span>
+              {/* ── Tips bottom-sheet popup ── */}
+              {showTipsPopup && itin.quickTips?.length > 0 && (
+                <div
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.50)', zIndex: 700, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+                  onClick={e => { if (e.target === e.currentTarget) setShowTipsPopup(false); }}
+                >
+                  <div style={{
+                    width: '100%', maxWidth: 560,
+                    background: '#FFFDF8',
+                    borderRadius: '22px 22px 0 0',
+                    paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
+                    boxShadow: '0 -10px 60px rgba(0,0,0,0.22)',
+                    animation: 'tipsSheetIn 0.3s cubic-bezier(0.2,0.7,0.2,1) both',
+                    maxHeight: '70vh',
+                    display: 'flex', flexDirection: 'column',
+                    overflow: 'hidden',
+                  }}>
+                    {/* Drag handle */}
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
+                      <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(28,20,16,0.14)' }} />
+                    </div>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px 13px', borderBottom: `1px solid ${D.divider}`, flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 12, background: D.goldTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="9" y1="18" x2="15" y2="18"/>
+                            <line x1="10" y1="22" x2="14" y2="22"/>
+                            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: D.espresso }}>Trip Tips</div>
+                          <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>{itin.quickTips.length} insider tips for your journey</div>
+                        </div>
                       </div>
-                    ))}
+                      <button onClick={() => setShowTipsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>✕</button>
+                    </div>
+                    {/* Scrollable tips list */}
+                    <div style={{ overflowY: 'auto', padding: '12px 16px' }}>
+                      {itin.quickTips.map((tip, i) => (
+                        <div key={i} style={{
+                          display: 'flex', gap: 11, alignItems: 'flex-start',
+                          padding: '11px 13px',
+                          background: D.surface,
+                          borderRadius: 14,
+                          marginBottom: 7,
+                          border: `0.5px solid ${D.border}`,
+                          boxShadow: '0 1px 4px rgba(28,20,16,0.04)',
+                        }}>
+                          <div style={{ width: 26, height: 26, borderRadius: 9, background: D.goldTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                            <span style={{ fontSize: 13 }}>💡</span>
+                          </div>
+                          <span style={{ fontSize: 13.5, color: D.secondary, lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif", flex: 1, paddingTop: 3 }}>{tip}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -901,33 +982,49 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   return (
                     <div key={d.day} style={{ marginBottom: '1.5rem' }}>
 
-                      {/* ── Day header: left gold bar + italic serif theme ── */}
-                      <div style={{ display: 'flex', alignItems: 'stretch', background: D.surface, borderRadius: 12, marginBottom: 10, overflow: 'hidden', boxShadow: '0 2px 8px rgba(28,20,16,0.06)' }}>
-                        {/* 3px gold left accent */}
-                        <div style={{ width: 3, background: D.gold, flexShrink: 0 }} />
-                        <div style={{ flex: 1, padding: '10px 12px' }}>
-                          {/* top row: date label left, temp + badges right */}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                            <span style={{ fontSize: 11, fontWeight: 500, color: D.muted, letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>{dateLabel}</span>
-                            <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                              {d.weather && <span style={{ fontSize: 11, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>{weatherIcon} <span style={{ color: D.coral }}>{d.weather.high}°</span>/{d.weather.low}°</span>}
-                              {d.estimatedCost && <span style={{ fontSize: 10, fontWeight: 600, background: D.goldTint, color: D.gold, borderRadius: 999, padding: '1px 7px' }}>{d.estimatedCost}</span>}
+                      {/* ── Day header ── */}
+                      <div className="day-header-card" style={{ background: D.surface, borderRadius: 18, marginBottom: 10, overflow: 'hidden', boxShadow: '0 2px 14px rgba(28,20,16,0.08)', border: `0.5px solid ${D.border}` }}>
+                        {/* Gradient accent bar at top */}
+                        <div style={{ height: 3, background: isSolo ? 'linear-gradient(90deg,#7F77DD,#534AB7)' : `linear-gradient(90deg,${D.gold},#A8731E,${D.gold})` }} />
+                        <div style={{ padding: '12px 14px 11px' }}>
+                          {/* Row 1: Day pill + date + weather */}
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <div style={{ background: isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : `linear-gradient(135deg,${D.gold},#A8731E)`, borderRadius: 10, padding: '4px 10px', display: 'flex', alignItems: 'baseline', gap: 3, boxShadow: isSolo ? '0 2px 8px rgba(127,119,221,0.30)' : '0 2px 8px rgba(201,145,58,0.28)', flexShrink: 0 }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.72)', textTransform: 'uppercase', letterSpacing: 0.5, lineHeight: 1 }}>Day</span>
+                                <span style={{ fontSize: 17, fontWeight: 800, color: '#fff', lineHeight: 1, fontFamily: "'Sora',sans-serif" }}>{d.day}</span>
+                              </div>
+                              <span style={{ fontSize: 12, fontWeight: 500, color: D.muted, letterSpacing: 0.4, fontFamily: "'DM Sans',sans-serif" }}>{dateLabel}</span>
                             </div>
+                            {d.weather && (
+                              <span style={{ fontSize: 11.5, color: D.secondary, display: 'flex', alignItems: 'center', gap: 3, flexShrink: 0 }}>
+                                {weatherIcon} <span style={{ color: D.coral, fontWeight: 600 }}>{d.weather.high}°</span><span style={{ color: D.muted, opacity: 0.7 }}>/{d.weather.low}°</span>
+                              </span>
+                            )}
                           </div>
-                          {/* theme in italic serif */}
-                          <div style={{ fontSize: 16, fontStyle: 'italic', color: D.espresso, fontFamily: "'Georgia',serif", lineHeight: 1.3, marginBottom: 5 }}>{d.title || d.theme}</div>
-                          {/* badge row */}
-                          <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                            {isArrivalDay && <span style={{ fontSize: 9, fontWeight: 700, background: D.blueTint, color: '#2563AB', borderRadius: 999, padding: '1px 6px' }}>✈ Arrives</span>}
-                            {isDepartureDay && <span style={{ fontSize: 9, fontWeight: 700, background: D.coralTint, color: D.coral, borderRadius: 999, padding: '1px 6px' }}>🛫 Departs</span>}
-                            {dayDoneCount > 0 && <span style={{ fontSize: 9, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 999, padding: '1px 7px' }}>✓ {dayDoneCount}/{dayTotalCount} done</span>}
+                          {/* Row 2: Theme */}
+                          <div style={{ fontSize: 15.5, fontStyle: 'italic', color: D.espresso, fontFamily: "'Georgia',serif", lineHeight: 1.38, marginBottom: (isArrivalDay || isDepartureDay || d.estimatedCost || dayDoneCount > 0) ? 9 : 0 }}>{d.title || d.theme}</div>
+                          {/* Row 3: Badges — only shown when relevant */}
+                          {(isArrivalDay || isDepartureDay || d.estimatedCost || dayDoneCount > 0) && (
+                            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                              {isArrivalDay && <span style={{ fontSize: 10, fontWeight: 700, background: D.blueTint, color: '#2563AB', borderRadius: 999, padding: '2px 8px' }}>✈ Arrives</span>}
+                              {isDepartureDay && <span style={{ fontSize: 10, fontWeight: 700, background: D.coralTint, color: D.coral, borderRadius: 999, padding: '2px 8px' }}>🛫 Departs</span>}
+                              {d.estimatedCost && <span style={{ fontSize: 10, fontWeight: 600, background: D.goldTint, color: D.gold, borderRadius: 999, padding: '2px 8px' }}>~{d.estimatedCost}</span>}
+                              {dayDoneCount > 0 && (
+                                <span style={{ fontSize: 10, fontWeight: 600, background: D.sageTint, color: D.sage, borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                  <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
+                                  {dayDoneCount}/{dayTotalCount}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {/* Progress bar — only when activities are checked off */}
+                        {dayDoneCount > 0 && (
+                          <div style={{ height: 2.5, background: D.neutral, margin: '0 0 0 0' }}>
+                            <div style={{ height: '100%', width: `${(dayDoneCount / dayTotalCount) * 100}%`, background: isSolo ? '#7F77DD' : D.gold, transition: 'width 0.5s ease' }} />
                           </div>
-                        </div>
-                        {/* Day number badge on right */}
-                        <div style={{ width: 48, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isSolo ? 'linear-gradient(160deg,#7F77DD,#534AB7)' : `linear-gradient(160deg,${D.gold},#A8731E)`, flexShrink: 0 }}>
-                          <span style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: .5, lineHeight: 1 }}>Day</span>
-                          <span style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>{d.day}</span>
-                        </div>
+                        )}
                       </div>
 
                       {/* weather + proTip slim bars */}
