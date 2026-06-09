@@ -117,6 +117,17 @@ const PRICE_CFG = {
   mid:    { label:'Mid',    icon:'₹₹',  bg:D.goldTint, color:'#92400E' },
   luxury: { label:'Luxury', icon:'₹₹₹', bg:'#FFF0F6',  color:'#9B2260' },
 };
+const PRICE_RANGES = [
+  { v:'all',    l:'Any',         sub:'' },
+  { v:'budget', l:'Budget',      sub:'Under ₹2,000/night' },
+  { v:'mid',    l:'Mid-range',   sub:'₹2,000 – ₹6,000/night' },
+  { v:'luxury', l:'Luxury',      sub:'₹6,000+/night' },
+];
+const PRICE_DISPLAY = {
+  budget: '< ₹2,000 / night',
+  mid:    '₹2,000 – ₹6,000 / night',
+  luxury: '₹6,000+ / night',
+};
 const CAT_CFG = {
   hospital:  { icon:'🏥', label:'Hospital',  bg:'#FEE2E2', color:'#B91C1C' },
   clinic:    { icon:'🩺', label:'Clinic',    bg:D.blueTint, color:'#1D4ED8' },
@@ -214,24 +225,25 @@ function FilterModal({ open, onClose, hotels, hospitals, rentals, draft, setDraf
                 {availStayTypes.map(t => { const c=STAY_CFG[t]||STAY_CFG.hotel; return <ModalChip key={t} label={c.label} active={draft.stayType===t} onClick={()=>setDraft(f=>({...f,stayType:t}))} bg={c.bg} color={c.color} />; })}
               </div>
             </div>
-            {/* Price Range Slider */}
+            {/* Price Range */}
             <div style={{ background:'#FDFCFA',borderRadius:14,padding:'12px 13px',border:'1px solid rgba(28,20,16,0.07)' }}>
               <FilterLabel>Price Range</FilterLabel>
-              <input type="range" min={0} max={2} step={1} value={draft.priceMax}
-                onChange={e=>setDraft(f=>({...f,priceMax:parseInt(e.target.value)}))}
-                style={{ width:'100%',WebkitAppearance:'none',appearance:'none',height:5,borderRadius:4,outline:'none',cursor:'pointer',
-                  background:`linear-gradient(to right,${D.gold} ${draft.priceMax/2*100}%,rgba(28,20,16,0.13) ${draft.priceMax/2*100}%)` }}
-              />
-              <div style={{ display:'flex',justifyContent:'space-between',marginTop:8,fontSize:11,fontWeight:700 }}>
-                <span style={{ color: draft.priceMax<=0 ? D.gold : D.muted }}>Budget</span>
-                <span style={{ color: draft.priceMax===1 ? D.gold : D.muted }}>Mid Range</span>
-                <span style={{ color: draft.priceMax>=2 ? D.gold : D.muted }}>Luxury</span>
+              <div style={{ display:'flex',flexDirection:'column',gap:6 }}>
+                {PRICE_RANGES.map(p => (
+                  <button key={p.v} onClick={()=>setDraft(f=>({...f,priceLevel:p.v}))}
+                    style={{ display:'flex',alignItems:'center',justifyContent:'space-between',
+                      padding:'9px 13px',borderRadius:11,textAlign:'left',
+                      border:`1.5px solid ${draft.priceLevel===p.v ? D.gold : 'rgba(28,20,16,0.10)'}`,
+                      background: draft.priceLevel===p.v ? D.goldTint : '#FAFAF8',
+                      cursor:'pointer',fontFamily:"'DM Sans',sans-serif" }}>
+                    <span style={{ fontSize:13,fontWeight:700,color:draft.priceLevel===p.v ? D.gold : D.espresso }}>{p.l}</span>
+                    {p.sub && <span style={{ fontSize:11,color:draft.priceLevel===p.v ? '#A8731E' : D.muted }}>{p.sub}</span>}
+                    {draft.priceLevel===p.v && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    )}
+                  </button>
+                ))}
               </div>
-              {draft.priceMax < 2 && (
-                <div style={{ textAlign:'center',fontSize:11.5,fontWeight:700,color:D.gold,marginTop:5 }}>
-                  {draft.priceMax===0 ? 'Budget stays only' : 'Budget & Mid-range'}
-                </div>
-              )}
             </div>
             {/* Guest Rating */}
             <div style={{ background:'#FDFCFA',borderRadius:14,padding:'12px 13px',border:'1px solid rgba(28,20,16,0.07)' }}>
@@ -245,30 +257,6 @@ function FilterModal({ open, onClose, hotels, hospitals, rentals, draft, setDraf
               <FilterLabel>Hotel Stars</FilterLabel>
               <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
                 {HOTEL_STARS.map(s => <ModalChip key={s.v} label={s.l} active={draft.starMin===s.v} onClick={()=>setDraft(p=>({...p,starMin:s.v}))} bg='#FFFBEB' color='#A16207' />)}
-              </div>
-            </div>
-            {/* Amenities */}
-            <div style={{ background:'#FDFCFA',borderRadius:14,padding:'12px 13px',border:'1px solid rgba(28,20,16,0.07)' }}>
-              <FilterLabel>Amenities</FilterLabel>
-              <div style={{ display:'flex',gap:8,flexWrap:'wrap' }}>
-                <button onClick={()=>setDraft(f=>({...f,breakfast:!f.breakfast}))}
-                  style={{ display:'flex',alignItems:'center',gap:6,padding:'8px 13px',borderRadius:10,
-                    border:`1.5px solid ${draft.breakfast ? D.gold : 'rgba(28,20,16,0.13)'}`,
-                    background: draft.breakfast ? D.goldTint : '#FAFAF8',
-                    color: draft.breakfast ? D.gold : '#7A7470',
-                    cursor:'pointer',fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>
-                  Breakfast Included
-                </button>
-                <button onClick={()=>setDraft(f=>({...f,coupleFriendly:!f.coupleFriendly}))}
-                  style={{ display:'flex',alignItems:'center',gap:6,padding:'8px 13px',borderRadius:10,
-                    border:`1.5px solid ${draft.coupleFriendly ? '#E8715A' : 'rgba(28,20,16,0.13)'}`,
-                    background: draft.coupleFriendly ? '#FDF0EE' : '#FAFAF8',
-                    color: draft.coupleFriendly ? '#E8715A' : '#7A7470',
-                    cursor:'pointer',fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700 }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                  Couple Friendly
-                </button>
               </div>
             </div>
           </div>
@@ -355,14 +343,17 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
         {filtered.map((h, i) => {
           const stCfg = STAY_CFG[h.stayType] || STAY_CFG.hotel;
           const prCfg = PRICE_CFG[h.priceLevel] || PRICE_CFG.mid;
+          const priceDisplay = h.pricePerNight || PRICE_DISPLAY[h.priceLevel] || null;
+          const mapsUrl = h.lat&&h.lng
+            ? `https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}`
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name+' '+destination)}`;
+          const knowMoreUrl = `https://www.google.com/search?q=${encodeURIComponent(h.name+' '+destination+' hotel review')}`;
           const hasImg = h.imageUrl && !imgErrors.has(h.id||h.name);
           return (
             <a
               key={h.id||i}
               className="r-card r-hotel-card"
-              href={h.lat&&h.lng
-                ? `https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}`
-                : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name+' '+destination)}`}
+              href={mapsUrl}
               target="_blank" rel="noreferrer"
               style={{ textDecoration:'none', background:D.surface, borderRadius:18, overflow:'hidden',
                 boxShadow:D.shadow, border:`0.5px solid ${D.border}`, display:'block',
@@ -394,26 +385,45 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
                 {/* name overlaid bottom */}
                 <div style={{ position:'absolute',bottom:10,left:13,right:13,pointerEvents:'none' }}>
                   <div style={{ fontSize:15.5,fontWeight:800,color:'#fff',lineHeight:1.2,fontFamily:"'Sora',sans-serif",textShadow:'0 1px 6px rgba(0,0,0,0.5)',letterSpacing:-0.2 }}>{h.name}</div>
-                  {h.pricePerNight && (
-                    <div style={{ fontSize:11,color:'rgba(255,255,255,0.8)',marginTop:2 }}>{h.pricePerNight}</div>
+                  {priceDisplay && (
+                    <div style={{ display:'inline-flex',alignItems:'center',gap:4,marginTop:4,background:'rgba(0,0,0,0.42)',borderRadius:7,padding:'2px 8px' }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                      <span style={{ fontSize:10.5,color:'rgba(255,255,255,0.9)',fontWeight:600 }}>{priceDisplay}</span>
+                    </div>
                   )}
                 </div>
               </div>
               {/* Card body */}
-              <div style={{ padding:'10px 13px 13px', display:'flex', alignItems:'center', gap:10 }}>
-                <div style={{ flex:1, minWidth:0 }}>
-                  {h.rating && <Stars rating={h.rating} />}
-                  {h.address && (
-                    <div style={{ fontSize:11,color:D.muted,marginTop:4,lineHeight:1.4,display:'flex',gap:4,alignItems:'flex-start' }}>
-                      <span style={{ flexShrink:0 }}>📍</span>
-                      <span>{h.address.length>65 ? h.address.slice(0,65)+'…' : h.address}</span>
-                    </div>
-                  )}
+              <div style={{ padding:'10px 13px 13px' }}>
+                <div style={{ display:'flex',alignItems:'flex-start',gap:8,marginBottom:6 }}>
+                  <div style={{ flex:1,minWidth:0 }}>
+                    {h.rating && <Stars rating={h.rating} />}
+                    {h.address && (
+                      <div style={{ fontSize:11,color:D.muted,marginTop:4,lineHeight:1.4,display:'flex',gap:4,alignItems:'flex-start' }}>
+                        <span style={{ flexShrink:0 }}>📍</span>
+                        <span>{h.address.length>65 ? h.address.slice(0,65)+'…' : h.address}</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div style={{ flexShrink:0, width:32, height:32, borderRadius:'50%', background:D.blueTint, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#2563AB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
-                  </svg>
+                {/* Action row */}
+                <div style={{ display:'flex',gap:7,marginTop:8 }}>
+                  <a href={mapsUrl} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
+                    style={{ flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                      padding:'8px',borderRadius:10,textDecoration:'none',
+                      background:D.blueTint,border:`1px solid rgba(37,99,235,0.18)`,
+                      fontSize:12,fontWeight:700,color:'#1D4ED8' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Maps
+                  </a>
+                  <a href={knowMoreUrl} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
+                    style={{ flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5,
+                      padding:'8px',borderRadius:10,textDecoration:'none',
+                      background:D.goldTint,border:`1px solid rgba(201,145,58,0.22)`,
+                      fontSize:12,fontWeight:700,color:D.gold }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Know More
+                  </a>
                 </div>
               </div>
             </a>
@@ -582,7 +592,7 @@ function LoadingSkeleton() {
 /* ════════════════════════════════════════
    MAIN COMPONENT
 ════════════════════════════════════════ */
-const INIT_FILTERS = { stayType:'all', priceMax:2, minRating:0, hospCat:'all', rentalType:'all', breakfast:false, coupleFriendly:false, starMin:0 };
+const INIT_FILTERS = { stayType:'all', priceLevel:'all', minRating:0, hospCat:'all', rentalType:'all', starMin:0 };
 
 export default function RecommendationsPage({ destination, isSolo, autoData, autoStep, onRetry }) {
   const [step, setStep]               = useState(autoStep || 'loading');
@@ -650,21 +660,16 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
 
   // Filtered arrays per section
   const filteredHotels = hotels.filter(h => {
-    if (filters.stayType !== 'all' && h.stayType !== filters.stayType) return false;
-    if (filters.priceMax < 2) {
-      const tierIdx = {budget:0, mid:1, luxury:2}[h.priceLevel] ?? 2;
-      if (tierIdx > filters.priceMax) return false;
-    }
-    if (filters.minRating > 0 && (!h.rating || parseFloat(h.rating) < filters.minRating)) return false;
-    if (filters.starMin > 0 && (!h.stars || h.stars < filters.starMin)) return false;
-    if (filters.breakfast && !h.breakfast) return false;
-    if (filters.coupleFriendly && !h.coupleFriendly) return false;
+    if (filters.stayType  !== 'all' && h.stayType   !== filters.stayType)   return false;
+    if (filters.priceLevel !== 'all' && h.priceLevel !== filters.priceLevel) return false;
+    if (filters.minRating  > 0 && (!h.rating || parseFloat(h.rating) < filters.minRating)) return false;
+    if (filters.starMin    > 0 && (!h.stars || h.stars < filters.starMin))  return false;
     return true;
   });
   const filteredHospitals = filters.hospCat    === 'all' ? hospitals : hospitals.filter(h => h.category === filters.hospCat);
   const filteredRentals   = filters.rentalType === 'all' ? rentals   : rentals.filter(r => r.type === filters.rentalType);
 
-  const stayFilterCount   = [filters.stayType!=='all', filters.priceMax<2, filters.minRating>0, filters.starMin>0, filters.breakfast, filters.coupleFriendly].filter(Boolean).length;
+  const stayFilterCount   = [filters.stayType!=='all', filters.priceLevel!=='all', filters.minRating>0, filters.starMin>0].filter(Boolean).length;
   const hospFilterCount   = filters.hospCat    !== 'all' ? 1 : 0;
   const rentalFilterCount = filters.rentalType !== 'all' ? 1 : 0;
 
