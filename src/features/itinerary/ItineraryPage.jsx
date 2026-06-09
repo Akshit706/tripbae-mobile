@@ -1009,25 +1009,25 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                     const totalActs = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).length, 0);
                     const mustSees  = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).filter(act => act.mustDo).length, 0);
                     return (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', paddingRight: itin.quickTips?.length > 0 ? '3rem' : 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{days}</span>
-                          <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)' }}>Days</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'nowrap', paddingRight: itin.quickTips?.length > 0 ? '3rem' : 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{days}</span>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>Days</span>
                         </div>
-                        <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{totalActs}</span>
-                          <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)' }}>Activities</span>
+                        <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{totalActs}</span>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>Activities</span>
                         </div>
                         {mustSees > 0 && (
                           <>
-                            <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F5D9A8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                              <span style={{ fontSize: 13, fontWeight: 700, color: '#F5D9A8', fontFamily: "'Sora',sans-serif" }}>{mustSees}</span>
-                              <span style={{ fontSize: 11.5, color: 'rgba(245,217,168,0.55)' }}>Must-Sees</span>
+                            <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#F5D9A8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#F5D9A8', fontFamily: "'Sora',sans-serif" }}>{mustSees}</span>
+                              <span style={{ fontSize: 11, color: 'rgba(245,217,168,0.55)', whiteSpace: 'nowrap' }}>Must-Sees</span>
                             </div>
                           </>
                         )}

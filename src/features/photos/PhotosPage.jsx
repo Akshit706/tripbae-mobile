@@ -51,16 +51,16 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       min-height:100vh; padding-bottom:8rem; animation:phPageIn .3s ease both;
     }
 
-    /* ── Hero card (Explore-style, real photo background) ── */
+    /* ── Hero card (compact, left-aligned like day planner) ── */
     .ph-hero {
-      position:relative; border-radius:22px; overflow:hidden; min-height:195px;
+      position:relative; border-radius:22px; overflow:hidden;
       background:linear-gradient(160deg,#081510 0%,#0A2C1A 40%,#0F6E56 100%);
       margin:1rem 1rem 0;
       animation:phHeroGlow 5s ease-in-out infinite;
     }
     .ph-hero-bg {
       position:absolute; inset:0; width:100%; height:100%;
-      object-fit:cover; opacity:0.26;
+      object-fit:cover; opacity:0.28;
       transform:scale(1.06); transition:opacity .8s ease;
     }
     .ph-hero-dot-grid {
@@ -70,7 +70,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     }
     .ph-hero-overlay {
       position:absolute; inset:0;
-      background:linear-gradient(165deg,rgba(6,16,11,0.85) 0%,rgba(8,30,18,0.62) 55%,rgba(15,80,50,0.44) 100%);
+      background:linear-gradient(165deg,rgba(6,16,11,0.88) 0%,rgba(8,30,18,0.64) 55%,rgba(15,80,50,0.44) 100%);
       z-index:2;
     }
     .ph-hero-scan {
@@ -80,64 +80,48 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       animation:phHeroScan 9s ease-in-out infinite 2.5s;
     }
     .ph-hero-deco-c1 {
-      position:absolute; top:-35px; right:-25px; width:140px; height:140px;
+      position:absolute; top:-30px; right:-20px; width:120px; height:120px;
       border-radius:50%; background:rgba(255,255,255,0.04); z-index:3; pointer-events:none;
     }
-    .ph-hero-deco-c2 {
-      position:absolute; bottom:-45px; left:-20px; width:120px; height:120px;
-      border-radius:50%; background:rgba(29,158,117,0.12); z-index:3; pointer-events:none;
-    }
     .ph-hero-content {
-      position:relative; z-index:4; padding:1.3rem 1.25rem 1.15rem;
-      display:flex; flex-direction:column; align-items:center; text-align:center;
+      position:relative; z-index:4; padding:1.1rem 1.15rem 1rem;
     }
     .ph-hero-eyebrow {
-      font-size:9px; font-weight:700; color:rgba(255,255,255,0.40);
-      text-transform:uppercase; letter-spacing:2.8px;
-      margin-bottom:9px;
+      font-size:9px; font-weight:700; color:rgba(255,255,255,0.38);
+      text-transform:uppercase; letter-spacing:2.4px;
+      margin-bottom:6px;
     }
     .ph-hero-name {
-      font-family:'Sora',sans-serif; font-size:22px; font-weight:800; color:#fff;
-      line-height:1.15; letter-spacing:-0.5px; margin-bottom:5px;
+      font-family:'Sora',sans-serif; font-size:20px; font-weight:800; color:#fff;
+      line-height:1.15; letter-spacing:-0.4px; margin-bottom:3px;
     }
     .ph-hero-dest {
-      font-size:11.5px; color:rgba(255,255,255,0.52); margin-bottom:12px;
-      display:flex; align-items:center; gap:4px; justify-content:center;
+      font-size:11px; color:rgba(255,255,255,0.48); margin-bottom:10px;
+      display:flex; align-items:center; gap:4px;
     }
-    .ph-hero-av-row {
-      display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+    /* inline stats row */
+    .ph-hero-stats {
+      display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:nowrap;
     }
-    .ph-hero-av-chip {
-      width:28px; height:28px; border-radius:50%;
-      display:flex; align-items:center; justify-content:center;
-      font-family:'Sora',sans-serif; font-size:10px; font-weight:800; color:#fff;
-      border:2px solid rgba(255,255,255,0.25); margin-left:-7px; flex-shrink:0;
+    .ph-hero-stat-item {
+      display:flex; align-items:center; gap:4px;
     }
-    .ph-hero-av-chip:first-child { margin-left:0; }
-    .ph-hero-stats-pill {
-      display:flex; align-items:center; gap:16px;
-      background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.16);
-      border-radius:99px; padding:7px 18px; backdrop-filter:blur(8px);
-      margin-bottom:13px;
-    }
-    .ph-hero-sval { font-family:'Sora',sans-serif; font-size:15px; font-weight:800; color:#fff; line-height:1; }
-    .ph-hero-slbl { font-size:9px; color:rgba(255,255,255,0.45); margin-top:2px; }
-    .ph-hero-sdiv { width:1px; height:22px; background:rgba(255,255,255,0.18); }
+    .ph-hero-stat-num { font-family:'Sora',sans-serif; font-size:12px; font-weight:700; color:#fff; }
+    .ph-hero-stat-lbl { font-size:11px; color:rgba(255,255,255,0.48); }
+    .ph-hero-stat-div { width:1px; height:12px; background:rgba(255,255,255,0.18); flex-shrink:0; }
 
     /* encryption strip */
     .ph-enc-strip {
-      display:flex; align-items:center; gap:9px; width:100%;
-      background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20);
-      border-radius:12px; padding:9px 12px; backdrop-filter:blur(6px);
+      display:flex; align-items:center; gap:7px;
+      background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18);
+      border-radius:10px; padding:6px 10px; backdrop-filter:blur(6px);
     }
     .ph-enc-strip-icon {
-      width:26px; height:26px; border-radius:8px;
-      background:rgba(255,255,255,0.18);
+      width:20px; height:20px; border-radius:6px;
+      background:rgba(255,255,255,0.15);
       display:flex; align-items:center; justify-content:center; flex-shrink:0;
     }
-    .ph-enc-strip-text { flex:1; }
-    .ph-enc-strip-label { font-size:11.5px; font-weight:700; color:#fff; }
-    .ph-enc-strip-desc { font-size:10.5px; color:rgba(255,255,255,0.65); margin-top:1px; line-height:1.35; }
+    .ph-enc-strip-label { font-size:10.5px; font-weight:700; color:rgba(255,255,255,0.82); flex:1; }
 
     /* ── member tabs ── */
     .ph-tabs {
@@ -384,7 +368,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
   document.head.appendChild(el);
 }
 
-function PhotosPage({ trip, myNickname }) {
+function PhotosPage({ trip, myNickname, myAvatar }) {
   const memberNames = normalizeMembers(trip.members);
   const me = myNickname || memberNames[0] || 'Me';
 
@@ -543,7 +527,9 @@ function PhotosPage({ trip, myNickname }) {
     const photo = allPhotos[seed % allPhotos.length];
     if (!photo?.url) return null;
     if (!photo.url.includes('ik.imagekit.io')) return photo.url;
-    return photo.url.replace(/(\.[^./?]+)(\?.*)?$/, '/tr:w-700,h-280,fo-auto,q-65$1$2');
+    // IK real-time transformation: resize + quality
+    const sep = photo.url.includes('?') ? '&' : '?';
+    return photo.url + sep + 'tr=w-700,h-260,fo-auto,q-65';
   }, [allPhotos, trip.id]);
 
   return (
@@ -586,57 +572,43 @@ function PhotosPage({ trip, myNickname }) {
         </div>
       )}
 
-      {/* ── Hero card (Explore-style, centered, photo bg) ── */}
+      {/* ── Hero card (compact, left-aligned) ── */}
       <div className="ph-hero">
         {heroBgUrl && <img className="ph-hero-bg" src={heroBgUrl} alt="" />}
         <div className="ph-hero-dot-grid" />
         <div className="ph-hero-overlay" />
         <div className="ph-hero-scan" />
         <div className="ph-hero-deco-c1" />
-        <div className="ph-hero-deco-c2" />
         <div className="ph-hero-content">
           <div className="ph-hero-eyebrow">✦ TRIP ALBUM ✦</div>
           <div className="ph-hero-name">{trip.groupName || trip.destination || 'Our Memories'}</div>
-          {trip.destination && (
+          {trip.destination && trip.groupName && (
             <div className="ph-hero-dest">
               <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
               {trip.destination}
             </div>
           )}
-          {memberNames.length > 0 && (
-            <div className="ph-hero-av-row">
-              {memberNames.slice(0, 6).map((m, i) => (
-                <div key={m} className="ph-hero-av-chip" style={{ background: mcolor(m), zIndex: memberNames.length - i }}>
-                  {initials(m)}
-                </div>
-              ))}
-              {memberNames.length > 6 && (
-                <div className="ph-hero-av-chip" style={{ background: 'rgba(255,255,255,0.18)', zIndex: 0, fontSize: 9 }}>+{memberNames.length - 6}</div>
-              )}
+          <div className="ph-hero-stats">
+            <div className="ph-hero-stat-item">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              <span className="ph-hero-stat-num">{totalPhotos}</span>
+              <span className="ph-hero-stat-lbl">{totalPhotos === 1 ? 'photo' : 'photos'}</span>
             </div>
-          )}
-          <div className="ph-hero-stats-pill">
-            <div style={{ textAlign: 'center' }}>
-              <div className="ph-hero-sval">{totalPhotos}</div>
-              <div className="ph-hero-slbl">Photos</div>
-            </div>
-            <div className="ph-hero-sdiv" />
-            <div style={{ textAlign: 'center' }}>
-              <div className="ph-hero-sval">{memberNames.length}</div>
-              <div className="ph-hero-slbl">Members</div>
+            <div className="ph-hero-stat-div" />
+            <div className="ph-hero-stat-item">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              <span className="ph-hero-stat-num">{memberNames.length}</span>
+              <span className="ph-hero-stat-lbl">{memberNames.length === 1 ? 'member' : 'members'}</span>
             </div>
           </div>
           <div className="ph-enc-strip">
             <div className="ph-enc-strip-icon">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
               </svg>
             </div>
-            <div className="ph-enc-strip-text">
-              <div className="ph-enc-strip-label">End-to-end encrypted &amp; private</div>
-              <div className="ph-enc-strip-desc">Only members of this trip can view or download.</div>
-            </div>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+            <span className="ph-enc-strip-label">End-to-end encrypted &amp; private</span>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
           </div>
@@ -654,8 +626,11 @@ function PhotosPage({ trip, myNickname }) {
             <div key={m} className={`ph-tab ${isActive ? 'active' : ''}`}
               onClick={() => { setActiveFolder(m); setSelected(new Set()); }}>
               <div className="ph-tab-ring">
-                <div className="ph-tab-av" style={{ background: color }}>
-                  {initials(m)}
+                <div className="ph-tab-av" style={{ background: isMe && myAvatar ? 'transparent' : color }}>
+                  {isMe && myAvatar
+                    ? <img src={myAvatar} alt={m} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                    : initials(m)
+                  }
                 </div>
                 {count > 0 && <span className="ph-tab-badge">{count}</span>}
               </div>

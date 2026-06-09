@@ -978,7 +978,7 @@ export default function App() {
                     {tab === 'itinerary' && <div className="tb-section-flow"><ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} /></div>}
                     {tab === 'photos' && (
                       <div className="tb-section-flow" style={{ marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
-                        <PhotosPageFeature trip={activeTripData} myNickname={myNickname} />
+                        <PhotosPageFeature trip={activeTripData} myNickname={myNickname} myAvatar={profile.avatar || null} />
                       </div>
                     )}
                     {tab === 'club' && (

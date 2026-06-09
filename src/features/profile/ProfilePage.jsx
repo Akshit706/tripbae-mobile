@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { tripDuration, normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
+import { imagekitAuth } from '../../api';
 const BADGE_DEFS = [
   { id: 'early_bird',     name: 'Early Bird',      emoji: '🌅', desc: 'Joined the TravelBae crew',           check: () => true },
   { id: 'first_flight',   name: 'First Flight',    emoji: '✈️', desc: 'Created your very first trip',         check: s => s.tripCount >= 1 },
@@ -138,7 +139,8 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
     const reader = new FileReader();
     reader.onload = (ev) => {
       const img = new Image();
-      img.onload = () => {
+      img.onload = async () => {
+        // Resize to canvas (used as fallback / preview)
         const MAX = 240;
         const scale = Math.min(1, MAX / Math.max(img.width, img.height));
         const w = Math.round(img.width * scale);
@@ -147,8 +149,34 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         c.width = w; c.height = h;
         c.getContext('2d').drawImage(img, 0, 0, w, h);
         const dataUrl = c.toDataURL('image/jpeg', 0.85);
+        // Optimistically show the base64 preview right away
         setAvatar(dataUrl);
         persist({ name, avatar: dataUrl });
+        // Attempt ImageKit upload in background
+        try {
+          const auth = await imagekitAuth();
+          const blob = await (await fetch(dataUrl)).blob();
+          const safeFile = (file.name || 'avatar.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
+          const fileName = `avatar_${Date.now()}_${safeFile}`;
+          const form = new FormData();
+          form.append('file', blob, fileName);
+          form.append('fileName', fileName);
+          form.append('folder', '/tb-avatars');
+          form.append('useUniqueFileName', 'false');
+          form.append('publicKey',  auth.publicKey);
+          form.append('signature',  auth.signature);
+          form.append('expire',     String(auth.expire));
+          form.append('token',      auth.token);
+          const res = await fetch('https://upload.imagekit.io/api/v1/files/upload', { method: 'POST', body: form });
+          const data = await res.json();
+          if (data.url) {
+            const ikUrl = data.url + '?tr=w-240,h-240,fo-face,q-85';
+            setAvatar(ikUrl);
+            persist({ name, avatar: ikUrl });
+          }
+        } catch {
+          // IK upload failed — base64 preview stays, no issue
+        }
       };
       img.src = ev.target.result;
     };
