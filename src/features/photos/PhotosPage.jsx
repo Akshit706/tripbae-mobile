@@ -84,7 +84,8 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       border-radius:50%; background:rgba(255,255,255,0.04); z-index:3; pointer-events:none;
     }
     .ph-hero-content {
-      position:relative; z-index:4; padding:1.1rem 1.15rem 1rem;
+      position:relative; z-index:4; padding:1.15rem 1.15rem 1.05rem;
+      text-align:center;
     }
     .ph-hero-eyebrow {
       font-size:9px; font-weight:700; color:rgba(255,255,255,0.38);
@@ -97,11 +98,12 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     }
     .ph-hero-dest {
       font-size:11px; color:rgba(255,255,255,0.48); margin-bottom:10px;
-      display:flex; align-items:center; gap:4px;
+      display:flex; align-items:center; gap:4px; justify-content:center;
     }
     /* inline stats row */
     .ph-hero-stats {
-      display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:nowrap;
+      display:flex; align-items:center; gap:10px; margin-bottom:0; flex-wrap:nowrap;
+      justify-content:center;
     }
     .ph-hero-stat-item {
       display:flex; align-items:center; gap:4px;
@@ -110,18 +112,15 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-hero-stat-lbl { font-size:11px; color:rgba(255,255,255,0.48); }
     .ph-hero-stat-div { width:1px; height:12px; background:rgba(255,255,255,0.18); flex-shrink:0; }
 
-    /* encryption strip */
-    .ph-enc-strip {
-      display:flex; align-items:center; gap:7px;
-      background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.18);
-      border-radius:10px; padding:6px 10px; backdrop-filter:blur(6px);
+    /* privacy note — plain bold line below hero */
+    .ph-privacy-note {
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      padding:.6rem 1rem .3rem;
     }
-    .ph-enc-strip-icon {
-      width:20px; height:20px; border-radius:6px;
-      background:rgba(255,255,255,0.15);
-      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    .ph-privacy-note-text {
+      font-size:11px; font-weight:600; color:#6B5E54;
+      letter-spacing:0.1px;
     }
-    .ph-enc-strip-label { font-size:10.5px; font-weight:700; color:rgba(255,255,255,0.82); flex:1; }
 
     /* ── member tabs ── */
     .ph-tabs {
@@ -601,18 +600,15 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
               <span className="ph-hero-stat-lbl">{memberNames.length === 1 ? 'member' : 'members'}</span>
             </div>
           </div>
-          <div className="ph-enc-strip">
-            <div className="ph-enc-strip-icon">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-              </svg>
-            </div>
-            <span className="ph-enc-strip-label">End-to-end encrypted &amp; private</span>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-            </svg>
-          </div>
         </div>
+      </div>
+
+      {/* ── Privacy note ── */}
+      <div className="ph-privacy-note">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+        <span className="ph-privacy-note-text">Only your trip group can see these photos</span>
       </div>
 
       {/* ── Member folder tabs ── */}
