@@ -1208,6 +1208,31 @@ function ClubPage({ trip, onTripRefresh }) {
           60% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
           100% { transform: translateX(220%) skewX(-18deg); opacity: 0; }
         }
+        @keyframes clubNeonGlow {
+          0%,100% { box-shadow: 0 0 28px rgba(247,37,133,0.28), 0 0 56px rgba(76,201,240,0.12), 0 8px 40px rgba(11,6,25,0.7); }
+          35% { box-shadow: 0 0 48px rgba(247,37,133,0.48), 0 0 80px rgba(76,201,240,0.22), 0 16px 60px rgba(11,6,25,0.8); }
+          70% { box-shadow: 0 0 36px rgba(114,9,183,0.4), 0 0 64px rgba(247,37,133,0.2), 0 12px 50px rgba(11,6,25,0.75); }
+        }
+        @keyframes clubOrb1 {
+          0%,100% { transform: translate(0,0) scale(1); opacity:.8; }
+          33% { transform: translate(-18px,14px) scale(1.12); opacity:1; }
+          66% { transform: translate(12px,-10px) scale(0.92); opacity:.7; }
+        }
+        @keyframes clubOrb2 {
+          0%,100% { transform: translate(0,0) scale(1); opacity:.7; }
+          40% { transform: translate(16px,-18px) scale(1.08); opacity:1; }
+          75% { transform: translate(-10px,14px) scale(1.04); opacity:.8; }
+        }
+        @keyframes clubNeonScan {
+          0% { transform: translateX(-140%) skewX(-12deg); opacity:0; }
+          12% { opacity:1; }
+          88% { opacity:1; }
+          100% { transform: translateX(280%) skewX(-12deg); opacity:0; }
+        }
+        @keyframes clubTagPop {
+          from { opacity:0; transform:scale(0.8) translateY(6px); }
+          to   { opacity:1; transform:scale(1) translateY(0); }
+        }
         @media (hover: hover) {
           button[data-club-card='true']:hover {
             transform: translateY(-4px);
@@ -1259,52 +1284,48 @@ function ClubPage({ trip, onTripRefresh }) {
       )}
 
       {/* ── Hero card ── */}
-      <div style={{ position: 'relative', borderRadius: 22, overflow: 'hidden', background: 'linear-gradient(155deg,#07100C 0%,#0C2518 38%,#0F4A34 70%,#1D9E75 100%)', margin: '1rem 1rem 0', boxShadow: '0 4px 32px rgba(15,110,86,0.22)', animation: 'clubPop .3s ease-out both' }}>
+      <div style={{ position: 'relative', borderRadius: 24, overflow: 'hidden', background: 'linear-gradient(145deg,#0B0619 0%,#1C0850 28%,#3D0A6E 55%,#6B0F7A 78%,#9B1B5A 100%)', margin: '1rem 1rem 1rem', animation: 'clubNeonGlow 4s ease-in-out infinite' }}>
+        {/* orb 1 — top-right hot pink */}
+        <div style={{ position:'absolute', top:-50, right:-35, width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle,rgba(247,37,133,0.55) 0%,transparent 68%)', zIndex:1, pointerEvents:'none', animation:'clubOrb1 7s ease-in-out infinite' }} />
+        {/* orb 2 — bottom-left cyan */}
+        <div style={{ position:'absolute', bottom:-55, left:-25, width:175, height:175, borderRadius:'50%', background:'radial-gradient(circle,rgba(76,201,240,0.38) 0%,transparent 68%)', zIndex:1, pointerEvents:'none', animation:'clubOrb2 9s ease-in-out infinite 1.8s' }} />
+        {/* orb 3 — mid purple */}
+        <div style={{ position:'absolute', top:'25%', left:'40%', width:130, height:130, borderRadius:'50%', background:'radial-gradient(circle,rgba(139,92,246,0.3) 0%,transparent 70%)', zIndex:1, pointerEvents:'none', animation:'clubOrb1 12s ease-in-out infinite 4s' }} />
         {/* dot grid */}
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle,rgba(255,255,255,0.055) 1px,transparent 1px)', backgroundSize: '20px 20px', zIndex: 1, pointerEvents: 'none' }} />
-        {/* overlay */}
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(165deg,rgba(4,12,8,0.9) 0%,rgba(7,22,13,0.65) 50%,rgba(15,74,52,0.42) 100%)', zIndex: 2 }} />
-        {/* shimmer */}
-        <div style={{ position: 'absolute', top: 0, bottom: 0, width: '50%', background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.05),transparent)', zIndex: 3, animation: 'clubShine 9s ease-in-out infinite 3s', pointerEvents: 'none' }} />
-        {/* deco circle */}
-        <div style={{ position: 'absolute', top: -28, right: -18, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,0.035)', zIndex: 3, pointerEvents: 'none' }} />
+        <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px)', backgroundSize:'18px 18px', zIndex:2, pointerEvents:'none' }} />
+        {/* dark overlay */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(165deg,rgba(8,2,20,0.78) 0%,rgba(20,5,50,0.48) 50%,rgba(80,8,70,0.28) 100%)', zIndex:3 }} />
+        {/* neon scan */}
+        <div style={{ position:'absolute', top:0, bottom:0, width:'38%', background:'linear-gradient(90deg,transparent,rgba(247,37,133,0.14),rgba(76,201,240,0.1),transparent)', zIndex:4, animation:'clubNeonScan 6s ease-in-out infinite 1s', pointerEvents:'none' }} />
         {/* content */}
-        <div style={{ position: 'relative', zIndex: 4, padding: '1.1rem 1.15rem 1rem', textAlign: 'center' }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.36)', textTransform: 'uppercase', letterSpacing: '2.4px', marginBottom: 8 }}>✦ TRIPBAE CLUB ✦</div>
-          <img src={bglessLogo} alt="TripBae" style={{ height: 54, width: 'auto', objectFit: 'contain', display: 'block', margin: '0 auto 4px', filter: 'brightness(0) invert(1)', opacity: 0.92 }} />
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 11, fontWeight: 500, color: 'rgba(255,255,255,0.45)', letterSpacing: '0.3px', fontStyle: 'italic', marginBottom: 12 }}>find your people.</div>
-          {/* stats row */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', flexWrap: 'nowrap', marginBottom: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.48)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 700, color: '#fff' }}>{(hub.discover || []).length}</span>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.46)' }}>groups nearby</span>
+        <div style={{ position:'relative', zIndex:5, padding:'1.25rem 1.2rem 1.15rem', textAlign:'center' }}>
+          <div style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.35)', textTransform:'uppercase', letterSpacing:'2.8px', marginBottom:10 }}>✦ TRIPBAE CLUB ✦</div>
+          <img src={bglessLogo} alt="TripBae" style={{ height:72, width:'auto', objectFit:'contain', display:'block', margin:'0 auto 3px', filter:'drop-shadow(0 0 18px rgba(247,37,133,0.7)) drop-shadow(0 0 40px rgba(76,201,240,0.35)) brightness(0) invert(1)', opacity:0.96 }} />
+          <div style={{ fontFamily:"'Sora',sans-serif", fontSize:12, fontWeight:700, background:'linear-gradient(90deg,#F9A8D4,#C084FC,#67E8F9)', WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text', letterSpacing:'0.5px', fontStyle:'italic', marginBottom:16 }}>find your people.</div>
+          {/* stat pills */}
+          <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(247,37,133,0.2)', border:'1px solid rgba(247,37,133,0.38)', borderRadius:99, padding:'5px 12px', animation:'clubTagPop .4s cubic-bezier(0.34,1.4,0.64,1) both .1s' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#F9A8D4" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <span style={{ fontFamily:"'Sora',sans-serif", fontSize:12, fontWeight:800, color:'#fff' }}>{(hub.discover||[]).length}</span>
+              <span style={{ fontSize:10.5, color:'rgba(249,168,212,0.8)' }}>groups nearby</span>
             </div>
-            <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.16)', flexShrink: 0 }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.48)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 700, color: '#fff' }}>{hub.chats?.length || 0}</span>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.46)' }}>{(hub.chats?.length || 0) === 1 ? 'chat' : 'chats'}</span>
+            <div style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(76,201,240,0.15)', border:'1px solid rgba(76,201,240,0.32)', borderRadius:99, padding:'5px 12px', animation:'clubTagPop .4s cubic-bezier(0.34,1.4,0.64,1) both .2s' }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#67E8F9" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              <span style={{ fontFamily:"'Sora',sans-serif", fontSize:12, fontWeight:800, color:'#fff' }}>{hub.chats?.length||0}</span>
+              <span style={{ fontSize:10.5, color:'rgba(103,232,249,0.8)' }}>{(hub.chats?.length||0)===1?'chat':'chats'}</span>
             </div>
-            {hub.incomingRequests.length > 0 && <>
-              <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.16)', flexShrink: 0 }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#5BE3B0" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-                <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 12, fontWeight: 700, color: '#5BE3B0' }}>{hub.incomingRequests.length}</span>
-                <span style={{ fontSize: 11, color: 'rgba(91,227,176,0.7)' }}>new {hub.incomingRequests.length === 1 ? 'request' : 'requests'}</span>
+            {hub.incomingRequests.length>0 && (
+              <div style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(251,191,36,0.2)', border:'1px solid rgba(251,191,36,0.4)', borderRadius:99, padding:'5px 12px', animation:'clubTagPop .4s cubic-bezier(0.34,1.4,0.64,1) both .3s, clubPulse 2.2s ease-in-out infinite 1s' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#FCD34D" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                <span style={{ fontFamily:"'Sora',sans-serif", fontSize:12, fontWeight:800, color:'#FCD34D' }}>{hub.incomingRequests.length} new</span>
               </div>
-            </>}
-          </div>
-          {/* safety note */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, marginTop: 10, paddingTop: 9, borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5BE3B0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, display: 'block' }}><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            <span style={{ fontSize: 10.5, fontWeight: 600, color: 'rgba(255,255,255,0.52)', letterSpacing: '0.15px' }}>Community guidelines apply · interact safely</span>
+            )}
           </div>
         </div>
       </div>
 
       {/* ── Underline tabs ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1.5px solid rgba(15,23,42,0.1)', marginBottom: '0.75rem', marginTop: 2 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1.5px solid rgba(15,23,42,0.1)', marginBottom: '0.75rem', marginTop: 0 }}>
         {[
           { id: 'discover', label: 'Discover' },
           { id: 'profile', label: 'Profile' },
