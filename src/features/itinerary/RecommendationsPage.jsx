@@ -343,7 +343,8 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
         {filtered.map((h, i) => {
           const stCfg = STAY_CFG[h.stayType] || STAY_CFG.hotel;
           const prCfg = PRICE_CFG[h.priceLevel] || PRICE_CFG.mid;
-          const priceDisplay = h.pricePerNight || PRICE_DISPLAY[h.priceLevel] || null;
+          // Only show price if it actually comes from the data — never fake it
+          const priceDisplay = h.pricePerNight || null;
           const mapsUrl = h.lat&&h.lng
             ? `https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}`
             : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name+' '+destination)}`;
@@ -403,6 +404,14 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
                         <span style={{ flexShrink:0 }}>📍</span>
                         <span>{h.address.length>65 ? h.address.slice(0,65)+'…' : h.address}</span>
                       </div>
+                    )}
+                    {h.phone && (
+                      <a href={`tel:${h.phone}`} onClick={e=>e.stopPropagation()}
+                        style={{ display:'inline-flex',alignItems:'center',gap:5,marginTop:5,
+                          fontSize:12,fontWeight:700,color:'#1D4ED8',textDecoration:'none' }}>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        {h.phone}
+                      </a>
                     )}
                   </div>
                 </div>
