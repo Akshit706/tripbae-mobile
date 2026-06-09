@@ -32,58 +32,112 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     @keyframes phSlideUp  { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
     @keyframes phSpin     { to{transform:rotate(360deg)} }
     @keyframes phPulse    { 0%,100%{opacity:.7} 50%{opacity:1} }
+    @keyframes phHeroGlow { 0%,100%{box-shadow:0 4px 32px rgba(15,110,86,0.22)} 50%{box-shadow:0 16px 56px rgba(29,158,117,0.42)} }
+    @keyframes phHeroScan {
+      0%   { transform:translateX(-100%); opacity:0; }
+      8%   { opacity:1; }
+      92%  { opacity:1; }
+      100% { transform:translateX(220%); opacity:0; }
+    }
+    @keyframes phRingPulse {
+      0%,100% { box-shadow:0 0 0 0 rgba(29,158,117,0.55); }
+      50%     { box-shadow:0 0 0 7px rgba(29,158,117,0); }
+    }
+    @keyframes phCellIn   { from{opacity:0;transform:scale(0.93)} to{opacity:1;transform:scale(1)} }
+    @keyframes phTabIn    { from{opacity:0;transform:translateY(10px) scale(0.86)} to{opacity:1;transform:translateY(0) scale(1)} }
 
     .ph-root {
       font-family:'DM Sans',sans-serif; background:#FAF8F4; color:#1C1410;
       min-height:100vh; padding-bottom:8rem; animation:phPageIn .3s ease both;
     }
 
-    /* ── Hero banner ── */
+    /* ── Hero card (Explore-style, real photo background) ── */
     .ph-hero {
-      background:linear-gradient(145deg,#0F6E56 0%,#1D9E75 55%,#22B584 100%);
-      padding:1.1rem 1rem 1rem; position:relative; overflow:hidden;
+      position:relative; border-radius:22px; overflow:hidden; min-height:195px;
+      background:linear-gradient(160deg,#081510 0%,#0A2C1A 40%,#0F6E56 100%);
+      margin:1rem 1rem 0;
+      animation:phHeroGlow 5s ease-in-out infinite;
     }
-    .ph-hero::before {
-      content:''; position:absolute; top:-40px; right:-30px;
-      width:140px; height:140px; border-radius:50%;
-      background:rgba(255,255,255,0.07); pointer-events:none;
+    .ph-hero-bg {
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:cover; opacity:0.26;
+      transform:scale(1.06); transition:opacity .8s ease;
     }
-    .ph-hero::after {
-      content:''; position:absolute; bottom:-50px; left:-20px;
-      width:110px; height:110px; border-radius:50%;
-      background:rgba(255,255,255,0.05); pointer-events:none;
+    .ph-hero-dot-grid {
+      position:absolute; inset:0;
+      background-image:radial-gradient(circle,rgba(255,255,255,0.06) 1px,transparent 1px);
+      background-size:20px 20px; pointer-events:none; z-index:1;
     }
-    .ph-hero-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:.7rem; }
-    .ph-hero-left { display:flex; align-items:center; gap:10px; }
-    .ph-hero-icon {
-      width:40px; height:40px; border-radius:13px;
-      background:rgba(255,255,255,0.18); border:1.5px solid rgba(255,255,255,0.25);
-      display:flex; align-items:center; justify-content:center; flex-shrink:0;
-      backdrop-filter:blur(4px);
+    .ph-hero-overlay {
+      position:absolute; inset:0;
+      background:linear-gradient(165deg,rgba(6,16,11,0.85) 0%,rgba(8,30,18,0.62) 55%,rgba(15,80,50,0.44) 100%);
+      z-index:2;
     }
-    .ph-hero-title { font-family:'Sora',sans-serif; font-size:18px; font-weight:800; color:#fff; line-height:1.1; }
-    .ph-hero-sub { font-size:11px; color:rgba(255,255,255,0.7); margin-top:2px; }
-    .ph-hero-stat {
-      text-align:right;
+    .ph-hero-scan {
+      position:absolute; top:0; bottom:0; width:55%;
+      background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.055) 50%,transparent 100%);
+      z-index:3; pointer-events:none;
+      animation:phHeroScan 9s ease-in-out infinite 2.5s;
     }
-    .ph-hero-stat-num { font-family:'Sora',sans-serif; font-size:26px; font-weight:800; color:#fff; line-height:1; }
-    .ph-hero-stat-label { font-size:10px; color:rgba(255,255,255,0.65); margin-top:2px; }
+    .ph-hero-deco-c1 {
+      position:absolute; top:-35px; right:-25px; width:140px; height:140px;
+      border-radius:50%; background:rgba(255,255,255,0.04); z-index:3; pointer-events:none;
+    }
+    .ph-hero-deco-c2 {
+      position:absolute; bottom:-45px; left:-20px; width:120px; height:120px;
+      border-radius:50%; background:rgba(29,158,117,0.12); z-index:3; pointer-events:none;
+    }
+    .ph-hero-content {
+      position:relative; z-index:4; padding:1.3rem 1.25rem 1.15rem;
+      display:flex; flex-direction:column; align-items:center; text-align:center;
+    }
+    .ph-hero-eyebrow {
+      font-size:9px; font-weight:700; color:rgba(255,255,255,0.40);
+      text-transform:uppercase; letter-spacing:2.8px;
+      margin-bottom:9px;
+    }
+    .ph-hero-name {
+      font-family:'Sora',sans-serif; font-size:22px; font-weight:800; color:#fff;
+      line-height:1.15; letter-spacing:-0.5px; margin-bottom:5px;
+    }
+    .ph-hero-dest {
+      font-size:11.5px; color:rgba(255,255,255,0.52); margin-bottom:12px;
+      display:flex; align-items:center; gap:4px; justify-content:center;
+    }
+    .ph-hero-av-row {
+      display:flex; align-items:center; justify-content:center; margin-bottom:14px;
+    }
+    .ph-hero-av-chip {
+      width:28px; height:28px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-family:'Sora',sans-serif; font-size:10px; font-weight:800; color:#fff;
+      border:2px solid rgba(255,255,255,0.25); margin-left:-7px; flex-shrink:0;
+    }
+    .ph-hero-av-chip:first-child { margin-left:0; }
+    .ph-hero-stats-pill {
+      display:flex; align-items:center; gap:16px;
+      background:rgba(255,255,255,0.10); border:1px solid rgba(255,255,255,0.16);
+      border-radius:99px; padding:7px 18px; backdrop-filter:blur(8px);
+      margin-bottom:13px;
+    }
+    .ph-hero-sval { font-family:'Sora',sans-serif; font-size:15px; font-weight:800; color:#fff; line-height:1; }
+    .ph-hero-slbl { font-size:9px; color:rgba(255,255,255,0.45); margin-top:2px; }
+    .ph-hero-sdiv { width:1px; height:22px; background:rgba(255,255,255,0.18); }
 
     /* encryption strip */
     .ph-enc-strip {
-      display:flex; align-items:center; gap:9px;
-      background:rgba(255,255,255,0.14); border:1px solid rgba(255,255,255,0.22);
-      border-radius:10px; padding:8px 12px;
-      backdrop-filter:blur(4px);
+      display:flex; align-items:center; gap:9px; width:100%;
+      background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.20);
+      border-radius:12px; padding:9px 12px; backdrop-filter:blur(6px);
     }
     .ph-enc-strip-icon {
       width:26px; height:26px; border-radius:8px;
-      background:rgba(255,255,255,0.2);
+      background:rgba(255,255,255,0.18);
       display:flex; align-items:center; justify-content:center; flex-shrink:0;
     }
     .ph-enc-strip-text { flex:1; }
     .ph-enc-strip-label { font-size:11.5px; font-weight:700; color:#fff; }
-    .ph-enc-strip-desc { font-size:10.5px; color:rgba(255,255,255,0.72); margin-top:1px; line-height:1.35; }
+    .ph-enc-strip-desc { font-size:10.5px; color:rgba(255,255,255,0.65); margin-top:1px; line-height:1.35; }
 
     /* ── member tabs ── */
     .ph-tabs {
@@ -104,7 +158,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     }
     .ph-tab.active .ph-tab-ring {
       border-color:#1D9E75;
-      box-shadow:0 0 0 3px rgba(29,158,117,0.15);
+      animation:phRingPulse 2.2s ease-in-out infinite;
     }
     .ph-tab-av {
       width:100%; height:100%; border-radius:50%;
@@ -482,6 +536,16 @@ function PhotosPage({ trip, myNickname }) {
   const initials = (name) => (name || '?').slice(0, 2).toUpperCase();
   const totalPhotos = allPhotos.length;
 
+  /* ── pick one photo as hero background ── */
+  const heroBgUrl = useMemo(() => {
+    if (!allPhotos.length) return null;
+    const seed = Math.abs(Array.from(trip.id || 'x').reduce((a, c) => a + c.charCodeAt(0), 0));
+    const photo = allPhotos[seed % allPhotos.length];
+    if (!photo?.url) return null;
+    if (!photo.url.includes('ik.imagekit.io')) return photo.url;
+    return photo.url.replace(/(\.[^./?]+)(\?.*)?$/, '/tr:w-700,h-280,fo-auto,q-65$1$2');
+  }, [allPhotos, trip.id]);
+
   return (
     <div className="ph-root">
 
@@ -522,42 +586,60 @@ function PhotosPage({ trip, myNickname }) {
         </div>
       )}
 
-      {/* ── Hero banner ── */}
+      {/* ── Hero card (Explore-style, centered, photo bg) ── */}
       <div className="ph-hero">
-        <div className="ph-hero-row">
-          <div className="ph-hero-left">
-            <div className="ph-hero-icon">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-              </svg>
-            </div>
-            <div>
-              <div className="ph-hero-title">Trip Album</div>
-              <div className="ph-hero-sub">{memberNames.length} member{memberNames.length !== 1 ? 's' : ''} · shared space</div>
-            </div>
-          </div>
-          {totalPhotos > 0 && (
-            <div className="ph-hero-stat">
-              <div className="ph-hero-stat-num">{totalPhotos}</div>
-              <div className="ph-hero-stat-label">{totalPhotos === 1 ? 'photo' : 'photos'}</div>
+        {heroBgUrl && <img className="ph-hero-bg" src={heroBgUrl} alt="" />}
+        <div className="ph-hero-dot-grid" />
+        <div className="ph-hero-overlay" />
+        <div className="ph-hero-scan" />
+        <div className="ph-hero-deco-c1" />
+        <div className="ph-hero-deco-c2" />
+        <div className="ph-hero-content">
+          <div className="ph-hero-eyebrow">✦ TRIP ALBUM ✦</div>
+          <div className="ph-hero-name">{trip.groupName || trip.destination || 'Our Memories'}</div>
+          {trip.destination && (
+            <div className="ph-hero-dest">
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              {trip.destination}
             </div>
           )}
-        </div>
-
-        {/* End-to-end encryption notice */}
-        <div className="ph-enc-strip">
-          <div className="ph-enc-strip-icon">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          {memberNames.length > 0 && (
+            <div className="ph-hero-av-row">
+              {memberNames.slice(0, 6).map((m, i) => (
+                <div key={m} className="ph-hero-av-chip" style={{ background: mcolor(m), zIndex: memberNames.length - i }}>
+                  {initials(m)}
+                </div>
+              ))}
+              {memberNames.length > 6 && (
+                <div className="ph-hero-av-chip" style={{ background: 'rgba(255,255,255,0.18)', zIndex: 0, fontSize: 9 }}>+{memberNames.length - 6}</div>
+              )}
+            </div>
+          )}
+          <div className="ph-hero-stats-pill">
+            <div style={{ textAlign: 'center' }}>
+              <div className="ph-hero-sval">{totalPhotos}</div>
+              <div className="ph-hero-slbl">Photos</div>
+            </div>
+            <div className="ph-hero-sdiv" />
+            <div style={{ textAlign: 'center' }}>
+              <div className="ph-hero-sval">{memberNames.length}</div>
+              <div className="ph-hero-slbl">Members</div>
+            </div>
+          </div>
+          <div className="ph-enc-strip">
+            <div className="ph-enc-strip-icon">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <div className="ph-enc-strip-text">
+              <div className="ph-enc-strip-label">End-to-end encrypted &amp; private</div>
+              <div className="ph-enc-strip-desc">Only members of this trip can view or download.</div>
+            </div>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
             </svg>
           </div>
-          <div className="ph-enc-strip-text">
-            <div className="ph-enc-strip-label">End-to-end encrypted &amp; private</div>
-            <div className="ph-enc-strip-desc">Only members of this trip can view or download these photos.</div>
-          </div>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
         </div>
       </div>
 
@@ -624,11 +706,6 @@ function PhotosPage({ trip, myNickname }) {
               <div className="ph-upload-right">
                 <div className="ph-upload-title">{dragging ? 'Release to upload' : 'Upload photos'}</div>
                 <div className="ph-upload-sub">Tap to pick · drag and drop · JPG PNG HEIC</div>
-              </div>
-              <div className="ph-upload-arrow">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
               </div>
             </div>
           </label>
