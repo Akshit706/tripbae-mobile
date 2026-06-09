@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense, deleteClubChatSplitExpense, deleteClubChat, addPhoto, deletePhoto } from '../../api';
+import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respondClubRequest, sendClubChatMessage, createClubChatSplitExpense, deleteClubChatSplitExpense, deleteClubChat, addPhoto, deletePhoto, imagekitAuth } from '../../api';
 import { supabase } from '../../supabase';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
@@ -453,6 +453,7 @@ function ClubPage({ trip, onTripRefresh }) {
   const [chatPhotoFolder, setChatPhotoFolder] = useState('all');
   const [chatPhotoLightbox, setChatPhotoLightbox] = useState(null);
   const [chatPhotoUploading, setChatPhotoUploading] = useState(false);
+  const [profilePhotoUploading, setProfilePhotoUploading] = useState(false);
   const [chatPhotoProgress, setChatPhotoProgress] = useState(0);
   const [chatPhotoDragging, setChatPhotoDragging] = useState(false);
   const [chatPhotoSelected, setChatPhotoSelected] = useState(new Set());
@@ -694,29 +695,32 @@ function ClubPage({ trip, onTripRefresh }) {
     setClubBusy(false);
   };
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if ((profileForm.photoUrls || []).length >= 3) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const img = new Image();
-      img.onload = () => {
-        const MAX = 900;
-        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-        const w = Math.round(img.width * scale);
-        const h = Math.round(img.height * scale);
-        const c = document.createElement('canvas');
-        c.width = w;
-        c.height = h;
-        c.getContext('2d').drawImage(img, 0, 0, w, h);
-        const dataUrl = c.toDataURL('image/jpeg', 0.88);
-        setProfileForm((f) => ({ ...f, photoUrls: [...(f.photoUrls || []).slice(0, 2), dataUrl] }));
-        if (e.target) e.target.value = '';
-      };
-      img.src = ev.target.result;
-    };
-    reader.readAsDataURL(file);
+    if (e.target) e.target.value = '';
+    setProfilePhotoUploading(true);
+    try {
+      const auth = await imagekitAuth();
+      const fileName = `club_${trip.id}_${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+      const form = new FormData();
+      form.append('file', file);
+      form.append('fileName', fileName);
+      form.append('folder', `/tb-club/${trip.id}`);
+      form.append('useUniqueFileName', 'false');
+      form.append('publicKey', auth.publicKey);
+      form.append('signature', auth.signature);
+      form.append('expire', String(auth.expire));
+      form.append('token', auth.token);
+      const res = await fetch('https://upload.imagekit.io/api/v1/files/upload', { method: 'POST', body: form });
+      const data = await res.json();
+      if (!data.url) throw new Error('Upload failed');
+      setProfileForm((f) => ({ ...f, photoUrls: [...(f.photoUrls || []).slice(0, 2), data.url] }));
+    } catch (err) {
+      alert('Photo upload failed: ' + err.message);
+    }
+    setProfilePhotoUploading(false);
   };
 
   const handleSaveProfile = async () => {
@@ -1397,10 +1401,13 @@ function ClubPage({ trip, onTripRefresh }) {
                 </div>
               ))}
               {(profileForm.photoUrls||[]).length < 3 && (
-                <button type="button" onClick={() => fileRef.current?.click()}
-                  style={{ width:120, height:160, borderRadius:18, background:'#F9FAFB', border:'2px dashed #D1D5DB', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, cursor:'pointer', flexShrink:0, color:'#9CA3AF' }}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                  <span style={{ fontSize:11, fontWeight:600 }}>Add photo</span>
+                <button type="button" onClick={() => !profilePhotoUploading && fileRef.current?.click()}
+                  style={{ width:120, height:160, borderRadius:18, background:profilePhotoUploading?'#FAF7FF':'#F9FAFB', border:profilePhotoUploading?'2px dashed #C4B5FD':'2px dashed #D1D5DB', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:8, cursor:profilePhotoUploading?'not-allowed':'pointer', flexShrink:0, color:profilePhotoUploading?'#7B2FF7':'#9CA3AF' }}>
+                  {profilePhotoUploading
+                    ? <div style={{ width:24, height:24, borderRadius:'50%', border:'2.5px solid rgba(123,47,247,0.18)', borderTopColor:'#7B2FF7', animation:'clubSpin .75s linear infinite' }} />
+                    : <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                  }
+                  <span style={{ fontSize:11, fontWeight:600 }}>{profilePhotoUploading?'Uploading…':'Add photo'}</span>
                 </button>
               )}
             </div>
@@ -1454,8 +1461,8 @@ function ClubPage({ trip, onTripRefresh }) {
           </div>
 
           {/* Location picker */}
-          <div style={{ marginTop:14, background:'#F0F9FF', border:'1px solid rgba(55,138,221,0.2)', borderRadius:18, padding:'14px 16px' }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'#378ADD', textTransform:'uppercase', letterSpacing:0.4, marginBottom:8 }}>📍 Your Location</div>
+          <div style={{ marginTop:14, background:'#FAF7FF', border:'1px solid rgba(123,47,247,0.18)', borderRadius:18, padding:'14px 16px' }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'#7B2FF7', textTransform:'uppercase', letterSpacing:0.4, marginBottom:8 }}>📍 Your Location</div>
             {locLabel ? (
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                 <div style={{ flex:1, fontSize:14, fontWeight:600, color:'#0F172A' }}>📍 {locLabel}</div>
@@ -1470,7 +1477,7 @@ function ClubPage({ trip, onTripRefresh }) {
                     <input style={{ border:'none', background:'transparent', flex:1, padding:'10px 0', fontSize:14, outline:'none' }}
                       placeholder="Type your city…" value={locQuery}
                       onChange={e => { setLocQuery(e.target.value); clearTimeout(locDebounce.current); locDebounce.current = setTimeout(() => searchLocality(e.target.value), 340); }} />
-                    {locSearching && <div style={{ width:16, height:16, border:'2px solid #E1F5EE', borderTopColor:'#1D9E75', borderRadius:'50%', animation:'clubSpin .75s linear infinite', flexShrink:0 }} />}
+                    {locSearching && <div style={{ width:16, height:16, border:'2px solid rgba(123,47,247,0.15)', borderTopColor:'#7B2FF7', borderRadius:'50%', animation:'clubSpin .75s linear infinite', flexShrink:0 }} />}
                   </div>
                   {locSuggestions.length > 0 && (
                     <div style={{ position:'absolute', left:0, right:0, top:'100%', background:'#fff', border:'1px solid rgba(0,0,0,0.1)', borderRadius:12, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', zIndex:50, overflow:'hidden', marginTop:4 }}>
@@ -1498,7 +1505,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
           {/* Save button */}
           <div style={{ display:'flex', gap:10, marginTop:20 }}>
-            <button style={{ flex:1, padding:'14px', fontSize:15, fontWeight:800, borderRadius:18, border:'none', cursor:clubBusy?'not-allowed':'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#1D9E75,#0F6E56)', color:'#fff', boxShadow:'0 4px 18px rgba(29,158,117,0.32)', opacity:clubBusy?0.7:1 }} disabled={clubBusy} onClick={handleSaveProfile}>
+            <button style={{ flex:1, padding:'14px', fontSize:15, fontWeight:800, borderRadius:18, border:'none', cursor:(clubBusy||profilePhotoUploading)?'not-allowed':'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 50%,#FF416C 100%)', color:'#fff', boxShadow:'0 4px 20px rgba(123,47,247,0.35)', opacity:(clubBusy||profilePhotoUploading)?0.7:1 }} disabled={clubBusy||profilePhotoUploading} onClick={handleSaveProfile}>
               {clubBusy ? 'Saving…' : 'Save My Card'}
             </button>
             <button style={{ padding:'14px 20px', fontSize:14, fontWeight:600, borderRadius:18, border:'1.5px solid #E5E7EB', cursor:'pointer', background:'#fff', color:'#374151' }} disabled={clubBusy} onClick={() => setClubView('discover')}>Back</button>
