@@ -50,6 +50,9 @@ if (typeof document !== 'undefined' && !document.getElementById('recs-v2-styles'
     .r-bounce { animation: rBounce 2s ease-in-out infinite; }
     .r-fade { animation: rFadeIn 0.4s ease both; }
     .r-sheet-in { animation: rSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both; }
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:#C9913A;cursor:pointer;box-shadow:0 2px 6px rgba(201,145,58,0.38)}
+    input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#C9913A;cursor:pointer;border:none;box-shadow:0 2px 6px rgba(201,145,58,0.38)}
+    input[type=range]:focus{outline:none}
   `;
   document.head.appendChild(el);
 }
@@ -104,6 +107,10 @@ const STAY_CFG = {
   hostel:     { icon:'🛏️', label:'Hostel',     bg:D.sageTint, color:'#166534' },
   guesthouse: { icon:'🏡', label:'Guesthouse', bg:D.goldTint, color:'#92400E' },
   resort:     { icon:'🌴', label:'Resort',     bg:'#FDF0EE',  color:'#9D2A0F' },
+  homestay:   { icon:'🏠', label:'Homestay',   bg:'#F0FDF4',  color:'#15803D' },
+  apartment:  { icon:'🏢', label:'Apartment',  bg:'#F0F9FF',  color:'#0369A1' },
+  villa:      { icon:'🏛️', label:'Villa',      bg:'#FFF7ED',  color:'#C2410C' },
+  bnb:        { icon:'☕', label:'B&B',        bg:'#FFFBEB',  color:'#A16207' },
 };
 const PRICE_CFG = {
   budget: { label:'Budget', icon:'₹',   bg:'#ECFDF5', color:'#065F46' },
@@ -121,7 +128,22 @@ const RENTAL_CFG = {
   bike:    { icon:'🏍️', label:'Bike',    bg:D.sageTint,  color:'#166534' },
   scooter: { icon:'🛵', label:'Scooter', bg:D.goldTint,  color:'#92400E' },
   cycle:   { icon:'🚲', label:'Cycle',   bg:'#F4F3FF',   color:'#534AB7' },
-};const RATINGS = [{v:0,l:'Any'},{v:3,l:'3+'},{v:3.5,l:'3.5+'},{v:4,l:'4+'},{v:4.5,l:'4.5+'}];
+};const RATINGS = [
+  {v:0,   l:'Any'},
+  {v:3.0, l:'Pleasant'},
+  {v:3.5, l:'Good'},
+  {v:4.0, l:'Very Good'},
+  {v:4.5, l:'Excellent'},
+  {v:4.7, l:'Exceptional'},
+];
+const HOTEL_STARS = [
+  {v:0, l:'Any'},
+  {v:1, l:'1 ★'},
+  {v:2, l:'2 ★★'},
+  {v:3, l:'3 ★★★'},
+  {v:4, l:'4 ★★★★'},
+  {v:5, l:'5 ★★★★★'},
+];
 /* ── FilterChip ── */
 function FilterChip({ label, active, onClick, bg, color }) {
   const defaultBg    = active ? (bg || D.goldTint) : D.surface;
@@ -168,7 +190,7 @@ function FilterLabel({ children }) {
 /* ── Filter Modal — section-scoped ── */
 function FilterModal({ open, onClose, hotels, hospitals, rentals, draft, setDraft, onApply, onReset, section }) {
   if (!open || !section) return null;
-  const availStayTypes = ['hotel','hostel','guesthouse','resort'].filter(t => hotels.some(h => h.stayType === t));
+  const availStayTypes = ['hotel','hostel','guesthouse','resort','homestay','apartment','villa','bnb'].filter(t => hotels.some(h => h.stayType === t));
   const availHospCats  = ['hospital','emergency','clinic','pharmacy'].filter(c => hospitals.some(h => h.category === c));
   const availRentTypes = ['car','bike','scooter','cycle'].filter(t => rentals.some(r => r.type === t));
   const titles = { stays: '🛏️  Stay Filters', healthcare: '🏥  Healthcare Filters', rentals: '🚗  Rental Filters' };
@@ -177,26 +199,77 @@ function FilterModal({ open, onClose, hotels, hospitals, rentals, draft, setDraf
       style={{ position:'fixed',inset:0,background:'rgba(14,16,24,0.45)',zIndex:600,display:'flex',alignItems:'flex-end',justifyContent:'center',animation:'rFadeIn .2s ease-out both' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="r-sheet-in" style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem 2rem',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)' }}>
+      <div className="r-sheet-in" style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem 2rem',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',maxHeight:'82vh',overflowY:'auto' }}>
         <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16 }}>
           <div style={{ fontFamily:"'Sora',sans-serif",fontSize:16,fontWeight:800 }}>{titles[section]}</div>
           <button onClick={onClose} style={{ width:30,height:30,borderRadius:'50%',border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'#6b6b68',padding:0 }}>✕</button>
         </div>
         {section === 'stays' && (
-          <div style={{ background:'#FDFCFA',borderRadius:16,padding:'13px 14px',marginBottom:16,border:'1px solid rgba(28,20,16,0.07)' }}>
-            <div style={{ fontSize:11,color:D.muted,marginBottom:6,fontWeight:600 }}>Stay type</div>
-            <div style={{ display:'flex',gap:6,flexWrap:'wrap',marginBottom:12 }}>
-              <ModalChip label="All Stays" active={draft.stayType==='all'} onClick={()=>setDraft(f=>({...f,stayType:'all'}))} bg={D.goldTint} color={D.gold} />
-              {availStayTypes.map(t => { const c=STAY_CFG[t]||STAY_CFG.hotel; return <ModalChip key={t} label={c.icon+' '+c.label+'s'} active={draft.stayType===t} onClick={()=>setDraft(f=>({...f,stayType:t}))} bg={c.bg} color={c.color} />; })}
+          <div style={{ display:'flex',flexDirection:'column',gap:11,marginBottom:16 }}>
+            {/* Accommodation Type */}
+            <div style={{ background:'#FDFCFA',borderRadius:14,padding:'12px 13px',border:'1px solid rgba(28,20,16,0.07)' }}>
+              <FilterLabel>Accommodation Type</FilterLabel>
+              <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+                <ModalChip label="All" active={draft.stayType==='all'} onClick={()=>setDraft(f=>({...f,stayType:'all'}))} bg={D.goldTint} color={D.gold} />
+                {availStayTypes.map(t => { const c=STAY_CFG[t]||STAY_CFG.hotel; return <ModalChip key={t} label={c.label} active={draft.stayType===t} onClick={()=>setDraft(f=>({...f,stayType:t}))} bg={c.bg} color={c.color} />; })}
+              </div>
             </div>
-            <div style={{ fontSize:11,color:D.muted,marginBottom:6,fontWeight:600 }}>Price range</div>
-            <div style={{ display:'flex',gap:6,flexWrap:'wrap',marginBottom:12 }}>
-              <ModalChip label="Any price" active={draft.priceLevel==='all'} onClick={()=>setDraft(f=>({...f,priceLevel:'all'}))} bg={D.neutral} color={D.muted} />
-              {['budget','mid','luxury'].map(p => { const c=PRICE_CFG[p]; return <ModalChip key={p} label={c.icon+' '+c.label} active={draft.priceLevel===p} onClick={()=>setDraft(f=>({...f,priceLevel:p}))} bg={c.bg} color={c.color} />; })}
+            {/* Price Range Slider */}
+            <div style={{ background:'#FDFCFA',borderRadius:14,padding:'12px 13px',border:'1px solid rgba(28,20,16,0.07)' }}>
+              <FilterLabel>Price Range</FilterLabel>
+              <input type="range" min={0} max={2} step={1} value={draft.priceMax}
+                onChange={e=>setDraft(f=>({...f,priceMax:parseInt(e.target.value)}))}
+                style={{ width:'100%',WebkitAppearance:'none',appearance:'none',height:5,borderRadius:4,outline:'none',cursor:'pointer',
+                  background:`linear-gradient(to right,${D.gold} ${draft.priceMax/2*100}%,rgba(28,20,16,0.13) ${draft.priceMax/2*100}%)` }}
+              />
+              <div style={{ display:'flex',justifyContent:'space-between',marginTop:8,fontSize:11,fontWeight:700 }}>
+                <span style={{ color: draft.priceMax<=0 ? D.gold : D.muted }}>Budget</span>
+                <span style={{ color: draft.priceMax===1 ? D.gold : D.muted }}>Mid Range</span>
+                <span style={{ color: draft.priceMax>=2 ? D.gold : D.muted }}>Luxury</span>
+              </div>
+              {draft.priceMax < 2 && (
+                <div style={{ textAlign:'center',fontSize:11.5,fontWeight:700,color:D.gold,marginTop:5 }}>
+                  {draft.priceMax===0 ? 'Budget stays only' : 'Budget & Mid-range'}
+                </div>
+              )}
             </div>
-            <div style={{ fontSize:11,color:D.muted,marginBottom:6,fontWeight:600 }}>Minimum rating</div>
-            <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
-              {RATINGS.map(f => <ModalChip key={f.v} label={f.v===0?'Any':'★ '+f.l} active={draft.minRating===f.v} onClick={()=>setDraft(p=>({...p,minRating:f.v}))} bg='#FEF9EE' color='#92400E' />)}
+            {/* Guest Rating */}
+            <div style={{ background:'#FDFCFA',borderRadius:14,padding:'12px 13px',border:'1px solid rgba(28,20,16,0.07)' }}>
+              <FilterLabel>Guest Rating</FilterLabel>
+              <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+                {RATINGS.map(r => <ModalChip key={r.v} label={r.l} active={draft.minRating===r.v} onClick={()=>setDraft(p=>({...p,minRating:r.v}))} bg='#FEF9EE' color='#92400E' />)}
+              </div>
+            </div>
+            {/* Hotel Stars */}
+            <div style={{ background:'#FDFCFA',borderRadius:14,padding:'12px 13px',border:'1px solid rgba(28,20,16,0.07)' }}>
+              <FilterLabel>Hotel Stars</FilterLabel>
+              <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+                {HOTEL_STARS.map(s => <ModalChip key={s.v} label={s.l} active={draft.starMin===s.v} onClick={()=>setDraft(p=>({...p,starMin:s.v}))} bg='#FFFBEB' color='#A16207' />)}
+              </div>
+            </div>
+            {/* Amenities */}
+            <div style={{ background:'#FDFCFA',borderRadius:14,padding:'12px 13px',border:'1px solid rgba(28,20,16,0.07)' }}>
+              <FilterLabel>Amenities</FilterLabel>
+              <div style={{ display:'flex',gap:8,flexWrap:'wrap' }}>
+                <button onClick={()=>setDraft(f=>({...f,breakfast:!f.breakfast}))}
+                  style={{ display:'flex',alignItems:'center',gap:6,padding:'8px 13px',borderRadius:10,
+                    border:`1.5px solid ${draft.breakfast ? D.gold : 'rgba(28,20,16,0.13)'}`,
+                    background: draft.breakfast ? D.goldTint : '#FAFAF8',
+                    color: draft.breakfast ? D.gold : '#7A7470',
+                    cursor:'pointer',fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>
+                  Breakfast Included
+                </button>
+                <button onClick={()=>setDraft(f=>({...f,coupleFriendly:!f.coupleFriendly}))}
+                  style={{ display:'flex',alignItems:'center',gap:6,padding:'8px 13px',borderRadius:10,
+                    border:`1.5px solid ${draft.coupleFriendly ? '#E8715A' : 'rgba(28,20,16,0.13)'}`,
+                    background: draft.coupleFriendly ? '#FDF0EE' : '#FAFAF8',
+                    color: draft.coupleFriendly ? '#E8715A' : '#7A7470',
+                    cursor:'pointer',fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:700 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  Couple Friendly
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -509,7 +582,7 @@ function LoadingSkeleton() {
 /* ════════════════════════════════════════
    MAIN COMPONENT
 ════════════════════════════════════════ */
-const INIT_FILTERS = { stayType:'all', priceLevel:'all', minRating:0, hospCat:'all', rentalType:'all' };
+const INIT_FILTERS = { stayType:'all', priceMax:2, minRating:0, hospCat:'all', rentalType:'all', breakfast:false, coupleFriendly:false, starMin:0 };
 
 export default function RecommendationsPage({ destination, isSolo, autoData, autoStep, onRetry }) {
   const [step, setStep]               = useState(autoStep || 'loading');
@@ -577,15 +650,21 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
 
   // Filtered arrays per section
   const filteredHotels = hotels.filter(h => {
-    if (filters.stayType   !== 'all' && h.stayType  !== filters.stayType)    return false;
-    if (filters.priceLevel !== 'all' && h.priceLevel !== filters.priceLevel)  return false;
-    if (filters.minRating  > 0 && (!h.rating || h.rating < filters.minRating)) return false;
+    if (filters.stayType !== 'all' && h.stayType !== filters.stayType) return false;
+    if (filters.priceMax < 2) {
+      const tierIdx = {budget:0, mid:1, luxury:2}[h.priceLevel] ?? 2;
+      if (tierIdx > filters.priceMax) return false;
+    }
+    if (filters.minRating > 0 && (!h.rating || parseFloat(h.rating) < filters.minRating)) return false;
+    if (filters.starMin > 0 && (!h.stars || h.stars < filters.starMin)) return false;
+    if (filters.breakfast && !h.breakfast) return false;
+    if (filters.coupleFriendly && !h.coupleFriendly) return false;
     return true;
   });
   const filteredHospitals = filters.hospCat    === 'all' ? hospitals : hospitals.filter(h => h.category === filters.hospCat);
   const filteredRentals   = filters.rentalType === 'all' ? rentals   : rentals.filter(r => r.type === filters.rentalType);
 
-  const stayFilterCount   = [filters.stayType!=='all', filters.priceLevel!=='all', filters.minRating>0].filter(Boolean).length;
+  const stayFilterCount   = [filters.stayType!=='all', filters.priceMax<2, filters.minRating>0, filters.starMin>0, filters.breakfast, filters.coupleFriendly].filter(Boolean).length;
   const hospFilterCount   = filters.hospCat    !== 'all' ? 1 : 0;
   const rentalFilterCount = filters.rentalType !== 'all' ? 1 : 0;
 

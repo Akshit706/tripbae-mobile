@@ -814,12 +814,13 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [showTipsPopup,      setShowTipsPopup]      = useState(false);
   const [showWelcomePopup,   setShowWelcomePopup]   = useState(false);
 
-  // Show welcome popup once per session when itinerary first loads
+  // Show welcome popup only once ever (persisted in localStorage per trip)
+  const WELCOME_SHOWN_KEY = `travelbae_welcome_seen_${trip.id}`;
   const welcomeShownRef = useRef(false);
   useEffect(() => {
     if (step === 'result' && itin && !welcomeShownRef.current) {
       welcomeShownRef.current = true;
-      // Small delay so the page renders first
+      try { if (localStorage.getItem(WELCOME_SHOWN_KEY)) return; } catch { /* ignore */ }
       const t = setTimeout(() => setShowWelcomePopup(true), 600);
       return () => clearTimeout(t);
     }
@@ -828,7 +829,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const DAY_CLOSING_MSGS = [
     { label: 'Rest & Recharge', note: 'Head back to your stay. Freshen up, put your feet up, and let the day settle in.' },
     { label: 'Wind Down', note: 'The city can wait. Take a breath, grab a light bite nearby, and ease into the evening.' },
-    { label: 'Golden Hour', note: 'Find a quiet spot to watch the sun dip. Some moments are best unplanned.' },
+    { label: 'Golden Hour', note: 'Head back as the sky turns gold. Let the last light of the day follow you home.' },
     { label: 'Evening In', note: "Return to your accommodation. A good night's rest makes tomorrow even better." },
     { label: 'Reflect & Rest', note: 'What a day. Let the memories settle while you get some well-earned rest.' },
     { label: 'Soft Landing', note: 'Head back, unwind with some local chai or a quiet walk before you sleep.' },
@@ -852,7 +853,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     { label: 'Night Walk Home', note: 'The streets at night carry a different energy. Walk back, take it in.' },
     { label: 'Easy Does It', note: 'No alarm, no rush \u2014 just a quiet end to a beautiful day.' },
     { label: 'Wrap Up', note: "Today's itinerary is complete. Grab a snack, rest, and rise ready." },
-    { label: 'Sundown', note: 'Chase the last light if you can, then head back to rest.' },
+    { label: 'Sundown', note: 'The day is done. Make your way back to your stay as the city dims its lights.' },
     { label: 'Close of Play', note: 'A full day, well-lived. Time to rest before the next one.' },
     { label: 'The Long Way Home', note: 'Take the scenic route back to your stay. There\u2019s no hurry.' },
     { label: 'Home Base', note: 'Back to your accommodation. Safe, warm, and ready for tomorrow.' },
@@ -922,7 +923,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               {showWelcomePopup && (
                 <div
                   style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.55)', zIndex: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', animation: 'welcomeFadeIn 0.25s ease both' }}
-                  onClick={e => { if (e.target === e.currentTarget) setShowWelcomePopup(false); }}
+                  onClick={e => { if (e.target === e.currentTarget) { try { localStorage.setItem(WELCOME_SHOWN_KEY, '1'); } catch { /* ignore */ } setShowWelcomePopup(false); } }}
                 >
                   <div style={{
                     width: '100%', maxWidth: 360,
@@ -972,7 +973,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                     </div>
                     <div style={{ padding: '0 1.5rem 1.5rem' }}>
                       <button
-                        onClick={() => setShowWelcomePopup(false)}
+                        onClick={() => { try { localStorage.setItem(WELCOME_SHOWN_KEY, '1'); } catch { /* ignore */ } setShowWelcomePopup(false); }}
                         style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', boxShadow: '0 4px 16px rgba(201,145,58,0.32)', letterSpacing: 0.2 }}
                       >
                         Let's explore
@@ -1003,28 +1004,32 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.50)', lineHeight: 1.5, marginBottom: 16 }}>
                     Every hour considered. Every detail placed.
                   </div>
-                  {/* Stats — left-aligned pills */}
+                  {/* Stats — plain text with dividers */}
                   {(() => {
                     const totalActs = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).length, 0);
                     const mustSees  = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).filter(act => act.mustDo).length, 0);
                     return (
-                      <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', paddingRight: itin.quickTips?.length > 0 ? '3rem' : 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.18)', borderRadius: 999, padding: '5px 11px', backdropFilter: 'blur(4px)' }}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{days}</span>
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Days</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', paddingRight: itin.quickTips?.length > 0 ? '3rem' : 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{days}</span>
+                          <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)' }}>Days</span>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.12)', border: '0.5px solid rgba(255,255,255,0.18)', borderRadius: 999, padding: '5px 11px', backdropFilter: 'blur(4px)' }}>
-                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{totalActs}</span>
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>Activities</span>
+                        <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{totalActs}</span>
+                          <span style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)' }}>Activities</span>
                         </div>
                         {mustSees > 0 && (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(245,217,168,0.18)', border: '0.5px solid rgba(245,217,168,0.32)', borderRadius: 999, padding: '5px 11px', backdropFilter: 'blur(4px)' }}>
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F5D9A8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: '#F5D9A8' }}>{mustSees}</span>
-                            <span style={{ fontSize: 11, color: 'rgba(245,217,168,0.7)' }}>Must-Sees</span>
-                          </div>
+                          <>
+                            <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#F5D9A8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                              <span style={{ fontSize: 13, fontWeight: 700, color: '#F5D9A8', fontFamily: "'Sora',sans-serif" }}>{mustSees}</span>
+                              <span style={{ fontSize: 11.5, color: 'rgba(245,217,168,0.55)' }}>Must-Sees</span>
+                            </div>
+                          </>
                         )}
                       </div>
                     );
