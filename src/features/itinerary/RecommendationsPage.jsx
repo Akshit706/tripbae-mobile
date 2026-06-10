@@ -319,129 +319,196 @@ function SecHeader({ icon, title, subtitle, count, ac, abg, onFilter, filterCoun
 }
 
 /* ════════════════════════════════════════
+   HOTEL PHOTO SLIDESHOW (5 images)
+════════════════════════════════════════ */
+function HotelPhotoSlideshow({ hotel, destination, stCfg }) {
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const [photos, setPhotos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const queries = [
+      `${hotel.name} ${destination} exterior`,
+      `${hotel.name} ${destination} room interior`,
+      `${hotel.name} ${destination} lobby`,
+      `${hotel.name} ${destination} amenities`,
+      `${destination} ${stCfg.label} travel`,
+    ];
+    // Kick off all 5 fetches in parallel; fill in as they resolve
+    const localPhotos = hotel.imageUrl ? [hotel.imageUrl] : [];
+    setPhotos(localPhotos.length ? localPhotos : []);
+    setLoading(true);
+
+    const { fetchPlacePhotos } = { fetchPlacePhotos: null };
+    // Dynamically fetch photos for each query
+    const promises = queries.map((q, i) =>
+      import('../../api').then(({ fetchPlacePhotos: fp }) =>
+        fp(q).then(d => (d.urls || [])[0] || null).catch(() => null)
+      )
+    );
+    let mounted = true;
+    Promise.all(promises).then(urls => {
+      if (!mounted) return;
+      // Merge imageUrl (if any) + fetched, deduplicate, take up to 5
+      const all = [hotel.imageUrl, ...urls].filter(Boolean);
+      const unique = [...new Set(all)].slice(0, 5);
+      setPhotos(unique.length ? unique : []);
+      setLoading(false);
+    });
+    return () => { mounted = false; };
+  }, [hotel.id || hotel.name, destination]);
+
+  const gradients = [
+    'linear-gradient(135deg,#0F2027,#203A43,#2C5364)',
+    'linear-gradient(135deg,#1A1A2E,#16213E,#0F3460)',
+    'linear-gradient(135deg,#1B2A1B,#2D4A2D,#1A3A1A)',
+    'linear-gradient(135deg,#2C1810,#4A2512,#7A3B1E)',
+    'linear-gradient(135deg,#16213E,#0F3460,#533483)',
+  ];
+  const fallbackGrad = gradients[(hotel.name || '').split('').reduce((a,c) => a + c.charCodeAt(0), 0) % gradients.length];
+
+  return (
+    <div style={{ position: 'relative', height: 200, overflow: 'hidden', background: fallbackGrad }}>
+      {loading && photos.length === 0 ? (
+        <div style={{ width: '100%', height: '100%', background: fallbackGrad }} />
+      ) : photos.length === 0 ? (
+        <div style={{ width: '100%', height: '100%', background: fallbackGrad, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+      ) : (
+        <img src={photos[photoIdx]} alt={hotel.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'opacity .25s' }}
+          onError={e => { e.target.style.display = 'none'; }} />
+      )}
+      {/* Gradient overlay */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 35%, rgba(10,8,6,0.82) 100%)', pointerEvents: 'none' }} />
+      {/* Nav arrows */}
+      {photos.length > 1 && (
+        <>
+          <button onClick={e => { e.preventDefault(); e.stopPropagation(); setPhotoIdx(i => Math.max(0, i - 1)); }}
+            style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', display: photoIdx === 0 ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button onClick={e => { e.preventDefault(); e.stopPropagation(); setPhotoIdx(i => Math.min(photos.length - 1, i + 1)); }}
+            style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', display: photoIdx === photos.length - 1 ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          {/* Dots */}
+          <div style={{ position: 'absolute', top: 10, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 4, pointerEvents: 'none' }}>
+            {photos.map((_, i) => (
+              <div key={i} style={{ width: i === photoIdx ? 18 : 5, height: 5, borderRadius: 99, background: i === photoIdx ? '#fff' : 'rgba(255,255,255,0.4)', transition: 'all .2s' }} />
+            ))}
+          </div>
+          <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.4)', borderRadius: 99, padding: '2px 8px', backdropFilter: 'blur(4px)' }}>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>{photoIdx + 1}/{photos.length}</span>
+          </div>
+        </>
+      )}
+      {/* Stay type badge */}
+      <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.92)', borderRadius: 10, padding: '3px 9px', backdropFilter: 'blur(6px)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: stCfg.color, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: .5 }}>{stCfg.label}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ════════════════════════════════════════
    STAYS SECTION
 ════════════════════════════════════════ */
 function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount }) {
-  const [imgErrors, setImgErrors] = useState(new Set());
   if (!hotels.length) return null;
   const STAYS_ICON = <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>;
 
   return (
-    <div style={{ marginBottom:'1.5rem' }}>
+    <div style={{ marginBottom: '1.5rem' }}>
       <SecHeader icon={STAYS_ICON} title="Where to Stay" subtitle="Hotels · Hostels · Guesthouses · Resorts"
         ac={D.gold} abg={D.goldTint} onFilter={onOpenFilter} filterCount={filterCount} />
 
       {!filtered.length && (
-        <div style={{ textAlign:'center', padding:'2.5rem 1rem', color:D.muted, fontSize:13 }}>
-          <div style={{ fontSize:36,marginBottom:10 }}>🔍</div>
+        <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: D.muted, fontSize: 13 }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 10, display: 'block', margin: '0 auto 10px' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
           No stays match these filters. Try broadening your search.
         </div>
       )}
 
-      {/* Cards — full-width list for better mobile readability */}
-      <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {filtered.map((h, i) => {
           const stCfg = STAY_CFG[h.stayType] || STAY_CFG.hotel;
           const prCfg = PRICE_CFG[h.priceLevel] || PRICE_CFG.mid;
-          // Only show price if it actually comes from the data — never fake it
-          const priceDisplay = h.pricePerNight || null;
-          const mapsUrl = h.lat&&h.lng
+          const priceDisplay = h.pricePerNight || (h.priceLevel ? PRICE_DISPLAY[h.priceLevel] : null);
+          const mapsUrl = h.lat && h.lng
             ? `https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}`
-            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name+' '+destination)}`;
-          const knowMoreUrl = `https://www.google.com/search?q=${encodeURIComponent(h.name+' '+destination+' hotel review')}`;
-          const hasImg = h.imageUrl && !imgErrors.has(h.id||h.name);
+            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name + ' ' + destination)}`;
+          const knowMoreUrl = `https://www.google.com/search?q=${encodeURIComponent(h.name + ' ' + destination + ' hotel review')}`;
+
           return (
-            <a
-              key={h.id||i}
-              className="r-card r-hotel-card"
-              href={mapsUrl}
-              target="_blank" rel="noreferrer"
-              style={{ textDecoration:'none', background:D.surface, borderRadius:18, overflow:'hidden',
-                boxShadow:D.shadow, border:`0.5px solid ${D.border}`, display:'block',
-                animationDelay:`${Math.min(i,8)*45}ms` }}
-            >
-              {/* Photo */}
-              <div style={{ position:'relative', height:160, overflow:'hidden', background:D.neutral }}>
-                {hasImg ? (
-                  <img src={h.imageUrl} alt={h.name}
-                    style={{ width:'100%',height:'100%',objectFit:'cover',display:'block' }}
-                    onError={()=>setImgErrors(p=>{const n=new Set(p);n.add(h.id||h.name);return n;})} />
-                ) : (
-                  <PlacePhoto
-                    query={`${h.name} ${destination} ${stCfg.label} exterior`}
-                    style={{ height:160, borderRadius:0 }}
-                    delay={i * 250}
-                  />
-                )}
-                {/* gradient overlay */}
-                <div style={{ position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 30%,rgba(10,8,6,0.78) 100%)',pointerEvents:'none' }} />
-        {/* Stay type badge on hotel card — text only, no emoji */}
-                <div style={{ position:'absolute',top:10,left:10,background:'rgba(255,255,255,0.92)',borderRadius:10,padding:'3px 9px',display:'flex',alignItems:'center',gap:4,backdropFilter:'blur(6px)',boxShadow:'0 2px 8px rgba(0,0,0,0.10)' }}>
-                  <span style={{ fontSize:10,fontWeight:700,color:stCfg.color,fontFamily:"'DM Sans',sans-serif",textTransform:'uppercase',letterSpacing:.5 }}>{stCfg.label}</span>
-                </div>
-                {/* price badge top-right */}
-                <div style={{ position:'absolute',top:10,right:10,background:prCfg.bg,borderRadius:999,padding:'3px 10px' }}>
-                  <span style={{ fontSize:10,fontWeight:800,color:prCfg.color }}>{prCfg.icon}</span>
-                </div>
-                {/* name overlaid bottom */}
-                <div style={{ position:'absolute',bottom:10,left:13,right:13,pointerEvents:'none' }}>
-                  <div style={{ fontSize:15.5,fontWeight:800,color:'#fff',lineHeight:1.2,fontFamily:"'Sora',sans-serif",textShadow:'0 1px 6px rgba(0,0,0,0.5)',letterSpacing:-0.2 }}>{h.name}</div>
-                  {priceDisplay && (
-                    <div style={{ display:'inline-flex',alignItems:'center',gap:4,marginTop:4,background:'rgba(0,0,0,0.42)',borderRadius:7,padding:'2px 8px' }}>
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                      <span style={{ fontSize:10.5,color:'rgba(255,255,255,0.9)',fontWeight:600 }}>{priceDisplay}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+            <div key={h.id || i} className="r-card r-hotel-card"
+              style={{ background: D.surface, borderRadius: 18, overflow: 'hidden', boxShadow: D.shadowMd, border: `0.5px solid ${D.border}`, animationDelay: `${Math.min(i, 8) * 45}ms` }}>
+
+              {/* 5-photo slideshow */}
+              <HotelPhotoSlideshow hotel={h} destination={destination} stCfg={stCfg} />
+
               {/* Card body */}
-              <div style={{ padding:'10px 13px 13px' }}>
-                <div style={{ display:'flex',alignItems:'flex-start',gap:8,marginBottom:6 }}>
-                  <div style={{ flex:1,minWidth:0 }}>
-                    {h.rating && <Stars rating={h.rating} />}
-                    {h.address && (
-                      <div style={{ fontSize:11,color:D.muted,marginTop:4,lineHeight:1.4,display:'flex',gap:4,alignItems:'flex-start' }}>
-                        <span style={{ flexShrink:0 }}>📍</span>
-                        <span>{h.address.length>65 ? h.address.slice(0,65)+'…' : h.address}</span>
-                      </div>
-                    )}
-                    {h.phone && (
-                      <a href={`tel:${h.phone}`} onClick={e=>e.stopPropagation()}
-                        style={{ display:'inline-flex',alignItems:'center',gap:5,marginTop:5,
-                          fontSize:12,fontWeight:700,color:'#1D4ED8',textDecoration:'none' }}>
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                        {h.phone}
-                      </a>
-                    )}
+              <div style={{ padding: '12px 14px 14px' }}>
+                {/* Name + price tier */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: D.espresso, lineHeight: 1.2, letterSpacing: -0.2 }}>{h.name}</div>
+                    {h.rating && <div style={{ marginTop: 4 }}><Stars rating={h.rating} /></div>}
+                  </div>
+                  <div style={{ background: prCfg.bg, borderRadius: 99, padding: '4px 10px', flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: prCfg.color }}>{prCfg.icon} {prCfg.label}</span>
                   </div>
                 </div>
-                {/* Action row */}
-                <div style={{ display:'flex',gap:7,marginTop:8 }}>
-                  <a href={mapsUrl} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
-                    style={{ flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5,
-                      padding:'8px',borderRadius:10,textDecoration:'none',
-                      background:D.blueTint,border:`1px solid rgba(37,99,235,0.18)`,
-                      fontSize:12,fontWeight:700,color:'#1D4ED8' }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    Maps
+
+                {/* Price per night — prominent */}
+                {priceDisplay && (
+                  <div style={{ background: D.goldTint, border: `1px solid rgba(201,145,58,0.2)`, borderRadius: 10, padding: '7px 12px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 7 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: D.gold }}>{priceDisplay}</span>
+                  </div>
+                )}
+
+                {/* Address */}
+                {h.address && (
+                  <div style={{ fontSize: 11.5, color: D.muted, marginBottom: 8, lineHeight: 1.5, display: 'flex', gap: 5, alignItems: 'flex-start' }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>{h.address.length > 70 ? h.address.slice(0, 70) + '…' : h.address}</span>
+                  </div>
+                )}
+
+                {/* Phone — tap-to-call */}
+                {h.phone && (
+                  <a href={`tel:${h.phone}`} onClick={e => e.stopPropagation()}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '7px 13px', textDecoration: 'none' }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8' }}>{h.phone}</span>
+                    <span style={{ fontSize: 10, color: '#1D4ED8', opacity: 0.7 }}>Tap to call</span>
                   </a>
-                  <a href={knowMoreUrl} target="_blank" rel="noreferrer" onClick={e=>e.stopPropagation()}
-                    style={{ flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:5,
-                      padding:'8px',borderRadius:10,textDecoration:'none',
-                      background:D.goldTint,border:`1px solid rgba(201,145,58,0.22)`,
-                      fontSize:12,fontWeight:700,color:D.gold }}>
+                )}
+
+                {/* Action buttons */}
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <a href={mapsUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px', borderRadius: 12, textDecoration: 'none', background: D.blueTint, border: `1px solid rgba(37,99,235,0.18)`, fontSize: 12, fontWeight: 700, color: '#1D4ED8' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Directions
+                  </a>
+                  <a href={knowMoreUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px', borderRadius: 12, textDecoration: 'none', background: D.goldTint, border: `1px solid rgba(201,145,58,0.2)`, fontSize: 12, fontWeight: 700, color: D.gold }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    Know More
+                    Reviews
                   </a>
                 </div>
               </div>
-            </a>
+            </div>
           );
         })}
       </div>
     </div>
   );
 }
+
 
 /* ════════════════════════════════════════
    HOSPITALS SECTION

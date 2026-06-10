@@ -21,6 +21,8 @@ import {
   sendClubRequest,
   respondClubRequest,
   saveAiCache,
+  sendOtp,
+  verifyOtp,
 } from './api';
 import HomePageFeature from './features/home/HomePage';
 import ShareCodeModalFeature from './features/home/ShareCodeModal';
@@ -270,10 +272,14 @@ const S = {
 
 export default function App() {
   const [authToken, setAuthToken] = useState(localStorage.getItem('travelbae_token'));
+  // authMode: 'otp-email' | 'otp-code' | 'otp-name' | 'password-login' | 'password-signup'
+  const [authMode, setAuthMode] = useState('otp-email');
   const [authScreen, setAuthScreen] = useState('login');
-  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '' });
+  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', otp: '' });
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [otpSentTo, setOtpSentTo] = useState('');
+  const [otpResendCountdown, setOtpResendCountdown] = useState(0);
   const [trips, setTrips] = useState([]);
   const [tripsLoading, setTripsLoading] = useState(false);
   const [activeTrip, setActiveTrip] = useState(null);
@@ -361,6 +367,59 @@ export default function App() {
 
   const isSolo = activeTripData?.isSolo || false;
 
+  // ── OTP countdown timer ──
+  useEffect(() => {
+    if (otpResendCountdown <= 0) return;
+    const t = setTimeout(() => setOtpResendCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [otpResendCountdown]);
+
+  const finishAuth = (data) => {
+    localStorage.setItem('travelbae_token', data.token);
+    setAuthToken(data.token);
+    const accountName = (data?.user?.name || data?.name || authForm.name || '').trim();
+    if (accountName) {
+      const nextProfile = { ...profile, name: accountName };
+      setProfile(nextProfile);
+      try { localStorage.setItem('travelbae_profile', JSON.stringify(nextProfile)); } catch (_) {}
+    }
+  };
+
+  // Step 1: send OTP
+  const handleSendOtp = async () => {
+    setAuthError(''); setAuthLoading(true);
+    try {
+      await sendOtp(authForm.email, authForm.name);
+      setOtpSentTo(authForm.email);
+      setAuthMode('otp-code');
+      setOtpResendCountdown(30);
+    } catch (err) { setAuthError(err.message); }
+    setAuthLoading(false);
+  };
+
+  // Step 2: verify OTP
+  const handleVerifyOtp = async () => {
+    setAuthError(''); setAuthLoading(true);
+    try {
+      const data = await verifyOtp(authForm.email, authForm.otp, authForm.name);
+      if (data.needsName) { setAuthMode('otp-name'); setAuthLoading(false); return; }
+      finishAuth(data);
+    } catch (err) { setAuthError(err.message); }
+    setAuthLoading(false);
+  };
+
+  // Step 3 (only if new user without name): submit name then verify again
+  const handleSubmitName = async () => {
+    if (!authForm.name.trim()) { setAuthError('Please enter your name.'); return; }
+    setAuthError(''); setAuthLoading(true);
+    try {
+      const data = await verifyOtp(authForm.email, authForm.otp, authForm.name);
+      finishAuth(data);
+    } catch (err) { setAuthError(err.message); }
+    setAuthLoading(false);
+  };
+
+  // Password login (classic)
   const handleAuth = async () => {
     setAuthError(''); setAuthLoading(true);
     try {
@@ -373,17 +432,8 @@ export default function App() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Something went wrong');
-      localStorage.setItem('travelbae_token', data.token);
-      setAuthToken(data.token);
-      const accountName = (data?.user?.name || data?.name || authForm.name || '').trim();
-      if (accountName) {
-        const nextProfile = { ...profile, name: accountName };
-        setProfile(nextProfile);
-        try { localStorage.setItem('travelbae_profile', JSON.stringify(nextProfile)); } catch (_) {}
-      }
-    } catch (err) {
-      setAuthError(err.message);
-    }
+      finishAuth(data);
+    } catch (err) { setAuthError(err.message); }
     setAuthLoading(false);
   };
 
@@ -394,6 +444,7 @@ export default function App() {
     setTrips([]);
     setActiveTrip(null);
   };
+
 
   const handleDeleteAccount = async () => {
     const first = window.confirm('Delete your TripBae account?\n\nThis permanently removes your profile, trip memberships, and any trips where you were the only member (along with their expenses, contacts, photos and itinerary).\n\nThis cannot be undone.');
@@ -643,44 +694,199 @@ export default function App() {
 
   // ── AUTH SCREEN ──
   if (!authToken) return (
-    <div style={{ ...S.root, display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '1.5rem', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: -120, right: -90, width: 300, height: 300, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.18) 0%, rgba(29,158,117,0) 70%)' }} />
-      <div style={{ position: 'absolute', bottom: -140, left: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle, rgba(55,138,221,0.14) 0%, rgba(55,138,221,0) 70%)' }} />
-      <div style={{ width: '100%', maxWidth: 380 }}>
-        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{ width: 68, height: 68, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 33, margin: '0 auto 12px', boxShadow: '0 14px 30px rgba(15,110,86,0.28)' }}>✈️</div>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 800 }}>Trip<span style={{ color: '#FF6B35' }}>bae</span></div>
-          <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4 }}>Plan less. Experience more.</div>
-          <div style={{ fontSize: 11.5, color: '#8d8c87', marginTop: 7 }}>A calmer way to travel with friends.</div>
-        </div>
-        <div style={{ background: 'linear-gradient(180deg,rgba(255,255,255,0.97),rgba(255,255,255,0.91))', backdropFilter: 'blur(12px)', borderRadius: 22, padding: '1.75rem', boxShadow: '0 26px 60px rgba(0,0,0,0.14)', border: '0.5px solid rgba(0,0,0,0.08)', animation: 'tbModalIn .5s cubic-bezier(.2,.7,.2,1)' }}>
-          <div style={{ display: 'flex', gap: 0, background: '#F1EFE8', borderRadius: 12, padding: 3, marginBottom: '1.5rem' }}>
-            {['login', 'signup'].map(s => (
-              <button key={s} onClick={() => { setAuthScreen(s); setAuthError(''); }}
-                style={{ flex: 1, padding: '9px', fontSize: 13, fontWeight: 500, borderRadius: 9, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: authScreen === s ? '#1D9E75' : 'transparent', color: authScreen === s ? '#fff' : '#6b6b68', transition: 'all .2s' }}>
-                {s === 'login' ? '🔑 Log In' : '✨ Sign Up'}
-              </button>
-            ))}
+    <div style={{ minHeight: '100vh', background: '#0A0D0B', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', position: 'relative', overflow: 'hidden', fontFamily: "'DM Sans',sans-serif" }}>
+      <style>{`
+        @keyframes authOrb1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-18px,22px)} }
+        @keyframes authOrb2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(22px,-14px)} }
+        @keyframes authFadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes authSpin { to{transform:rotate(360deg)} }
+        @keyframes authShine {
+          0%{transform:translateX(-100%)} 100%{transform:translateX(300%)}
+        }
+        .auth-input {
+          width:100%; border:1.5px solid rgba(255,255,255,0.1); border-radius:14px;
+          background:rgba(255,255,255,0.06); color:#fff; font-size:15px;
+          font-family:'DM Sans',sans-serif; padding:13px 16px; outline:none;
+          box-sizing:border-box; transition:border-color .2s;
+        }
+        .auth-input::placeholder { color:rgba(255,255,255,0.28); }
+        .auth-input:focus { border-color:rgba(255,165,50,0.55); background:rgba(255,255,255,0.09); }
+        .auth-input.otp-input {
+          font-size:28px; font-weight:800; letter-spacing:14px; text-align:center;
+          padding:16px 14px;
+        }
+        .auth-btn-primary {
+          width:100%; padding:14px; border-radius:14px; border:none; cursor:pointer;
+          font-family:'DM Sans',sans-serif; font-size:15px; font-weight:800; color:#0A0D0B;
+          background:linear-gradient(135deg,#FFB020 0%,#FF6B35 100%);
+          box-shadow:0 4px 24px rgba(255,107,53,0.38); transition:opacity .15s; position:relative; overflow:hidden;
+        }
+        .auth-btn-primary:disabled { opacity:0.55; cursor:not-allowed; }
+        .auth-btn-primary::after {
+          content:''; position:absolute; top:0; left:-100%; width:60%; height:100%;
+          background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);
+          animation:authShine 3s ease-in-out infinite 1s;
+        }
+        .auth-btn-ghost {
+          background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.12);
+          color:rgba(255,255,255,0.65); font-size:13px; font-family:'DM Sans',sans-serif;
+          font-weight:600; padding:10px 18px; border-radius:12px; cursor:pointer; transition:all .15s;
+        }
+        .auth-btn-ghost:hover { background:rgba(255,255,255,0.12); color:#fff; }
+        .auth-spinner { width:20px; height:20px; border:2.5px solid rgba(255,255,255,0.15); border-top-color:#fff; border-radius:50%; animation:authSpin .65s linear infinite; display:inline-block; }
+      `}</style>
+
+      {/* Ambient orbs */}
+      <div style={{ position:'absolute', top:-80, right:-60, width:280, height:280, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,107,53,0.18) 0%,transparent 70%)', animation:'authOrb1 12s ease-in-out infinite', pointerEvents:'none' }} />
+      <div style={{ position:'absolute', bottom:-100, left:-70, width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle,rgba(201,145,58,0.14) 0%,transparent 70%)', animation:'authOrb2 16s ease-in-out infinite', pointerEvents:'none' }} />
+      <div style={{ position:'absolute', top:'35%', left:'5%', width:180, height:180, borderRadius:'50%', background:'radial-gradient(circle,rgba(29,158,117,0.08) 0%,transparent 70%)', pointerEvents:'none' }} />
+
+      {/* Dot grid */}
+      <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(rgba(255,255,255,0.035) 1px,transparent 1px)', backgroundSize:'28px 28px', pointerEvents:'none' }} />
+
+      <div style={{ width:'100%', maxWidth:400, animation:'authFadeUp .5s ease both' }}>
+
+        {/* Logo + tagline */}
+        <div style={{ textAlign:'center', marginBottom:'2.2rem' }}>
+          <div style={{ position:'relative', display:'inline-block', marginBottom:16 }}>
+            <div style={{ width:72, height:72, borderRadius:22, background:'linear-gradient(135deg,#1a1a18,#2a2a26)', border:'1.5px solid rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto', boxShadow:'0 8px 32px rgba(0,0,0,0.5)' }}>
+              <img src={bglessLogo} alt="TripBae" style={{ width:52, height:52, objectFit:'contain', filter:'brightness(0) invert(1)' }} />
+            </div>
           </div>
-          {authScreen === 'signup' && (
-            <>
-              <label style={S.label}>Your Name</label>
-              <input style={{ ...S.input, marginBottom: 10 }} value={authForm.name} onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Arjun" />
-            </>
+          <div style={{ fontFamily:"'Sora',sans-serif", fontSize:28, fontWeight:800, color:'#fff', letterSpacing:'-0.5px', lineHeight:1.1 }}>Trip<span style={{ color:'#FF6B35' }}>bae</span></div>
+          <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.45)', marginTop:6, letterSpacing:'0.2px' }}>Plan. Split. Explore. Together.</div>
+        </div>
+
+        {/* Card */}
+        <div style={{ background:'rgba(255,255,255,0.05)', backdropFilter:'blur(20px)', borderRadius:24, padding:'1.75rem', border:'1.5px solid rgba(255,255,255,0.1)', boxShadow:'0 32px 80px rgba(0,0,0,0.5)' }}>
+
+          {/* ── Step: Enter email ── */}
+          {(authMode === 'otp-email') && (
+            <div style={{ animation:'authFadeUp .3s ease both' }}>
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:19, fontWeight:800, color:'#fff', marginBottom:5 }}>Welcome back</div>
+                <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)' }}>Enter your email and we'll send you a code</div>
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 }}>Email</div>
+                <input className="auth-input" type="email" value={authForm.email} autoFocus
+                  onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && handleSendOtp()}
+                  placeholder="you@email.com" />
+              </div>
+              {authError && <div style={{ fontSize:13, color:'#FFB3A0', background:'rgba(232,113,90,0.15)', border:'1px solid rgba(232,113,90,0.25)', borderRadius:10, padding:'10px 13px', marginBottom:12 }}>{authError}</div>}
+              <button className="auth-btn-primary" onClick={handleSendOtp} disabled={authLoading || !authForm.email.trim()}>
+                {authLoading ? <span className="auth-spinner" /> : 'Send login code →'}
+              </button>
+              <button className="auth-btn-ghost" style={{ width:'100%', marginTop:10 }} onClick={() => { setAuthMode('password-login'); setAuthError(''); }}>
+                Use password instead
+              </button>
+            </div>
           )}
-          <label style={S.label}>Email</label>
-          <input style={{ ...S.input, marginBottom: 10 }} type="email" value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))} placeholder="you@email.com" />
-          <label style={S.label}>Password</label>
-          <input style={{ ...S.input, marginBottom: 10 }} type="password" value={authForm.password} onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))} onKeyDown={e => e.key === 'Enter' && handleAuth()} placeholder="Min 6 characters" />
-          {authError && <div style={{ fontSize: 13, color: '#993C1D', background: '#FAECE7', border: '0.5px solid #F5C4B3', borderRadius: 10, padding: '9px 12px', marginBottom: 10 }}>⚠️ {authError}</div>}
-          <button style={{ ...S.btn, ...S.btnP, width: '100%', justifyContent: 'center', padding: '12px', fontSize: 15, borderRadius: 12, marginTop: 4, opacity: authLoading ? 0.6 : 1 }}
-            onClick={handleAuth} disabled={authLoading}>
-            {authLoading ? 'Please wait…' : authScreen === 'login' ? '🔑 Log In' : '🚀 Create Account'}
-          </button>
+
+          {/* ── Step: Enter OTP ── */}
+          {authMode === 'otp-code' && (
+            <div style={{ animation:'authFadeUp .3s ease both' }}>
+              <button style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:13, padding:'0 0 16px', display:'flex', alignItems:'center', gap:6 }}
+                onClick={() => { setAuthMode('otp-email'); setAuthError(''); setAuthForm(f => ({ ...f, otp:'' })); }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Back
+              </button>
+              <div style={{ marginBottom:22 }}>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:19, fontWeight:800, color:'#fff', marginBottom:5 }}>Check your inbox</div>
+                <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', lineHeight:1.6 }}>
+                  We sent a 6-digit code to<br/><span style={{ color:'rgba(255,255,255,0.7)', fontWeight:600 }}>{otpSentTo}</span>
+                </div>
+              </div>
+              <input className="auth-input otp-input" type="tel" inputMode="numeric" maxLength={6}
+                value={authForm.otp} autoFocus
+                onChange={e => setAuthForm(f => ({ ...f, otp: e.target.value.replace(/\D/g,'').slice(0,6) }))}
+                onKeyDown={e => e.key === 'Enter' && authForm.otp.length === 6 && handleVerifyOtp()}
+                placeholder="······" />
+              {authError && <div style={{ fontSize:13, color:'#FFB3A0', background:'rgba(232,113,90,0.15)', border:'1px solid rgba(232,113,90,0.25)', borderRadius:10, padding:'10px 13px', marginTop:12, marginBottom:0 }}>{authError}</div>}
+              <button className="auth-btn-primary" style={{ marginTop:14 }} onClick={handleVerifyOtp} disabled={authLoading || authForm.otp.length < 6}>
+                {authLoading ? <span className="auth-spinner" /> : 'Verify & log in →'}
+              </button>
+              <div style={{ textAlign:'center', marginTop:14 }}>
+                {otpResendCountdown > 0
+                  ? <span style={{ fontSize:12, color:'rgba(255,255,255,0.3)' }}>Resend in {otpResendCountdown}s</span>
+                  : <button className="auth-btn-ghost" onClick={handleSendOtp} disabled={authLoading} style={{ fontSize:12, padding:'7px 16px' }}>Resend code</button>
+                }
+              </div>
+            </div>
+          )}
+
+          {/* ── Step: New user — enter name ── */}
+          {authMode === 'otp-name' && (
+            <div style={{ animation:'authFadeUp .3s ease both' }}>
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:19, fontWeight:800, color:'#fff', marginBottom:5 }}>One last thing</div>
+                <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)' }}>What should your trip mates call you?</div>
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 }}>Your name</div>
+                <input className="auth-input" type="text" value={authForm.name} autoFocus
+                  onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && handleSubmitName()}
+                  placeholder="e.g. Arjun" />
+              </div>
+              {authError && <div style={{ fontSize:13, color:'#FFB3A0', background:'rgba(232,113,90,0.15)', border:'1px solid rgba(232,113,90,0.25)', borderRadius:10, padding:'10px 13px', marginBottom:12 }}>{authError}</div>}
+              <button className="auth-btn-primary" onClick={handleSubmitName} disabled={authLoading || !authForm.name.trim()}>
+                {authLoading ? <span className="auth-spinner" /> : "Let's go →"}
+              </button>
+            </div>
+          )}
+
+          {/* ── Password login ── */}
+          {(authMode === 'password-login' || authMode === 'password-signup') && (
+            <div style={{ animation:'authFadeUp .3s ease both' }}>
+              <button style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:13, padding:'0 0 16px', display:'flex', alignItems:'center', gap:6 }}
+                onClick={() => { setAuthMode('otp-email'); setAuthScreen('login'); setAuthError(''); }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Back
+              </button>
+              {/* Login / Signup toggle */}
+              <div style={{ display:'flex', gap:0, background:'rgba(255,255,255,0.08)', borderRadius:12, padding:3, marginBottom:20 }}>
+                {['password-login','password-signup'].map(m => (
+                  <button key={m} onClick={() => { setAuthMode(m); setAuthScreen(m === 'password-login' ? 'login' : 'signup'); setAuthError(''); }}
+                    style={{ flex:1, padding:'9px', fontSize:13, fontWeight:600, borderRadius:9, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:authMode === m ? 'rgba(255,255,255,0.14)' : 'transparent', color:authMode === m ? '#fff' : 'rgba(255,255,255,0.4)', transition:'all .2s' }}>
+                    {m === 'password-login' ? 'Log In' : 'Sign Up'}
+                  </button>
+                ))}
+              </div>
+              {authMode === 'password-signup' && (
+                <div style={{ marginBottom:12 }}>
+                  <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 }}>Your name</div>
+                  <input className="auth-input" value={authForm.name} onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Arjun" />
+                </div>
+              )}
+              <div style={{ marginBottom:12 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 }}>Email</div>
+                <input className="auth-input" type="email" value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))} placeholder="you@email.com" />
+              </div>
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 }}>Password</div>
+                <input className="auth-input" type="password" value={authForm.password}
+                  onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && handleAuth()}
+                  placeholder={authMode === 'password-signup' ? 'Min 6 characters' : 'Your password'} />
+              </div>
+              {authError && <div style={{ fontSize:13, color:'#FFB3A0', background:'rgba(232,113,90,0.15)', border:'1px solid rgba(232,113,90,0.25)', borderRadius:10, padding:'10px 13px', marginBottom:12 }}>{authError}</div>}
+              <button className="auth-btn-primary" onClick={handleAuth} disabled={authLoading}>
+                {authLoading ? <span className="auth-spinner" /> : authMode === 'password-login' ? 'Log In' : 'Create Account'}
+              </button>
+            </div>
+          )}
+
+        </div>
+
+        <div style={{ textAlign:'center', marginTop:18, fontSize:11.5, color:'rgba(255,255,255,0.2)', lineHeight:1.7 }}>
+          By continuing you agree to our Terms of Service.<br/>Your data is end-to-end encrypted.
         </div>
       </div>
     </div>
   );
+
 
   return (
     <div className="tb-app-shell" style={S.root}>

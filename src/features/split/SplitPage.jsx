@@ -494,8 +494,9 @@ function SplitPage({ trip, myNickname }) {
   return (
     <div>
       {/* ── Hero ── */}
-      <div style={{ background: 'linear-gradient(135deg,#0F6E56,#1D9E75)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 90, opacity: 0.07 }}>₹</div>
+      <div style={{ background: 'linear-gradient(135deg,#0F6E56,#1D9E75 48%,#4ABA96)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', left: -40, bottom: -48, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
+        <div style={{ position: 'absolute', right: -20, top: -20, fontSize: 90, opacity: 0.06, color: '#fff', pointerEvents: 'none', userSelect: 'none' }}>₹</div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, marginBottom: budget ? 14 : 0 }}>
           {[
             { label: 'Total spent', value: `₹${Math.round(total).toLocaleString('en-IN')}`, sub: `${expenses.length} expenses` },
@@ -509,10 +510,22 @@ function SplitPage({ trip, myNickname }) {
             </div>
           ))}
         </div>
-        
+        {budget && (
+          <div style={{ marginTop: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Budget</span>
+              <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: budgetPct > 85 ? '#FFD3C4' : 'rgba(255,255,255,0.9)' }}>
+                ₹{Math.round(total).toLocaleString('en-IN')} / ₹{Math.round(budget).toLocaleString('en-IN')}
+              </span>
+            </div>
+            <div style={{ height: 6, background: 'rgba(255,255,255,0.18)', borderRadius: 4, overflow: 'hidden' }}>
+              <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? '#FFD3C4' : 'rgba(255,255,255,0.85)', transition: 'width .6s' }} />
+            </div>
+          </div>
+        )}
         {!budget && (
           <button onClick={() => setShowBudgetEdit(true)}
-            style={{ ...S.btn, background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', fontSize: 12, marginTop: 8 }}>
+            style={{ background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", marginTop: 10 }}>
             + Set a budget
           </button>
         )}
@@ -559,7 +572,7 @@ function SplitPage({ trip, myNickname }) {
       <div style={{ display: 'flex', gap: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 13, padding: 3, marginBottom: '1rem' }}>
         {SECTION_TABS.map(t => (
           <button key={t.id} onClick={() => setSection(t.id)}
-            style={{ flex: 1, padding: '8px 4px', fontSize: 12, fontWeight: section === t.id ? 600 : 400, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: section === t.id ? '#1D9E75' : 'transparent', color: section === t.id ? '#fff' : '#6b6b68', transition: 'all .15s' }}>
+            style={{ flex: 1, padding: '8px 4px', fontSize: 12, fontWeight: section === t.id ? 600 : 400, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: section === t.id ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : 'transparent', color: section === t.id ? '#fff' : '#6b6b68', transition: 'all .15s', boxShadow: section === t.id ? '0 2px 8px rgba(15,110,86,0.22)' : 'none' }}>
             {t.label}
           </button>
         ))}
@@ -579,10 +592,12 @@ function SplitPage({ trip, myNickname }) {
           </div>
 
           {sortedExpenses.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '4rem 1rem', color: '#6b6b68' }}>
-              <div style={{ fontSize: 48, marginBottom: 14 }}>🧾</div>
-              <p style={{ fontSize: 15, fontWeight: 500, marginBottom: 6 }}>No expenses yet</p>
-              <p style={{ fontSize: 13 }}>Tap + to add your first one</p>
+            <div style={{ textAlign: 'center', padding: '4rem 1rem' }}>
+              <div style={{ width: 64, height: 64, borderRadius: 20, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+              </div>
+              <p style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: '#1a1a18', marginBottom: 5 }}>No expenses yet</p>
+              <p style={{ fontSize: 13, color: '#6b6b68' }}>Tap + to log your first shared expense</p>
             </div>
           )}
 
@@ -857,7 +872,7 @@ function SplitPage({ trip, myNickname }) {
       {section === 'expenses' && (
         <button
           onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: getNow().date, time: getNow().time, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); setShowForm(true); }}
-          style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', border: 'none', boxShadow: '0 4px 20px rgba(15,110,86,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
+          style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', border: 'none', boxShadow: '0 6px 24px rgba(15,110,86,0.45), 0 2px 8px rgba(0,0,0,0.15)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
           +

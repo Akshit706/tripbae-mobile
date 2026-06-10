@@ -33,6 +33,12 @@ export const signup = (name, email, password) =>
 export const login = (email, password) =>
   apiFetch('/auth/login', { method: 'POST', body: { email, password } });
 
+export const sendOtp = (email, name) =>
+  apiFetch('/auth/send-otp', { method: 'POST', body: { email, name } });
+
+export const verifyOtp = (email, code, name) =>
+  apiFetch('/auth/verify-otp', { method: 'POST', body: { email, code, name } });
+
 export const getMe = () => apiFetch('/auth/me');
 
 export const deleteAccount = () => apiFetch('/auth/me', { method: 'DELETE' });
