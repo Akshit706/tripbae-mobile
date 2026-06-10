@@ -2,7 +2,7 @@
 // Premium "Nearby" tab — Stays · Healthcare · Rentals
 import { useState, useEffect, useRef } from 'react';
 import { PlacePhoto } from '../media/PlaceMedia';
-import { fetchRecommendations } from '../../api';  // eager import — eliminates dynamic-import delay
+import { fetchRecommendations, fetchPlacePhotos } from '../../api';
 
 /* ── Design tokens ── */
 const D = {
@@ -323,40 +323,38 @@ function SecHeader({ icon, title, subtitle, count, ac, abg, onFilter, filterCoun
 ════════════════════════════════════════ */
 function HotelPhotoSlideshow({ hotel, destination, stCfg }) {
   const [photoIdx, setPhotoIdx] = useState(0);
-  const [photos, setPhotos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [photos, setPhotos] = useState(hotel.imageUrl ? [hotel.imageUrl] : []);
+  const [loadedSet, setLoadedSet] = useState(new Set());
+  const [imgErr, setImgErr] = useState(new Set());
 
   useEffect(() => {
-    const queries = [
-      `${hotel.name} ${destination} exterior`,
-      `${hotel.name} ${destination} room interior`,
-      `${hotel.name} ${destination} lobby`,
-      `${hotel.name} ${destination} amenities`,
-      `${destination} ${stCfg.label} travel`,
-    ];
-    // Kick off all 5 fetches in parallel; fill in as they resolve
-    const localPhotos = hotel.imageUrl ? [hotel.imageUrl] : [];
-    setPhotos(localPhotos.length ? localPhotos : []);
-    setLoading(true);
+    // Seed with imageUrl immediately
+    const base = hotel.imageUrl ? [hotel.imageUrl] : [];
+    setPhotos(base);
+    setPhotoIdx(0);
+    setImgErr(new Set());
 
-    const { fetchPlacePhotos } = { fetchPlacePhotos: null };
-    // Dynamically fetch photos for each query
-    const promises = queries.map((q, i) =>
-      import('../../api').then(({ fetchPlacePhotos: fp }) =>
-        fp(q).then(d => (d.urls || [])[0] || null).catch(() => null)
-      )
-    );
+    const queries = [
+      `${hotel.name} ${destination} exterior building`,
+      `${hotel.name} ${destination} room`,
+      `${hotel.name} ${destination} lobby interior`,
+      `${destination} hotel accommodation`,
+    ];
+
     let mounted = true;
-    Promise.all(promises).then(urls => {
+    (async () => {
+      const results = await Promise.allSettled(queries.map(q => fetchPlacePhotos(q)));
       if (!mounted) return;
-      // Merge imageUrl (if any) + fetched, deduplicate, take up to 5
-      const all = [hotel.imageUrl, ...urls].filter(Boolean);
-      const unique = [...new Set(all)].slice(0, 5);
-      setPhotos(unique.length ? unique : []);
-      setLoading(false);
-    });
+      const fetched = results
+        .filter(r => r.status === 'fulfilled')
+        .flatMap(r => (r.value?.urls || []).slice(0, 2));
+      const all = [...base, ...fetched].filter(Boolean);
+      const unique = [...new Set(all)].slice(0, 6);
+      if (unique.length > 0) setPhotos(unique);
+    })();
+
     return () => { mounted = false; };
-  }, [hotel.id || hotel.name, destination]);
+  }, [hotel.name, destination]);
 
   const gradients = [
     'linear-gradient(135deg,#0F2027,#203A43,#2C5364)',
@@ -365,47 +363,63 @@ function HotelPhotoSlideshow({ hotel, destination, stCfg }) {
     'linear-gradient(135deg,#2C1810,#4A2512,#7A3B1E)',
     'linear-gradient(135deg,#16213E,#0F3460,#533483)',
   ];
-  const fallbackGrad = gradients[(hotel.name || '').split('').reduce((a,c) => a + c.charCodeAt(0), 0) % gradients.length];
+  const fallbackGrad = gradients[(hotel.name || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length];
+
+  // Active photo (skip errored ones)
+  const activePhotos = photos.filter((_, i) => !imgErr.has(i));
+  const curUrl = activePhotos[photoIdx % Math.max(1, activePhotos.length)];
+  const showSlider = activePhotos.length > 1;
 
   return (
     <div style={{ position: 'relative', height: 200, overflow: 'hidden', background: fallbackGrad }}>
-      {loading && photos.length === 0 ? (
-        <div style={{ width: '100%', height: '100%', background: fallbackGrad }} />
-      ) : photos.length === 0 ? (
-        <div style={{ width: '100%', height: '100%', background: fallbackGrad, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        </div>
+      {curUrl ? (
+        <img
+          src={curUrl}
+          alt={hotel.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'opacity .2s' }}
+          onError={() => setImgErr(p => { const n = new Set(p); n.add(photoIdx % Math.max(1, activePhotos.length)); return n; })}
+        />
       ) : (
-        <img src={photos[photoIdx]} alt={hotel.name}
-          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'opacity .25s' }}
-          onError={e => { e.target.style.display = 'none'; }} />
+        <div style={{ width: '100%', height: '100%', background: fallbackGrad, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+        </div>
       )}
+
       {/* Gradient overlay */}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 35%, rgba(10,8,6,0.82) 100%)', pointerEvents: 'none' }} />
-      {/* Nav arrows */}
-      {photos.length > 1 && (
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 30%, rgba(10,8,6,0.78) 100%)', pointerEvents: 'none' }} />
+
+      {/* Arrows */}
+      {showSlider && (
         <>
-          <button onClick={e => { e.preventDefault(); e.stopPropagation(); setPhotoIdx(i => Math.max(0, i - 1)); }}
-            style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', display: photoIdx === 0 ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+          <button
+            onClick={e => { e.preventDefault(); e.stopPropagation(); setPhotoIdx(i => (i - 1 + activePhotos.length) % activePhotos.length); }}
+            style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', width: 30, height: 30, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', display: photoIdx === 0 ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', zIndex: 2 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <button onClick={e => { e.preventDefault(); e.stopPropagation(); setPhotoIdx(i => Math.min(photos.length - 1, i + 1)); }}
-            style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', display: photoIdx === photos.length - 1 ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)' }}>
+          <button
+            onClick={e => { e.preventDefault(); e.stopPropagation(); setPhotoIdx(i => (i + 1) % activePhotos.length); }}
+            style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 30, height: 30, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', display: photoIdx >= activePhotos.length - 1 ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', backdropFilter: 'blur(4px)', zIndex: 2 }}>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
-          {/* Dots */}
-          <div style={{ position: 'absolute', top: 10, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 4, pointerEvents: 'none' }}>
-            {photos.map((_, i) => (
-              <div key={i} style={{ width: i === photoIdx ? 18 : 5, height: 5, borderRadius: 99, background: i === photoIdx ? '#fff' : 'rgba(255,255,255,0.4)', transition: 'all .2s' }} />
+
+          {/* Dot indicators */}
+          <div style={{ position: 'absolute', bottom: 44, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 4, pointerEvents: 'none', zIndex: 2 }}>
+            {activePhotos.map((_, i) => (
+              <div key={i} style={{ width: i === photoIdx ? 16 : 5, height: 5, borderRadius: 99, background: i === photoIdx ? '#fff' : 'rgba(255,255,255,0.4)', transition: 'all .2s' }} />
             ))}
           </div>
-          <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.4)', borderRadius: 99, padding: '2px 8px', backdropFilter: 'blur(4px)' }}>
-            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>{photoIdx + 1}/{photos.length}</span>
+
+          {/* Counter */}
+          <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(0,0,0,0.45)', borderRadius: 99, padding: '2px 8px', backdropFilter: 'blur(4px)', zIndex: 2 }}>
+            <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{photoIdx + 1}/{activePhotos.length}</span>
           </div>
         </>
       )}
+
       {/* Stay type badge */}
-      <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.92)', borderRadius: 10, padding: '3px 9px', backdropFilter: 'blur(6px)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
+      <div style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.92)', borderRadius: 10, padding: '3px 9px', backdropFilter: 'blur(6px)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)', zIndex: 2 }}>
         <span style={{ fontSize: 10, fontWeight: 700, color: stCfg.color, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: .5 }}>{stCfg.label}</span>
       </div>
     </div>
@@ -435,7 +449,14 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
         {filtered.map((h, i) => {
           const stCfg = STAY_CFG[h.stayType] || STAY_CFG.hotel;
           const prCfg = PRICE_CFG[h.priceLevel] || PRICE_CFG.mid;
-          const priceDisplay = h.pricePerNight || (h.priceLevel ? PRICE_DISPLAY[h.priceLevel] : null);
+          const priceDisplay = (() => {
+            if (h.pricePerNight) return h.pricePerNight;
+            const p = (h.priceLevel || '').toLowerCase();
+            if (p.includes('budget') || p === 'cheap' || p === 'low') return '< ₹2,000 / night';
+            if (p.includes('luxury') || p === 'expensive' || p === 'premium') return '₹6,000+ / night';
+            if (p.includes('mid') || p.includes('moderate') || p === 'standard' || p === 'average') return '₹2,000–₹6,000 / night';
+            return PRICE_DISPLAY[h.priceLevel] || null;
+          })();
           const mapsUrl = h.lat && h.lng
             ? `https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}`
             : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name + ' ' + destination)}`;

@@ -497,40 +497,56 @@ function SplitPage({ trip, myNickname }) {
       <div style={{ background: 'linear-gradient(135deg,#0F6E56,#1D9E75 48%,#4ABA96)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', left: -40, bottom: -48, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ position: 'absolute', right: -20, top: -20, fontSize: 90, opacity: 0.06, color: '#fff', pointerEvents: 'none', userSelect: 'none' }}>₹</div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 0, marginBottom: budget ? 14 : 0 }}>
-          {[
-            { label: 'Total spent', value: `₹${Math.round(total).toLocaleString('en-IN')}`, sub: `${expenses.length} expenses` },
-            { label: 'Per person',  value: `₹${Math.round(perPerson).toLocaleString('en-IN')}`, sub: 'equal share' },
-            { label: 'Days left',   value: daysLeft, sub: `of ${days} nights` },
-          ].map((s, i) => (
-            <div key={s.label} style={{ textAlign: i === 1 ? 'center' : i === 2 ? 'right' : 'left' }}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 3 }}>{s.label}</div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: '#fff' }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>{s.sub}</div>
-            </div>
-          ))}
-        </div>
-        {budget && (
-          <div style={{ marginTop: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-              <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: '.05em' }}>Budget</span>
-              <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: budgetPct > 85 ? '#FFD3C4' : 'rgba(255,255,255,0.9)' }}>
-                ₹{Math.round(total).toLocaleString('en-IN')} / ₹{Math.round(budget).toLocaleString('en-IN')}
-              </span>
-            </div>
-            <div style={{ height: 6, background: 'rgba(255,255,255,0.18)', borderRadius: 4, overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? '#FFD3C4' : 'rgba(255,255,255,0.85)', transition: 'width .6s' }} />
-            </div>
+
+        {/* Row: Total left, budget right */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: budget ? 14 : 0 }}>
+          <div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 4 }}>Total Spent</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 700, color: '#fff' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>₹{Math.round(perPerson).toLocaleString('en-IN')}/person · {expenses.length} expense{expenses.length !== 1 ? 's' : ''}</div>
           </div>
-        )}
+          {budget && (
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', marginBottom: 4 }}>Budget Left</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : 'rgba(255,255,255,0.95)' }}>
+                {budgetLeft < 0 ? '-' : ''}₹{Math.abs(Math.round(budgetLeft)).toLocaleString('en-IN')}
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of ₹{budget.toLocaleString('en-IN')}</div>
+            </div>
+          )}
+        </div>
+
+        {budget && (() => {
+          const budgetEmoji = budgetPct <= 25 ? '💚' : budgetPct <= 50 ? '🙂' : budgetPct <= 70 ? '😐' : budgetPct <= 85 ? '😬' : budgetPct <= 95 ? '😰' : '🔥';
+          const budgetMsg = budgetPct <= 25 ? 'Crushing it!' : budgetPct <= 50 ? 'Looking good' : budgetPct <= 70 ? 'Keep an eye' : budgetPct <= 85 ? 'Getting close' : budgetPct <= 95 ? 'Almost gone!' : 'Budget blown!';
+          return (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <span style={{ fontSize: 20, lineHeight: 1 }}>{budgetEmoji}</span>
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{budgetMsg}</span>
+              </div>
+              <div style={{ height: 7, background: 'rgba(255,255,255,0.18)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? '#FFD3C4' : 'rgba(255,255,255,0.85)', transition: 'width .6s' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
+                <span>{budgetPct}% used</span><span>{100 - budgetPct}% remaining</span>
+              </div>
+            </div>
+          );
+        })()}
         {!budget && (
           <button onClick={() => setShowBudgetEdit(true)}
-            style={{ background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.22)', borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", marginTop: 10 }}>
+            style={{ background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.88)', border: '0.5px solid rgba(255,255,255,0.26)', borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", marginTop: 10 }}>
             + Set a budget
           </button>
         )}
+        {budget && (
+          <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
+            style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", marginTop: 8 }}>
+            ✏️ Edit budget
+          </button>
+        )}
       </div>
-
       {showBudgetEdit && (
         <div style={{ ...S.card, border: '0.5px solid #9FE1CB', background: '#f9fffe', marginBottom: '0.75rem' }}>
           <label style={S.label}>Total trip budget ₹</label>

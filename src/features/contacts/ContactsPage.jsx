@@ -286,19 +286,11 @@ function ContactsPage({ trip, myNickname, isSolo }) {
           </div>
         </div>
 
-        <div style={{ display:'flex', gap:12, position:'relative' }}>
-          <div style={{ background:'rgba(255,255,255,0.14)', borderRadius:12, padding:'8px 16px', display:'flex', flexDirection:'column', alignItems:'center', minWidth:64 }}>
+        <div style={{ display:'flex', gap:8, position:'relative' }}>
+          <div style={{ background:'rgba(255,255,255,0.14)', borderRadius:12, padding:'8px 16px', display:'flex', flexDirection:'column', alignItems:'center', minWidth:60 }}>
             <span style={{ fontFamily:"'Sora',sans-serif", fontSize:22, fontWeight:800, color:'#fff', lineHeight:1 }}>{contacts.length}</span>
-            <span style={{ fontSize:10, color:'rgba(255,255,255,0.7)', marginTop:3, fontWeight:600, letterSpacing:.4, textTransform:'uppercase' }}>Saved</span>
+            <span style={{ fontSize:10, color:'rgba(255,255,255,0.65)', marginTop:3, fontWeight:600, letterSpacing:.4, textTransform:'uppercase' }}>Contacts</span>
           </div>
-          {contacts.filter(c => c.cat === 'guardian' || c.cat === 'emergency').length > 0 && (
-            <div style={{ background:'rgba(255,255,255,0.14)', borderRadius:12, padding:'8px 16px', display:'flex', flexDirection:'column', alignItems:'center', minWidth:64 }}>
-              <span style={{ fontFamily:"'Sora',sans-serif", fontSize:22, fontWeight:800, color:'#fff', lineHeight:1 }}>
-                {contacts.filter(c => c.cat === 'guardian' || c.cat === 'emergency').length}
-              </span>
-              <span style={{ fontSize:10, color:'rgba(255,255,255,0.7)', marginTop:3, fontWeight:600, letterSpacing:.4, textTransform:'uppercase' }}>Emergency</span>
-            </div>
-          )}
         </div>
       </div>
 

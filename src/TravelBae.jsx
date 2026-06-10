@@ -694,89 +694,72 @@ export default function App() {
 
   // ── AUTH SCREEN ──
   if (!authToken) return (
-    <div style={{ minHeight: '100vh', background: '#0A0D0B', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', position: 'relative', overflow: 'hidden', fontFamily: "'DM Sans',sans-serif" }}>
+    <div style={{ minHeight:'100vh', background:'#FAFAF7', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'1.5rem', position:'relative', overflow:'hidden', fontFamily:"'DM Sans',sans-serif" }}>
       <style>{`
-        @keyframes authOrb1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-18px,22px)} }
-        @keyframes authOrb2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(22px,-14px)} }
-        @keyframes authFadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes authFadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
         @keyframes authSpin { to{transform:rotate(360deg)} }
-        @keyframes authShine {
-          0%{transform:translateX(-100%)} 100%{transform:translateX(300%)}
-        }
+        @keyframes authShine { 0%{transform:translateX(-100%)} 100%{transform:translateX(300%)} }
         .auth-input {
-          width:100%; border:1.5px solid rgba(255,255,255,0.1); border-radius:14px;
-          background:rgba(255,255,255,0.06); color:#fff; font-size:15px;
+          width:100%; border:1.5px solid rgba(28,20,16,0.12); border-radius:14px;
+          background:#fff; color:#1C1410; font-size:15px;
           font-family:'DM Sans',sans-serif; padding:13px 16px; outline:none;
-          box-sizing:border-box; transition:border-color .2s;
+          box-sizing:border-box; transition:border-color .2s, box-shadow .2s;
         }
-        .auth-input::placeholder { color:rgba(255,255,255,0.28); }
-        .auth-input:focus { border-color:rgba(255,165,50,0.55); background:rgba(255,255,255,0.09); }
+        .auth-input::placeholder { color:rgba(28,20,16,0.28); }
+        .auth-input:focus { border-color:#1D9E75; box-shadow:0 0 0 3px rgba(29,158,117,0.1); }
         .auth-input.otp-input {
-          font-size:28px; font-weight:800; letter-spacing:14px; text-align:center;
-          padding:16px 14px;
+          font-size:30px; font-weight:800; letter-spacing:16px; text-align:center;
+          padding:16px 14px; background:#F8FEFB; border-color:rgba(29,158,117,0.2);
         }
         .auth-btn-primary {
           width:100%; padding:14px; border-radius:14px; border:none; cursor:pointer;
-          font-family:'DM Sans',sans-serif; font-size:15px; font-weight:800; color:#0A0D0B;
-          background:linear-gradient(135deg,#FFB020 0%,#FF6B35 100%);
-          box-shadow:0 4px 24px rgba(255,107,53,0.38); transition:opacity .15s; position:relative; overflow:hidden;
+          font-family:'DM Sans',sans-serif; font-size:15px; font-weight:800; color:#fff;
+          background:linear-gradient(135deg,#1D9E75 0%,#0F6E56 100%);
+          box-shadow:0 4px 20px rgba(29,158,117,0.32); transition:opacity .15s; position:relative; overflow:hidden;
         }
-        .auth-btn-primary:disabled { opacity:0.55; cursor:not-allowed; }
+        .auth-btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
         .auth-btn-primary::after {
           content:''; position:absolute; top:0; left:-100%; width:60%; height:100%;
-          background:linear-gradient(90deg,transparent,rgba(255,255,255,0.2),transparent);
-          animation:authShine 3s ease-in-out infinite 1s;
+          background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent);
+          animation:authShine 3.5s ease-in-out infinite 1.5s;
         }
         .auth-btn-ghost {
-          background:rgba(255,255,255,0.07); border:1.5px solid rgba(255,255,255,0.12);
-          color:rgba(255,255,255,0.65); font-size:13px; font-family:'DM Sans',sans-serif;
+          background:#fff; border:1.5px solid rgba(28,20,16,0.12);
+          color:#5C504A; font-size:13px; font-family:'DM Sans',sans-serif;
           font-weight:600; padding:10px 18px; border-radius:12px; cursor:pointer; transition:all .15s;
         }
-        .auth-btn-ghost:hover { background:rgba(255,255,255,0.12); color:#fff; }
-        .auth-spinner { width:20px; height:20px; border:2.5px solid rgba(255,255,255,0.15); border-top-color:#fff; border-radius:50%; animation:authSpin .65s linear infinite; display:inline-block; }
+        .auth-btn-ghost:hover { border-color:#1D9E75; color:#1D9E75; }
+        .auth-spinner { width:20px; height:20px; border:2.5px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:authSpin .65s linear infinite; display:inline-block; vertical-align:middle; }
       `}</style>
 
-      {/* Ambient orbs */}
-      <div style={{ position:'absolute', top:-80, right:-60, width:280, height:280, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,107,53,0.18) 0%,transparent 70%)', animation:'authOrb1 12s ease-in-out infinite', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', bottom:-100, left:-70, width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle,rgba(201,145,58,0.14) 0%,transparent 70%)', animation:'authOrb2 16s ease-in-out infinite', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', top:'35%', left:'5%', width:180, height:180, borderRadius:'50%', background:'radial-gradient(circle,rgba(29,158,117,0.08) 0%,transparent 70%)', pointerEvents:'none' }} />
+      {/* Subtle decorative blobs */}
+      <div style={{ position:'absolute', top:-100, right:-80, width:340, height:340, borderRadius:'50%', background:'radial-gradient(circle,rgba(29,158,117,0.08) 0%,transparent 70%)', pointerEvents:'none' }} />
+      <div style={{ position:'absolute', bottom:-120, left:-80, width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle,rgba(201,145,58,0.06) 0%,transparent 70%)', pointerEvents:'none' }} />
 
-      {/* Dot grid */}
-      <div style={{ position:'absolute', inset:0, backgroundImage:'radial-gradient(rgba(255,255,255,0.035) 1px,transparent 1px)', backgroundSize:'28px 28px', pointerEvents:'none' }} />
+      <div style={{ width:'100%', maxWidth:400, animation:'authFadeUp .45s ease both' }}>
 
-      <div style={{ width:'100%', maxWidth:400, animation:'authFadeUp .5s ease both' }}>
-
-        {/* Logo + tagline */}
-        <div style={{ textAlign:'center', marginBottom:'2.2rem' }}>
-          <div style={{ position:'relative', display:'inline-block', marginBottom:16 }}>
-            <div style={{ width:72, height:72, borderRadius:22, background:'linear-gradient(135deg,#1a1a18,#2a2a26)', border:'1.5px solid rgba(255,255,255,0.1)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto', boxShadow:'0 8px 32px rgba(0,0,0,0.5)' }}>
-              <img src={bglessLogo} alt="TripBae" style={{ width:52, height:52, objectFit:'contain', filter:'brightness(0) invert(1)' }} />
-            </div>
-          </div>
-          <div style={{ fontFamily:"'Sora',sans-serif", fontSize:28, fontWeight:800, color:'#fff', letterSpacing:'-0.5px', lineHeight:1.1 }}>Trip<span style={{ color:'#FF6B35' }}>bae</span></div>
-          <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.45)', marginTop:6, letterSpacing:'0.2px' }}>Plan. Split. Explore. Together.</div>
+        {/* Logo — no text */}
+        <div style={{ textAlign:'center', marginBottom:'2.5rem' }}>
+          <img src={bglessLogo} alt="TripBae" style={{ width:68, height:68, objectFit:'contain' }} />
+          <div style={{ fontSize:11.5, color:'rgba(28,20,16,0.32)', marginTop:10, letterSpacing:'0.6px', fontWeight:500, fontFamily:"'DM Sans',sans-serif" }}>Plan. Split. Explore. Together.</div>
         </div>
 
         {/* Card */}
-        <div style={{ background:'rgba(255,255,255,0.05)', backdropFilter:'blur(20px)', borderRadius:24, padding:'1.75rem', border:'1.5px solid rgba(255,255,255,0.1)', boxShadow:'0 32px 80px rgba(0,0,0,0.5)' }}>
+        <div style={{ background:'#fff', borderRadius:24, padding:'2rem', border:'1px solid rgba(28,20,16,0.07)', boxShadow:'0 8px 48px rgba(28,20,16,0.09), 0 2px 12px rgba(28,20,16,0.05)' }}>
 
           {/* ── Step: Enter email ── */}
           {(authMode === 'otp-email') && (
             <div style={{ animation:'authFadeUp .3s ease both' }}>
-              <div style={{ marginBottom:20 }}>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:19, fontWeight:800, color:'#fff', marginBottom:5 }}>Welcome back</div>
-                <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)' }}>Enter your email and we'll send you a code</div>
+              <div style={{ marginBottom:22 }}>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:20, fontWeight:800, color:'#1C1410', marginBottom:5 }}>Welcome</div>
+                <div style={{ fontSize:13.5, color:'#8A7E76', lineHeight:1.5 }}>Enter your email to get a sign-in code</div>
               </div>
-              <div style={{ marginBottom:14 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 }}>Email</div>
-                <input className="auth-input" type="email" value={authForm.email} autoFocus
-                  onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && handleSendOtp()}
-                  placeholder="you@email.com" />
-              </div>
-              {authError && <div style={{ fontSize:13, color:'#FFB3A0', background:'rgba(232,113,90,0.15)', border:'1px solid rgba(232,113,90,0.25)', borderRadius:10, padding:'10px 13px', marginBottom:12 }}>{authError}</div>}
-              <button className="auth-btn-primary" onClick={handleSendOtp} disabled={authLoading || !authForm.email.trim()}>
-                {authLoading ? <span className="auth-spinner" /> : 'Send login code →'}
+              <input className="auth-input" type="email" placeholder="you@example.com"
+                value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && handleSendOtp()} autoFocus />
+              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:8, fontWeight:500 }}>{authError}</div>}
+              <button className="auth-btn-primary" style={{ marginTop:16 }} onClick={handleSendOtp} disabled={authLoading || !authForm.email.trim()}>
+                {authLoading ? <span className="auth-spinner" /> : 'Continue with Email'}
               </button>
               <button className="auth-btn-ghost" style={{ width:'100%', marginTop:10 }} onClick={() => { setAuthMode('password-login'); setAuthError(''); }}>
                 Use password instead
@@ -784,108 +767,92 @@ export default function App() {
             </div>
           )}
 
-          {/* ── Step: Enter OTP ── */}
+          {/* ── Step: OTP code ── */}
           {authMode === 'otp-code' && (
             <div style={{ animation:'authFadeUp .3s ease both' }}>
-              <button style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:13, padding:'0 0 16px', display:'flex', alignItems:'center', gap:6 }}
-                onClick={() => { setAuthMode('otp-email'); setAuthError(''); setAuthForm(f => ({ ...f, otp:'' })); }}>
+              <button onClick={() => { setAuthMode('otp-email'); setAuthError(''); setAuthForm(f => ({ ...f, otp:'' })); }}
+                style={{ background:'none', border:'none', color:'#8A7E76', fontSize:13, cursor:'pointer', padding:0, marginBottom:20, display:'flex', alignItems:'center', gap:5 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 Back
               </button>
               <div style={{ marginBottom:22 }}>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:19, fontWeight:800, color:'#fff', marginBottom:5 }}>Check your inbox</div>
-                <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)', lineHeight:1.6 }}>
-                  We sent a 6-digit code to<br/><span style={{ color:'rgba(255,255,255,0.7)', fontWeight:600 }}>{otpSentTo}</span>
-                </div>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:20, fontWeight:800, color:'#1C1410', marginBottom:6 }}>Check your inbox</div>
+                <div style={{ fontSize:13.5, color:'#8A7E76', lineHeight:1.5 }}>We sent a 6-digit code to <strong style={{ color:'#1C1410' }}>{otpSentTo || authForm.email}</strong></div>
               </div>
-              <input className="auth-input otp-input" type="tel" inputMode="numeric" maxLength={6}
-                value={authForm.otp} autoFocus
-                onChange={e => setAuthForm(f => ({ ...f, otp: e.target.value.replace(/\D/g,'').slice(0,6) }))}
-                onKeyDown={e => e.key === 'Enter' && authForm.otp.length === 6 && handleVerifyOtp()}
-                placeholder="······" />
-              {authError && <div style={{ fontSize:13, color:'#FFB3A0', background:'rgba(232,113,90,0.15)', border:'1px solid rgba(232,113,90,0.25)', borderRadius:10, padding:'10px 13px', marginTop:12, marginBottom:0 }}>{authError}</div>}
-              <button className="auth-btn-primary" style={{ marginTop:14 }} onClick={handleVerifyOtp} disabled={authLoading || authForm.otp.length < 6}>
-                {authLoading ? <span className="auth-spinner" /> : 'Verify & log in →'}
+              <input className="auth-input otp-input" type="tel" inputMode="numeric" maxLength={6} placeholder="000000"
+                value={authForm.otp} onChange={e => setAuthForm(f => ({ ...f, otp: e.target.value.replace(/\D/g,'').slice(0,6) }))}
+                onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()} autoFocus />
+              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:8, fontWeight:500 }}>{authError}</div>}
+              <button className="auth-btn-primary" style={{ marginTop:16 }} onClick={handleVerifyOtp} disabled={authLoading || authForm.otp.length < 6}>
+                {authLoading ? <span className="auth-spinner" /> : 'Verify Code'}
               </button>
-              <div style={{ textAlign:'center', marginTop:14 }}>
+              <div style={{ textAlign:'center', marginTop:14, fontSize:13, color:'#8A7E76' }}>
                 {otpResendCountdown > 0
-                  ? <span style={{ fontSize:12, color:'rgba(255,255,255,0.3)' }}>Resend in {otpResendCountdown}s</span>
-                  : <button className="auth-btn-ghost" onClick={handleSendOtp} disabled={authLoading} style={{ fontSize:12, padding:'7px 16px' }}>Resend code</button>
+                  ? <span>Resend in <strong style={{ color:'#1C1410' }}>{otpResendCountdown}s</strong></span>
+                  : <button onClick={handleSendOtp} style={{ background:'none', border:'none', color:'#1D9E75', fontWeight:700, cursor:'pointer', fontSize:13, fontFamily:"'DM Sans',sans-serif", textDecoration:'underline' }}>Resend code</button>
                 }
               </div>
             </div>
           )}
 
-          {/* ── Step: New user — enter name ── */}
+          {/* ── Step: Enter name (new user) ── */}
           {authMode === 'otp-name' && (
             <div style={{ animation:'authFadeUp .3s ease both' }}>
-              <div style={{ marginBottom:20 }}>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:19, fontWeight:800, color:'#fff', marginBottom:5 }}>One last thing</div>
-                <div style={{ fontSize:13, color:'rgba(255,255,255,0.4)' }}>What should your trip mates call you?</div>
+              <div style={{ marginBottom:22 }}>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:20, fontWeight:800, color:'#1C1410', marginBottom:6 }}>One last thing</div>
+                <div style={{ fontSize:13.5, color:'#8A7E76', lineHeight:1.5 }}>What should your trip mates call you?</div>
               </div>
-              <div style={{ marginBottom:14 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 }}>Your name</div>
-                <input className="auth-input" type="text" value={authForm.name} autoFocus
-                  onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && handleSubmitName()}
-                  placeholder="e.g. Arjun" />
-              </div>
-              {authError && <div style={{ fontSize:13, color:'#FFB3A0', background:'rgba(232,113,90,0.15)', border:'1px solid rgba(232,113,90,0.25)', borderRadius:10, padding:'10px 13px', marginBottom:12 }}>{authError}</div>}
-              <button className="auth-btn-primary" onClick={handleSubmitName} disabled={authLoading || !authForm.name.trim()}>
-                {authLoading ? <span className="auth-spinner" /> : "Let's go →"}
+              <input className="auth-input" type="text" placeholder="Your first name"
+                value={authForm.name} onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && handleSubmitName()} autoFocus />
+              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:8, fontWeight:500 }}>{authError}</div>}
+              <button className="auth-btn-primary" style={{ marginTop:16 }} onClick={handleSubmitName} disabled={authLoading || !authForm.name.trim()}>
+                {authLoading ? <span className="auth-spinner" /> : 'Get Started'}
               </button>
             </div>
           )}
 
-          {/* ── Password login ── */}
+          {/* ── Password flow ── */}
           {(authMode === 'password-login' || authMode === 'password-signup') && (
             <div style={{ animation:'authFadeUp .3s ease both' }}>
-              <button style={{ background:'none', border:'none', color:'rgba(255,255,255,0.4)', cursor:'pointer', fontSize:13, padding:'0 0 16px', display:'flex', alignItems:'center', gap:6 }}
-                onClick={() => { setAuthMode('otp-email'); setAuthScreen('login'); setAuthError(''); }}>
+              <button onClick={() => { setAuthMode('otp-email'); setAuthScreen('login'); setAuthError(''); }}
+                style={{ background:'none', border:'none', color:'#8A7E76', fontSize:13, cursor:'pointer', padding:0, marginBottom:20, display:'flex', alignItems:'center', gap:5 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 Back
               </button>
-              {/* Login / Signup toggle */}
-              <div style={{ display:'flex', gap:0, background:'rgba(255,255,255,0.08)', borderRadius:12, padding:3, marginBottom:20 }}>
-                {['password-login','password-signup'].map(m => (
+              <div style={{ display:'flex', gap:0, background:'#F4F2EE', borderRadius:12, padding:3, marginBottom:22 }}>
+                {[['password-login','Log In'],['password-signup','Sign Up']].map(([m, l]) => (
                   <button key={m} onClick={() => { setAuthMode(m); setAuthScreen(m === 'password-login' ? 'login' : 'signup'); setAuthError(''); }}
-                    style={{ flex:1, padding:'9px', fontSize:13, fontWeight:600, borderRadius:9, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:authMode === m ? 'rgba(255,255,255,0.14)' : 'transparent', color:authMode === m ? '#fff' : 'rgba(255,255,255,0.4)', transition:'all .2s' }}>
-                    {m === 'password-login' ? 'Log In' : 'Sign Up'}
-                  </button>
+                    style={{ flex:1, padding:'9px', fontSize:13, fontWeight:600, borderRadius:9, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:authMode === m ? '#fff' : 'transparent', color:authMode === m ? '#1C1410' : '#8A7E76', transition:'all .2s', boxShadow: authMode === m ? '0 1px 4px rgba(0,0,0,0.09)' : 'none' }}>{l}</button>
                 ))}
               </div>
               {authMode === 'password-signup' && (
-                <div style={{ marginBottom:12 }}>
-                  <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 }}>Your name</div>
-                  <input className="auth-input" value={authForm.name} onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. Arjun" />
-                </div>
+                <input className="auth-input" type="text" placeholder="Your name" value={authForm.name}
+                  onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
+                  style={{ marginBottom:10 }} autoFocus />
               )}
-              <div style={{ marginBottom:12 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 }}>Email</div>
-                <input className="auth-input" type="email" value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))} placeholder="you@email.com" />
-              </div>
-              <div style={{ marginBottom:14 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:'rgba(255,255,255,0.4)', textTransform:'uppercase', letterSpacing:'0.7px', marginBottom:7 }}>Password</div>
-                <input className="auth-input" type="password" value={authForm.password}
-                  onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && handleAuth()}
-                  placeholder={authMode === 'password-signup' ? 'Min 6 characters' : 'Your password'} />
-              </div>
-              {authError && <div style={{ fontSize:13, color:'#FFB3A0', background:'rgba(232,113,90,0.15)', border:'1px solid rgba(232,113,90,0.25)', borderRadius:10, padding:'10px 13px', marginBottom:12 }}>{authError}</div>}
-              <button className="auth-btn-primary" onClick={handleAuth} disabled={authLoading}>
+              <input className="auth-input" type="email" placeholder="Email address" value={authForm.email}
+                onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
+                style={{ marginBottom:10 }} autoFocus={authMode === 'password-login'} />
+              <input className="auth-input" type="password" value={authForm.password}
+                onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && handleAuth()}
+                placeholder={authMode === 'password-signup' ? 'Min 6 characters' : 'Your password'} />
+              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:8, fontWeight:500 }}>{authError}</div>}
+              <button className="auth-btn-primary" style={{ marginTop:16 }} onClick={handleAuth} disabled={authLoading || !authForm.email.trim() || !authForm.password.trim() || (authMode === 'password-signup' && !authForm.name.trim())}>
                 {authLoading ? <span className="auth-spinner" /> : authMode === 'password-login' ? 'Log In' : 'Create Account'}
               </button>
             </div>
           )}
-
         </div>
 
-        <div style={{ textAlign:'center', marginTop:18, fontSize:11.5, color:'rgba(255,255,255,0.2)', lineHeight:1.7 }}>
+        <div style={{ textAlign:'center', marginTop:20, fontSize:11.5, color:'rgba(28,20,16,0.3)', lineHeight:1.7 }}>
           By continuing you agree to our Terms of Service.<br/>Your data is end-to-end encrypted.
         </div>
       </div>
     </div>
   );
+
 
 
   return (
