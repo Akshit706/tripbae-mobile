@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { addExpense, updateExpense, deleteExpense } from '../../api';
 import { CATS, normalizeMembers, tripDuration, tripStatusInfo } from '../shared/constants';
 import { S } from '../shared/styles';
-import { Avatar } from '../shared/ui';
+import { Avatar, CatIcon } from '../shared/ui';
 function SplitPage({ trip, myNickname }) {
   const memberNames = normalizeMembers(trip.members);
   const [expenses, setExpenses] = useState(trip.expenses || []);
@@ -360,7 +360,7 @@ function SplitPage({ trip, myNickname }) {
               {expenseCats.map(c => (
                 <button key={c.id} onClick={() => setForm(f => ({ ...f, cat: c.id }))}
                   style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: `1.5px solid ${form.cat === c.id ? '#1D9E75' : 'rgba(0,0,0,0.09)'}`, background: form.cat === c.id ? '#E1F5EE' : '#fafafa', color: form.cat === c.id ? '#0F6E56' : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: form.cat === c.id ? 600 : 400, transition: 'all .12s' }}>
-                  <span style={{ fontSize: 13 }}>{c.icon}</span>
+                  <CatIcon id={c.id} size={14} />
                   <span>{c.label}</span>
                 </button>
               ))}
@@ -440,7 +440,9 @@ function SplitPage({ trip, myNickname }) {
                       splitWith: [...memberNames],
                     }))}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: form.splitMode === 'all' ? '#E1F5EE' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: form.splitMode === 'all' ? '#0F6E56' : '#1a1a18', marginBottom: 2 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: form.splitMode === 'all' ? '#1D9E75' : '#f0f0ee', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>👥</div>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: form.splitMode === 'all' ? '#1D9E75' : '#f0f0ee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={form.splitMode === 'all' ? '#fff' : '#6b6b68'} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
                     <span style={{ flex: 1, fontWeight: form.splitMode === 'all' ? 600 : 400 }}>Everyone equally</span>
                     <span style={{ fontSize: 12, color: '#a8a8a5', marginRight: 8 }}>÷{memberNames.length}</span>
                     <div style={{ width: 22, height: 22, borderRadius: 7, border: `2px solid ${form.splitMode === 'all' ? '#1D9E75' : '#D3D1C7'}`, background: form.splitMode === 'all' ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', flexShrink: 0 }}>
@@ -509,13 +511,13 @@ function SplitPage({ trip, myNickname }) {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-      {/* ── Hero ── */}}
+      {/* ── Hero ── */}
       <div style={{ background: 'linear-gradient(135deg,#0F6E56,#1D9E75 48%,#4ABA96)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -18, right: -18, fontSize: 84, opacity: 0.08 }}>💸</div>
+        <svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,1)" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', top: -18, right: -18, opacity: 0.08, pointerEvents: 'none' }}>
+          <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="14.5" r="1.5" fill="rgba(255,255,255,1)" stroke="none"/>
+        </svg>
         <div style={{ position: 'absolute', left: -40, bottom: -48, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-
-        {/* Row: Total left, budget right */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: budget ? 14 : 0 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
           <div>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 4 }}>Total Spent</div>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 700, color: '#fff' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
@@ -524,7 +526,7 @@ function SplitPage({ trip, myNickname }) {
           {budget && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', marginBottom: 4 }}>Budget Left</div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : 'rgba(255,255,255,0.95)' }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#C8F0E4' }}>
                 {budgetLeft < 0 ? '-' : ''}₹{Math.abs(Math.round(budgetLeft)).toLocaleString('en-IN')}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of ₹{budget.toLocaleString('en-IN')}</div>
@@ -533,16 +535,16 @@ function SplitPage({ trip, myNickname }) {
         </div>
 
         {budget && (() => {
-          const budgetEmoji = budgetPct <= 25 ? '�' : budgetPct <= 50 ? '🙂' : budgetPct <= 70 ? '😐' : budgetPct <= 85 ? '😬' : budgetPct <= 95 ? '😰' : '🤯';
+          const dotColor = budgetPct <= 25 ? '#6EE7B7' : budgetPct <= 50 ? '#A7F3D0' : budgetPct <= 70 ? '#FDE68A' : budgetPct <= 85 ? '#FCA5A5' : budgetPct <= 95 ? '#FB923C' : '#EF4444';
           const budgetMsg = budgetPct <= 25 ? 'Crushing it!' : budgetPct <= 50 ? 'Looking good' : budgetPct <= 70 ? 'Keep an eye' : budgetPct <= 85 ? 'Getting close' : budgetPct <= 95 ? 'Almost gone!' : 'Budget blown!';
           return (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 20, lineHeight: 1 }}>{budgetEmoji}</span>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, display: 'inline-block', transition: 'background .4s', boxShadow: budgetPct > 85 ? `0 0 6px ${dotColor}` : 'none', flexShrink: 0 }} />
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{budgetMsg}</span>
               </div>
-              <div style={{ height: 7, background: 'rgba(255,255,255,0.18)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? '#FFD3C4' : 'rgba(255,255,255,0.85)', transition: 'width .6s' }} />
+              <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? '#FFD3C4' : '#C8F0E4', transition: 'width .6s' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
                 <span>{budgetPct}% used</span><span>{100 - budgetPct}% remaining</span>
@@ -551,15 +553,14 @@ function SplitPage({ trip, myNickname }) {
           );
         })()}
         {!budget && (
-          <button onClick={() => setShowBudgetEdit(true)}
-            style={{ background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.88)', border: '0.5px solid rgba(255,255,255,0.26)', borderRadius: 10, padding: '6px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", marginTop: 10 }}>
+          <button onClick={() => setShowBudgetEdit(true)} style={{ ...S.btn, background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.88)', border: '0.5px solid rgba(255,255,255,0.26)', fontSize: 12, marginTop: 8 }}>
             + Set a budget
           </button>
         )}
         {budget && (
-          <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }}
-            style={{ background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '5px 12px', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", marginTop: 8 }}>
-            ✏️ Edit budget
+          <button onClick={() => { setBudgetInput(String(budget)); setShowBudgetEdit(true); }} style={{ ...S.btn, background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', fontSize: 11, marginTop: 8 }}>
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit budget
           </button>
         )}
       </div>
@@ -621,12 +622,12 @@ function SplitPage({ trip, myNickname }) {
             {expenseCats.filter(c => catTotals[c.id] > 0).map(c => (
               <button key={c.id} onClick={() => setFilterCat(filterCat === c.id ? 'all' : c.id)}
                 style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, background: filterCat === c.id ? c.bg : '#fff', color: filterCat === c.id ? (CAT_COLORS[c.id] || '#6b6b68') : '#6b6b68', border: `0.5px solid ${filterCat === c.id ? (CAT_COLORS[c.id] || '#6b6b68') + '44' : 'rgba(0,0,0,0.12)'}` }}>
-                {c.icon} {c.label}
+                <CatIcon id={c.id} size={12} /><span>{c.label}</span>
               </button>
             ))}
           </div>
 
-          {sortedExpenses.length === 0 && <div style={{ textAlign: 'center', padding: '2.5rem', color: '#6b6b68', fontSize: 14 }}><div style={{ fontSize: 40, marginBottom: 10 }}>📝</div><p>No expenses yet. Add your first one!</p></div>}
+          {sortedExpenses.length === 0 && <div style={{ textAlign: 'center', padding: '2.5rem', color: '#6b6b68', fontSize: 14 }}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 10, display: 'block', margin: '0 auto 10px' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg><p>No expenses yet. Add your first one!</p></div>}
 
           {sortedExpenses.map(exp => {
             const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
@@ -638,7 +639,7 @@ function SplitPage({ trip, myNickname }) {
                 {/* color top strip */}
                 <div style={{ height: 3, background: `linear-gradient(90deg, ${accentColor}, ${accentColor}88)` }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 21, boxShadow: `0 2px 8px ${accentColor}44` }}>{cat.icon}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, boxShadow: `0 2px 8px ${accentColor}44` }}><CatIcon id={cat.id} size={22} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
@@ -704,7 +705,7 @@ function SplitPage({ trip, myNickname }) {
           </div>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Who pays whom</div>
           {settlements.length === 0
-            ? <div style={{ background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 12, padding: '1rem 1.25rem', fontSize: 14, color: '#085041', fontWeight: 500 }}>✅ Everyone is squared up!</div>
+            ? <div style={{ background: '#E1F5EE', border: '0.5px solid #9FE1CB', borderRadius: 12, padding: '1rem 1.25rem', fontSize: 14, color: '#085041', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20,6 9,17 4,12"/></svg>Everyone is squared up!</div>
             : settlements.map((s, i) => (
               <div key={i} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(s.from), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.from.slice(0, 2).toUpperCase()}</div>
@@ -766,7 +767,7 @@ function SplitPage({ trip, myNickname }) {
           </div>
 
           <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#E1F5EE,#F0FDF9)', border: `0.5px solid ${SPLIT_ACCENT_BORDER}`, position: 'relative', overflow: 'hidden', animation: 'soloFadeUp .4s ease-out both', animationDelay: '120ms' }}>
-            <div style={{ position: 'absolute', right: 10, top: 6, fontSize: 26, opacity: 0.3 }}>🎒</div>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={SPLIT_ACCENT_TEXT} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: 10, top: 6, opacity: 0.3 }}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="14.5" x2="15" y2="14.5"/></svg>
             <div style={{ fontSize: 11, color: SPLIT_ACCENT_TEXT, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Group money mood</div>
             <div style={{ fontSize: 14, color: SPLIT_ACCENT_TEXT, lineHeight: 1.55, paddingRight: 20 }}>{funInsightLine}</div>
           </div>
@@ -775,9 +776,9 @@ function SplitPage({ trip, myNickname }) {
             <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#F8FFF9,#F1FFFA)' }}>
               <div style={{ fontSize: 11, color: '#0F6E56', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Crew Pace Meter</div>
               <div style={{ fontSize: 14, color: '#1a1a18', lineHeight: 1.5 }}>
-                {pacePct <= 95 && `🧘 Smooth pace. Team is at ${pacePct}% of planned daily budget.`}
-                {pacePct > 95 && pacePct <= 115 && `⚖️ Balanced burn. Team is at ${pacePct}% of planned daily budget.`}
-                {pacePct > 115 && `🔥 Sprint mode. Team is at ${pacePct}% of planned daily budget.`}
+                {pacePct <= 95 && `Smooth pace — team at ${pacePct}% of planned daily budget.`}
+                {pacePct > 95 && pacePct <= 115 && `Balanced burn — team at ${pacePct}% of planned daily budget.`}
+                {pacePct > 115 && `Sprint mode — team at ${pacePct}% of planned daily budget.`}
               </div>
               <div style={{ marginTop: 8, fontSize: 12, color: '#6b6b68' }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day now vs ₹{Math.round(plannedDailyBudget).toLocaleString('en-IN')}/day planned</div>
             </div>
@@ -804,8 +805,9 @@ function SplitPage({ trip, myNickname }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
-                  <div style={{ padding: '10px 11px', background: projected > budget ? '#FAECE7' : SPLIT_ACCENT_BG, border: `0.5px solid ${projected > budget ? '#F5C4B3' : SPLIT_ACCENT_BORDER}`, borderRadius: 10, fontSize: 12, color: projected > budget ? '#993C1D' : SPLIT_ACCENT_TEXT, lineHeight: 1.45 }}>
-                    {projected > budget ? `⚠️ Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `✅ ₹${Math.round(underBy).toLocaleString('en-IN')} under pace`}
+                  <div style={{ padding: '10px 11px', background: projected > budget ? '#FAECE7' : SPLIT_ACCENT_BG, border: `0.5px solid ${projected > budget ? '#F5C4B3' : SPLIT_ACCENT_BORDER}`, borderRadius: 10, fontSize: 12, color: projected > budget ? '#993C1D' : SPLIT_ACCENT_TEXT, lineHeight: 1.45, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>{projected > budget ? <><path d="M10.3 3.3L2 19h20L13.7 3.3a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></> : <polyline points="20,6 9,17 4,12"/>}</svg>
+                    {projected > budget ? `Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `₹${Math.round(underBy).toLocaleString('en-IN')} under pace`}
                   </div>
                   <div style={{ height: 7, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
                     <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? SPLIT_WARN : SPLIT_ACCENT, transition: 'width .6s' }} />
@@ -827,7 +829,7 @@ function SplitPage({ trip, myNickname }) {
                 return (
                   <div key={c.id} style={{ marginBottom: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 9, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{c.icon}</div>
+                      <div style={{ width: 34, height: 34, borderRadius: 9, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon id={c.id} size={18} /></div>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: 13, fontWeight: 600 }}>{c.label}</span>
@@ -855,8 +857,8 @@ function SplitPage({ trip, myNickname }) {
                 const pct = total > 0 ? Math.round(exp.amount / total * 100) : 0;
                 return (
                   <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: idx < top3.length - 1 ? '0 0 10px' : '0', borderBottom: idx < top3.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', marginBottom: idx < top3.length - 1 ? 10 : 0, animation: 'soloFadeUp .32s ease-out both', animationDelay: `${320 + idx * 45}ms` }}>
-                    <span style={{ fontSize: 18, flexShrink: 0 }}>{['🥇','🥈','🥉'][idx]}</span>
-                    <div style={{ width: 34, height: 34, borderRadius: 9, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{cat.icon}</div>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: idx === 0 ? '#BA7517' : idx === 1 ? '#8B9EB0' : '#9D6B3C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{idx + 1}</div>
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon id={cat.id} size={18} /></div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
                       <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2 }}>{exp.paidBy} · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>

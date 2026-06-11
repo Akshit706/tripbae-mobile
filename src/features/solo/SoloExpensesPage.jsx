@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { addExpense, updateExpense, deleteExpense } from '../../api';
 import { CATS, tripDuration } from '../shared/constants';
 import { S } from '../shared/styles';
+import { CatIcon } from '../shared/ui';
 function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [expenses, setExpenses] = useState(trip.expenses || []);
   const [budget, setBudget] = useState(trip.budget || null);
@@ -347,7 +348,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
               {expenseCats.map(c => (
                 <button key={c.id} onClick={() => setForm(f => ({ ...f, cat: c.id }))}
                   style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: `1.5px solid ${form.cat === c.id ? SOLO_ACCENT_2 : 'rgba(0,0,0,0.09)'}`, background: form.cat === c.id ? SOLO_ACCENT_BG : '#fafafa', color: form.cat === c.id ? SOLO_ACCENT : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: form.cat === c.id ? 600 : 400, transition: 'all .12s' }}>
-                  <span style={{ fontSize: 13 }}>{c.icon}</span>
+                  <CatIcon id={c.id} size={14} />
                   <span>{c.label}</span>
                 </button>
               ))}
@@ -385,7 +386,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         }
       `}</style>
       <div style={{ background: 'linear-gradient(135deg,#26215C,#534AB7 48%,#7F77DD)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -18, right: -18, fontSize: 84, opacity: 0.08 }}>💸</div>
+        <svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,1)" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', top: -18, right: -18, opacity: 0.08, pointerEvents: 'none' }}>
+          <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="14.5" r="1.5" fill="rgba(255,255,255,1)" stroke="none"/>
+        </svg>
         <div style={{ position: 'absolute', left: -40, bottom: -48, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
           <div>
@@ -404,12 +407,12 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           )}
         </div>
         {budget && (() => {
-          const budgetEmoji = budgetPct <= 25 ? '😎' : budgetPct <= 50 ? '🙂' : budgetPct <= 70 ? '😐' : budgetPct <= 85 ? '😬' : budgetPct <= 95 ? '😰' : '🤯';
+          const dotColor = budgetPct <= 25 ? '#A7F3D0' : budgetPct <= 50 ? '#BEF264' : budgetPct <= 70 ? '#FDE68A' : budgetPct <= 85 ? '#FCA5A5' : budgetPct <= 95 ? '#FB923C' : '#EF4444';
           const budgetMsg = budgetPct <= 25 ? 'Crushing it!' : budgetPct <= 50 ? 'Looking good' : budgetPct <= 70 ? 'Keep an eye' : budgetPct <= 85 ? 'Getting close' : budgetPct <= 95 ? 'Almost gone!' : 'Budget blown!';
           return (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 22, lineHeight: 1, transition: 'all .4s', filter: budgetPct > 85 ? 'drop-shadow(0 0 4px rgba(255,150,80,0.6))' : 'none' }}>{budgetEmoji}</span>
+                <span style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, display: 'inline-block', transition: 'background .4s', boxShadow: budgetPct > 85 ? `0 0 6px ${dotColor}` : 'none', flexShrink: 0 }} />
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{budgetMsg}</span>
               </div>
               <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
@@ -428,7 +431,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         )}
         {budget && (
           <button onClick={() => { setEditBudget(String(budget)); setShowBudgetEdit(true); }} style={{ ...S.btn, background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', fontSize: 11, marginTop: 8 }}>
-            ✏️ Edit budget
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit budget
           </button>
         )}
       </div>
@@ -477,11 +481,11 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             {expenseCats.filter(c => catTotals[c.id] > 0).map(c => (
               <button key={c.id} onClick={() => setFilterCat(filterCat === c.id ? 'all' : c.id)}
                 style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, background: filterCat === c.id ? c.bg : '#fff', color: filterCat === c.id ? (CAT_COLORS[c.id] || '#6b6b68') : '#6b6b68', border: `0.5px solid ${filterCat === c.id ? (CAT_COLORS[c.id] || '#6b6b68') + '44' : 'rgba(0,0,0,0.12)'}` }}>
-                {c.icon} {c.label}
+                <CatIcon id={c.id} size={12} /><span>{c.label}</span>
               </button>
             ))}
           </div>
-          {sortedFiltered.length === 0 && <div style={{ textAlign: 'center', padding: '2.5rem', color: '#6b6b68', fontSize: 14 }}><div style={{ fontSize: 40, marginBottom: 10 }}>📝</div><p>No expenses yet. Add your first one!</p></div>}
+          {sortedFiltered.length === 0 && <div style={{ textAlign: 'center', padding: '2.5rem', color: '#6b6b68', fontSize: 14 }}><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: 10, display: 'block', margin: '0 auto 10px' }}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg><p>No expenses yet. Add your first one!</p></div>}
           {sortedFiltered.map(exp => {
             const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
             const timeLabel = getExpenseTimeLabel(exp);
@@ -490,7 +494,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
               <div key={exp.id} style={{ background: '#fff', borderRadius: 18, marginBottom: 10, boxShadow: '0 4px 18px rgba(15,23,42,0.07)', overflow: 'hidden', border: '0.5px solid rgba(0,0,0,0.06)' }}>
                 <div style={{ height: 3, background: `linear-gradient(90deg, ${accentColor}, ${accentColor}88)` }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, fontSize: 21, boxShadow: `0 2px 8px ${accentColor}44` }}>{cat.icon}</div>
+                  <div style={{ width: 44, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, boxShadow: `0 2px 8px ${accentColor}44` }}><CatIcon id={cat.id} size={22} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
                     <div style={{ fontSize: 11, color: '#9ca3af' }}>
@@ -530,7 +534,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           </div>
 
           <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#EEEDFE,#F3F2FF)', border: `0.5px solid ${SOLO_ACCENT_BORDER}`, position: 'relative', overflow: 'hidden', animation: 'soloFadeUp .4s ease-out both', animationDelay: '120ms' }}>
-            <div style={{ position: 'absolute', right: 10, top: 6, fontSize: 26, opacity: 0.3 }}>🎒</div>
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={SOLO_ACCENT_TEXT} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: 10, top: 6, opacity: 0.3 }}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="14.5" x2="15" y2="14.5"/></svg>
             <div style={{ fontSize: 11, color: SOLO_ACCENT_TEXT, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Solo money mood</div>
             <div style={{ fontSize: 14, color: SOLO_ACCENT_TEXT, lineHeight: 1.55, paddingRight: 20 }}>{soloInsightLine}</div>
           </div>
@@ -539,9 +543,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#F8FFF9,#F1FFFA)' }}>
               <div style={{ fontSize: 11, color: '#0F6E56', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Pace Meter</div>
               <div style={{ fontSize: 14, color: '#1a1a18', lineHeight: 1.5 }}>
-                {pacePct <= 95 && `🧘 Nice control. You're at ${pacePct}% of planned daily budget pace.`}
-                {pacePct > 95 && pacePct <= 115 && `⚖️ Balanced pace. You're running at ${pacePct}% of planned daily budget pace.`}
-                {pacePct > 115 && `🔥 High-burn mode. You're at ${pacePct}% of planned daily budget pace.`}
+                {pacePct <= 95 && `Nice control — you're at ${pacePct}% of planned daily budget pace.`}
+                {pacePct > 95 && pacePct <= 115 && `Balanced pace — running at ${pacePct}% of planned daily budget pace.`}
+                {pacePct > 115 && `High-burn mode — at ${pacePct}% of planned daily budget pace.`}
               </div>
               <div style={{ marginTop: 8, fontSize: 12, color: '#6b6b68' }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day now vs ₹{Math.round(plannedDailyBudget).toLocaleString('en-IN')}/day planned</div>
             </div>
@@ -569,8 +573,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
-                  <div style={{ padding: '10px 11px', background: projected > budget ? '#FAECE7' : SOLO_ACCENT_BG, border: `0.5px solid ${projected > budget ? '#F5C4B3' : SOLO_ACCENT_BORDER}`, borderRadius: 10, fontSize: 12, color: projected > budget ? '#993C1D' : SOLO_ACCENT_TEXT, lineHeight: 1.45 }}>
-                    {projected > budget ? `⚠️ Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `✅ ₹${Math.round(underBy).toLocaleString('en-IN')} under pace`}
+                  <div style={{ padding: '10px 11px', background: projected > budget ? '#FAECE7' : SOLO_ACCENT_BG, border: `0.5px solid ${projected > budget ? '#F5C4B3' : SOLO_ACCENT_BORDER}`, borderRadius: 10, fontSize: 12, color: projected > budget ? '#993C1D' : SOLO_ACCENT_TEXT, lineHeight: 1.45, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>{projected > budget ? <><path d="M10.3 3.3L2 19h20L13.7 3.3a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></> : <polyline points="20,6 9,17 4,12"/>}</svg>
+                    {projected > budget ? `Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `₹${Math.round(underBy).toLocaleString('en-IN')} under pace`}
                   </div>
                   <div style={{ height: 7, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
                     <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? SOLO_WARN : SOLO_ACCENT_2, transition: 'width .6s' }} />
@@ -592,7 +597,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                 return (
                   <div key={c.id} style={{ marginBottom: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 9, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{c.icon}</div>
+                      <div style={{ width: 34, height: 34, borderRadius: 9, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon id={c.id} size={18} /></div>
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: 13, fontWeight: 600 }}>{c.label}</span>
@@ -620,8 +625,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                 const pct = total > 0 ? Math.round((exp.amount / total) * 100) : 0;
                 return (
                   <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: idx < top3.length - 1 ? '0 0 10px' : 0, borderBottom: idx < top3.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', marginBottom: idx < top3.length - 1 ? 10 : 0, animation: 'soloFadeUp .32s ease-out both', animationDelay: `${320 + idx * 45}ms` }}>
-                    <span style={{ fontSize: 18, flexShrink: 0 }}>{['🥇','🥈','🥉'][idx]}</span>
-                    <div style={{ width: 34, height: 34, borderRadius: 9, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>{cat.icon}</div>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: idx === 0 ? '#BA7517' : idx === 1 ? '#8B9EB0' : '#9D6B3C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{idx + 1}</div>
+                    <div style={{ width: 34, height: 34, borderRadius: 9, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon id={cat.id} size={18} /></div>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
                       <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2 }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
