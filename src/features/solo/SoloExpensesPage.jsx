@@ -390,8 +390,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="14.5" r="1.5" fill="rgba(255,255,255,1)" stroke="none"/>
         </svg>
         <div style={{ position: 'absolute', left: -40, bottom: -48, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-          <div>
+        <div style={{ display: 'flex', justifyContent: budget ? 'space-between' : 'center', alignItems: 'flex-start', marginBottom: 12 }}>
+          <div style={{ paddingLeft: budget ? 2 : 0, textAlign: budget ? 'left' : 'center' }}>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 4 }}>Total Spent</div>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 700, color: '#fff' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day TSR · {expenses.length} entries</div>
@@ -407,16 +407,27 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           )}
         </div>
         {budget && (() => {
-          const dotColor = budgetPct <= 25 ? '#A7F3D0' : budgetPct <= 50 ? '#BEF264' : budgetPct <= 70 ? '#FDE68A' : budgetPct <= 85 ? '#FCA5A5' : budgetPct <= 95 ? '#FB923C' : '#EF4444';
+          const statusColor = budgetPct <= 25 ? '#6EE7B7' : budgetPct <= 50 ? '#A7F3D0' : budgetPct <= 70 ? '#FDE68A' : budgetPct <= 85 ? '#FCA5A5' : budgetPct <= 95 ? '#FB923C' : '#EF4444';
           const budgetMsg = budgetPct <= 25 ? 'Crushing it!' : budgetPct <= 50 ? 'Looking good' : budgetPct <= 70 ? 'Keep an eye' : budgetPct <= 85 ? 'Getting close' : budgetPct <= 95 ? 'Almost gone!' : 'Budget blown!';
+          const statusIcon = budgetPct <= 25
+            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8,12 11,15 16,9"/></svg>
+            : budgetPct <= 50
+            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
+            : budgetPct <= 70
+            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            : budgetPct <= 85
+            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+            : budgetPct <= 95
+            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>;
           return (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, display: 'inline-block', transition: 'background .4s', boxShadow: budgetPct > 85 ? `0 0 6px ${dotColor}` : 'none', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
+                <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{statusIcon}</span>
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{budgetMsg}</span>
               </div>
               <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? '#FFD3C4' : '#DAD7FF', transition: 'width .6s' }} />
+                <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? '#FFD3C4' : '#DAD7FF', transition: 'width .6s' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
                 <span>{budgetPct}% used</span><span>{100 - budgetPct}% remaining</span>
@@ -425,18 +436,13 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           );
         })()}
         {!budget && (
-          <button onClick={() => setShowBudgetEdit(true)} style={{ ...S.btn, background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.88)', border: '0.5px solid rgba(255,255,255,0.26)', fontSize: 12, marginTop: 8 }}>
-            + Set a budget
-          </button>
-        )}
-        {budget && (
-          <button onClick={() => { setEditBudget(String(budget)); setShowBudgetEdit(true); }} style={{ ...S.btn, background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.8)', border: '0.5px solid rgba(255,255,255,0.2)', fontSize: 11, marginTop: 8 }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-            Edit budget
-          </button>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 10 }}>
+            <button onClick={() => setShowBudgetEdit(true)} style={{ ...S.btn, background: 'rgba(255,255,255,0.14)', color: 'rgba(255,255,255,0.88)', border: '0.5px solid rgba(255,255,255,0.26)', fontSize: 12 }}>
+              + Set a budget
+            </button>
+          </div>
         )}
       </div>
-
       {showBudgetEdit && (
         <div style={{ ...S.card, border: `0.5px solid ${SOLO_ACCENT_BORDER}`, background: '#f9fffe', marginBottom: '1rem' }}>
           <label style={S.label}>Total trip budget ₹</label>
@@ -463,15 +469,25 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', gap: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 13, padding: 3, flex: 1 }}>
-          {SECTION_TABS.map(t => (
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', borderBottom: '1.5px solid rgba(0,0,0,0.08)', marginBottom: '1rem' }}>
+        {SECTION_TABS.map(t => {
+          const tabIcons = {
+            expenses: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>,
+            insights: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+          };
+          return (
             <button key={t.id} onClick={() => setSection(t.id)}
-              style={{ flex: 1, padding: '8px 4px', fontSize: 12, fontWeight: section === t.id ? 600 : 400, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: section === t.id ? `linear-gradient(135deg,${SOLO_ACCENT_2},${SOLO_ACCENT})` : 'transparent', color: section === t.id ? '#fff' : '#6b6b68', transition: 'all .15s' }}>
-              {t.label}
+              style={{ ...S.navTab, ...(section === t.id ? S.navTabActive : {}), position: 'relative', padding: '9px 2px 10px', fontSize: 12, borderRadius: 0 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: section === t.id ? 700 : 500, fontSize: 12 }}>
+                {tabIcons[t.id]}
+                {t.label}
+              </span>
+              {section === t.id && (
+                <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: SOLO_ACCENT }} />
+              )}
             </button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
       {section === 'expenses' && (
