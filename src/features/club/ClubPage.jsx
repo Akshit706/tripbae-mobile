@@ -435,7 +435,8 @@ function ClubDiscoveryCard({ item, compatibility, alreadySent, distKm, onOpen })
 }
 
 function ClubPage({ trip, onTripRefresh }) {
-  const [clubLoading, setClubLoading] = useState(true);
+  const [clubLoading, setClubLoading] = useState(false);
+  const [hubFetched, setHubFetched] = useState(false);
   const [clubBusy, setClubBusy] = useState(false);
   const [hub, setHub] = useState({ myProfile: null, discover: [], incomingRequests: [], outgoingRequests: [], chats: [] });
   const [clubView, setClubView] = useState('discover');
@@ -640,6 +641,7 @@ function ClubPage({ trip, onTripRefresh }) {
     } catch (err) {
       alert('Could not load club: ' + err.message);
     }
+    setHubFetched(true);
     setClubLoading(false);
   }, [trip.id, trip.groupName, filters.vibe]);
 
@@ -1189,7 +1191,6 @@ function ClubPage({ trip, onTripRefresh }) {
     backdropFilter: 'blur(14px)',
   };
 
-  if (clubLoading) return <Spinner text="Loading Club..." solo={trip.isSolo} />;
 
   return (
     <div>
@@ -2201,7 +2202,14 @@ function ClubPage({ trip, onTripRefresh }) {
               </div>
             )}
 
-            {listed && filteredDiscover
+            {listed && !hubFetched && (
+              <div style={{ paddingTop: 4 }}>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="tb-shimmer" style={{ height: 140, borderRadius: 18, marginBottom: 12, opacity: 1 - i * 0.15 }} />
+                ))}
+              </div>
+            )}
+            {listed && hubFetched && filteredDiscover
               .map(item => ({
                 item,
                 alreadySent: hub.outgoingRequests.some(r => r.targetTripId === item.tripId && r.status === 'pending'),

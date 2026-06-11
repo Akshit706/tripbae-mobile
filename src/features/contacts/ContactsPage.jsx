@@ -66,6 +66,14 @@ function ContactsPage({ trip, myNickname, isSolo }) {
   const [emergencyBannerDismissed, setEmergencyBannerDismissed] = useState(
     () => localStorage.getItem(`travelbae_contacts_emg_dismissed_${trip.id}`) === '1'
   );
+  const CONTACTS_WELCOME_KEY = `travelbae_contacts_welcome_${trip.id}`;
+  const [showWelcome, setShowWelcome] = useState(
+    () => { try { return !localStorage.getItem(`travelbae_contacts_welcome_${trip.id}`); } catch { return false; } }
+  );
+  const dismissWelcome = () => {
+    try { localStorage.setItem(CONTACTS_WELCOME_KEY, '1'); } catch {}
+    setShowWelcome(false);
+  };
 
   const importFromPhoneContacts = async () => {
     if (!contactPickerSupported) {
@@ -157,7 +165,7 @@ function ContactsPage({ trip, myNickname, isSolo }) {
           {form._editId ? 'Edit Contact' : 'Add Contact'}
         </div>
         <button onClick={handleAdd} disabled={saving || !form.name.trim() || !form.phone.trim()}
-          style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), padding:'8px 22px', fontSize:14, fontWeight:600, borderRadius:12, opacity:(saving || !form.name.trim() || !form.phone.trim()) ? 0.4 : 1 }}>
+          style={{ ...S.btn, ...(isSolo ? S.btnSolo : { background:'linear-gradient(135deg,#D97706,#B45309)', color:'#fff', border:'0.5px solid rgba(180,83,9,0.6)', boxShadow:'0 8px 20px rgba(180,83,9,0.2)' }), padding:'8px 22px', fontSize:14, fontWeight:600, borderRadius:12, opacity:(saving || !form.name.trim() || !form.phone.trim()) ? 0.4 : 1 }}>
           {saving ? 'Saving…' : form._editId ? 'Update' : 'Save'}
         </button>
       </div>
@@ -191,7 +199,7 @@ function ContactsPage({ trip, myNickname, isSolo }) {
                 type="button"
                 style={{
                   ...S.btn,
-                  ...(isSolo ? S.btnSolo : S.btnP),
+                  ...(isSolo ? S.btnSolo : { background:'linear-gradient(135deg,#D97706,#B45309)', color:'#fff', border:'0.5px solid rgba(180,83,9,0.6)' }),
                   width:'100%',
                   padding:'10px 14px',
                   borderRadius:12,
@@ -258,6 +266,50 @@ function ContactsPage({ trip, myNickname, isSolo }) {
   return (
     <div style={{ paddingBottom:'5rem' }}>
 
+      {/* Welcome popup */}
+      {showWelcome && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9999, display:'flex', alignItems:'flex-end', justifyContent:'center' }}
+          onClick={dismissWelcome}>
+          <div style={{ background:'#fff', borderRadius:'24px 24px 0 0', padding:'28px 22px 38px', width:'100%', maxWidth:440, boxShadow:'0 -8px 40px rgba(0,0,0,0.15)', animation:'clubPop .28s ease-out both' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width:40, height:4, borderRadius:99, background:'#E5E7EB', margin:'0 auto 22px' }} />
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
+              <div style={{ width:48, height:48, borderRadius:15, background: isSolo ? '#EDE9FE' : '#FEF3C7', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#6D28D9' : '#B45309'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:17, fontWeight:800, color:'#111' }}>Trip Contacts</div>
+                <div style={{ fontSize:12, color:'#9ca3af', marginTop:2 }}>Keep your journey safe &amp; connected</div>
+              </div>
+            </div>
+            {[
+              ['Guardian', 'Add a trusted person who can be reached in an emergency.'],
+              ['Emergency', 'Doctor, nearest hospital, local police or helpline.'],
+              ['On-Trip', 'Driver, hotel, guide, or anyone you\'ll contact en-route.'],
+            ].map(([title, desc]) => (
+              <div key={title} style={{ display:'flex', gap:10, alignItems:'flex-start', marginBottom:12 }}>
+                <div style={{ width:6, height:6, borderRadius:'50%', background: isSolo ? '#6D28D9' : '#B45309', marginTop:6, flexShrink:0 }} />
+                <div>
+                  <span style={{ fontFamily:"'Sora',sans-serif", fontSize:13, fontWeight:700, color:'#111' }}>{title} · </span>
+                  <span style={{ fontSize:12.5, color:'#6b6b68', lineHeight:1.5 }}>{desc}</span>
+                </div>
+              </div>
+            ))}
+            <button
+              onClick={dismissWelcome}
+              style={{ marginTop:18, width:'100%', padding:'13px', borderRadius:14, border:'none', background: isSolo ? 'linear-gradient(135deg,#4C1D95,#7C3AED)' : 'linear-gradient(135deg,#92400E,#D97706)', color:'#fff', fontFamily:"'Sora',sans-serif", fontSize:14, fontWeight:700, cursor:'pointer', boxShadow: isSolo ? '0 6px 20px rgba(109,40,217,0.3)' : '0 6px 20px rgba(180,83,9,0.3)' }}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Hero card */}
       <div style={{
         background: isSolo
@@ -286,12 +338,6 @@ function ContactsPage({ trip, myNickname, isSolo }) {
           </div>
         </div>
 
-        <div style={{ display:'flex', gap:8, position:'relative' }}>
-          <div style={{ background:'rgba(255,255,255,0.14)', borderRadius:12, padding:'8px 16px', display:'flex', flexDirection:'column', alignItems:'center', minWidth:60 }}>
-            <span style={{ fontFamily:"'Sora',sans-serif", fontSize:22, fontWeight:800, color:'#fff', lineHeight:1 }}>{contacts.length}</span>
-            <span style={{ fontSize:10, color:'rgba(255,255,255,0.65)', marginTop:3, fontWeight:600, letterSpacing:.4, textTransform:'uppercase' }}>Contacts</span>
-          </div>
-        </div>
       </div>
 
       {/* Emergency / guardian contact reminder */}
@@ -308,47 +354,48 @@ function ContactsPage({ trip, myNickname, isSolo }) {
             });
         if (membersMissing.length === 0) return null;
         return (
-          <div style={{ background:'linear-gradient(135deg,#FFF6E0,#FFEAD6)', border:'0.5px solid #F2C679', borderRadius:16, padding:'12px 14px', marginBottom:'1.1rem', display:'flex', alignItems:'flex-start', gap:12, position:'relative' }}>
-            <div style={{ width:38, height:38, borderRadius:11, background:'#FFE0A8', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#92400E" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
+          <div style={{ background:'#fff', border:'1px solid rgba(0,0,0,0.07)', borderRadius:16, overflow:'hidden', marginBottom:'1.1rem', boxShadow:'0 2px 12px rgba(0,0,0,0.06)', position:'relative' }}>
+            <div style={{ height:3, background:'linear-gradient(90deg,#E53E3E,#F97316)' }} />
+            <div style={{ padding:'14px 14px 14px', display:'flex', alignItems:'flex-start', gap:12 }}>
+            <div style={{ width:40, height:40, borderRadius:12, background:'#FFF1F2', border:'1px solid #FED7D7', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:2 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E53E3E" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
               </svg>
             </div>
             <div style={{ flex:1, minWidth:0, paddingRight:18 }}>
-              <div style={{ fontFamily:"'Sora',sans-serif", fontSize:13.5, fontWeight:700, color:'#7A4A0B', marginBottom:2 }}>
-                Add a guardian or emergency contact
+              <div style={{ fontFamily:"'Sora',sans-serif", fontSize:13.5, fontWeight:700, color:'#1C1410', marginBottom:3 }}>
+                Add a safety contact
               </div>
-              <div style={{ fontSize:12, color:'#7A4A0B', lineHeight:1.5, opacity:0.85 }}>
+              <div style={{ fontSize:12, color:'#6b6b68', lineHeight:1.55 }}>
                 {isSolo
-                  ? 'Save at least one trusted contact we can reach in an emergency.'
-                  : `Each traveller should add at least one. Still pending: ${membersMissing.slice(0, 3).join(', ')}${membersMissing.length > 3 ? ` +${membersMissing.length - 3} more` : ''}.`}
+                  ? 'Save a trusted guardian or emergency contact for your trip.'
+                  : `Each traveller should add one. Still pending: ${membersMissing.slice(0, 3).join(', ')}${membersMissing.length > 3 ? ` +${membersMissing.length - 3} more` : ''}.`}
               </div>
-              <div style={{ display:'flex', gap:8, marginTop:9, flexWrap:'wrap' }}>
+              <div style={{ display:'flex', gap:8, marginTop:10, flexWrap:'wrap' }}>
                 <button
                   onClick={() => { setForm({ name:'', role:'', cat:'guardian', phone:'', note:'' }); setShowForm(true); }}
-                  style={{ background:'#7A4A0B', color:'#fff', border:'none', borderRadius:10, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans',sans-serif" }}
+                  style={{ background:'#1C1410', color:'#fff', border:'none', borderRadius:10, padding:'7px 14px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans',sans-serif" }}
                 >
                   + Add guardian
                 </button>
                 <button
                   onClick={() => { setForm({ name:'', role:'', cat:'emergency', phone:'', note:'' }); setShowForm(true); }}
-                  style={{ background:'#fff', color:'#7A4A0B', border:'0.5px solid #F2C679', borderRadius:10, padding:'6px 12px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans',sans-serif" }}
+                  style={{ background:'#FFF1F2', color:'#E53E3E', border:'1px solid #FED7D7', borderRadius:10, padding:'7px 14px', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:"'DM Sans',sans-serif" }}
                 >
-                  Add emergency
+                  + Emergency
                 </button>
               </div>
             </div>
             <button
               onClick={() => { localStorage.setItem(dismissKey, '1'); setEmergencyBannerDismissed(true); }}
               aria-label="Dismiss"
-              style={{ position:'absolute', top:8, right:10, width:22, height:22, border:'none', background:'transparent', cursor:'pointer', lineHeight:1, opacity:0.6, display:'flex', alignItems:'center', justifyContent:'center' }}
+              style={{ position:'absolute', top:10, right:10, width:22, height:22, border:'none', background:'transparent', cursor:'pointer', lineHeight:1, opacity:0.45, display:'flex', alignItems:'center', justifyContent:'center' }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7A4A0B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1C1410" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
             </button>
+            </div>
           </div>
         );
       })()}
@@ -362,7 +409,7 @@ function ContactsPage({ trip, myNickname, isSolo }) {
       {/* Category filter pills */}
       <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:'1rem' }}>
         <button onClick={() => setFilterCat('all')}
-          style={{ ...S.btn, fontSize:11, padding:'4px 12px', borderRadius:20, ...(filterCat === 'all' ? (isSolo ? S.btnSolo : S.btnP) : {}) }}>
+          style={{ ...S.btn, fontSize:11, padding:'4px 12px', borderRadius:20, ...(filterCat === 'all' ? (isSolo ? S.btnSolo : { background:'linear-gradient(135deg,#D97706,#B45309)', color:'#fff', border:'0.5px solid rgba(180,83,9,0.6)', boxShadow:'0 6px 16px rgba(180,83,9,0.18)' }) : {}) }}>
           All · {contacts.length}
         </button>
         {CONTACT_CATS.filter(c => catCounts[c.id] > 0).map(c => (

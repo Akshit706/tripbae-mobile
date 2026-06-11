@@ -395,9 +395,9 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
             )}
           </div>
 
-          {/* Tags */}
+          {/* Tags + Know More inline */}
           {(item.tags || []).length > 0 && (
-            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 2 }}>
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 2, alignItems: 'center' }}>
               {item.tags.map(t => {
                 const c = tastTagBg(t);
                 return (
@@ -406,18 +406,16 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
                   </span>
                 );
               })}
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent(item.name + ' ' + dest)}`}
+                target="_blank" rel="noreferrer"
+                onClick={e => e.stopPropagation()}
+                title="Know more"
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: D.goldTint, border: `1px solid rgba(201,145,58,0.25)`, color: D.gold, textDecoration: 'none', flexShrink: 0 }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </a>
             </div>
           )}
-
-          {/* Know More */}
-          <a
-            href={`https://www.google.com/search?q=${encodeURIComponent(item.name + ' ' + dest)}`}
-            target="_blank" rel="noreferrer"
-            onClick={e => e.stopPropagation()}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 8, fontSize: 11.5, fontWeight: 700, color: D.gold, textDecoration: 'none', background: D.goldTint, border: `1px solid rgba(201,145,58,0.2)`, borderRadius: 99, padding: '4px 11px' }}>
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            Know more
-          </a>
         </div>
       </div>
     );
