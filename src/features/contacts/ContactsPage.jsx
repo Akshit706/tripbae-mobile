@@ -268,41 +268,43 @@ function ContactsPage({ trip, myNickname, isSolo }) {
 
       {/* Welcome popup */}
       {showWelcome && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', zIndex:9999, display:'flex', alignItems:'flex-end', justifyContent:'center' }}
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 20px' }}
           onClick={dismissWelcome}>
-          <div style={{ background:'#fff', borderRadius:'24px 24px 0 0', padding:'28px 22px 38px', width:'100%', maxWidth:440, boxShadow:'0 -8px 40px rgba(0,0,0,0.15)', animation:'clubPop .28s ease-out both' }}
+          <div style={{ background:'#fff', borderRadius:24, padding:'28px 22px 24px', width:'100%', maxWidth:380, boxShadow:'0 24px 64px rgba(0,0,0,0.22)', animation:'clubPop .28s ease-out both', position:'relative' }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ width:40, height:4, borderRadius:99, background:'#E5E7EB', margin:'0 auto 22px' }} />
-            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16 }}>
-              <div style={{ width:48, height:48, borderRadius:15, background: isSolo ? '#EDE9FE' : '#FEF3C7', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#6D28D9' : '#B45309'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                  <circle cx="9" cy="7" r="4"/>
-                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-                </svg>
-              </div>
-              <div>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:17, fontWeight:800, color:'#111' }}>Trip Contacts</div>
-                <div style={{ fontSize:12, color:'#9ca3af', marginTop:2 }}>Keep your journey safe &amp; connected</div>
-              </div>
+            {/* X close */}
+            <button onClick={dismissWelcome} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            {/* Icon */}
+            <div style={{ width:56, height:56, borderRadius:18, background: isSolo ? 'linear-gradient(135deg,#4C1D95,#7C3AED)' : 'linear-gradient(135deg,#92400E,#D97706)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16 }}>
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
             </div>
+            <div style={{ fontFamily:"'Sora',sans-serif", fontSize:18, fontWeight:800, color:'#111', marginBottom:4 }}>Trip Contacts</div>
+            <div style={{ fontSize:12.5, color:'#9ca3af', marginBottom:20, lineHeight:1.5 }}>Keep your journey safe &amp; connected</div>
             {[
-              ['Guardian', 'Add a trusted person who can be reached in an emergency.'],
-              ['Emergency', 'Doctor, nearest hospital, local police or helpline.'],
-              ['On-Trip', 'Driver, hotel, guide, or anyone you\'ll contact en-route.'],
-            ].map(([title, desc]) => (
-              <div key={title} style={{ display:'flex', gap:10, alignItems:'flex-start', marginBottom:12 }}>
-                <div style={{ width:6, height:6, borderRadius:'50%', background: isSolo ? '#6D28D9' : '#B45309', marginTop:6, flexShrink:0 }} />
-                <div>
-                  <span style={{ fontFamily:"'Sora',sans-serif", fontSize:13, fontWeight:700, color:'#111' }}>{title} · </span>
-                  <span style={{ fontSize:12.5, color:'#6b6b68', lineHeight:1.5 }}>{desc}</span>
+              [isSolo ? '#EDE9FE' : '#FEF3C7', isSolo ? '#6D28D9' : '#B45309', 'Guardian', 'A trusted person reachable in an emergency.'],
+              [isSolo ? '#FEE2E2' : '#FEE2E2', '#DC2626', 'Emergency', 'Doctor, hospital, police or local helpline.'],
+              [isSolo ? '#E0F2FE' : '#E0F2FE', '#0369A1', 'On-Trip', 'Driver, hotel, guide — anyone en-route.'],
+            ].map(([bg, color, title, desc]) => (
+              <div key={title} style={{ display:'flex', gap:12, alignItems:'flex-start', marginBottom:14 }}>
+                <div style={{ width:34, height:34, borderRadius:10, background:bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                  <div style={{ width:8, height:8, borderRadius:'50%', background:color }} />
+                </div>
+                <div style={{ paddingTop:2 }}>
+                  <div style={{ fontFamily:"'Sora',sans-serif", fontSize:13, fontWeight:700, color:'#111', marginBottom:1 }}>{title}</div>
+                  <div style={{ fontSize:12, color:'#6b6b68', lineHeight:1.5 }}>{desc}</div>
                 </div>
               </div>
             ))}
             <button
               onClick={dismissWelcome}
-              style={{ marginTop:18, width:'100%', padding:'13px', borderRadius:14, border:'none', background: isSolo ? 'linear-gradient(135deg,#4C1D95,#7C3AED)' : 'linear-gradient(135deg,#92400E,#D97706)', color:'#fff', fontFamily:"'Sora',sans-serif", fontSize:14, fontWeight:700, cursor:'pointer', boxShadow: isSolo ? '0 6px 20px rgba(109,40,217,0.3)' : '0 6px 20px rgba(180,83,9,0.3)' }}
+              style={{ marginTop:6, width:'100%', padding:'13px', borderRadius:14, border:'none', background: isSolo ? 'linear-gradient(135deg,#4C1D95,#7C3AED)' : 'linear-gradient(135deg,#92400E,#D97706)', color:'#fff', fontFamily:"'Sora',sans-serif", fontSize:14, fontWeight:700, cursor:'pointer', boxShadow: isSolo ? '0 6px 20px rgba(109,40,217,0.3)' : '0 6px 20px rgba(180,83,9,0.3)' }}
             >
               Got it
             </button>
@@ -321,18 +323,20 @@ function ContactsPage({ trip, myNickname, isSolo }) {
         <div style={{ position:'absolute', right:-30, top:-36, width:120, height:120, borderRadius:'50%', background:'rgba(255,255,255,0.07)', pointerEvents:'none' }} />
         <div style={{ position:'absolute', left:-40, bottom:-48, width:140, height:140, borderRadius:'50%', background:'rgba(255,255,255,0.08)', pointerEvents:'none' }} />
 
-        <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom:16, position:'relative' }}>
-          <div style={{ width:44, height:44, borderRadius:14, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', textAlign:'center', position:'relative', gap:10 }}>
+          <div style={{ width:50, height:50, borderRadius:16, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
           </div>
           <div>
-            <div style={{ fontFamily:"'Sora',sans-serif", fontSize:18, fontWeight:800, color:'#fff', letterSpacing:-0.3, lineHeight:1.2 }}>
+            <div style={{ fontFamily:"'Sora',sans-serif", fontSize:20, fontWeight:800, color:'#fff', letterSpacing:-0.4, lineHeight:1.2 }}>
               {isSolo ? 'My Contacts' : 'Trip Contacts'}
             </div>
-            <div style={{ fontSize:12, color:'rgba(255,255,255,0.65)', marginTop:2 }}>
+            <div style={{ fontSize:12.5, color:'rgba(255,255,255,0.65)', marginTop:4 }}>
               {isSolo ? 'Personal contacts for this trip' : 'Shared by the group · always in reach'}
             </div>
           </div>

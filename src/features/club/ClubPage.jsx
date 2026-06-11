@@ -945,28 +945,37 @@ function ClubPage({ trip, onTripRefresh }) {
     setChatPhotoUploading(true);
     setChatPhotoProgress(0);
     try {
+      let auth = null;
+      try { auth = await imagekitAuth(); } catch (e) {
+        console.error('IK auth failed', e);
+        setChatPhotoUploading(false);
+        return;
+      }
       for (let i = 0; i < imageFiles.length; i += 1) {
         try {
           const file = imageFiles[i];
           const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
-          const fileName = `${trip.id}/club-chat/${Date.now()}-${i}-${safeName}`;
+          const fileName = `club_chat_${trip.id}_${Date.now()}_${i}_${safeName}`;
 
-          const { error } = await supabase.storage.from('trip-photos').upload(fileName, file);
-          if (error) {
-            console.error('Club chat upload error:', error.message || error);
+          const form = new FormData();
+          form.append('file', file);
+          form.append('fileName', fileName);
+          form.append('folder', `/tb-club-chat/${trip.id}`);
+          form.append('useUniqueFileName', 'false');
+          form.append('publicKey', auth.publicKey);
+          form.append('signature', auth.signature);
+          form.append('expire', String(auth.expire));
+          form.append('token', auth.token);
+
+          const uploadRes = await fetch('https://upload.imagekit.io/api/v1/files/upload', { method: 'POST', body: form });
+          const uploadData = await uploadRes.json();
+
+          if (!uploadData.url) {
+            console.error('Club chat IK upload error', uploadData);
             continue;
           }
 
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from('trip-photos').getPublicUrl(fileName);
-
-          if (!publicUrl) {
-            console.error('Club chat upload error: missing public URL for', fileName);
-            continue;
-          }
-
-          await addPhoto(trip.id, publicUrl);
+          await addPhoto(trip.id, uploadData.url);
           setChatPhotoProgress(Math.round(((i + 1) / imageFiles.length) * 100));
         } catch (fileErr) {
           console.error('Club chat per-file upload error:', fileErr);
@@ -1090,11 +1099,8 @@ function ClubPage({ trip, onTripRefresh }) {
     [chatFolderPhotos, chatPhotoSelected]
   );
   const canDeleteSelectedChatPhotos = useMemo(
-    () => selectedChatPhotos.length > 0 && selectedChatPhotos.every((photo) => {
-      const path = extractStoragePathFromPublicUrl(photo.url);
-      return Boolean(path && path.startsWith(`${trip.id}/`));
-    }),
-    [selectedChatPhotos, trip.id]
+    () => selectedChatPhotos.length > 0,
+    [selectedChatPhotos]
   );
   const splitEntries = useMemo(() => activeChat?.splitExpenses || [], [activeChat]);
   const splitBalances = useMemo(
