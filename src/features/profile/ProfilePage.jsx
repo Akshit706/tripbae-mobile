@@ -2,6 +2,18 @@ import { useState, useRef, useEffect } from 'react';
 import { tripDuration, normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { imagekitAuth } from '../../api';
+import bglessLogo from '../../assets/bgless.png';
+
+// ── Logo helpers ────────────────────────────────────────────────────────────
+const TBLogo = ({ h = 15 }) => (
+  <img src={bglessLogo} alt="TravelBae" style={{ height: h, width: 'auto', verticalAlign: 'middle', display: 'inline-block', position: 'relative', top: '-1px' }} />
+);
+const withLogo = (text, h = 15) => {
+  if (typeof text !== 'string' || !/TravelBae|TripBae/i.test(text)) return text;
+  return text.split(/(TravelBae|TripBae)/gi).map((p, i) =>
+    /^(TravelBae|TripBae)$/i.test(p) ? <TBLogo key={i} h={h} /> : p
+  );
+};
 const BADGE_DEFS = [
   { id: 'early_bird',     name: 'Early Bird',      emoji: '🌅', desc: 'Joined the TravelBae crew',           check: () => true },
   { id: 'first_flight',   name: 'First Flight',    emoji: '✈️', desc: 'Created your very first trip',         check: s => s.tripCount >= 1 },
@@ -409,7 +421,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
             </button>
             <div style={{ fontSize: 38, marginBottom: 8 }}>✨</div>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 700, color: '#1a1a18', marginBottom: 6 }}>
-              Enjoying TravelBae?
+              Enjoying <TBLogo h={18} />?
             </div>
             <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 18, lineHeight: 1.5 }}>
               Tap a star to rate your experience.
@@ -571,7 +583,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           {MENU_SECTIONS.map(section => (
             <div key={section.title} style={{ padding: '1.25rem 1.25rem 0' }}>
               <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 4 }}>
-                {section.title}
+                {withLogo(section.title, 11)}
               </div>
               <div style={{ background: 'linear-gradient(180deg,#ffffff,#fbfbf8)', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 20px rgba(0,0,0,0.045)' }}>
                 {section.items.map((m, idx) => (
@@ -591,7 +603,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                       {m.icon}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{m.label}</div>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{withLogo(m.label)}</div>
                       <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2 }}>{m.sub}</div>
                     </div>
                     <div style={{ fontSize: 18, color: '#c8c6c0', flexShrink: 0 }}>
@@ -1010,7 +1022,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               <div style={{ fontSize: 12.5, color: '#6b6b68', lineHeight: 1.6 }}>{s.p}</div>
             </div>
           ))}
-          <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', marginTop: '1.25rem' }}>© 2026 TravelBae</div>
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', marginTop: '1.25rem' }}>© 2026 <TBLogo h={11} /></div>
         </div>
       )}
 
@@ -1029,10 +1041,10 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           ].map(s => (
             <div key={s.h} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '14px 16px', marginBottom: 10 }}>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#1a1a18', marginBottom: 6 }}>{s.h}</div>
-              <div style={{ fontSize: 12.5, color: '#6b6b68', lineHeight: 1.6 }}>{s.p}</div>
+              <div style={{ fontSize: 12.5, color: '#6b6b68', lineHeight: 1.6 }}>{withLogo(s.p, 12)}</div>
             </div>
           ))}
-          <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', marginTop: '1.25rem' }}>© 2026 TravelBae</div>
+          <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', marginTop: '1.25rem' }}>© 2026 <TBLogo h={11} /></div>
         </div>
       )}
 
@@ -1042,8 +1054,8 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           {/* Hero */}
           <div style={{ textAlign: 'center', padding: '1rem 1rem 1.5rem' }}>
             <div style={{ width: 78, height: 78, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, margin: '0 auto 14px', boxShadow: '0 10px 28px rgba(29,158,117,0.35)' }}>✈️</div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 700, letterSpacing: '-0.4px' }}>
-              Travel<span style={{ color: '#1D9E75' }}>Bae</span>
+            <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto' }}>
+              <img src={bglessLogo} alt="TravelBae" style={{ height: 52, width: 'auto', objectFit: 'contain' }} />
             </div>
             <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4, fontStyle: 'italic' }}>Plan, split, explore — together.</div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, padding: '4px 12px', borderRadius: 12, background: '#E1F5EE', border: '0.5px solid #9FE1CB', fontSize: 11, color: '#0F6E56', fontWeight: 600 }}>
@@ -1053,9 +1065,9 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
 
           {/* What is TravelBae */}
           <div style={{ background: 'linear-gradient(135deg,#fff,#F0FAF5)', border: '0.5px solid #9FE1CB', borderRadius: 16, padding: '18px 18px', marginBottom: 12 }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#0F6E56', marginBottom: 8 }}>What is TravelBae?</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#0F6E56', marginBottom: 8 }}>What is <TBLogo h={15} />?</div>
             <div style={{ fontSize: 13, color: '#1a1a18', lineHeight: 1.65 }}>
-              TravelBae is a calm, all-in-one companion for travellers who'd rather spend their energy on the journey than the logistics. From the first spark of an idea to the photos you scroll through years later, every part of a trip — planning, money, people, memories — lives in one place. No spreadsheets, no scattered group chats, no awkward "who owes whom" maths.
+              <TBLogo h={13} /> is a calm, all-in-one companion for travellers who'd rather spend their energy on the journey than the logistics. From the first spark of an idea to the photos you scroll through years later, every part of a trip — planning, money, people, memories — lives in one place. No spreadsheets, no scattered group chats, no awkward "who owes whom" maths.
             </div>
           </div>
 
@@ -1080,7 +1092,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                 <div style={{ width: 34, height: 34, borderRadius: 10, background: '#F0FAF5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{f.icon}</div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13.5, fontWeight: 700, color: '#1a1a18', marginBottom: 2 }}>{f.title}</div>
-                  <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55 }}>{f.body}</div>
+                  <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55 }}>{withLogo(f.body, 12)}</div>
                 </div>
               </div>
             ))}
@@ -1120,7 +1132,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
             Made with <span style={{ color: '#1D9E75' }}>💚</span> for travellers, everywhere.
           </div>
           <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', paddingBottom: '1rem' }}>
-            © 2026 TravelBae · All rights reserved
+            © 2026 <TBLogo h={11} /> · All rights reserved
           </div>
         </div>
       )}

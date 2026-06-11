@@ -772,7 +772,7 @@ export default function App() {
           <img src={bglessLogo} alt="TripBae" style={{ width:56, height:56, objectFit:'contain' }} />
         </div>
         <div className="lg-logo-text">
-          <span className="lg-logo-trip">trip</span><span className="lg-logo-bae">bae</span>
+          <img src={bglessLogo} alt="TripBae" style={{ height: 30, width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.18))' }} />
         </div>
         <div className="lg-tagline">Plan · Split · Explore · Together</div>
       </div>
