@@ -462,9 +462,7 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
             if (p.includes('mid') || p.includes('moderate') || p === 'standard' || p === 'average') return '₹2,000–₹6,000 / night';
             return PRICE_DISPLAY[h.priceLevel] || null;
           })();
-          const mapsUrl = h.lat && h.lng
-            ? `https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}`
-            : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name + ' ' + destination)}`;
+          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name + ' ' + destination)}`;
 
           return (
             <div key={h.id || i} className="r-card r-hotel-card"
