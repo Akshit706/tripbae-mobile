@@ -694,74 +694,130 @@ export default function App() {
 
   // ── AUTH SCREEN ──
   if (!authToken) return (
-    <div style={{ minHeight:'100vh', background:'#FAFAF7', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'1.5rem', position:'relative', overflow:'hidden', fontFamily:"'DM Sans',sans-serif" }}>
+    <div style={{ minHeight:'100vh', background:'linear-gradient(145deg,#041f12 0%,#072c18 15%,#0d4a28 32%,#14703c 50%,#b8975a 74%,#e2d0a0 100%)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'1.5rem 1.25rem', position:'relative', overflow:'hidden', fontFamily:"'DM Sans',sans-serif" }}>
       <style>{`
-        @keyframes authFadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes authFadeUp { from{opacity:0;transform:translateY(26px)} to{opacity:1;transform:translateY(0)} }
         @keyframes authSpin { to{transform:rotate(360deg)} }
-        @keyframes authShine { 0%{transform:translateX(-100%)} 100%{transform:translateX(300%)} }
-        .auth-input {
-          width:100%; border:1.5px solid rgba(28,20,16,0.12); border-radius:14px;
+        @keyframes authShimmer { 0%{transform:translateX(-120%) skewX(-18deg)} 100%{transform:translateX(420%) skewX(-18deg)} }
+        @keyframes authBlobDrift1 { 0%,100%{transform:translate(0,0) scale(1)} 35%{transform:translate(28px,-22px) scale(1.06)} 68%{transform:translate(-18px,14px) scale(0.96)} }
+        @keyframes authBlobDrift2 { 0%,100%{transform:translate(0,0) scale(1)} 42%{transform:translate(-22px,18px) scale(1.09)} 72%{transform:translate(16px,-14px) scale(0.95)} }
+        @keyframes authBlobDrift3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(20px,-16px)} }
+        @keyframes authGlowRing { 0%,100%{box-shadow:0 0 0 0 rgba(29,158,117,0)} 50%{box-shadow:0 0 0 6px rgba(29,158,117,0.22)} }
+        @keyframes authLogoBob { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-5px)} }
+
+        .auth-pill-input {
+          width:100%; border:1.5px solid rgba(28,20,16,0.11); border-radius:99px;
           background:#fff; color:#1C1410; font-size:15px;
-          font-family:'DM Sans',sans-serif; padding:13px 16px; outline:none;
-          box-sizing:border-box; transition:border-color .2s, box-shadow .2s;
+          font-family:'DM Sans',sans-serif; padding:14px 20px 14px 48px; outline:none;
+          box-sizing:border-box;
+          box-shadow:inset 0 2px 6px rgba(28,20,16,0.06), 0 1px 3px rgba(0,0,0,0.04);
+          transition:border-color .25s, box-shadow .25s;
         }
-        .auth-input::placeholder { color:rgba(28,20,16,0.28); }
-        .auth-input:focus { border-color:#1D9E75; box-shadow:0 0 0 3px rgba(29,158,117,0.1); }
-        .auth-input.otp-input {
-          font-size:30px; font-weight:800; letter-spacing:16px; text-align:center;
-          padding:16px 14px; background:#F8FEFB; border-color:rgba(29,158,117,0.2);
+        .auth-pill-input::placeholder { color:rgba(28,20,16,0.3); }
+        .auth-pill-input:focus {
+          border-color:#1D9E75;
+          box-shadow:inset 0 2px 6px rgba(28,20,16,0.04), 0 0 0 4px rgba(29,158,117,0.18);
+          animation:authGlowRing 1.6s ease-in-out;
+        }
+        .auth-pill-input.no-icon { padding-left:20px; }
+        .auth-pill-input.otp-input {
+          font-size:28px; font-weight:800; letter-spacing:14px; text-align:center;
+          padding:16px 14px; background:#F8FEFB; border-color:rgba(29,158,117,0.22);
         }
         .auth-btn-primary {
-          width:100%; padding:14px; border-radius:14px; border:none; cursor:pointer;
+          width:100%; padding:15px; border-radius:99px; border:none; cursor:pointer;
           font-family:'DM Sans',sans-serif; font-size:15px; font-weight:800; color:#fff;
-          background:linear-gradient(135deg,#1D9E75 0%,#0F6E56 100%);
-          box-shadow:0 4px 20px rgba(29,158,117,0.32); transition:opacity .15s; position:relative; overflow:hidden;
+          background:linear-gradient(135deg,#1D9E75 0%,#0A5C42 100%);
+          box-shadow:0 8px 30px rgba(10,92,66,0.52), 0 3px 10px rgba(0,0,0,0.18);
+          transition:opacity .15s, transform .2s, box-shadow .2s;
+          position:relative; overflow:hidden; letter-spacing:0.15px;
         }
-        .auth-btn-primary:disabled { opacity:0.5; cursor:not-allowed; }
+        .auth-btn-primary:not(:disabled):hover { transform:translateY(-1px); box-shadow:0 12px 38px rgba(10,92,66,0.58), 0 4px 14px rgba(0,0,0,0.22); }
+        .auth-btn-primary:not(:disabled):active { transform:translateY(0px); }
+        .auth-btn-primary:disabled { opacity:0.42; cursor:not-allowed; }
         .auth-btn-primary::after {
-          content:''; position:absolute; top:0; left:-100%; width:60%; height:100%;
-          background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent);
-          animation:authShine 3.5s ease-in-out infinite 1.5s;
+          content:''; position:absolute; top:0; left:-120%; width:55%; height:100%;
+          background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);
+          transform:skewX(-18deg);
+          animation:authShimmer 4.2s ease-in-out infinite 2.2s;
         }
         .auth-btn-ghost {
-          background:#fff; border:1.5px solid rgba(28,20,16,0.12);
-          color:#5C504A; font-size:13px; font-family:'DM Sans',sans-serif;
-          font-weight:600; padding:10px 18px; border-radius:12px; cursor:pointer; transition:all .15s;
+          width:100%; padding:13px; border-radius:99px;
+          border:1.5px solid rgba(28,20,16,0.13);
+          background:rgba(255,255,255,0.0);
+          color:#5C504A; font-size:14px; font-family:'DM Sans',sans-serif;
+          font-weight:600; cursor:pointer;
+          transition:border-color .2s, background .2s, color .2s;
+          letter-spacing:0.05px;
         }
-        .auth-btn-ghost:hover { border-color:#1D9E75; color:#1D9E75; }
+        .auth-btn-ghost:hover { border-color:#1D9E75; color:#0F6E56; background:rgba(29,158,117,0.04); }
         .auth-spinner { width:20px; height:20px; border:2.5px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:authSpin .65s linear infinite; display:inline-block; vertical-align:middle; }
+        .auth-back-btn { background:none; border:none; color:#8A7E76; font-size:13px; cursor:pointer; padding:0; margin-bottom:20px; display:flex; align-items:center; gap:5px; font-family:'DM Sans',sans-serif; transition:color .15s; }
+        .auth-back-btn:hover { color:#1C1410; }
+        .auth-input-wrap { position:relative; margin-bottom:12px; }
+        .auth-input-icon { position:absolute; left:17px; top:50%; transform:translateY(-50%); color:rgba(28,20,16,0.3); pointer-events:none; z-index:1; display:flex; align-items:center; }
+        .auth-seg-track { display:flex; gap:0; background:#F4F2EE; border-radius:99px; padding:4px; margin-bottom:22px; }
+        .auth-seg-btn { flex:1; padding:9px; font-size:13px; font-weight:600; border-radius:99px; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s; }
+        .auth-seg-btn.seg-active { background:#fff; color:#1C1410; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+        .auth-seg-btn.seg-inactive { background:transparent; color:#8A7E76; }
+        .auth-logo-frame { display:inline-flex; align-items:center; justify-content:center; width:96px; height:96px; border-radius:30px; background:rgba(255,255,255,0.14); backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px); border:1.5px solid rgba(255,255,255,0.26); box-shadow:0 10px 40px rgba(0,0,0,0.25), 0 2px 10px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.22); margin-bottom:18px; animation:authLogoBob 6s ease-in-out infinite; }
       `}</style>
 
-      {/* Subtle decorative blobs */}
-      <div style={{ position:'absolute', top:-100, right:-80, width:340, height:340, borderRadius:'50%', background:'radial-gradient(circle,rgba(29,158,117,0.08) 0%,transparent 70%)', pointerEvents:'none' }} />
-      <div style={{ position:'absolute', bottom:-120, left:-80, width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle,rgba(201,145,58,0.06) 0%,transparent 70%)', pointerEvents:'none' }} />
+      {/* ── Bokeh blobs ── */}
+      <div style={{ position:'absolute', top:'-18%', left:'-12%', width:560, height:560, borderRadius:'50%', background:'radial-gradient(circle,rgba(29,158,117,0.38) 0%,transparent 66%)', filter:'blur(72px)', animation:'authBlobDrift1 20s ease-in-out infinite', pointerEvents:'none', zIndex:0 }} />
+      <div style={{ position:'absolute', bottom:'-14%', right:'-10%', width:500, height:500, borderRadius:'50%', background:'radial-gradient(circle,rgba(184,151,90,0.36) 0%,transparent 64%)', filter:'blur(80px)', animation:'authBlobDrift2 24s ease-in-out infinite 5s', pointerEvents:'none', zIndex:0 }} />
+      <div style={{ position:'absolute', top:'38%', right:'-6%', width:300, height:300, borderRadius:'50%', background:'radial-gradient(circle,rgba(15,80,50,0.30) 0%,transparent 70%)', filter:'blur(55px)', animation:'authBlobDrift3 15s ease-in-out infinite 3s', pointerEvents:'none', zIndex:0 }} />
+      <div style={{ position:'absolute', bottom:'22%', left:'-8%', width:240, height:240, borderRadius:'50%', background:'radial-gradient(circle,rgba(196,162,78,0.24) 0%,transparent 70%)', filter:'blur(48px)', animation:'authBlobDrift1 17s ease-in-out infinite 9s', pointerEvents:'none', zIndex:0 }} />
+      <div style={{ position:'absolute', top:'60%', left:'40%', width:180, height:180, borderRadius:'50%', background:'radial-gradient(circle,rgba(29,158,117,0.18) 0%,transparent 70%)', filter:'blur(40px)', animation:'authBlobDrift2 19s ease-in-out infinite 6s', pointerEvents:'none', zIndex:0 }} />
 
-      <div style={{ width:'100%', maxWidth:400, animation:'authFadeUp .45s ease both' }}>
+      {/* ── Dotted grid overlay ── */}
+      <svg style={{ position:'absolute', inset:0, width:'100%', height:'100%', pointerEvents:'none', zIndex:1 }} xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="authDots" x="0" y="0" width="26" height="26" patternUnits="userSpaceOnUse">
+            <circle cx="1" cy="1" r="0.9" fill="rgba(255,255,255,0.09)" />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#authDots)" />
+      </svg>
 
-        {/* Logo — no text */}
-        <div style={{ textAlign:'center', marginBottom:'2.5rem' }}>
-          <img src={bglessLogo} alt="TripBae" style={{ width:68, height:68, objectFit:'contain' }} />
-          <div style={{ fontSize:11.5, color:'rgba(28,20,16,0.32)', marginTop:10, letterSpacing:'0.6px', fontWeight:500, fontFamily:"'DM Sans',sans-serif" }}>Plan. Split. Explore. Together.</div>
+      {/* ── Content wrapper ── */}
+      <div style={{ width:'100%', maxWidth:420, position:'relative', zIndex:2, animation:'authFadeUp .55s cubic-bezier(.2,.8,.2,1) both' }}>
+
+        {/* Logo + tagline */}
+        <div style={{ textAlign:'center', marginBottom:'2rem' }}>
+          <div style={{ display:'flex', justifyContent:'center' }}>
+            <div className="auth-logo-frame">
+              <img src={bglessLogo} alt="TravelBae" style={{ width:62, height:62, objectFit:'contain' }} />
+            </div>
+          </div>
+          <div style={{ fontFamily:"'Sora',sans-serif", fontSize:12, fontWeight:300, color:'rgba(255,255,255,0.52)', letterSpacing:'3.5px', textTransform:'uppercase' }}>
+            Plan · Split · Explore · Together
+          </div>
         </div>
 
-        {/* Card */}
-        <div style={{ background:'#fff', borderRadius:24, padding:'2rem', border:'1px solid rgba(28,20,16,0.07)', boxShadow:'0 8px 48px rgba(28,20,16,0.09), 0 2px 12px rgba(28,20,16,0.05)' }}>
+        {/* ── Glassmorphism card ── */}
+        <div style={{ background:'rgba(255,255,255,0.88)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', borderRadius:28, padding:'2.2rem 2rem 2rem', border:'1px solid rgba(255,255,255,0.72)', boxShadow:'0 36px 80px rgba(0,0,0,0.26), 0 12px 32px rgba(0,0,0,0.14), 0 3px 8px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.7)' }}>
 
           {/* ── Step: Enter email ── */}
           {(authMode === 'otp-email') && (
             <div style={{ animation:'authFadeUp .3s ease both' }}>
-              <div style={{ marginBottom:22 }}>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:20, fontWeight:800, color:'#1C1410', marginBottom:5 }}>Welcome</div>
-                <div style={{ fontSize:13.5, color:'#8A7E76', lineHeight:1.5 }}>Enter your email to get a sign-in code</div>
+              <div style={{ marginBottom:24 }}>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:28, fontWeight:800, color:'#1C1410', marginBottom:6, letterSpacing:'-0.5px', lineHeight:1.15 }}>Welcome</div>
+                <div style={{ fontSize:14, color:'#8A7E76', lineHeight:1.6, fontWeight:400 }}>Enter your email to get a sign-in code</div>
               </div>
-              <input className="auth-input" type="email" placeholder="you@example.com"
-                value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleSendOtp()} autoFocus />
-              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:8, fontWeight:500 }}>{authError}</div>}
-              <button className="auth-btn-primary" style={{ marginTop:16 }} onClick={handleSendOtp} disabled={authLoading || !authForm.email.trim()}>
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </span>
+                <input className="auth-pill-input" type="email" placeholder="you@example.com"
+                  value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && handleSendOtp()} autoFocus />
+              </div>
+              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:2, marginBottom:10, fontWeight:500, paddingLeft:6 }}>{authError}</div>}
+              <button className="auth-btn-primary" style={{ marginTop:14 }} onClick={handleSendOtp} disabled={authLoading || !authForm.email.trim()}>
                 {authLoading ? <span className="auth-spinner" /> : 'Continue with Email'}
               </button>
-              <button className="auth-btn-ghost" style={{ width:'100%', marginTop:10 }} onClick={() => { setAuthMode('password-login'); setAuthError(''); }}>
+              <button className="auth-btn-ghost" style={{ marginTop:10 }} onClick={() => { setAuthMode('password-login'); setAuthError(''); }}>
                 Use password instead
               </button>
             </div>
@@ -770,19 +826,18 @@ export default function App() {
           {/* ── Step: OTP code ── */}
           {authMode === 'otp-code' && (
             <div style={{ animation:'authFadeUp .3s ease both' }}>
-              <button onClick={() => { setAuthMode('otp-email'); setAuthError(''); setAuthForm(f => ({ ...f, otp:'' })); }}
-                style={{ background:'none', border:'none', color:'#8A7E76', fontSize:13, cursor:'pointer', padding:0, marginBottom:20, display:'flex', alignItems:'center', gap:5 }}>
+              <button className="auth-back-btn" onClick={() => { setAuthMode('otp-email'); setAuthError(''); setAuthForm(f => ({ ...f, otp:'' })); }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 Back
               </button>
-              <div style={{ marginBottom:22 }}>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:20, fontWeight:800, color:'#1C1410', marginBottom:6 }}>Check your inbox</div>
-                <div style={{ fontSize:13.5, color:'#8A7E76', lineHeight:1.5 }}>We sent a 6-digit code to <strong style={{ color:'#1C1410' }}>{otpSentTo || authForm.email}</strong></div>
+              <div style={{ marginBottom:24 }}>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:28, fontWeight:800, color:'#1C1410', marginBottom:6, letterSpacing:'-0.5px', lineHeight:1.15 }}>Check your inbox</div>
+                <div style={{ fontSize:14, color:'#8A7E76', lineHeight:1.6 }}>We sent a 6-digit code to <strong style={{ color:'#1C1410' }}>{otpSentTo || authForm.email}</strong></div>
               </div>
-              <input className="auth-input otp-input" type="tel" inputMode="numeric" maxLength={6} placeholder="000000"
+              <input className="auth-pill-input otp-input" type="tel" inputMode="numeric" maxLength={6} placeholder="000000"
                 value={authForm.otp} onChange={e => setAuthForm(f => ({ ...f, otp: e.target.value.replace(/\D/g,'').slice(0,6) }))}
                 onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()} autoFocus />
-              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:8, fontWeight:500 }}>{authError}</div>}
+              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:8, fontWeight:500, paddingLeft:6 }}>{authError}</div>}
               <button className="auth-btn-primary" style={{ marginTop:16 }} onClick={handleVerifyOtp} disabled={authLoading || authForm.otp.length < 6}>
                 {authLoading ? <span className="auth-spinner" /> : 'Verify Code'}
               </button>
@@ -798,15 +853,20 @@ export default function App() {
           {/* ── Step: Enter name (new user) ── */}
           {authMode === 'otp-name' && (
             <div style={{ animation:'authFadeUp .3s ease both' }}>
-              <div style={{ marginBottom:22 }}>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:20, fontWeight:800, color:'#1C1410', marginBottom:6 }}>One last thing</div>
-                <div style={{ fontSize:13.5, color:'#8A7E76', lineHeight:1.5 }}>What should your trip mates call you?</div>
+              <div style={{ marginBottom:24 }}>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:28, fontWeight:800, color:'#1C1410', marginBottom:6, letterSpacing:'-0.5px', lineHeight:1.15 }}>One last thing</div>
+                <div style={{ fontSize:14, color:'#8A7E76', lineHeight:1.6 }}>What should your trip mates call you?</div>
               </div>
-              <input className="auth-input" type="text" placeholder="Your first name"
-                value={authForm.name} onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleSubmitName()} autoFocus />
-              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:8, fontWeight:500 }}>{authError}</div>}
-              <button className="auth-btn-primary" style={{ marginTop:16 }} onClick={handleSubmitName} disabled={authLoading || !authForm.name.trim()}>
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <input className="auth-pill-input" type="text" placeholder="Your first name"
+                  value={authForm.name} onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && handleSubmitName()} autoFocus />
+              </div>
+              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:2, marginBottom:10, fontWeight:500, paddingLeft:6 }}>{authError}</div>}
+              <button className="auth-btn-primary" style={{ marginTop:14 }} onClick={handleSubmitName} disabled={authLoading || !authForm.name.trim()}>
                 {authLoading ? <span className="auth-spinner" /> : 'Get Started'}
               </button>
             </div>
@@ -815,30 +875,48 @@ export default function App() {
           {/* ── Password flow ── */}
           {(authMode === 'password-login' || authMode === 'password-signup') && (
             <div style={{ animation:'authFadeUp .3s ease both' }}>
-              <button onClick={() => { setAuthMode('otp-email'); setAuthScreen('login'); setAuthError(''); }}
-                style={{ background:'none', border:'none', color:'#8A7E76', fontSize:13, cursor:'pointer', padding:0, marginBottom:20, display:'flex', alignItems:'center', gap:5 }}>
+              <button className="auth-back-btn" onClick={() => { setAuthMode('otp-email'); setAuthScreen('login'); setAuthError(''); }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                 Back
               </button>
-              <div style={{ display:'flex', gap:0, background:'#F4F2EE', borderRadius:12, padding:3, marginBottom:22 }}>
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:24, fontWeight:800, color:'#1C1410', letterSpacing:'-0.4px', lineHeight:1.2 }}>
+                  {authMode === 'password-login' ? 'Welcome back' : 'Create account'}
+                </div>
+              </div>
+              <div className="auth-seg-track">
                 {[['password-login','Log In'],['password-signup','Sign Up']].map(([m, l]) => (
-                  <button key={m} onClick={() => { setAuthMode(m); setAuthScreen(m === 'password-login' ? 'login' : 'signup'); setAuthError(''); }}
-                    style={{ flex:1, padding:'9px', fontSize:13, fontWeight:600, borderRadius:9, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:authMode === m ? '#fff' : 'transparent', color:authMode === m ? '#1C1410' : '#8A7E76', transition:'all .2s', boxShadow: authMode === m ? '0 1px 4px rgba(0,0,0,0.09)' : 'none' }}>{l}</button>
+                  <button key={m} className={`auth-seg-btn ${authMode === m ? 'seg-active' : 'seg-inactive'}`}
+                    onClick={() => { setAuthMode(m); setAuthScreen(m === 'password-login' ? 'login' : 'signup'); setAuthError(''); }}>{l}</button>
                 ))}
               </div>
               {authMode === 'password-signup' && (
-                <input className="auth-input" type="text" placeholder="Your name" value={authForm.name}
-                  onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
-                  style={{ marginBottom:10 }} autoFocus />
+                <div className="auth-input-wrap">
+                  <span className="auth-input-icon">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  </span>
+                  <input className="auth-pill-input" type="text" placeholder="Your name" value={authForm.name}
+                    onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))} autoFocus />
+                </div>
               )}
-              <input className="auth-input" type="email" placeholder="Email address" value={authForm.email}
-                onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
-                style={{ marginBottom:10 }} autoFocus={authMode === 'password-login'} />
-              <input className="auth-input" type="password" value={authForm.password}
-                onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleAuth()}
-                placeholder={authMode === 'password-signup' ? 'Min 6 characters' : 'Your password'} />
-              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:8, fontWeight:500 }}>{authError}</div>}
+              <div className="auth-input-wrap">
+                <span className="auth-input-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </span>
+                <input className="auth-pill-input" type="email" placeholder="Email address" value={authForm.email}
+                  onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
+                  autoFocus={authMode === 'password-login'} />
+              </div>
+              <div className="auth-input-wrap" style={{ marginBottom:0 }}>
+                <span className="auth-input-icon">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </span>
+                <input className="auth-pill-input" type="password" value={authForm.password}
+                  onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && handleAuth()}
+                  placeholder={authMode === 'password-signup' ? 'Min 6 characters' : 'Your password'} />
+              </div>
+              {authError && <div style={{ color:'#E8715A', fontSize:12.5, marginTop:10, fontWeight:500, paddingLeft:6 }}>{authError}</div>}
               <button className="auth-btn-primary" style={{ marginTop:16 }} onClick={handleAuth} disabled={authLoading || !authForm.email.trim() || !authForm.password.trim() || (authMode === 'password-signup' && !authForm.name.trim())}>
                 {authLoading ? <span className="auth-spinner" /> : authMode === 'password-login' ? 'Log In' : 'Create Account'}
               </button>
@@ -846,8 +924,12 @@ export default function App() {
           )}
         </div>
 
-        <div style={{ textAlign:'center', marginTop:20, fontSize:11.5, color:'rgba(28,20,16,0.3)', lineHeight:1.7 }}>
-          By continuing you agree to our Terms of Service.<br/>Your data is end-to-end encrypted.
+        {/* Bottom trust line */}
+        <div style={{ textAlign:'center', marginTop:20, fontSize:11, color:'rgba(255,255,255,0.38)', letterSpacing:'0.3px', display:'flex', alignItems:'center', justifyContent:'center', gap:6, lineHeight:1.8 }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          <span>End-to-end encrypted · By continuing you agree to our Terms</span>
         </div>
       </div>
     </div>
