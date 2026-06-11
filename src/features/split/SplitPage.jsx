@@ -195,7 +195,7 @@ function SplitPage({ trip, myNickname }) {
       chartInstances.current.donut = new window.Chart(donutRef.current, {
         type: 'doughnut',
         data: {
-          datasets: [{ data: [Math.min(total, budget), Math.max(0, budget - total)], backgroundColor: [budgetPct > 85 ? '#D85A30' : '#D4700A', '#FEF0DC'], borderWidth: 0, hoverOffset: 0 }]
+          datasets: [{ data: [Math.min(total, budget), Math.max(0, budget - total)], backgroundColor: [budgetPct > 85 ? '#D85A30' : '#FF5C1A', '#FFF2ED'], borderWidth: 0, hoverOffset: 0 }]
         },
         options: { responsive: true, maintainAspectRatio: false, cutout: '74%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataIndex === 0 ? ` Spent: ₹${Math.round(Math.min(total, budget)).toLocaleString('en-IN')}` : ` Left: ₹${Math.round(Math.max(0, budget - total)).toLocaleString('en-IN')}` } } } },
         plugins: [{ id: 'center', afterDraw(chart) { const { ctx, chartArea: { width, height, left, top } } = chart; const cx = left + width / 2, cy = top + height / 2; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '600 17px system-ui'; ctx.fillStyle = '#1a1a18'; ctx.fillText(`${budgetPct}%`, cx, cy - 9); ctx.font = '12px system-ui'; ctx.fillStyle = textColor; ctx.fillText('used', cx, cy + 9); ctx.restore(); } }]
@@ -204,7 +204,7 @@ function SplitPage({ trip, myNickname }) {
 
     if (barRef.current) {
       if (activeCats.length === 0) return;
-      const BAR_COLORS = { food:'#BA7517', transport:'#D4700A', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E'};
+      const BAR_COLORS = { food:'#BA7517', transport:'#FF5C1A', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E'};
       chartInstances.current.bar = new window.Chart(barRef.current, {
         type: 'bar',
         data: { labels: activeCats.map(c => c.label), datasets: [{ data: activeCats.map(c => catTotals[c.id]), backgroundColor: activeCats.map(c => BAR_COLORS[c.id] || '#888780'), borderRadius: 6, borderSkipped: false }] },
@@ -298,11 +298,11 @@ function SplitPage({ trip, myNickname }) {
     setForm(f => ({ ...f, cat: id }));
   };
 
-  const SPLIT_ACCENT = '#D4700A';
-  const SPLIT_ACCENT_2 = '#A34E00';
-  const SPLIT_ACCENT_BG = '#FEF0DC';
-  const SPLIT_ACCENT_BORDER = '#F9C98E';
-  const SPLIT_ACCENT_TEXT = '#7A3800';
+  const SPLIT_ACCENT = '#FF5C1A';
+  const SPLIT_ACCENT_2 = '#7A1E00';
+  const SPLIT_ACCENT_BG = '#FFF2ED';
+  const SPLIT_ACCENT_BORDER = '#FFAA80';
+  const SPLIT_ACCENT_TEXT = '#6B1800';
   const SPLIT_WARN = '#D85A30';
   const SECTION_TABS = [
     { id: 'expenses', label: 'Expenses' },
@@ -329,7 +329,7 @@ function SplitPage({ trip, myNickname }) {
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
         {/* Amount block */}
-        <div style={{ background: 'linear-gradient(135deg,#A34E00,#D4700A)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
+        <div style={{ background: 'linear-gradient(135deg,#6B1800,#C83D00)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .6, textTransform: 'uppercase', marginBottom: 12 }}>How much?</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>₹</span>
@@ -359,7 +359,7 @@ function SplitPage({ trip, myNickname }) {
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
               {expenseCats.map(c => (
                 <button key={c.id} onClick={() => setForm(f => ({ ...f, cat: c.id }))}
-                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: `1.5px solid ${form.cat === c.id ? '#D4700A' : 'rgba(0,0,0,0.09)'}`, background: form.cat === c.id ? '#FEF0DC' : '#fafafa', color: form.cat === c.id ? '#A34E00' : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: form.cat === c.id ? 600 : 400, transition: 'all .12s' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '5px 10px', borderRadius: 18, fontSize: 12, border: `1.5px solid ${form.cat === c.id ? '#FF5C1A' : 'rgba(0,0,0,0.09)'}`, background: form.cat === c.id ? '#FFF2ED' : '#fafafa', color: form.cat === c.id ? '#7A1E00' : '#6b6b68', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: form.cat === c.id ? 600 : 400, transition: 'all .12s' }}>
                   <CatIcon id={c.id} size={14} />
                   <span>{c.label}</span>
                 </button>
@@ -418,10 +418,10 @@ function SplitPage({ trip, myNickname }) {
                   {memberNames.map(m => (
                     <button key={m}
                       onClick={() => setForm(f => ({ ...f, paidBy: m, _paidByOpen: false }))}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: form.paidBy === m ? '#FEF0DC' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: form.paidBy === m ? '#A34E00' : '#1a1a18', marginBottom: 2 }}>
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: form.paidBy === m ? '#FFF2ED' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: form.paidBy === m ? '#7A1E00' : '#1a1a18', marginBottom: 2 }}>
                       <div style={{ width: 32, height: 32, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{m.slice(0,2).toUpperCase()}</div>
                       <span style={{ flex: 1, fontWeight: form.paidBy === m ? 600 : 400 }}>{m}</span>
-                      {form.paidBy === m && <span style={{ fontSize: 16, color: '#D4700A' }}>✓</span>}
+                      {form.paidBy === m && <span style={{ fontSize: 16, color: '#FF5C1A' }}>✓</span>}
                     </button>
                   ))}
                 </div>
@@ -439,13 +439,13 @@ function SplitPage({ trip, myNickname }) {
                       splitMode: 'all',
                       splitWith: [...memberNames],
                     }))}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: form.splitMode === 'all' ? '#FEF0DC' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: form.splitMode === 'all' ? '#A34E00' : '#1a1a18', marginBottom: 2 }}>
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: form.splitMode === 'all' ? '#D4700A' : '#f0f0ee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: form.splitMode === 'all' ? '#FFF2ED' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: form.splitMode === 'all' ? '#7A1E00' : '#1a1a18', marginBottom: 2 }}>
+                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: form.splitMode === 'all' ? '#FF5C1A' : '#f0f0ee', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={form.splitMode === 'all' ? '#fff' : '#6b6b68'} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </div>
                     <span style={{ flex: 1, fontWeight: form.splitMode === 'all' ? 600 : 400 }}>Everyone equally</span>
                     <span style={{ fontSize: 12, color: '#a8a8a5', marginRight: 8 }}>÷{memberNames.length}</span>
-                    <div style={{ width: 22, height: 22, borderRadius: 7, border: `2px solid ${form.splitMode === 'all' ? '#D4700A' : '#D3D1C7'}`, background: form.splitMode === 'all' ? '#D4700A' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', flexShrink: 0 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: 7, border: `2px solid ${form.splitMode === 'all' ? '#FF5C1A' : '#D3D1C7'}`, background: form.splitMode === 'all' ? '#FF5C1A' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', flexShrink: 0 }}>
                       {form.splitMode === 'all' ? '✓' : ''}
                     </div>
                   </button>
@@ -467,7 +467,7 @@ function SplitPage({ trip, myNickname }) {
                           const isAll = newWith.length === memberNames.length;
                           return { ...f, splitMode: isAll ? 'all' : 'select', splitWith: newWith };
                         })}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: sel ? '#FEF0DC' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: sel ? '#A34E00' : '#1a1a18', marginBottom: 2 }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: sel ? '#FFF2ED' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: sel ? '#7A1E00' : '#1a1a18', marginBottom: 2 }}>
                         <div style={{ width: 32, height: 32, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{m.slice(0,2).toUpperCase()}</div>
                         <span style={{ flex: 1, fontWeight: sel ? 600 : 400 }}>{m}</span>
                         {form.amount && parseFloat(form.amount) > 0 && sel && (
@@ -475,7 +475,7 @@ function SplitPage({ trip, myNickname }) {
                             ₹{(parseFloat(form.amount) / form.splitWith.length).toFixed(0)}
                           </span>
                         )}
-                        <div style={{ width: 22, height: 22, borderRadius: 7, border: `2px solid ${sel ? '#D4700A' : '#D3D1C7'}`, background: sel ? '#D4700A' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', flexShrink: 0 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: 7, border: `2px solid ${sel ? '#FF5C1A' : '#D3D1C7'}`, background: sel ? '#FF5C1A' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', flexShrink: 0 }}>
                           {sel ? '✓' : ''}
                         </div>
                       </button>
@@ -487,10 +487,10 @@ function SplitPage({ trip, myNickname }) {
               {form.amount && parseFloat(form.amount) > 0 && !form._paidByOpen && !form._splitOpen && (
                 <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.07)', padding: '10px 12px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {(form.splitMode === 'all' ? memberNames : form.splitWith).map(m => (
-                    <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '0.5px solid #F9C98E', borderRadius: 20, padding: '4px 10px 4px 5px', fontSize: 12 }}>
+                    <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '0.5px solid #FFAA80', borderRadius: 20, padding: '4px 10px 4px 5px', fontSize: 12 }}>
                       <div style={{ width: 18, height: 18, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 7, fontWeight: 700 }}>{m.slice(0,2).toUpperCase()}</div>
                       <span style={{ color: '#444' }}>{m}</span>
-                      <span style={{ color: '#A34E00', fontWeight: 700 }}>₹{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : form.splitWith.length)).toFixed(0)}</span>
+                      <span style={{ color: '#7A1E00', fontWeight: 700 }}>₹{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : form.splitWith.length)).toFixed(0)}</span>
                     </div>
                   ))}
                 </div>
@@ -504,7 +504,7 @@ function SplitPage({ trip, myNickname }) {
   );
 
   return (
-    <div>
+    <div style={{ padding: '0 1.25rem' }}>
       <style>{`
         @keyframes soloFadeUp {
           from { opacity: 0; transform: translateY(10px); }
@@ -512,7 +512,7 @@ function SplitPage({ trip, myNickname }) {
         }
       `}</style>
       {/* ── Hero ── */}
-      <div style={{ background: 'linear-gradient(135deg,#A34E00,#D4700A 48%,#E8862C)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ background: 'linear-gradient(135deg,#6B1800,#C83D00 50%,#FF6028)', borderRadius: 18, padding: '1.4rem 1.6rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden', boxShadow: '0 8px 36px rgba(108,24,0,0.38)', borderTop: '0.5px solid rgba(255,255,255,0.22)' }}>
         <svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,1)" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', top: -18, right: -18, opacity: 0.08, pointerEvents: 'none' }}>
           <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="14.5" r="1.5" fill="rgba(255,255,255,1)" stroke="none"/>
         </svg>
@@ -521,12 +521,12 @@ function SplitPage({ trip, myNickname }) {
           <div style={{ paddingLeft: budget ? 2 : 0, textAlign: budget ? 'left' : 'center' }}>
             <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 4 }}>Total Spent</div>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 700, color: '#fff' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>₹{Math.round(perPerson).toLocaleString('en-IN')}/person · {expenses.length} expense{expenses.length !== 1 ? 's' : ''}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day TSR · {expenses.length} entries</div>
           </div>
           {budget && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', marginBottom: 4 }}>Budget Left</div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#FFE4BC' }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#FFD0B0' }}>
                 {budgetLeft < 0 ? '-' : ''}₹{Math.abs(Math.round(budgetLeft)).toLocaleString('en-IN')}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of ₹{budget.toLocaleString('en-IN')}</div>
@@ -554,7 +554,7 @@ function SplitPage({ trip, myNickname }) {
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{budgetMsg}</span>
               </div>
               <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? '#FFD3C4' : '#FFE4BC', transition: 'width .6s' }} />
+                <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? 'linear-gradient(90deg,#FF9970,#FFD3C4)' : 'linear-gradient(90deg,#FF8050,#FFD0B0)', transition: 'width .6s' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
                 <span>{budgetPct}% used</span><span>{100 - budgetPct}% remaining</span>
@@ -571,11 +571,11 @@ function SplitPage({ trip, myNickname }) {
         )}
       </div>
       {showBudgetEdit && (
-        <div style={{ ...S.card, border: '0.5px solid #F9C98E', background: '#f9fffe', marginBottom: '0.75rem' }}>
+        <div style={{ ...S.card, border: '0.5px solid #FFAA80', background: '#f9fffe', marginBottom: '0.75rem' }}>
           <label style={S.label}>Total trip budget ₹</label>
           <input style={S.input} type="number" value={budgetInput} onChange={e => setBudgetInput(e.target.value)} placeholder="e.g. 50000" autoFocus />
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-            <button style={{ ...S.btn, background: 'linear-gradient(135deg,#D4700A,#A34E00)', color: '#fff', border: '0.5px solid rgba(163,78,0,0.68)', boxShadow: '0 10px 22px rgba(163,78,0,0.24)', flex: 1, justifyContent: 'center', padding: '9px' }}
+            <button style={{ ...S.btn, background: 'linear-gradient(135deg,#FF5C1A,#7A1E00)', color: '#fff', border: '0.5px solid rgba(163,78,0,0.68)', boxShadow: '0 10px 22px rgba(163,78,0,0.24)', flex: 1, justifyContent: 'center', padding: '9px' }}
               onClick={async () => {
                 const v = parseFloat(budgetInput);
                 if (!isNaN(v) && v > 0) {
@@ -636,7 +636,7 @@ function SplitPage({ trip, myNickname }) {
         <div style={{ paddingBottom: '5rem' }}>
           {/* Category filter chips */}
           <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: '1rem' }}>
-            <button onClick={() => setFilterCat('all')} style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, ...(filterCat === 'all' ? { background: 'linear-gradient(135deg,#D4700A,#A34E00)', color: '#fff', border: '0.5px solid rgba(163,78,0,0.68)' } : {}) }}>All</button>
+            <button onClick={() => setFilterCat('all')} style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, ...(filterCat === 'all' ? { background: 'linear-gradient(135deg,#FF5C1A,#7A1E00)', color: '#fff', border: '0.5px solid rgba(163,78,0,0.68)' } : {}) }}>All</button>
             {expenseCats.filter(c => catTotals[c.id] > 0).map(c => (
               <button key={c.id} onClick={() => setFilterCat(filterCat === c.id ? 'all' : c.id)}
                 style={{ ...S.btn, fontSize: 11, padding: '4px 10px', borderRadius: 16, background: filterCat === c.id ? c.bg : '#fff', color: filterCat === c.id ? (CAT_COLORS[c.id] || '#6b6b68') : '#6b6b68', border: `0.5px solid ${filterCat === c.id ? (CAT_COLORS[c.id] || '#6b6b68') + '44' : 'rgba(0,0,0,0.12)'}` }}>
@@ -694,9 +694,9 @@ function SplitPage({ trip, myNickname }) {
       {/* ══ SHARES TAB ══ */}
       {section === 'shares' && (
         <div>
-          <div style={{ ...S.card, background: 'linear-gradient(135deg,#FEF0DC,#E6F1FB)', border: '0.5px solid #F9C98E', marginBottom: '1rem' }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: '#7A3800' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
-            <div style={{ fontSize: 12, color: '#A34E00', marginTop: 3 }}>{memberNames.length} members · {expenses.length} expenses · {days} days</div>
+          <div style={{ ...S.card, background: 'linear-gradient(135deg,#FFF2ED,#E6F1FB)', border: '0.5px solid #FFAA80', marginBottom: '1rem' }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: '#6B1800' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
+            <div style={{ fontSize: 12, color: '#7A1E00', marginTop: 3 }}>{memberNames.length} members · {expenses.length} expenses · {days} days</div>
           </div>
           <div style={{ ...S.card, marginBottom: '0.75rem' }}>
             {memberNames.map((m, i) => {
@@ -714,7 +714,7 @@ function SplitPage({ trip, myNickname }) {
                     <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 1 }}>paid ₹{Math.round(paid).toLocaleString('en-IN')} · share ₹{Math.round(owes).toLocaleString('en-IN')}</div>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: net >= 0 ? '#A34E00' : '#993C1D' }}>{net >= 0 ? '+' : '−'}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: net >= 0 ? '#7A1E00' : '#993C1D' }}>{net >= 0 ? '+' : '−'}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}</div>
                     <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 1 }}>{net > 0.5 ? 'gets back' : net < -0.5 ? 'owes' : 'settled'}</div>
                   </div>
                 </div>
@@ -723,7 +723,7 @@ function SplitPage({ trip, myNickname }) {
           </div>
           <div style={{ fontSize: 12, fontWeight: 600, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Who pays whom</div>
           {settlements.length === 0
-            ? <div style={{ background: '#FEF0DC', border: '0.5px solid #F9C98E', borderRadius: 12, padding: '1rem 1.25rem', fontSize: 14, color: '#7A3800', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20,6 9,17 4,12"/></svg>Everyone is squared up!</div>
+            ? <div style={{ background: '#FFF2ED', border: '0.5px solid #FFAA80', borderRadius: 12, padding: '1rem 1.25rem', fontSize: 14, color: '#6B1800', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20,6 9,17 4,12"/></svg>Everyone is squared up!</div>
             : settlements.map((s, i) => (
               <div key={i} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(s.from), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.from.slice(0, 2).toUpperCase()}</div>
@@ -735,7 +735,7 @@ function SplitPage({ trip, myNickname }) {
                 </div>
                 <span style={{ fontSize: 13, fontWeight: 500 }}>{s.to}</span>
                 <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(s.to), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.to.slice(0, 2).toUpperCase()}</div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#A34E00', marginLeft: 6 }}>₹{Math.round(s.amt).toLocaleString('en-IN')}</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#7A1E00', marginLeft: 6 }}>₹{Math.round(s.amt).toLocaleString('en-IN')}</div>
               </div>
             ))
           }
@@ -749,16 +749,16 @@ function SplitPage({ trip, myNickname }) {
             const b = balances[m];
             const isPos = b >= 0.5, isNeg = b < -0.5;
             return (
-              <div key={m} style={{ ...S.card, borderTop: `3px solid ${isPos ? '#D4700A' : isNeg ? '#D85A30' : '#D3D1C7'}`, borderRadius: '0 0 14px 14px', padding: '1rem' }}>
+              <div key={m} style={{ ...S.card, borderTop: `3px solid ${isPos ? '#FF5C1A' : isNeg ? '#D85A30' : '#D3D1C7'}`, borderRadius: '0 0 14px 14px', padding: '1rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                   <div style={{ width: 32, height: 32, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700 }}>{m.slice(0, 2).toUpperCase()}</div>
                   <div style={{ fontSize: 14, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m}</div>
                 </div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: isPos ? '#A34E00' : isNeg ? '#993C1D' : '#6b6b68' }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: isPos ? '#7A1E00' : isNeg ? '#993C1D' : '#6b6b68' }}>
                   {isPos ? '+' : ''}₹{Math.abs(Math.round(b)).toLocaleString('en-IN')}
                 </div>
                 <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 4 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: isPos ? '#D4700A' : isNeg ? '#D85A30' : '#D3D1C7', display: 'inline-block', marginRight: 4 }} />
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: isPos ? '#FF5C1A' : isNeg ? '#D85A30' : '#D3D1C7', display: 'inline-block', marginRight: 4 }} />
                   {isPos ? 'gets back' : isNeg ? 'owes' : 'all settled'}
                 </div>
               </div>
@@ -784,7 +784,7 @@ function SplitPage({ trip, myNickname }) {
             ))}
           </div>
 
-          <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FEF0DC,#FFF5E8)', border: `0.5px solid ${SPLIT_ACCENT_BORDER}`, position: 'relative', overflow: 'hidden', animation: 'soloFadeUp .4s ease-out both', animationDelay: '120ms' }}>
+          <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FFF2ED,#FFF2ED)', border: `0.5px solid ${SPLIT_ACCENT_BORDER}`, position: 'relative', overflow: 'hidden', animation: 'soloFadeUp .4s ease-out both', animationDelay: '120ms' }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={SPLIT_ACCENT_TEXT} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: 10, top: 6, opacity: 0.3 }}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="14.5" x2="15" y2="14.5"/></svg>
             <div style={{ fontSize: 11, color: SPLIT_ACCENT_TEXT, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Group money mood</div>
             <div style={{ fontSize: 14, color: SPLIT_ACCENT_TEXT, lineHeight: 1.55, paddingRight: 20 }}>{funInsightLine}</div>
@@ -792,7 +792,7 @@ function SplitPage({ trip, myNickname }) {
 
           {budget && pacePct !== null && (
             <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#F8FFF9,#F1FFFA)' }}>
-              <div style={{ fontSize: 11, color: '#A34E00', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Crew Pace Meter</div>
+              <div style={{ fontSize: 11, color: '#7A1E00', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Crew Pace Meter</div>
               <div style={{ fontSize: 14, color: '#1a1a18', lineHeight: 1.5 }}>
                 {pacePct <= 95 && `Smooth pace — team at ${pacePct}% of planned daily budget.`}
                 {pacePct > 95 && pacePct <= 115 && `Balanced burn — team at ${pacePct}% of planned daily budget.`}
@@ -908,7 +908,7 @@ function SplitPage({ trip, myNickname }) {
                     <div style={{ height: '100%', width: `${Math.round((payTotal[m] || 0) / maxPay * 100)}%`, background: mcolor(m), borderRadius: 4, transition: 'width .5s' }} />
                   </div>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, flexShrink: 0, background: balances[m] >= 0.5 ? '#FEF0DC' : balances[m] <= -0.5 ? '#FAECE7' : '#F1EFE8', color: balances[m] >= 0.5 ? '#A34E00' : balances[m] <= -0.5 ? '#993C1D' : '#6b6b68' }}>
+                <span style={{ fontSize: 11, fontWeight: 600, padding: '3px 9px', borderRadius: 20, flexShrink: 0, background: balances[m] >= 0.5 ? '#FFF2ED' : balances[m] <= -0.5 ? '#FAECE7' : '#F1EFE8', color: balances[m] >= 0.5 ? '#7A1E00' : balances[m] <= -0.5 ? '#993C1D' : '#6b6b68' }}>
                   {balances[m] >= 0.5 ? '+' : ''}₹{Math.abs(Math.round(balances[m])).toLocaleString('en-IN')}
                 </span>
               </div>
@@ -946,7 +946,7 @@ function SplitPage({ trip, myNickname }) {
       {section === 'expenses' && (
         <button
           onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: getNow().date, time: getNow().time, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); setShowForm(true); }}
-          style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#D4700A,#A34E00)', border: 'none', boxShadow: '0 4px 20px rgba(212,112,10,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
+          style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#FF5C1A,#7A1E00)', border: 'none', boxShadow: '0 4px 20px rgba(255,92,26,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
           +
