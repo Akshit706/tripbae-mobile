@@ -465,9 +465,6 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
           const mapsUrl = h.lat && h.lng
             ? `https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}`
             : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name + ' ' + destination)}`;
-          const callUrl = h.phone
-            ? `tel:${h.phone}`
-            : `https://www.google.com/search?q=${encodeURIComponent(h.name + ' ' + destination + ' hotel phone number')}`;
 
           return (
             <div key={h.id || i} className="r-card r-hotel-card"
@@ -476,42 +473,33 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
               {/* 5-photo slideshow */}
               <HotelPhotoSlideshow hotel={h} destination={destination} stCfg={stCfg} />
 
-              {/* Card body */}
-              <div style={{ padding: '12px 14px 14px' }}>
-                {/* Name row */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: h.rating ? 4 : 8 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15.5, fontWeight: 800, color: D.espresso, lineHeight: 1.2, letterSpacing: -0.2 }}>{h.name}</div>
-                    {h.rating && <div style={{ marginTop: 4 }}><Stars rating={h.rating} /></div>}
-                  </div>
-                  {/* Price badge */}
-                  <div style={{ background: prCfg.bg, borderRadius: 10, padding: '4px 10px', flexShrink: 0 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: prCfg.color }}>{prCfg.icon} {priceDisplay || prCfg.label}</span>
-                  </div>
-                </div>
+              {/* Card body — name + (price · map · call) */}
+              <div style={{ padding: '11px 13px 13px' }}>
+                {/* Line 1: Hotel name */}
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14.5, fontWeight: 800, color: D.espresso, lineHeight: 1.25, letterSpacing: -0.2, marginBottom: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{h.name}</div>
 
-                {/* Address */}
-                {h.address && (
-                  <div style={{ fontSize: 11.5, color: D.muted, marginBottom: 10, lineHeight: 1.5, display: 'flex', gap: 5, alignItems: 'flex-start' }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span>{h.address.length > 65 ? h.address.slice(0, 65) + '…' : h.address}</span>
+                {/* Line 2: price · map icon · call icon */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  {/* Price pill */}
+                  <div style={{ background: prCfg.bg, borderRadius: 99, padding: '4px 10px', flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: prCfg.color }}>{priceDisplay || prCfg.label}</span>
                   </div>
-                )}
 
-                {/* Two icon-only action buttons */}
-                <div style={{ display: 'flex', gap: 10 }}>
-                  {/* Map */}
+                  <div style={{ flex: 1 }} />
+
+                  {/* Map icon button */}
                   <a href={mapsUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', borderRadius: 14, textDecoration: 'none', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+                    style={{ width: 36, height: 36, borderRadius: 11, background: '#EFF6FF', border: '1px solid #BFDBFE', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', flexShrink: 0 }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8' }}>Directions</span>
                   </a>
-                  {/* Call */}
-                  <a href={callUrl} target={h.phone ? undefined : '_blank'} rel="noreferrer" onClick={e => e.stopPropagation()}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', borderRadius: 14, textDecoration: 'none', background: h.phone ? '#F0FDF4' : D.neutral, border: h.phone ? '1px solid #86EFAC' : `1px solid ${D.border}` }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={h.phone ? '#16A34A' : D.muted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    <span style={{ fontSize: 12.5, fontWeight: 700, color: h.phone ? '#16A34A' : D.muted }}>{h.phone || 'Find number'}</span>
-                  </a>
+
+                  {/* Call icon button — only shown when phone is available */}
+                  {h.phone && (
+                    <a href={`tel:${h.phone}`} onClick={e => e.stopPropagation()}
+                      style={{ width: 36, height: 36, borderRadius: 11, background: '#F0FDF4', border: '1px solid #86EFAC', display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', flexShrink: 0 }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
