@@ -465,7 +465,9 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
           const mapsUrl = h.lat && h.lng
             ? `https://www.google.com/maps/search/?api=1&query=${h.lat},${h.lng}`
             : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(h.name + ' ' + destination)}`;
-          const knowMoreUrl = `https://www.google.com/search?q=${encodeURIComponent(h.name + ' ' + destination + ' hotel review')}`;
+          const callUrl = h.phone
+            ? `tel:${h.phone}`
+            : `https://www.google.com/search?q=${encodeURIComponent(h.name + ' ' + destination + ' hotel phone number')}`;
 
           return (
             <div key={h.id || i} className="r-card r-hotel-card"
@@ -476,71 +478,39 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
 
               {/* Card body */}
               <div style={{ padding: '12px 14px 14px' }}>
-                {/* Name + price tier */}
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
+                {/* Name row */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: h.rating ? 4 : 8 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: D.espresso, lineHeight: 1.2, letterSpacing: -0.2 }}>{h.name}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15.5, fontWeight: 800, color: D.espresso, lineHeight: 1.2, letterSpacing: -0.2 }}>{h.name}</div>
                     {h.rating && <div style={{ marginTop: 4 }}><Stars rating={h.rating} /></div>}
                   </div>
-                  <div style={{ background: prCfg.bg, borderRadius: 99, padding: '4px 10px', flexShrink: 0 }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: prCfg.color }}>{prCfg.icon} {prCfg.label}</span>
+                  {/* Price badge */}
+                  <div style={{ background: prCfg.bg, borderRadius: 10, padding: '4px 10px', flexShrink: 0 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: prCfg.color }}>{prCfg.icon} {priceDisplay || prCfg.label}</span>
                   </div>
                 </div>
 
-                {/* Price per night — prominent */}
-                {priceDisplay && (
-                  <div style={{ background: D.goldTint, border: `1px solid rgba(201,145,58,0.2)`, borderRadius: 10, padding: '7px 12px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 7 }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: D.gold }}>{priceDisplay}</span>
-                  </div>
-                )}
-
                 {/* Address */}
                 {h.address && (
-                  <div style={{ fontSize: 11.5, color: D.muted, marginBottom: 8, lineHeight: 1.5, display: 'flex', gap: 5, alignItems: 'flex-start' }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    <span>{h.address.length > 70 ? h.address.slice(0, 70) + '…' : h.address}</span>
+                  <div style={{ fontSize: 11.5, color: D.muted, marginBottom: 10, lineHeight: 1.5, display: 'flex', gap: 5, alignItems: 'flex-start' }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 2 }}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span>{h.address.length > 65 ? h.address.slice(0, 65) + '…' : h.address}</span>
                   </div>
                 )}
 
-                {/* Phone — tap-to-call */}
-                {h.phone ? (
-                  <a href={`tel:${h.phone}`} onClick={e => e.stopPropagation()}
-                    style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '8px 13px', textDecoration: 'none' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: '#1D4ED8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1D4ED8', lineHeight: 1 }}>{h.phone}</div>
-                      <div style={{ fontSize: 10, color: '#3B82F6', marginTop: 2 }}>Tap to call</div>
-                    </div>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                  </a>
-                ) : (
-                  <a href={`https://www.google.com/search?q=${encodeURIComponent(h.name + ' ' + destination + ' hotel phone number')}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-                    style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 10, padding: '8px 13px', textDecoration: 'none' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 8, background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280' }}>Find contact number</div>
-                      <div style={{ fontSize: 10, color: '#9CA3AF' }}>Search on Google</div>
-                    </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                  </a>
-                )}
-
-                {/* Action buttons */}
-                <div style={{ display: 'flex', gap: 8 }}>
+                {/* Two icon-only action buttons */}
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {/* Map */}
                   <a href={mapsUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px', borderRadius: 12, textDecoration: 'none', background: D.blueTint, border: `1px solid rgba(37,99,235,0.18)`, fontSize: 12, fontWeight: 700, color: '#1D4ED8' }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    Directions
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', borderRadius: 14, textDecoration: 'none', background: '#EFF6FF', border: '1px solid #BFDBFE' }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1D4ED8' }}>Directions</span>
                   </a>
-                  <a href={knowMoreUrl} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '9px', borderRadius: 12, textDecoration: 'none', background: D.goldTint, border: `1px solid rgba(201,145,58,0.2)`, fontSize: 12, fontWeight: 700, color: D.gold }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    Reviews
+                  {/* Call */}
+                  <a href={callUrl} target={h.phone ? undefined : '_blank'} rel="noreferrer" onClick={e => e.stopPropagation()}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', borderRadius: 14, textDecoration: 'none', background: h.phone ? '#F0FDF4' : D.neutral, border: h.phone ? '1px solid #86EFAC' : `1px solid ${D.border}` }}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={h.phone ? '#16A34A' : D.muted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: h.phone ? '#16A34A' : D.muted }}>{h.phone || 'Find number'}</span>
                   </a>
                 </div>
               </div>
