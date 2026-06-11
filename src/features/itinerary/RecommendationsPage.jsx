@@ -328,17 +328,22 @@ function HotelPhotoSlideshow({ hotel, destination, stCfg }) {
   const [imgErr, setImgErr] = useState(new Set());
 
   useEffect(() => {
-    // Seed with imageUrl immediately
-    const base = hotel.imageUrl ? [hotel.imageUrl] : [];
+    // Prefer the cached images array (filled by backend Serper Images on first fetch)
+    const cachedImgs = Array.isArray(hotel.images) && hotel.images.length > 0 ? hotel.images : [];
+    const base = cachedImgs.length > 0
+      ? cachedImgs
+      : (hotel.imageUrl ? [hotel.imageUrl] : []);
     setPhotos(base);
     setPhotoIdx(0);
     setImgErr(new Set());
 
+    // If we already have 5+ photos from cache, skip external fetch entirely
+    if (base.length >= 5) return;
+
+    // Fallback: fetch more photos via Serper Images API (used only when cache is cold)
     const queries = [
-      `${hotel.name} ${destination} exterior building`,
+      `${hotel.name} ${destination} exterior`,
       `${hotel.name} ${destination} room`,
-      `${hotel.name} ${destination} lobby interior`,
-      `${destination} hotel accommodation`,
     ];
 
     let mounted = true;
@@ -347,14 +352,14 @@ function HotelPhotoSlideshow({ hotel, destination, stCfg }) {
       if (!mounted) return;
       const fetched = results
         .filter(r => r.status === 'fulfilled')
-        .flatMap(r => (r.value?.urls || []).slice(0, 2));
+        .flatMap(r => (r.value?.urls || []).slice(0, 3));
       const all = [...base, ...fetched].filter(Boolean);
-      const unique = [...new Set(all)].slice(0, 6);
-      if (unique.length > 0) setPhotos(unique);
+      const unique = [...new Set(all)].slice(0, 5);
+      if (unique.length > base.length) setPhotos(unique);
     })();
 
     return () => { mounted = false; };
-  }, [hotel.name, destination]);
+  }, [hotel.name, hotel.images, destination]);
 
   const gradients = [
     'linear-gradient(135deg,#0F2027,#203A43,#2C5364)',
@@ -499,12 +504,29 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
                 )}
 
                 {/* Phone — tap-to-call */}
-                {h.phone && (
+                {h.phone ? (
                   <a href={`tel:${h.phone}`} onClick={e => e.stopPropagation()}
-                    style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 10, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '7px 13px', textDecoration: 'none' }}>
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                    <span style={{ fontSize: 13, fontWeight: 700, color: '#1D4ED8' }}>{h.phone}</span>
-                    <span style={{ fontSize: 10, color: '#1D4ED8', opacity: 0.7 }}>Tap to call</span>
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: 10, padding: '8px 13px', textDecoration: 'none' }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: '#1D4ED8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 800, color: '#1D4ED8', lineHeight: 1 }}>{h.phone}</div>
+                      <div style={{ fontSize: 10, color: '#3B82F6', marginTop: 2 }}>Tap to call</div>
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                  </a>
+                ) : (
+                  <a href={`https://www.google.com/search?q=${encodeURIComponent(h.name + ' ' + destination + ' hotel phone number')}`} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                    style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10, background: '#F9FAFB', border: '1px solid rgba(0,0,0,0.09)', borderRadius: 10, padding: '8px 13px', textDecoration: 'none' }}>
+                    <div style={{ width: 28, height: 28, borderRadius: 8, background: '#E5E7EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1.18h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.85a16 16 0 0 0 6.29 6.29l1.17-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#6B7280' }}>Find contact number</div>
+                      <div style={{ fontSize: 10, color: '#9CA3AF' }}>Search on Google</div>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                   </a>
                 )}
 
