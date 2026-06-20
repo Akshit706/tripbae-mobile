@@ -1,5 +1,5 @@
 // src/api.js
-const BASE = 'https://travelbae-backend-sg.onrender.com/';
+const BASE = 'https://travelbae-backend-sg.onrender.com';
 function getToken() {
   return localStorage.getItem('travelbae_token');
 }
