@@ -3,17 +3,210 @@ import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 import { PlacePhoto, PlacePhotosStrip } from '../media/PlaceMedia';
+import RecommendationsPage from './RecommendationsPage';
+import { fetchRecommendations, generateLocalTaste } from '../../api';
+
+/* ── Premium design tokens ─────────────────────────────────── */
+const D = {
+  bg:        '#FAF8F4',
+  surface:   '#FFFFFF',
+  espresso:  '#1C1410',
+  gold:      '#C9913A',
+  goldTint:  '#FDF3E3',
+  sage:      '#7A9E7E',
+  sageTint:  '#EBF3EC',
+  coral:     '#E8715A',
+  coralTint: '#FDF0EE',
+  blueTint:  '#E6F1FB',
+  neutral:   '#F4F2EE',
+  muted:     '#8A7E76',
+  secondary: '#5C504A',
+  divider:   'rgba(28,20,16,0.06)',
+  border:    'rgba(28,20,16,0.08)',
+  cardShadow:'0 2px 8px rgba(28,20,16,0.06)',
+};
+
+/* Determine if an activity time slot is currently active */
+function isActiveSlot(time, endTime) {
+  if (!time || !endTime) return false;
+  const parse = t => {
+    const [tp, period] = t.trim().split(' ');
+    const [h, m] = tp.split(':').map(Number);
+    let hrs = h;
+    if (period === 'PM' && h !== 12) hrs += 12;
+    if (period === 'AM' && h === 12) hrs = 0;
+    return hrs * 60 + (m || 0);
+  };
+  const now = new Date();
+  const cur = now.getHours() * 60 + now.getMinutes();
+  return cur >= parse(time) && cur <= parse(endTime);
+}
+
+/* ── CSS keyframe injection (pulse dot + card entry + shimmer) ── */
+if (typeof document !== 'undefined' && !document.getElementById('itinerary-styles')) {
+  const el = document.createElement('style');
+  el.id = 'itinerary-styles';
+  el.textContent = `
+    @keyframes dotPulse {
+      0%,100% { transform: scale(1);   opacity: 1; }
+      50%      { transform: scale(1.6); opacity: 0.8; }
+    }
+    @keyframes glowPulse {
+      0%,100% { transform: scale(1);   opacity: 0.25; }
+      50%      { transform: scale(1.9); opacity: 0; }
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    @keyframes floatBadge {
+      0%,100% { transform: translateY(0px); }
+      50%      { transform: translateY(-3px); }
+    }
+    @keyframes fadeSlideUp {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes rSheetIn { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes rFadeIn  { from{opacity:0} to{opacity:1} }
+    .itin-card-enter { animation: cardIn 0.38s cubic-bezier(0.34,1.3,0.64,1) both; }
+    .itin-dot-active  { animation: dotPulse 1.4s ease-in-out infinite; }
+    .itin-dot-glow    { animation: glowPulse 1.4s ease-in-out infinite; }
+    .itin-float       { animation: floatBadge 3s ease-in-out infinite; }
+    .itin-shimmer     {
+      background: linear-gradient(90deg,#f0ede8 25%,#e8e4dc 50%,#f0ede8 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+    }
+    @keyframes checkPop {
+      0%   { transform: scale(0.4); opacity: 0; }
+      60%  { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(1);   opacity: 1; }
+    }
+    @keyframes sectionIn {
+      from { opacity: 0; transform: translateX(-10px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .itin-photo-card:hover { transform: translateY(-2px) scale(1.008); box-shadow: 0 10px 36px rgba(28,20,16,0.14) !important; }
+    .itin-photo-card { transition: transform 0.22s cubic-bezier(0.34,1.3,0.64,1), box-shadow 0.22s ease; }
+    .itin-action-pill:hover { transform: scale(1.05); filter: brightness(0.96); }
+    .itin-action-pill { transition: transform 0.15s ease, filter 0.15s ease; }
+    .itin-done-btn { transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+    .itin-done-btn.checked { animation: checkPop 0.28s cubic-bezier(0.34,1.56,0.64,1) both; }
+    .itin-sec-header { animation: sectionIn 0.32s ease both; }
+    .itin-taste-card:hover { transform: translateY(-3px); box-shadow: 0 12px 32px rgba(28,20,16,0.12) !important; }
+    .itin-taste-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    @keyframes tipsBulbPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(245,217,168,0.72), 0 2px 10px rgba(0,0,0,0.28); }
+      50%       { box-shadow: 0 0 0 10px rgba(245,217,168,0), 0 4px 18px rgba(0,0,0,0.32); }
+    }
+    .tips-bulb-btn { animation: tipsBulbPulse 2.6s ease-in-out infinite; transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), background 0.2s ease !important; }
+    .tips-bulb-btn:hover { transform: scale(1.14) !important; background: rgba(255,255,255,0.26) !important; }
+    @keyframes tipsSheetIn { from { opacity:0; transform:translateY(38px); } to { opacity:1; transform:translateY(0); } }
+    @keyframes dayHeaderIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+    .day-header-card { animation: dayHeaderIn 0.3s ease both; }
+    @keyframes welcomePopIn {
+      0%   { opacity:0; transform:scale(0.88) translateY(22px); }
+      65%  { transform:scale(1.02) translateY(-2px); }
+      100% { opacity:1; transform:scale(1) translateY(0); }
+    }
+    @keyframes welcomeFadeIn { from{opacity:0} to{opacity:1} }
+    @keyframes statCountUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes heroGlow {
+      0%,100% { box-shadow: 0 4px 20px rgba(28,20,16,0.18); }
+      50%      { box-shadow: 0 8px 40px rgba(201,145,58,0.28); }
+    }
+    .itin-hero-card { animation: heroGlow 4s ease-in-out infinite; }
+    @keyframes actCardIn {
+      from { opacity:0; transform:translateX(-8px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+    .itin-act-enter { animation: actCardIn 0.3s cubic-bezier(0.2,0.7,0.2,1) both; }
+    @keyframes closingSlide {
+      from { opacity:0; transform:translateX(10px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+    .day-closing-card { animation: closingSlide 0.35s ease both; }
+    .itin-day-wrap { position:relative; }
+    .itin-day-wrap::before {
+      content:''; position:absolute; left:61px; top:0; bottom:0;
+      width:1.5px; background:linear-gradient(to bottom,rgba(201,145,58,0.15),rgba(201,145,58,0.04));
+      pointer-events:none; z-index:0;
+    }
+  `;
+  document.head.appendChild(el);
+}
+
+/* ── Lightbox ─────────────────────────────────────────────── */
+function Lightbox({ url, onClose }) {
+  if (!url) return null;
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: 'fixed', inset: 0, zIndex: 9999, background: 'rgba(0,0,0,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, cursor: 'zoom-out' }}
+    >
+      <img
+        src={url}
+        alt=""
+        onClick={e => e.stopPropagation()}
+        style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 14, objectFit: 'contain', boxShadow: '0 8px 48px rgba(0,0,0,0.6)' }}
+      />
+      <button
+        onClick={onClose}
+        style={{ position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
+      >✕</button>
+    </div>
+  );
+}
+
+/* Tag colour resolver */
+function tagStyle(tag, mustDo) {
+  if (mustDo || ['must do','must-do','must-try','iconic'].includes(tag.toLowerCase()))
+    return { bg: D.goldTint, color: D.gold };
+  const t = tag.toLowerCase();
+  if (['heritage','cultural','culture','historic','offbeat'].some(k => t.includes(k)))
+    return { bg: D.blueTint, color: '#2563AB' };
+  if (['scenic','nature','park','beach','lake'].some(k => t.includes(k)))
+    return { bg: D.sageTint, color: '#3A7A42' };
+  if (['easy'].includes(t))  return { bg: D.sageTint,  color: '#3A7A42' };
+  if (['moderate'].includes(t)) return { bg: '#FFF8E6', color: '#A0761C' };
+  if (['strenuous','hard'].some(k => t.includes(k))) return { bg: D.coralTint, color: D.coral };
+  return { bg: D.neutral, color: D.muted };
+}
 function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   const [step, setStep] = useState(autoStep || 'idle');
   const [data, setData] = useState(autoData || null);
   const [dest, setDest] = useState(destination || '');
   const [doneItems, setDoneItems] = useState(new Set());
+  const [lightboxUrl, setLightboxUrl] = useState(null);
+  const [expandedItems, setExpandedItems] = useState(new Set());
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [filters, setFilters] = useState({ minRating: 0 });
+  const [filterDraft, setFilterDraft] = useState({ minRating: 0 });
+  const [activeTab, setActiveTab] = useState('dishes');
+  const [tabDir, setTabDir] = useState('right');
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const TASTE_TAB_ORDER = ['dishes', 'places', 'exp'];
+  const switchTasteTab = (key) => {
+    const dir = TASTE_TAB_ORDER.indexOf(key) > TASTE_TAB_ORDER.indexOf(activeTab) ? 'right' : 'left';
+    setTabDir(dir);
+    setActiveTab(key);
+  };
 
-  // Sync if parent finishes loading after mount
   useEffect(() => {
     if (autoStep && autoStep !== step) setStep(autoStep);
     if (autoData && !data) setData(autoData);
   }, [autoStep, autoData]);
+
+  useEffect(() => {
+    const handler = () => setShowScrollTop(window.scrollY > 300);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
 
   const generate = async () => {
     if (!dest.trim()) return;
@@ -31,7 +224,8 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     }
   };
 
-  const toggleDone = (key) => setDoneItems(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+  const toggleDone = key => setDoneItems(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
+  const toggleExpand = key => setExpandedItems(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   const renderStars = (rating) => {
     if (!rating) return null;
@@ -46,98 +240,413 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
       else stars.push('☆');
     }
     return (
-      <span style={{ fontSize: 11, letterSpacing: 1 }}>
+      <span style={{ fontSize: 12, letterSpacing: 1 }}>
         <span style={{ color: '#E6A817' }}>{stars.slice(0, full + (half ? 1 : 0)).join('')}</span>
         <span style={{ color: '#D3D1C7' }}>{stars.slice(full + (half ? 1 : 0)).join('')}</span>
-        <span style={{ color: '#a8a8a5', marginLeft: 3 }}>{r.toFixed(1)}</span>
+        <span style={{ fontFamily: "'DM Sans',sans-serif", color: D.muted, marginLeft: 4, fontSize: 11 }}>{r.toFixed(1)}</span>
       </span>
     );
   };
 
-  const tagBg = t => {
-    if (['must-try','must-do','iconic'].includes(t)) return { bg: '#FAECE7', color: '#993C1D' };
-    if (['heritage','scenic','culture','offbeat'].includes(t)) return { bg: '#E6F1FB', color: '#378ADD' };
-    return { bg: '#FAEEDA', color: '#854F0B' };
+  const tastTagBg = t => {
+    const tl = t.toLowerCase();
+    if (['must-try','must-do','iconic','legendary','signature'].includes(tl)) return { bg: D.goldTint, color: D.gold };
+    if (['heritage','traditional','authentic','artisan'].includes(tl)) return { bg: D.blueTint, color: '#2563AB' };
+    if (['street food','casual','quick bite'].includes(tl)) return { bg: D.coralTint, color: D.coral };
+    if (['vegetarian','vegan'].includes(tl)) return { bg: D.sageTint, color: '#3A7A42' };
+    return { bg: D.neutral, color: D.muted };
   };
+
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
-  const Sec = ({ icon, title, items, iconBg, secKey, dest, startIndex = 0, photoSuffix = 'photo' }) => {
-    const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
+
+  /* ── Veg / Non-veg dot ── */
+  const VegDot = ({ item }) => {
+    const str = ((item.tags || []).join(' ') + ' ' + (item.desc || '') + ' ' + (item.name || '')).toLowerCase();
+    const isVeg    = /\bveg\b|vegetarian|paneer|sabzi|dal |aloo|gobi|palak|chole|rajma|dosa|idli|pongal|dhokla|poha|chaat|lassi/.test(str);
+    const isNonVeg = /non.?veg|chicken|mutton|lamb|fish|prawn|seafood|\begg\b|keema|rogan|kebab|tandoori chicken|crab|lobster/.test(str);
+    if (!isVeg && !isNonVeg) return null;
+    const veg = isVeg && !isNonVeg;
     return (
-      <div style={{ marginBottom: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 9, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>{icon}</div>
-          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: .4, textTransform: 'uppercase', color: '#6b6b68' }}>{title}</span>
-          <span style={{ fontSize: 11, color: '#a8a8a5' }}>{items.length} picks</span>
-          {doneCount > 0 && <span style={{ fontSize: 11, fontWeight: 600, color: accentColor, background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '2px 8px', marginLeft: 'auto' }}>✓ {doneCount}/{items.length} done</span>}
-        </div>
-        {items.map((item, i) => {
-          const key = `${secKey}-${i}`;
-          const isDone = doneItems.has(key);
-          return (
-            <div key={i} style={{ ...S.card, display: 'flex', gap: 14, alignItems: 'flex-start', opacity: isDone ? 0.45 : 1, transition: 'all .25s' }}>
-              <div style={{ fontSize: 28, lineHeight: 1, flexShrink: 0, filter: isDone ? 'grayscale(1)' : 'none' }}>{item.emoji}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 3, textDecoration: isDone ? 'line-through' : 'none', color: isDone ? '#a8a8a5' : '#1a1a18' }}>{item.name}</div>
-                {/* Rating + price + best time row */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 5 }}>
-                  {item.rating && renderStars(item.rating)}
-                  {item.priceRange && (
-                    <span style={{ fontSize: 11, color: '#5a3a0a', background: '#FAEEDA', borderRadius: 6, padding: '1px 7px', fontWeight: 600 }}>{item.priceRange}</span>
-                  )}
-                  {item.bestTime && (
-                    <span style={{ fontSize: 11, color: '#0F6E56', background: '#E1F5EE', borderRadius: 6, padding: '1px 7px', fontWeight: 600 }}>Best: {item.bestTime}</span>
-                  )}
-                </div>
-                <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{item.desc}</div>
-                <div style={{ margin: '10px 0 4px' }}>
-                  <PlacePhoto query={`${item.name} ${dest} ${photoSuffix}`} style={{ height: 110 }} delay={(startIndex + i) * 600} />
-                </div>
-                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 7 }}>
-                  {(item.tags || []).map(t => { const c = tagBg(t); return <span key={t} style={{ fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 10, textTransform: 'uppercase', letterSpacing: .3, background: isDone ? '#F1EFE8' : c.bg, color: isDone ? '#a8a8a5' : c.color }}>{t}</span>; })}
-                </div>
-              </div>
-              <button onClick={() => toggleDone(key)} style={{ flexShrink: 0, width: 32, height: 32, borderRadius: '50%', border: isDone ? `2px solid ${accentColor}` : '1.5px solid rgba(0,0,0,0.15)', background: isDone ? accentColor : '#fff', color: isDone ? '#fff' : '#a8a8a5', fontSize: 16, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>{isDone ? '✓' : '○'}</button>
-            </div>
-          );
-        })}
+      <div title={veg ? 'Vegetarian' : 'Non-vegetarian'} style={{ width: 16, height: 16, borderRadius: 3, border: `2px solid ${veg ? '#2E7D32' : '#C62828'}`, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 4 }}>
+        <div style={{ width: 7, height: 7, borderRadius: '50%', background: veg ? '#2E7D32' : '#C62828' }} />
       </div>
     );
   };
 
-  if (step === 'loading') return <Spinner text={`Discovering local flavours of ${dest}…`} solo={isSolo} />;
+  /* ── Premium item card ── */
+  const TasteCard = ({ item, secKey, index, photoSuffix, startIndex }) => {
+    const key = `${secKey}-${index}`;
+    const isDone = doneItems.has(key);
+    const isExpanded = expandedItems.has(key);
+    const descLong = (item.desc || '').length > 130;
+
+    return (
+      <div
+        className="itin-card-enter itin-taste-card"
+        style={{
+          background: D.surface,
+          borderRadius: 16,
+          overflow: 'hidden',
+          marginBottom: 12,
+          boxShadow: '0 2px 8px rgba(28,20,16,0.06)',
+          border: `0.5px solid ${D.border}`,
+          opacity: isDone ? 0.5 : 1,
+          filter: isDone ? 'grayscale(0.5) blur(0.4px)' : 'none',
+          transition: 'opacity 0.3s ease, filter 0.3s ease',
+          animationDelay: `${index * 70}ms`,
+        }}
+      >
+        {/* Photo at top — full width, clickable */}
+        <div
+          style={{ position: 'relative', height: 160, cursor: 'zoom-in', overflow: 'hidden', background: D.neutral }}
+          onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}
+        >
+          <PlacePhoto
+            query={`${item.name} ${dest} ${photoSuffix}`}
+            style={{ height: 160, borderRadius: 0 }}
+            delay={index * 60}
+          />
+          {/* bottom gradient on photo */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 35%, rgba(28,20,16,0.72) 100%)', pointerEvents: 'none' }} />
+          {/* done overlay tick */}
+          {isDone && (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.48)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(1px)' }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: '2px solid rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <polyline points="4,12 9,17 20,7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+            </div>
+          )}
+          {/* name + veg dot overlaid on photo gradient */}
+          <div style={{ position: 'absolute', bottom: 10, left: 12, right: 52, pointerEvents: 'none' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 1px 6px rgba(0,0,0,0.55)', fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none', flex: 1 }}>
+                {item.name}
+              </span>
+              {secKey === 'dishes' && (() => {
+                const str = ((item.tags||[]).join(' ')+' '+(item.desc||'')+' '+(item.name||'')).toLowerCase();
+                const veg = /\bveg\b|vegetarian|paneer|sabzi|dal |aloo|gobi|palak|chole|rajma|dosa|idli|dhokla|poha|chaat|lassi/.test(str) && !/non.?veg|chicken|mutton|lamb|fish|prawn|seafood|\begg\b|keema|kebab|crab|lobster/.test(str);
+                const nonVeg = /non.?veg|chicken|mutton|lamb|fish|prawn|seafood|\begg\b|keema|rogan|kebab|crab|lobster/.test(str);
+                if (!veg && !nonVeg) return null;
+                return (
+                  <div style={{ width: 16, height: 16, borderRadius: 3, border: `2px solid ${veg ? '#4CAF50' : '#EF5350'}`, background: 'rgba(255,255,255,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: veg ? '#2E7D32' : '#C62828' }} />
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+          {/* done button over photo */}
+          <button
+            onClick={e => { e.stopPropagation(); toggleDone(key); }}
+            style={{
+              position: 'absolute', bottom: 10, right: 10,
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: isDone ? '5px 11px 5px 8px' : '5px 10px',
+              borderRadius: 999,
+              border: isDone ? 'none' : '1.5px solid rgba(255,255,255,0.6)',
+              background: isDone ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(8px)',
+              cursor: 'pointer',
+              transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+              boxShadow: isDone ? '0 2px 10px rgba(0,0,0,0.15)' : 'none',
+            }}
+          >
+            {isDone ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                  <circle cx="6.5" cy="6.5" r="6.5" fill={accentColor}/>
+                  <polyline points="3.5,6.5 5.5,8.5 9.5,4.5" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span style={{ fontSize: 11, fontWeight: 700, color: accentColor, fontFamily: "'DM Sans',sans-serif" }}>Done</span>
+              </>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="rgba(255,255,255,0.8)" strokeWidth="1.5"/>
+              </svg>
+            )}
+          </button>
+        </div>
+
+        {/* Card body */}
+        <div style={{ padding: '12px 14px 13px' }}>
+          {/* Rating + price + best time */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 7 }}>
+            {item.rating && renderStars(item.rating)}
+            {item.priceRange && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: D.gold, background: D.goldTint, borderRadius: 999, padding: '2px 8px' }}>{item.priceRange}</span>
+            )}
+            {item.bestTime && (
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#0F6E56', background: D.sageTint, borderRadius: 999, padding: '2px 8px' }}>🕐 {item.bestTime}</span>
+            )}
+          </div>
+
+          {/* Description with expand */}
+          <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, marginBottom: 8 }}>
+            {isExpanded || !descLong ? item.desc : `${item.desc.slice(0, 130)}…`}
+            {descLong && (
+              <span
+                onClick={() => toggleExpand(key)}
+                style={{ color: D.gold, fontWeight: 600, cursor: 'pointer', marginLeft: 4, fontSize: 12 }}
+              >
+                {isExpanded ? ' less' : ' more'}
+              </span>
+            )}
+          </div>
+
+          {/* Tags + Know More inline */}
+          {(item.tags || []).length > 0 && (
+            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 2, alignItems: 'center' }}>
+              {item.tags.map(t => {
+                const c = tastTagBg(t);
+                return (
+                  <span key={t} style={{ fontSize: 10, fontWeight: 700, letterSpacing: .6, padding: '2px 8px', borderRadius: 999, textTransform: 'uppercase', background: isDone ? D.neutral : c.bg, color: isDone ? D.muted : c.color }}>
+                    {t}
+                  </span>
+                );
+              })}
+              <a
+                href={`https://www.google.com/search?q=${encodeURIComponent(item.name + ' ' + dest)}`}
+                target="_blank" rel="noreferrer"
+                onClick={e => e.stopPropagation()}
+                title="Know more"
+                style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: D.goldTint, border: `1px solid rgba(201,145,58,0.25)`, color: D.gold, textDecoration: 'none', flexShrink: 0 }}>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              </a>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  /* ── Section block with editorial header ── */
+  const Sec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac, sectionRef, onFilter, filterCount: secFilterCount = 0 }) => {
+    const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
+    if (!items.length) return null;
+    return (
+      <div style={{ marginBottom: '1.9rem' }}>
+        {/* Section header — matches Nearby style */}
+        <div className="itin-sec-header" style={{
+          display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
+          background: D.surface, borderRadius: 16, padding: '12px 14px',
+          boxShadow: '0 2px 12px rgba(28,20,16,0.07)', border: `0.5px solid ${D.border}`,
+          borderLeft: `4px solid ${ac}`,
+        }}>
+          <div style={{ width: 40, height: 40, borderRadius: 12, background: accentBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={ac} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{icon}</svg>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.1 }}>{title}</div>
+            {subtitle && <div style={{ fontSize: 11, color: D.muted, marginTop: 2, lineHeight: 1.3 }}>{subtitle}</div>}
+          </div>
+          {onFilter && (
+            <button onClick={onFilter} style={{ position: 'relative', flexShrink: 0, width: 34, height: 34, borderRadius: 11, border: `1.5px solid ${secFilterCount > 0 ? ac : 'rgba(28,20,16,0.12)'}`, background: secFilterCount > 0 ? accentBg : '#FAFAF8', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={secFilterCount > 0 ? ac : '#888'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+              </svg>
+              {secFilterCount > 0 && (
+                <span style={{ position: 'absolute', top: -5, right: -5, width: 15, height: 15, borderRadius: '50%', background: ac, color: '#fff', fontSize: 8, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '2px solid #fff' }}>{secFilterCount}</span>
+              )}
+            </button>
+          )}
+        </div>
+        {/* Cards */}
+        {items.map((item, i) => (
+          <TasteCard key={i} item={item} secKey={secKey} index={i} photoSuffix={photoSuffix} startIndex={startIndex} />
+        ))}
+      </div>
+    );
+  };
+
+  if (step === 'loading') return <Spinner text={`Discovering the local life of ${dest}…`} solo={isSolo} />;
+
+  const filterCount = filters.minRating > 0 ? 1 : 0;
+  const TASTE_RATINGS = [{v:0,l:'Any'},{v:3,l:'3+'},{v:3.5,l:'3.5+'},{v:4,l:'4+'},{v:4.5,l:'4.5+'}];
 
   if (step === 'result' && data) return (
-    <div>
-      <div style={{ background: 'linear-gradient(135deg,#fff9f0,#fff0e5)', border: '0.5px solid #FAC775', borderRadius: 14, padding: '1.1rem 1.25rem', marginBottom: '1.25rem', display: 'flex', gap: 14, alignItems: 'center' }}>
-        <div style={{ fontSize: 36 }}>🗺️</div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#854F0B', marginBottom: 3 }}>{data.headline}</div>
-          <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.5 }}>{data.tagline}</div>
+    <div style={{ background: D.bg, paddingBottom: '1.5rem', position: 'relative' }}>
+      <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+
+      {/* ── Filter Modal ── */}
+      {filterOpen && (
+        <div style={{ position:'fixed',inset:0,background:'rgba(14,16,24,0.45)',zIndex:600,display:'flex',alignItems:'flex-end',justifyContent:'center' }}
+          onClick={e => { if (e.target === e.currentTarget) setFilterOpen(false); }}>
+          <div style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem 2rem',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',animation:'rSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both' }}>
+            <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16 }}>
+              <div style={{ fontFamily:"'Sora',sans-serif",fontSize:16,fontWeight:800 }}>Filter Local Life</div>
+              <button onClick={() => setFilterOpen(false)} style={{ width:30,height:30,borderRadius:'50%',border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'#6b6b68',padding:0 }}>✕</button>
+            </div>
+            <div style={{ background:'#FDFCFA',borderRadius:16,padding:'13px 14px',marginBottom:16,border:'1px solid rgba(28,20,16,0.07)' }}>
+              <div style={{ fontSize:11,color:D.muted,marginBottom:6,fontWeight:600 }}>Min rating</div>
+              <div style={{ display:'flex',gap:6,flexWrap:'wrap' }}>
+                {TASTE_RATINGS.map(f => (
+                  <button key={f.v} onClick={() => setFilterDraft(p => ({...p,minRating:f.v}))}
+                    style={{ fontSize:12,fontWeight:700,padding:'7px 14px',borderRadius:999,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",border:`1.5px solid ${filterDraft.minRating===f.v?D.gold:'rgba(28,20,16,0.13)'}`,background:filterDraft.minRating===f.v?D.goldTint:'#FAFAF8',color:filterDraft.minRating===f.v?D.gold:'#7A7470' }}>
+                    {f.v===0?'Any':'★ '+f.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div style={{ display:'flex',gap:8 }}>
+              <button onClick={() => setFilterDraft({minRating:0})} style={{ flex:1,padding:'12px',fontSize:13,fontWeight:700,borderRadius:14,border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',fontFamily:"'DM Sans',sans-serif",color:'#444' }}>Reset</button>
+              <button onClick={() => { setFilters(filterDraft); setFilterOpen(false); }} style={{ flex:2,padding:'12px',fontSize:13,fontWeight:700,borderRadius:14,border:'none',background:`linear-gradient(135deg,${D.gold},#A8731E)`,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",color:'#fff' }}>Apply</button>
+            </div>
+          </div>
         </div>
-        {/* <button style={{ ...S.btn, fontSize: 12, flexShrink: 0 }} onClick={() => { setStep('idle'); setData(null); setDoneItems(new Set()); }}>↺</button> */}
+      )}
+
+      {/* ── Hero banner ── */}
+      <div style={{
+        position: 'relative', minHeight: 140, borderRadius: 16, overflow: 'hidden',
+        background: 'linear-gradient(135deg, #2C1810 0%, #8B5E3C 50%, #C9913A 100%)',
+        marginBottom: '1.25rem', boxShadow: '0 4px 20px rgba(28,20,16,0.18)',
+      }}>
+        <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 130, opacity: 0.06, lineHeight: 1 }}>🍜</div>
+        <div style={{ position: 'relative', zIndex: 1, padding: '1.25rem 1.25rem 1rem' }}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6, fontFamily: "'DM Sans',sans-serif" }}>
+            LOCAL LIFE GUIDE
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: -0.3, marginBottom: 4, fontFamily: "'Sora',sans-serif" }}>
+            Local life in <span style={{ color: '#F5D9A8' }}>{destination}</span>
+          </div>
+          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.58)', lineHeight: 1.6, marginBottom: 14 }}>
+            The food. The streets. The moments.
+          </div>
+          {/* Stat buttons — click to switch active tab */}
+          <div style={{ display:'flex', gap:8, marginTop:14 }}>
+            {[
+              { n: (data.dishes||[]).length,      label:'dishes',      key:'dishes' },
+              { n: (data.places||[]).length,      label:'places',      key:'places' },
+              { n: (data.experiences||[]).length, label:'experiences', key:'exp' },
+            ].map(({ n, label, key }) => n > 0 && (
+              <button key={key} onClick={() => switchTasteTab(key)}
+                style={{ flex:1, background: activeTab === key ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.13)', border: activeTab === key ? '1.5px solid rgba(255,255,255,0.65)' : '0.5px solid rgba(255,255,255,0.22)', backdropFilter:'blur(6px)', borderRadius:999, padding:'5px 8px', display:'flex', gap:5, alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'all 0.2s ease' }}
+              >
+                <span style={{ fontSize:13, fontWeight:800, color:'#fff' }}>{n}</span>
+                <span style={{ fontSize:11, color: activeTab === key ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)' }}>{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
-      <Sec icon="🍴" iconBg="#FAEEDA" title="Must-eat dishes" items={data.dishes || []} secKey="dishes" dest={dest} startIndex={0} photoSuffix="food dish restaurant" />
-      <Sec icon="📍" iconBg="#E6F1FB" title="Unmissable places" items={data.places || []} secKey="places" dest={dest} startIndex={4} photoSuffix="tourist attraction landmark" />
-      <Sec icon="✨" iconBg="#EEEDFE" title="Local experiences" items={data.experiences || []} secKey="exp" dest={dest} startIndex={8} photoSuffix="travel experience" />
-      {data.tip && <div style={{ background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 10, padding: '.75rem 1rem', display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: '1rem', fontSize: 12, color: isSolo ? '#26215C' : '#085041', lineHeight: 1.5 }}>💡 <span><strong>Local tip:</strong> {data.tip}</span></div>}
+
+      {/* ── Active section (tab-switched with animation) ── */}
+      <div key={activeTab} style={{ animation: `${tabDir === 'right' ? 'rSlideRight' : 'rSlideLeft'} 0.25s cubic-bezier(0.2,0.7,0.2,1) both` }}>
+        {activeTab === 'dishes' && (
+          <Sec
+            icon={<><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></>}
+            title="Must-Eat Dishes" subtitle="Iconic plates you can't leave without trying"
+            items={(data.dishes || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
+            secKey="dishes" startIndex={0} photoSuffix="food dish restaurant"
+            accentBg="#FAEEDA" accentColor={D.gold}
+            onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
+            filterCount={filters.minRating > 0 ? 1 : 0}
+          />
+        )}
+        {activeTab === 'places' && (
+          <Sec
+            icon={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>}
+            title="Unmissable Places" subtitle="The landmarks and streets that define this city"
+            items={(data.places || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
+            secKey="places" startIndex={5} photoSuffix="tourist attraction landmark"
+            accentBg={D.blueTint} accentColor="#2563AB"
+            onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
+            filterCount={filters.minRating > 0 ? 1 : 0}
+          />
+        )}
+        {activeTab === 'exp' && (
+          <Sec
+            icon={<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>}
+            title="Local Experiences" subtitle="Things to do that no guidebook will tell you"
+            items={(data.experiences || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
+            secKey="exp" startIndex={10} photoSuffix="travel experience"
+            accentBg="#EEEDFE" accentColor="#534AB7"
+            onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
+            filterCount={filters.minRating > 0 ? 1 : 0}
+          />
+        )}
+      </div>
+
+      {/* ── Insider tip ── */}
+      {data.tip && (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: D.surface, border: `0.5px solid ${D.border}`, borderLeft: `3px solid ${D.gold}`, borderRadius: 12, padding: '12px 14px', boxShadow: '0 2px 8px rgba(28,20,16,0.06)' }}>
+          <span style={{ fontSize: 20, flexShrink: 0 }}>💡</span>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: D.gold, textTransform: 'uppercase', letterSpacing: .8, marginBottom: 4, fontFamily: "'DM Sans',sans-serif" }}>Insider Tip</div>
+            <div style={{ fontSize: 13, color: D.secondary, lineHeight: 1.65 }}>{data.tip}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Scroll-to-top */}
+      {showScrollTop && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+          style={{
+            position: 'fixed', bottom: '5.8rem', right: '1rem', zIndex: 90,
+            width: 38, height: 38, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 0, animation: 'rFadeIn 0.25s ease both',
+          }}
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="18 15 12 9 6 15"/>
+          </svg>
+        </button>
+      )}
+
     </div>
   );
 
+  /* ── Idle / entry state ── */
   return (
-    <div>
-      <div style={{ background: 'linear-gradient(135deg,#FAEEDA,#FAECE7)', border: '0.5px solid #FAC775', borderRadius: 14, padding: '1.5rem', marginBottom: '1.25rem', textAlign: 'center' }}>
-        <div style={{ fontSize: 40, marginBottom: 10 }}>🍽️</div>
-        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Local Taste Guide</div>
-        <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.6 }}>Discover what to eat, where to go, and what to do like a local.</div>
+    <div style={{ background: D.bg }}>
+      {/* Hero entry card */}
+      <div style={{
+        position: 'relative', borderRadius: 18, overflow: 'hidden', marginBottom: '1.25rem',
+        background: 'linear-gradient(135deg, #1C1410 0%, #8B5E3C 60%, #C9913A 100%)',
+        padding: '2rem 1.5rem', textAlign: 'center', boxShadow: '0 4px 20px rgba(28,20,16,0.18)',
+      }}>
+        <div style={{ position: 'absolute', top: -30, right: -30, fontSize: 150, opacity: 0.05, lineHeight: 1 }}>🍜</div>
+        <div style={{ fontSize: 44, marginBottom: 12 }}>🍽️</div>
+        <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 6, fontFamily: "'Sora',sans-serif", letterSpacing: -0.3 }}>Local Life Guide</div>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.68)', lineHeight: 1.65, maxWidth: 280, margin: '0 auto 0' }}>
+          Dishes, places, and experiences that define this city.
+        </div>
       </div>
-      <div style={S.card}>
-        <label style={S.label}>Destination</label>
-        <input style={S.input} value={dest} onChange={e => setDest(e.target.value)} onKeyDown={e => e.key === 'Enter' && generate()} placeholder="e.g. Jaipur, Rajasthan" />
-        <button style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), width: '100%', justifyContent: 'center', marginTop: 12, padding: '11px', fontSize: 14, borderRadius: 12 }} onClick={generate} disabled={!dest.trim()}>✨ Discover local flavours</button>
+
+      {/* Input card */}
+      <div style={{ background: D.surface, borderRadius: 16, padding: '1.1rem 1.25rem', marginBottom: '1rem', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}` }}>
+        <div style={{ fontSize: 11, fontWeight: 700, color: D.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Where are you headed?</div>
+        <input
+          style={{ width: '100%', border: `1.5px solid ${D.border}`, borderRadius: 10, padding: '10px 12px', fontSize: 14, fontFamily: "'DM Sans',sans-serif", color: D.espresso, background: D.bg, outline: 'none', boxSizing: 'border-box' }}
+          value={dest}
+          onChange={e => setDest(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && generate()}
+          placeholder="e.g. Jaipur, Rajasthan"
+        />
+        <button
+          style={{ width: '100%', marginTop: 10, padding: '12px', fontSize: 14, fontWeight: 700, borderRadius: 12, border: 'none', cursor: dest.trim() ? 'pointer' : 'not-allowed', fontFamily: "'DM Sans',sans-serif", background: dest.trim() ? (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : `linear-gradient(135deg,${D.gold},#A8731E)`) : D.neutral, color: dest.trim() ? '#fff' : D.muted, transition: 'all .2s', opacity: dest.trim() ? 1 : 0.6 }}
+          onClick={generate}
+          disabled={!dest.trim()}
+        >
+          ✨ Discover local life
+        </button>
       </div>
-      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
-        {['Jaipur','Udaipur','Goa','Varanasi','Mumbai','Coorg','Hampi'].map(c => (
-          <button key={c} style={{ ...S.btn, fontSize: 12, padding: '5px 12px', borderRadius: 20 }} onClick={() => setDest(c)}>{c}</button>
+
+      {/* Quick-pick chips */}
+      <div style={{ fontSize: 10, fontWeight: 700, color: D.muted, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Popular destinations</div>
+      <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+        {['Jaipur', 'Udaipur', 'Goa', 'Varanasi', 'Mumbai', 'Coorg', 'Hampi'].map(c => (
+          <button
+            key={c}
+            onClick={() => setDest(c)}
+            style={{ fontSize: 12, fontWeight: 600, padding: '6px 14px', borderRadius: 999, border: `0.5px solid ${D.border}`, background: D.surface, color: D.secondary, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 1px 4px rgba(28,20,16,0.05)' }}
+          >{c}</button>
         ))}
       </div>
     </div>
@@ -177,6 +686,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     departureSlot: trip.departureSlot || 'morning',
     budget: trip.budget ? String(trip.budget) : '',
     people: String(normalizeMembers(trip.members).length || 1),
+    travelNotes: trip.travelNotes || '',
   });
 
   const days = form.arrival && form.departure
@@ -225,11 +735,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       setLocalTasteStep('result');
     }
 
-    // Only generate what's missing
+    // Generate what's missing
     if (!hasGenerated.current) {
       hasGenerated.current = true;
       if (!trip._cachedItin) runGenerateItinerary();
-      if (!trip._cachedTaste) runGenerateLocalTaste();
+      // Always fetch local taste — backend uses Supabase shared cache (instant if cached)
+      runGenerateLocalTaste();
     }
   }, [trip._cachedItin, trip._cachedTaste]);
 
@@ -247,6 +758,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         departureSlot: form.departureSlot,
         firstActivitySlot: firstActivitySlot(),
         arrival: form.arrival,
+        travelNotes: form.travelNotes || '',
       });
       setItin(result.itinerary);
       setSources(result.sources || []);
@@ -259,22 +771,37 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   };
 
   const runGenerateLocalTaste = async () => {
-    setLocalTasteStep('loading');
+    // Don't flash spinner if we already have data — refresh silently
+    if (!localTasteData) setLocalTasteStep('loading');
     try {
-      const { generateLocalTaste } = await import('../../api');
       const r = await generateLocalTaste({ destination: form.dest });
       setLocalTasteData(r);
       setLocalTasteStep('result');
-      // ── Save back to parent ──
-      onCacheUpdate?.({ _cachedTaste: r });
+      // Local taste is now Supabase-cached on the backend (destination_taste table).
+      // No longer saving per-trip — Supabase is the single source of truth.
     } catch {
-      setLocalTasteStep('error');
+      if (!localTasteData) setLocalTasteStep('error');
     }
   };
 
+  useEffect(() => {
+    const handler = () => setShowPlannerScrollTop(window.scrollY > 240);
+    window.addEventListener('scroll', handler, { passive: true });
+    return () => window.removeEventListener('scroll', handler);
+  }, []);
+
+  // Pre-fetch nearby data on mount so the tab opens instantly
+  useEffect(() => {
+    if (!form.dest) return;
+    let cancelled = false;
+    fetchRecommendations(form.dest)
+      .then(result => { if (!cancelled) { setNearbyData(result); setNearbyStep('result'); } })
+      .catch(() => { if (!cancelled) setNearbyStep('error'); });
+    return () => { cancelled = true; };
+  }, [form.dest]);
+
   const handleRedo = () => {
     onCacheUpdate?.({ _cachedItin: null });
-    setShowDescBox(true);
   };
 
   const SlotBadge = ({ slot, label }) => (
@@ -283,17 +810,88 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     </div>
   );
 
-  const ITABS = [{ id: 'planner', label: '🗺️ Day Planner' }, { id: 'taste', label: '🍜 Local Taste' }];
+  const ITABS = [
+    { id: 'planner', label: 'Day Planner' },
+    { id: 'taste',   label: 'Local Life' },
+    { id: 'nearby',  label: 'Nearby' },
+  ];
+  const [lightboxUrl,        setLightboxUrl]        = useState(null);
+  const [nearbyData,         setNearbyData]         = useState(null);
+  const [nearbyStep,         setNearbyStep]         = useState('loading');
+  const [showPlannerScrollTop, setShowPlannerScrollTop] = useState(false);
+  const [showTipsPopup,      setShowTipsPopup]      = useState(false);
+  const [showWelcomePopup,   setShowWelcomePopup]   = useState(false);
+
+  // Show welcome popup only once ever (persisted in localStorage per trip)
+  const WELCOME_SHOWN_KEY = `travelbae_welcome_seen_${trip.id}`;
+  const welcomeShownRef = useRef(false);
+  useEffect(() => {
+    if (step === 'result' && itin && !welcomeShownRef.current) {
+      welcomeShownRef.current = true;
+      try { if (localStorage.getItem(WELCOME_SHOWN_KEY)) return; } catch { /* ignore */ }
+      const t = setTimeout(() => setShowWelcomePopup(true), 600);
+      return () => clearTimeout(t);
+    }
+  }, [step, itin]);
+
+  const DAY_CLOSING_MSGS = [
+    { label: 'Rest & Recharge', note: 'Head back to your stay. Freshen up, put your feet up, and let the day settle in.' },
+    { label: 'Wind Down', note: 'The city can wait. Take a breath, grab a light bite nearby, and ease into the evening.' },
+    { label: 'Golden Hour', note: 'Head back as the sky turns gold. Let the last light of the day follow you home.' },
+    { label: 'Evening In', note: "Return to your accommodation. A good night's rest makes tomorrow even better." },
+    { label: 'Reflect & Rest', note: 'What a day. Let the memories settle while you get some well-earned rest.' },
+    { label: 'Soft Landing', note: 'Head back, unwind with some local chai or a quiet walk before you sleep.' },
+    { label: 'End of Day', note: "Another chapter done. Your room awaits \u2014 rest up for what tomorrow brings." },
+    { label: 'Night Mode', note: 'The day was full. Let the city hum in the background as you wind down.' },
+    { label: 'Twilight Return', note: 'Make your way back as the lights come on. The city looks different at dusk.' },
+    { label: 'Debrief & Rest', note: 'Swap stories over dinner at your hotel, then get a solid night of sleep.' },
+    { label: 'Slow Close', note: 'No rush. Pick up a snack from a roadside stall and walk back slowly.' },
+    { label: 'Check In & Chill', note: 'Settle back in, charge your devices, and let the day digest.' },
+    { label: "Tonight's Quiet", note: 'A gentle close to a full day. Rest is also part of the journey.' },
+    { label: 'Recharge Mode', note: 'Body and mind both need fuel. Early night, great tomorrow.' },
+    { label: 'Dusk Stroll', note: 'If energy allows, a slow evening walk back to base is the perfect cooldown.' },
+    { label: 'Night Cap', note: 'Grab a warm drink from a local caf\u00e9 before heading back to your stay.' },
+    { label: 'Settle In', note: "Back to base. Lay out tomorrow's plan, then let go and rest." },
+    { label: 'Late Calm', note: 'Even the busiest cities go quiet after dark. Return and embrace the stillness.' },
+    { label: 'Lights Out', note: 'A well-earned rest after a well-spent day. Sleep well, traveller.' },
+    { label: 'Evening Pause', note: 'The best way to end a great day \u2014 slowly, with no agenda.' },
+    { label: 'Drift Off', note: 'Return to your stay, let the day replay in your mind, and drift into sleep.' },
+    { label: 'Quiet Hours', note: "Head back in time to avoid the late-night rush. Tomorrow starts early." },
+    { label: 'Comfortable Retreat', note: 'Your room is your sanctuary tonight. Enjoy it.' },
+    { label: 'Night Walk Home', note: 'The streets at night carry a different energy. Walk back, take it in.' },
+    { label: 'Easy Does It', note: 'No alarm, no rush \u2014 just a quiet end to a beautiful day.' },
+    { label: 'Wrap Up', note: "Today's itinerary is complete. Grab a snack, rest, and rise ready." },
+    { label: 'Sundown', note: 'The day is done. Make your way back to your stay as the city dims its lights.' },
+    { label: 'Close of Play', note: 'A full day, well-lived. Time to rest before the next one.' },
+    { label: 'The Long Way Home', note: 'Take the scenic route back to your stay. There\u2019s no hurry.' },
+    { label: 'Home Base', note: 'Back to your accommodation. Safe, warm, and ready for tomorrow.' },
+  ];
 
   return (
     <div>
-      <div style={{ display: 'flex', gap: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 13, padding: 3, marginBottom: '1.1rem' }}>
-        {ITABS.map(t => (
-          <button key={t.id} onClick={() => setITab(t.id)}
-            style={{ flex: 1, padding: '8px 8px', fontSize: 12, fontWeight: 500, borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: iTab === t.id ? (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : '#1D9E75') : 'transparent', color: iTab === t.id ? '#fff' : '#6b6b68', transition: 'all .15s' }}>
-            {t.label}
-          </button>
-        ))}
+      <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
+
+      {/* ── Underline tab switcher (Club-style) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1.5px solid rgba(28,20,16,0.1)', marginBottom: '1rem' }}>
+        {ITABS.map(t => {
+          const tabIcons = {
+            planner: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            taste:   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>,
+            nearby:  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+          };
+          return (
+            <button key={t.id} onClick={() => setITab(t.id)}
+              style={{ ...S.navTab, ...(iTab === t.id ? S.navTabActive : {}), position: 'relative', padding: '9px 2px 10px', fontSize: 12, borderRadius: 0 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: iTab === t.id ? 700 : 500, fontSize: 12 }}>
+                {tabIcons[t.id]}
+                {t.label}
+              </span>
+              {iTab === t.id && (
+                <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: isSolo ? '#7F77DD' : D.gold }} />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {iTab === 'planner' && (
@@ -301,13 +899,19 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           {step === 'loading' && (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8 }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 10, color: D.espresso }}>
                 Building your itinerary…
               </div>
-              <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.7 }}>
-                🔍 Scanning TripAdvisor, Lonely Planet & travel blogs<br />
-                📊 Ranking attractions by ratings & reviews<br />
-                🗓️ Scheduling from your {SLOT_LABELS[firstActivitySlot()]} arrival slot
+              <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 7, textAlign: 'left' }}>
+                {[
+                  { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>, text: 'Scanning TripAdvisor, Lonely Planet & travel blogs' },
+                  { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, text: 'Ranking attractions by ratings & reviews' },
+                  { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, text: `Scheduling from your ${SLOT_LABELS[firstActivitySlot()]} slot` },
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: D.secondary, animation: `statCountUp 0.4s ease ${i * 0.15}s both` }}>
+                    {item.icon} {item.text}
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -321,212 +925,597 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           )}
 
           {step === 'result' && itin && (
-            <div style={{ paddingBottom: '2rem' }}>
-              <div style={{ background: headerBg, borderRadius: 16, padding: '1.25rem 1.5rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: -10, right: -10, fontSize: 80, opacity: 0.08 }}>✈️</div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#fff', marginBottom: 4 }}>
-                  {itin.headline || `${days}-Day ${form.dest} Itinerary`}
-                </div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.6, marginBottom: 12 }}>{itin.summary}</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <SlotBadge slot={form.arrivalSlot} label="✈️ Arrives" />
-                  <SlotBadge slot={form.departureSlot} label="🛫 Departs" />
-                  {itin.totalEstimatedCost && (
-                    <div style={{ background: 'rgba(255,255,255,0.15)', borderRadius: 8, padding: '4px 10px', fontSize: 11, color: '#fff' }}>
-                      💰 {itin.totalEstimatedCost}
+            <div style={{ background: D.bg, paddingBottom: '2.5rem' }}>
+
+              {/* ── Welcome popup (first-time) ── */}
+              {showWelcomePopup && (
+                <div
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.55)', zIndex: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', animation: 'welcomeFadeIn 0.25s ease both' }}
+                  onClick={e => { if (e.target === e.currentTarget) { try { localStorage.setItem(WELCOME_SHOWN_KEY, '1'); } catch { /* ignore */ } setShowWelcomePopup(false); } }}
+                >
+                  <div style={{
+                    width: '100%', maxWidth: 360,
+                    background: '#FFFDF8',
+                    borderRadius: 24,
+                    overflow: 'hidden',
+                    boxShadow: '0 24px 80px rgba(0,0,0,0.28)',
+                    animation: 'welcomePopIn 0.45s cubic-bezier(0.34,1.3,0.64,1) both',
+                  }}>
+                    {/* Top gradient band */}
+                    <div style={{ height: 4, background: `linear-gradient(90deg,${D.gold},#A8731E,${D.gold})` }} />
+                    <div style={{ padding: '1.5rem 1.5rem 0' }}>
+                      {/* Icon */}
+                      <div style={{ width: 52, height: 52, borderRadius: 17, background: `linear-gradient(135deg,${D.gold},#A8731E)`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 6px 20px rgba(201,145,58,0.35)' }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10"/>
+                          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
+                        </svg>
+                      </div>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: D.espresso, lineHeight: 1.25, marginBottom: 10 }}>
+                        Your {form.dest} itinerary is ready
+                      </div>
+                      <div style={{ fontSize: 13.5, color: D.secondary, lineHeight: 1.72, marginBottom: 18 }}>
+                        Our travel agent has curated a day-by-day plan built around <strong style={{ color: D.espresso }}>the best spots, finest eateries, and standout experiences</strong> in {form.dest}.
+                        <br /><br />
+                        Just follow this — and {form.dest} is covered.
+                      </div>
+                      {/* Stats row */}
+                      {(() => {
+                        const totalActs = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).length, 0);
+                        const mustSees  = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).filter(act => act.mustDo).length, 0);
+                        return (
+                          <div style={{ display: 'flex', gap: 0, borderRadius: 14, overflow: 'hidden', border: `0.5px solid ${D.border}`, marginBottom: 20 }}>
+                            {[
+                              { n: days,      label: 'Days' },
+                              { n: totalActs, label: 'Activities' },
+                              { n: mustSees,  label: 'Must-Sees' },
+                            ].map((s, i) => (
+                              <div key={i} style={{ flex: 1, padding: '12px 6px', textAlign: 'center', borderRight: i < 2 ? `0.5px solid ${D.border}` : 'none', background: i === 1 ? D.goldTint : D.surface, animation: `statCountUp 0.4s ease ${i * 0.1}s both` }}>
+                                <div style={{ fontSize: 20, fontWeight: 800, color: i === 1 ? D.gold : D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1 }}>{s.n}</div>
+                                <div style={{ fontSize: 10, color: D.muted, fontWeight: 600, marginTop: 3, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.label}</div>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
-                  )}
-                  
+                    <div style={{ padding: '0 1.5rem 1.5rem' }}>
+                      <button
+                        onClick={() => { try { localStorage.setItem(WELCOME_SHOWN_KEY, '1'); } catch { /* ignore */ } setShowWelcomePopup(false); }}
+                        style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', boxShadow: '0 4px 16px rgba(201,145,58,0.32)', letterSpacing: 0.2 }}
+                      >
+                        Let's explore
+                      </button>
+                    </div>
+                  </div>
                 </div>
+              )}
+
+              {/* ── Hero ── */}
+              <div
+                className="itin-hero-card"
+                style={{
+                  position: 'relative', minHeight: 140, borderRadius: 18, overflow: 'hidden',
+                  background: 'linear-gradient(135deg, #1C1410 0%, #4A2C10 50%, #C9913A 100%)',
+                  marginBottom: '1.25rem',
+                }}>
+                {/* Subtle grid texture overlay */}
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '18px 18px', pointerEvents: 'none', zIndex: 0 }} />
+                <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 130, opacity: 0.05, lineHeight: 1, zIndex: 0 }}>🗺️</div>
+                <div style={{ position: 'relative', zIndex: 1, padding: '1.25rem 1.25rem 1rem' }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 7, fontFamily: "'DM Sans',sans-serif" }}>
+                    Day-by-Day Planner
+                  </div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: -0.4, marginBottom: 4, fontFamily: "'Sora',sans-serif" }}>
+                    {days} day{days > 1 ? 's' : ''} in <span style={{ color: '#F5D9A8' }}>{form.dest}</span>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.50)', lineHeight: 1.5, marginBottom: 16 }}>
+                    Every hour considered. Every detail placed.
+                  </div>
+                  {/* Stats — plain text with dividers */}
+                  {(() => {
+                    const totalActs = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).length, 0);
+                    const mustSees  = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).filter(act => act.mustDo).length, 0);
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'nowrap', paddingRight: itin.quickTips?.length > 0 ? '3rem' : 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{days}</span>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>Days</span>
+                        </div>
+                        <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{totalActs}</span>
+                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>Activities</span>
+                        </div>
+                        {mustSees > 0 && (
+                          <>
+                            <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#F5D9A8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                              <span style={{ fontSize: 12, fontWeight: 700, color: '#F5D9A8', fontFamily: "'Sora',sans-serif" }}>{mustSees}</span>
+                              <span style={{ fontSize: 11, color: 'rgba(245,217,168,0.55)', whiteSpace: 'nowrap' }}>Must-Sees</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+
+                {/* ── Glowing tips bulb — bottom-right of hero ── */}
+                {itin.quickTips?.length > 0 && (
+                  <button
+                    className="tips-bulb-btn"
+                    onClick={() => setShowTipsPopup(true)}
+                    title={`${itin.quickTips.length} trip tips`}
+                    style={{
+                      position: 'absolute', bottom: 12, right: 12, zIndex: 2,
+                      width: 38, height: 38, borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.13)',
+                      backdropFilter: 'blur(8px)',
+                      border: '1.5px solid rgba(255,255,255,0.30)',
+                      cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      padding: 0,
+                    }}
+                  >
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F5D9A8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="9" y1="18" x2="15" y2="18"/>
+                      <line x1="10" y1="22" x2="14" y2="22"/>
+                      <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+                    </svg>
+                  </button>
+                )}
               </div>
 
-              {itin.quickTips?.length > 0 && (
-                <div style={{ ...S.card, marginBottom: '1rem', background: '#FAEEDA', border: '0.5px solid #FAC775' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#854F0B', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 8 }}>💡 Quick Tips</div>
-                  {itin.quickTips.map((tip, i) => (
-                    <div key={i} style={{ fontSize: 13, color: '#5a3a0a', lineHeight: 1.5, marginBottom: i < itin.quickTips.length - 1 ? 5 : 0 }}>· {tip}</div>
-                  ))}
+              {/* ── Tips bottom-sheet popup ── */}
+              {showTipsPopup && itin.quickTips?.length > 0 && (
+                <div
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.50)', zIndex: 700, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+                  onClick={e => { if (e.target === e.currentTarget) setShowTipsPopup(false); }}
+                >
+                  <div style={{
+                    width: '100%', maxWidth: 560,
+                    background: '#FFFDF8',
+                    borderRadius: '22px 22px 0 0',
+                    paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
+                    boxShadow: '0 -10px 60px rgba(0,0,0,0.22)',
+                    animation: 'tipsSheetIn 0.3s cubic-bezier(0.2,0.7,0.2,1) both',
+                    maxHeight: '70vh',
+                    display: 'flex', flexDirection: 'column',
+                    overflow: 'hidden',
+                  }}>
+                    {/* Drag handle */}
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
+                      <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(28,20,16,0.14)' }} />
+                    </div>
+                    {/* Header */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px 13px', borderBottom: `1px solid ${D.divider}`, flexShrink: 0 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 36, height: 36, borderRadius: 12, background: D.goldTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="9" y1="18" x2="15" y2="18"/>
+                            <line x1="10" y1="22" x2="14" y2="22"/>
+                            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: D.espresso }}>Trip Tips</div>
+                          <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>{itin.quickTips.length} insider tips for your journey</div>
+                        </div>
+                      </div>
+                      <button onClick={() => setShowTipsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>✕</button>
+                    </div>
+                    {/* Scrollable tips list */}
+                    <div style={{ overflowY: 'auto', padding: '12px 16px' }}>
+                      {itin.quickTips.map((tip, i) => (
+                        <div key={i} style={{
+                          display: 'flex', gap: 11, alignItems: 'flex-start',
+                          padding: '11px 13px',
+                          background: D.surface,
+                          borderRadius: 14,
+                          marginBottom: 7,
+                          border: `0.5px solid ${D.border}`,
+                          boxShadow: '0 1px 4px rgba(28,20,16,0.04)',
+                        }}>
+                          <div style={{ width: 26, height: 26, borderRadius: 9, background: D.goldTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                          </div>
+                          <span style={{ fontSize: 13.5, color: D.secondary, lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif", flex: 1, paddingTop: 3 }}>{tip}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               )}
 
 
 
-              {/* Reliability disclaimer */}
-              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#F8F8F6', border: '0.5px solid #E0DED8', borderRadius: 10, padding: '10px 12px', marginBottom: '1rem', fontSize: 11, color: '#6b6b68', lineHeight: 1.6 }}>
-                <span style={{ flexShrink: 0, fontSize: 14 }}>ℹ️</span>
-                <span>Place names and descriptions are sourced from real travel publications. Hours marked <strong style={{ color: '#1D9E75' }}>✓</strong> are from those sources; hours marked <strong style={{ color: '#7A6FCF' }}>est.</strong> are safe estimates — always verify before visiting. Prices are approximate.</span>
-              </div>
-
+              {/* ── Day sections ─────────────────────────────────── */}
               {(() => {
                 let photoIndex = 0;
                 return (itin.days || []).map((d, dayIndex) => {
                   const dateLabel = form.arrival ? formatTripDate(form.arrival, dayIndex) : `Day ${d.day}`;
-                  const isArrivalDay = dayIndex === 0;
+                  const isArrivalDay   = dayIndex === 0;
                   const isDepartureDay = dayIndex === (itin.days.length - 1);
-                  const dayTotalCount = (d.activities || []).length;
-                  const dayDoneCount = (d.activities || []).filter((_, ai) => doneActivities.has(`day-${d.day}-act-${ai}`)).length;
+                  const dayTotalCount  = (d.activities || []).length;
+                  const dayDoneCount   = (d.activities || []).filter((_, ai) => doneActivities.has(`day-${d.day}-act-${ai}`)).length;
+                  const WeatherSvg = ({ high }) => {
+                    if (high > 30) return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E6A817" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
+                    if (high > 18) return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7B9EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>;
+                    return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7B9EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="19" x2="8" y2="21"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="16" y1="19" x2="16" y2="21"/><line x1="16" y1="13" x2="16" y2="15"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="12" y1="15" x2="12" y2="17"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>;
+                  };
+
                   return (
-                    <div key={d.day} style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14 }}>
-                      <div style={{ background: headerBg, padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', borderRadius: 8, padding: '3px 10px', fontSize: 11, fontWeight: 700, fontFamily: "'Sora',sans-serif", flexShrink: 0 }}>
-                          {dateLabel}
-                        </div>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 600, color: '#fff' }}>{d.title}</div>
-                          {d.theme && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 1 }}>{d.theme}</div>}
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3, flexShrink: 0 }}>
-                          {isArrivalDay && (
-                            <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>
-                              ✈️ Arrives {SLOT_LABELS[form.arrivalSlot]}
-                            </span>
-                          )}
-                          {isDepartureDay && (
-                            <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 6, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>
-                              🛫 Departs {SLOT_LABELS[form.departureSlot]}
-                            </span>
-                          )}
-                          {d.weather && (
-                            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)' }}>
-                              {d.weather.high > 30 ? '☀️' : d.weather.high > 18 ? '⛅' : '🧊'} {d.weather.high}°/{d.weather.low}°
+                    <div key={d.day} style={{ marginBottom: '1.75rem' }}>
+
+                      {/* ── Day header ── */}                      <div className="day-header-card" style={{ background: D.surface, borderRadius: 18, marginBottom: 12, overflow: 'hidden', boxShadow: '0 2px 14px rgba(28,20,16,0.08)', border: `0.5px solid ${D.border}` }}>
+                        {/* Gradient accent bar at top */}
+                        <div style={{ height: 3, background: isSolo ? 'linear-gradient(90deg,#7F77DD,#534AB7)' : `linear-gradient(90deg,${D.gold},#A8731E,${D.gold})` }} />
+                        {/* Flex row: content left + Day N right */}
+                        <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                          <div style={{ flex: 1, padding: '12px 13px 11px' }}>
+                            {/* Row 1: date + weather */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
+                              <span style={{ fontSize: 11, fontWeight: 600, color: D.muted, letterSpacing: 0.3, fontFamily: "'DM Sans',sans-serif" }}>{dateLabel}</span>
+                              {d.weather && (
+                                <span style={{ fontSize: 11, color: D.secondary, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                                  <WeatherSvg high={d.weather.high} />
+                                  <span style={{ color: D.coral, fontWeight: 600 }}>{d.weather.high}°</span>
+                                  <span style={{ color: D.muted, opacity: 0.65 }}>/{d.weather.low}°</span>
+                                </span>
+                              )}
                             </div>
-                          )}
-                          {d.estimatedCost && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)' }}>{d.estimatedCost}</div>}
-                          {dayDoneCount > 0 && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.25)', color: '#fff' }}>✓ {dayDoneCount}/{dayTotalCount}</span>}
-                        </div>
-                      </div>
-                      {d.weather?.tip && (
-                        <div style={{ padding: '6px 16px', background: isSolo ? '#f4f3ff' : '#f0faf6', borderBottom: `0.5px solid ${isSolo ? '#c9c5f5' : '#c8ecd8'}`, fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56' }}>
-                          💡 {d.weather.tip}
-                        </div>
-                      )}
-                      {d.proTip && (
-                        <div style={{ padding: '8px 16px', background: '#FAEEDA', borderBottom: '0.5px solid #FAC775', fontSize: 12, color: '#5a3a0a', lineHeight: 1.5, display: 'flex', gap: 8 }}>
-                          <span style={{ flexShrink: 0 }}>🎯</span>
-                          <span><strong>Local tip:</strong> {d.proTip}</span>
-                        </div>
-                      )}
-                      <div style={{ padding: '10px 16px' }}>
-                        {(d.activities || []).map((a, i) => {
-                          const showPhoto = a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel';
-                          const currentDelay = showPhoto ? photoIndex++ * 600 : 0;
-                          const isLast = i === d.activities.length - 1;
-                          const doneKey = `day-${d.day}-act-${i}`;
-                          const isDone = doneActivities.has(doneKey);
-                          return (
-                            <div key={i}>
-                              <div style={{ display: 'flex', gap: 12, padding: '10px 0', opacity: isDone ? 0.45 : 1, transition: 'opacity .25s' }}>
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, width: 14 }}>
-                                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: a.mustDo ? accentColor : '#D3D1C7', marginTop: 4, flexShrink: 0, border: a.mustDo ? `2px solid ${accentColor}33` : 'none', boxSizing: 'border-box' }} />
-                                  {!isLast && <div style={{ width: 1, flex: 1, background: 'rgba(0,0,0,0.06)', marginTop: 3 }} />}
-                                </div>
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 3 }}>
-                                    {/* Time column: shows start → end */}
-                                    <div style={{ flexShrink: 0, width: 80, paddingTop: 2 }}>
-                                      <div style={{ fontSize: 11, color: '#a8a8a5', fontWeight: 600 }}>{a.time}</div>
-                                      {a.endTime && <div style={{ fontSize: 10, color: '#c8c8c4' }}>↓ {a.endTime}</div>}
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                        <span style={{ fontSize: 16 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
-                                        <span style={{ fontSize: 14, fontWeight: 600, color: isDone ? '#a8a8a5' : '#1a1a18', textDecoration: isDone ? 'line-through' : 'none' }}>{a.name}</span>
-                                        {a.mustDo && (
-                                          <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 8, background: isSolo ? '#EEEDFE' : '#E1F5EE', color: accentColor, textTransform: 'uppercase', letterSpacing: .3 }}>Must do</span>
-                                        )}
-                                        {a.energyLevel && ENERGY_CONFIG[a.energyLevel] && (
-                                          <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 8, background: ENERGY_CONFIG[a.energyLevel].bg, color: ENERGY_CONFIG[a.energyLevel].color, letterSpacing: .3, fontFamily: 'monospace' }}>
-                                            {ENERGY_CONFIG[a.energyLevel].symbol} {ENERGY_CONFIG[a.energyLevel].label}
-                                          </span>
-                                        )}
-                                      </div>
-                                      {a.openingHours && (
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#a8a8a5', marginTop: 2 }}>
-                                          <span>🕐 Open {a.openingHours}</span>
-                                          {a.hoursSource === 'estimated' && (
-                                            <span style={{ fontSize: 9, background: '#F4F3FF', color: '#7A6FCF', borderRadius: 5, padding: '1px 5px', fontWeight: 600 }}>est.</span>
-                                          )}
-                                          {a.hoursSource === 'verified' && (
-                                            <span style={{ fontSize: 9, background: '#E1F5EE', color: '#1D9E75', borderRadius: 5, padding: '1px 5px', fontWeight: 600 }}>✓</span>
-                                          )}
-                                        </div>
-                                      )}
-                                      {a.note && <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 4, lineHeight: 1.55, fontStyle: 'italic' }}>{a.note}</div>}
-                                      {a.headsUp && (
-                                        <div style={{ display: 'flex', gap: 6, alignItems: 'flex-start', marginTop: 6, background: '#FFFBF0', border: '0.5px solid #FAC775', borderRadius: 8, padding: '5px 8px' }}>
-                                          <span style={{ fontSize: 12, flexShrink: 0 }}>⚠️</span>
-                                          <span style={{ fontSize: 11, color: '#7A4F00', lineHeight: 1.5 }}>{a.headsUp}</span>
-                                        </div>
-                                      )}
-                                      <div style={{ display: 'flex', gap: 10, marginTop: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                                        {a.duration && <span style={{ fontSize: 11, color: '#a8a8a5' }}>⏱ {a.duration}</span>}
-                                        {a.cost && <span style={{ fontSize: 11, color: '#a8a8a5' }}>💰 {a.cost}</span>}
-                                        {a.area && <span style={{ fontSize: 11, color: '#a8a8a5' }}>📍 {a.area}</span>}
-                                        {a.type !== 'hotel' && a.type !== 'transport' && (
-                                          <>
-                                            <a
-                                              href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
-                                              target="_blank"
-                                              rel="noreferrer"
-                                              style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#378ADD', background: '#E6F1FB', border: '0.5px solid #B8D4F0', borderRadius: 7, padding: '2px 8px', textDecoration: 'none', fontWeight: 600, marginLeft: 'auto', flexShrink: 0 }}
-                                            >
-                                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                              Maps
-                                            </a>
-                                            <a
-                                              href={`https://www.google.com/search?q=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
-                                              target="_blank"
-                                              rel="noreferrer"
-                                              style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: '#6b6b68', background: '#F1EFE8', border: '0.5px solid #D3D1C7', borderRadius: 7, padding: '2px 8px', textDecoration: 'none', fontWeight: 600, flexShrink: 0 }}
-                                            >
-                                              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                              Know more
-                                            </a>
-                                          </>
-                                        )}
-                                      </div>
-                                      {showPhoto && (
-                                        <div style={{ marginTop: 10 }}>
-                                          <PlacePhoto query={`${a.name} ${form.dest} ${ a.type === 'food' ? 'restaurant dish food' : a.type === 'experience' ? 'travel experience' : a.type === 'shopping' ? 'market shopping' : 'tourist attraction landmark' }`} style={{ height: 120 }} delay={currentDelay} />
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                                <button onClick={() => toggleActivity(doneKey)} style={{ flexShrink: 0, alignSelf: 'flex-start', marginTop: 6, width: 28, height: 28, borderRadius: '50%', border: isDone ? `2px solid ${accentColor}` : '1.5px solid rgba(0,0,0,0.15)', background: isDone ? accentColor : '#fff', color: isDone ? '#fff' : '#a8a8a5', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all .2s' }}>{isDone ? '✓' : '○'}</button>
+                            {/* Row 2: Theme — Sora 700 */}
+                            <div style={{ fontSize: 15, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.35, marginBottom: (isArrivalDay || isDepartureDay || d.estimatedCost || dayDoneCount > 0) ? 8 : 0 }}>
+                              {d.title || d.theme}
+                            </div>
+                            {/* Row 3: Badges */}
+                            {(isArrivalDay || isDepartureDay || dayDoneCount > 0) && (
+                              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
+                                {isArrivalDay && (
+                                  <span style={{ fontSize: 10, fontWeight: 700, background: D.blueTint, color: '#2563AB', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 2c-2-2-4-2-5.5-.5L10 5 1.8 6.2c-.6.1-.9.7-.5 1.2l5.7 5.7-1.8 4.8"/></svg>
+                                    Arrives
+                                  </span>
+                                )}
+                                {isDepartureDay && (
+                                  <span style={{ fontSize: 10, fontWeight: 700, background: D.coralTint, color: D.coral, borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                                    Departs
+                                  </span>
+                                )}
+                                {dayDoneCount > 0 && (
+                                  <span style={{ fontSize: 10, fontWeight: 600, background: D.sageTint, color: D.sage, borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                    <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
+                                    {dayDoneCount}/{dayTotalCount}
+                                  </span>
+                                )}
                               </div>
-                              {/* Travel connector to next activity */}
-                              {!isLast && a.travelToNext && (
-                                <div style={{ display: 'flex', gap: 12, paddingBottom: 2 }}>
-                                  <div style={{ width: 14, display: 'flex', justifyContent: 'center' }}>
-                                    <div style={{ width: 1, background: 'rgba(0,0,0,0.06)', height: '100%' }} />
-                                  </div>
-                                  <div style={{ fontSize: 10, color: '#b0b0aa', paddingLeft: 2, paddingBottom: 4, fontStyle: 'italic' }}>
-                                    🚶 {a.travelToNext}
-                                  </div>
-                                </div>
-                              )}
-                              {/* Separator line between activities (not after travel connector) */}
-                              {!isLast && !a.travelToNext && (
-                                <div style={{ marginLeft: 26, height: '0.5px', background: 'rgba(0,0,0,0.05)' }} />
-                              )}
-                            </div>
-                          );
-                        })}
+                            )}
+                          </div>
+                          {/* Day N badge — RIGHT side */}
+                          <div style={{ width: 52, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isSolo ? 'linear-gradient(160deg,#7F77DD,#534AB7)' : `linear-gradient(160deg,${D.gold},#A8731E)`, flexShrink: 0 }}>
+                            <span style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: .5, lineHeight: 1 }}>Day</span>
+                            <span style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.1, fontFamily: "'Sora',sans-serif" }}>{d.day}</span>
+                          </div>
+                        </div>
+                        {/* Integrated tips inside card */}
+                        {(d.weather?.tip || d.proTip) && (
+                          <div style={{ borderTop: `1px solid ${D.divider}`, background: isSolo ? 'rgba(127,119,221,0.04)' : 'rgba(201,145,58,0.04)', padding: '9px 13px 10px', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                            {d.weather?.tip && (
+                              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#534AB7' : '#0F6E56'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                                <span style={{ fontSize: 12, color: isSolo ? '#534AB7' : '#0F6E56', lineHeight: 1.55 }}>{d.weather.tip}</span>
+                              </div>
+                            )}
+                            {d.proTip && (
+                              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                                <span style={{ fontSize: 12, color: '#5a3a0a', lineHeight: 1.55 }}><strong style={{ color: D.gold, fontWeight: 700 }}>Local:</strong> {d.proTip}</span>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {/* Progress bar */}
+                        {dayDoneCount > 0 && (
+                          <div style={{ height: 2.5, background: D.neutral }}>
+                            <div style={{ height: '100%', width: `${(dayDoneCount / dayTotalCount) * 100}%`, background: isSolo ? '#7F77DD' : D.gold, transition: 'width 0.5s ease' }} />
+                          </div>
+                        )}
                       </div>
+
+                      {/* Activities */}
+                      {(d.activities || []).map((a, i) => {
+                        const showPhoto  = a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel';
+                        const currentDelay = showPhoto ? photoIndex++ * 600 : 0;
+                        const isLast   = i === d.activities.length - 1;
+                        const doneKey  = `day-${d.day}-act-${i}`;
+                        const isDone   = doneActivities.has(doneKey);
+                        const isActive = isActiveSlot(a.time, a.endTime);
+                        const dotColor = isActive ? D.gold : (a.mustDo ? D.gold : '#D3CFC8');
+                        const allTags  = [
+                          ...(a.mustDo ? ['MUST DO'] : []),
+                          ...(a.energyLevel && ENERGY_CONFIG[a.energyLevel] ? [ENERGY_CONFIG[a.energyLevel].label] : []),
+                        ];
+                        const typeAccent = a.type === 'food' ? D.coral : a.type === 'experience' ? '#7F77DD' : a.type === 'shopping' ? D.sage : a.mustDo ? D.gold : D.border;
+
+                        return (
+                          <div key={i}>
+                            {/* Timeline row */}
+                            <div style={{ display: 'flex', gap: 0, opacity: isDone ? 0.42 : 1, transition: 'opacity .3s' }}>
+
+                              {/* Time + dot column */}
+                              <div style={{ width: 52, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingRight: 10, paddingTop: 5 }}>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: D.espresso, lineHeight: 1, fontFamily: "'DM Sans',sans-serif" }}>{a.time}</span>
+                                {a.endTime && <span style={{ fontSize: 10, color: D.muted, marginTop: 2 }}>{a.endTime}</span>}
+                              </div>
+
+                              {/* Connector */}
+                              <div style={{ width: 20, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 7 }}>
+                                <div style={{ position: 'relative', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  {isActive && <div className="itin-dot-glow" style={{ position: 'absolute', width: 20, height: 20, borderRadius: '50%', background: 'rgba(201,145,58,0.22)' }} />}
+                                  <div className={isActive ? 'itin-dot-active' : ''} style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, zIndex: 1, boxShadow: (isActive || a.mustDo) ? `0 0 0 3px ${D.goldTint}` : 'none' }} />
+                                </div>
+                                {!isLast && <div style={{ width: 1.5, flex: 1, background: D.divider, marginTop: 1 }} />}
+                              </div>
+
+                              {/* ── PHOTO-FIRST activity card ── */}
+                              <div
+                                className="itin-card-enter itin-act-enter itin-photo-card"
+                                style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}`, borderLeft: showPhoto ? `0.5px solid ${D.border}` : `3px solid ${typeAccent}`, minWidth: 0, animationDelay: `${i * 60}ms` }}
+                              >
+                                {/* Photo at top (non-hotel/transport only) */}
+                                {showPhoto && (
+                                  <div
+                                    style={{ position: 'relative', height: 150, overflow: 'hidden', cursor: 'zoom-in', background: D.neutral }}
+                                    onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}
+                                  >
+                                    <PlacePhoto
+                                      query={`${a.name} ${form.dest} ${a.type === 'food' ? 'restaurant dish food' : a.type === 'experience' ? 'travel experience' : a.type === 'shopping' ? 'market shopping' : 'tourist attraction landmark'}`}
+                                      style={{ height: 150, borderRadius: 0 }}
+                                      delay={currentDelay}
+                                    />
+                                    {/* gradient on photo */}
+                                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(28,20,16,0.62) 100%)', pointerEvents: 'none' }} />
+                                    {/* activity type badge top-left */}
+                                    <div className="itin-float" style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.92)', borderRadius: 10, padding: '3px 9px', display: 'flex', alignItems: 'center', gap: 4, backdropFilter: 'blur(4px)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
+                                      <span style={{ fontSize: 14 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
+                                      <span style={{ fontSize: 10, fontWeight: 700, color: D.espresso, textTransform: 'uppercase', letterSpacing: .5, fontFamily: "'DM Sans',sans-serif" }}>{a.type}</span>
+                                    </div>
+                                    {/* mustDo gold badge top-right */}
+                                    {a.mustDo && (
+                                      <div style={{ position: 'absolute', top: 10, right: 10, background: D.gold, borderRadius: 999, padding: '3px 9px', fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: .6, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 8px rgba(201,145,58,0.45)' }}>★ Must Do</div>
+                                    )}
+                                    {/* name + time overlaid */}
+                                    <div style={{ position: 'absolute', bottom: 10, left: 12, right: 12, pointerEvents: 'none' }}>
+                                      <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 1px 6px rgba(0,0,0,0.5)', fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none' }}>{a.name}</div>
+                                    </div>
+                                    {/* done overlay */}
+                                    {isDone && (
+                                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.48)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(1px)' }}>
+                                        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: '2px solid rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                            <polyline points="4,12 9,17 20,7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                          </svg>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Card body */}
+                                <div style={{ padding: '11px 13px 12px' }}>
+                                  {/* Name row for hotel/transport (no photo) */}
+                                  {!showPhoto && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                                      <span style={{ fontSize: 18 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
+                                      <span style={{ fontSize: 14, fontWeight: 700, color: isDone ? D.muted : D.espresso, textDecoration: isDone ? 'line-through' : 'none', fontFamily: "'Sora',sans-serif" }}>{a.name}</span>
+                                    </div>
+                                  )}
+
+                                  {/* Tags */}
+                                  {allTags.length > 0 && (
+                                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 7 }}>
+                                      {allTags.map((tag, ti) => {
+                                        const ts = tagStyle(tag, tag === 'MUST DO');
+                                        return <span key={ti} style={{ fontSize: 10, fontWeight: 700, letterSpacing: .7, textTransform: 'uppercase', padding: '2px 9px', borderRadius: 999, background: ts.bg, color: ts.color }}>{tag}</span>;
+                                      })}
+                                    </div>
+                                  )}
+
+                                  {/* Opening hours */}
+                                  {a.openingHours && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                                      <span style={{ fontSize: 11 }}>🕐</span>
+                                      <span style={{ fontSize: 11.5, color: D.muted }}>Open {a.openingHours}</span>
+                                      {a.hoursSource === 'verified'  && <span style={{ fontSize: 9, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 4, padding: '1px 5px' }}>✓ verified</span>}
+                                      {a.hoursSource === 'estimated' && <span style={{ fontSize: 9, fontStyle: 'italic', background: '#F4F3FF', color: '#7A6FCF', borderRadius: 4, padding: '1px 5px' }}>Estimated</span>}
+                                    </div>
+                                  )}
+
+                                  {/* Description */}
+                                  {(a.note || a.description) && (
+                                    <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, marginBottom: 7 }}>{a.note || a.description}</div>
+                                  )}
+
+                                  {/* Heads-up warning */}
+                                  {a.headsUp && (
+                                    <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', background: '#FFFBF0', border: '0.5px solid #FAC775', borderRadius: 8, padding: '7px 10px', marginBottom: 7 }}>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                      <span style={{ fontSize: 11, color: '#7A4F00', lineHeight: 1.5 }}>{a.headsUp}</span>
+                                    </div>
+                                  )}
+
+                                  {/* Meta row */}
+                                  {(a.duration || a.cost || a.area) && (
+                                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 9 }}>
+                                      {a.duration && (
+                                        <span style={{ fontSize: 11, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                          {a.duration}
+                                        </span>
+                                      )}
+                                      {a.cost && (
+                                        <span style={{ fontSize: 11, color: D.gold, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                          {a.cost}
+                                        </span>
+                                      )}
+                                      {a.area && (
+                                        <span style={{ fontSize: 11, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                          {a.area}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Action pills */}
+                                  {a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel' && (
+                                    <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                                      <a className="itin-action-pill"
+                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
+                                        target="_blank" rel="noreferrer"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#2563AB', background: D.blueTint, borderRadius: 999, padding: '6px 14px', textDecoration: 'none', fontWeight: 600, border: 'none', fontFamily: "'DM Sans',sans-serif" }}
+                                      >
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                        Maps
+                                      </a>
+                                      <a className="itin-action-pill"
+                                        href={`https://www.google.com/search?q=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
+                                        target="_blank" rel="noreferrer"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: D.secondary, background: D.neutral, borderRadius: 999, padding: '6px 14px', textDecoration: 'none', fontWeight: 600, border: 'none', fontFamily: "'DM Sans',sans-serif" }}
+                                      >
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        Know more
+                                      </a>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Done toggle */}
+                              <button
+                                onClick={() => toggleActivity(doneKey)}
+                                style={{
+                                  flexShrink: 0, alignSelf: 'flex-start', marginTop: 6, marginLeft: 6,
+                                  width: 28, height: 28, borderRadius: '50%',
+                                  border: isDone ? 'none' : `1.5px solid ${D.border}`,
+                                  background: isDone ? accentColor : D.surface,
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  boxShadow: isDone ? `0 2px 8px ${accentColor}55` : 'none',
+                                  transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+                                }}
+                              >
+                                {isDone ? (
+                                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                    <polyline points="2.5,6.5 5.5,9.5 10.5,3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                ) : (
+                                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <circle cx="6" cy="6" r="5" stroke={D.border} strokeWidth="1.5"/>
+                                  </svg>
+                                )}
+                              </button>
+                            </div>
+
+                            {/* Transit chip */}
+                            {!isLast && a.travelToNext && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '8px 0 8px 20px' }}>
+                                <div style={{ flex: 1, height: 1, background: D.divider }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: D.neutral, borderRadius: 999, padding: '3px 11px', fontSize: 11, color: D.muted, flexShrink: 0 }}>
+                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                  {a.travelToNext}
+                                </div>
+                                <div style={{ flex: 1, height: 1, background: D.divider }} />
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+
+                      {/* ── Day closing ── */}
+                      {(() => {
+                        const acts = d.activities || [];
+                        const lastAct = acts[acts.length - 1];
+                        const isLastDay = dayIndex === (itin.days.length - 1);
+                        if (!acts.length || lastAct?.type === 'hotel' || lastAct?.type === 'stay') return null;
+                        // Pick a unique closing message per day (rotate through the 30)
+                        const closing = isLastDay
+                          ? { label: 'Journey Home', note: 'Safe travels! Pack up and head to the airport or station — your adventure ends here, until next time.' }
+                          : DAY_CLOSING_MSGS[dayIndex % DAY_CLOSING_MSGS.length];
+                        return (
+                          <div className="day-closing-card" style={{ display: 'flex', gap: 0, marginTop: 6, marginBottom: 8 }}>
+                            <div style={{ width: 52, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingRight: 10, paddingTop: 10 }}>
+                              <span style={{ fontSize: 10, fontWeight: 500, color: D.muted, fontFamily: "'DM Sans',sans-serif", letterSpacing: 0.2 }}>Night</span>
+                            </div>
+                            <div style={{ width: 20, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 12 }}>
+                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#C8C4BC', border: `2px solid ${D.neutral}` }} />
+                            </div>
+                            <div style={{ flex: 1, marginLeft: 10 }}>
+                              <div style={{ background: 'linear-gradient(135deg,#F9F7F3,#F4F2EE)', border: `0.5px solid ${D.border}`, borderRadius: 14, padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                <div style={{ width: 34, height: 34, borderRadius: 11, background: isSolo ? '#F4F3FF' : '#F0FAF6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                  {isLastDay ? (
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#534AB7' : D.sage} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                      <polyline points="9 22 9 12 15 12 15 22"/>
+                                    </svg>
+                                  ) : (
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#534AB7' : D.sage} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                                      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                                      <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+                                    </svg>
+                                  )}
+                                </div>
+                                <div>
+                                  <div style={{ fontSize: 13, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", marginBottom: 3 }}>{closing.label}</div>
+                                  <div style={{ fontSize: 11.5, color: D.muted, lineHeight: 1.55, fontFamily: "'DM Sans',sans-serif" }}>{closing.note}</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   );
                 });
               })()}
 
+              {/* Scroll-to-top in Day Planner */}
+              {showPlannerScrollTop && (
+                <button
+                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                  style={{
+                    position: 'fixed', bottom: '5.8rem', right: '1rem', zIndex: 90,
+                    width: 38, height: 38, borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: 0, animation: 'rFadeIn 0.25s ease both',
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                </button>
+              )}
+
               {sources.length > 0 && (
-                <div style={{ ...S.card, marginBottom: '1rem' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: .4, marginBottom: 10 }}>🔍 Researched from</div>
+                <div style={{ background: D.surface, border: `0.5px solid ${D.border}`, borderRadius: 12, padding: '12px 14px', marginTop: 4, boxShadow: D.cardShadow }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: D.muted, textTransform: 'uppercase', letterSpacing: .8, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Researched from
+                  </div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {sources.map((s, i) => (
                       <a key={i} href={s.url} target="_blank" rel="noreferrer"
-                        style={{ fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56', background: isSolo ? '#EEEDFE' : '#E1F5EE', border: `0.5px solid ${isSolo ? '#AFA9EC' : '#9FE1CB'}`, borderRadius: 8, padding: '4px 10px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        🔗 {s.title?.slice(0, 28) || new URL(s.url).hostname}
+                        style={{ fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56', background: isSolo ? '#EEEDFE' : D.sageTint, borderRadius: 999, padding: '4px 11px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        {s.title?.slice(0, 28) || new URL(s.url).hostname}
                       </a>
                     ))}
                   </div>
@@ -544,6 +1533,21 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           autoData={localTasteData}
           autoStep={localTasteStep}
           onRetry={runGenerateLocalTaste}
+        />
+      )}
+
+      {iTab === 'nearby' && (
+        <RecommendationsPage
+          destination={form.dest}
+          isSolo={isSolo}
+          autoData={nearbyData}
+          autoStep={nearbyStep}
+          onRetry={() => {
+            setNearbyStep('loading'); setNearbyData(null);
+            fetchRecommendations(form.dest)
+              .then(r => { setNearbyData(r); setNearbyStep('result'); })
+              .catch(() => setNearbyStep('error'));
+          }}
         />
       )}
     </div>
