@@ -917,6 +917,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [showWelcomePopup,   setShowWelcomePopup]   = useState(false);
   const [clockNowMs,         setClockNowMs]         = useState(() => Date.now());
   const [destinationClock,   setDestinationClock]   = useState(null);
+  const [liveHintPinnedKey,  setLiveHintPinnedKey]  = useState(null);
+  const [liveHintHoverKey,   setLiveHintHoverKey]   = useState(null);
 
   useEffect(() => {
     const tick = () => setClockNowMs(Date.now());
@@ -1309,12 +1311,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               {firstLiveActivity && (
                 <div style={{ position: 'sticky', top: 72, zIndex: 40, pointerEvents: 'none', marginLeft: 56, marginBottom: 8 }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.96)', border: `1px solid ${D.gold}`, borderRadius: 999, padding: '5px 11px', boxShadow: '0 8px 24px rgba(201,145,58,0.24)', backdropFilter: 'blur(8px)' }}>
-                    <span className="itin-live-walker" style={{ width: 14, height: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="5" r="2.4" />
-                        <path d="M12 8.5v5M12 11.5l-4 2.5M12 11.5l4 2.5M12 13.5l-3 5M12 13.5l3 5" />
-                      </svg>
-                    </span>
                     <span className="itin-now-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: D.gold, display: 'inline-block' }} />
                     <span style={{ fontSize: 10, fontWeight: 800, color: D.gold, letterSpacing: 0.7, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>Now</span>
                     <span style={{ width: 1, height: 12, background: 'rgba(201,145,58,0.32)' }} />
@@ -1428,11 +1424,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                           <div style={{ position: 'relative', height: 20 }}>
                             <div style={{ position: 'absolute', left: 0, right: 0, top: 9, height: 2.5, background: D.neutral }} />
                             <div className={hasActiveNow ? 'itin-live-bar' : ''} style={{ position: 'absolute', left: 0, top: 9, height: 2.5, width: `${dayProgressClamped}%`, background: isSolo ? '#7F77DD' : D.gold, transition: 'width 0.6s ease' }} />
-                            <div className="itin-live-walker" style={{ position: 'absolute', top: 0, left: `calc(${dayProgressClamped}% - 8px)`, width: 16, height: 16, borderRadius: '50%', background: '#fff', border: `1px solid ${isSolo ? '#7F77DD' : D.gold}`, boxShadow: '0 2px 10px rgba(28,20,16,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'left 0.6s ease' }}>
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#7F77DD' : D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                <circle cx="12" cy="5" r="2.4" />
-                                <path d="M12 8.5v5M12 11.5l-4 2.5M12 11.5l4 2.5M12 13.5l-3 5M12 13.5l3 5" />
-                              </svg>
+                            <div className={hasActiveNow ? 'itin-now-dot' : ''} style={{ position: 'absolute', top: 5.5, left: `calc(${dayProgressClamped}% - 4px)`, width: 8, height: 8, borderRadius: '50%', background: isSolo ? '#7F77DD' : D.gold, transition: 'left 0.6s ease' }}>
                             </div>
                           </div>
                         )}
@@ -1450,6 +1442,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         const isPast = liveState === 'past';
                         const connectorProgress = getActivityTimeProgress(a.time, a.endTime, nowMinutes);
                         const connectorPct = Math.max(0, Math.min(100, ((connectorProgress === null ? (isPast ? 100 : 0) : connectorProgress * 100))));
+                        const liveHintKey = `${doneKey}-live`;
+                        const isHintVisible = (liveHintHoverKey === liveHintKey) || (liveHintPinnedKey === liveHintKey);
+                        const liveWhatText = `Now ${nowTimeLabel}: ${a.name} is in progress (${Math.round(connectorPct)}% done). Follow this step in your itinerary.`;
                         const dotColor = isActive ? D.gold : (isPast ? '#BCA478' : (a.mustDo ? D.gold : '#D3CFC8'));
                         const allTags  = [
                           ...(a.mustDo ? ['MUST DO'] : []),
@@ -1473,7 +1468,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                 <span style={{ fontSize: 11, fontWeight: 700, color: D.espresso, lineHeight: 1, fontFamily: "'DM Sans',sans-serif" }}>{a.time}</span>
                                 {a.endTime && <span style={{ fontSize: 10, color: D.muted, marginTop: 2 }}>{a.endTime}</span>}
                                 {isActive && (
-                                  <span style={{ marginTop: 3, fontSize: 9, fontWeight: 800, color: D.gold, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+                                  <span style={{ marginTop: 3, fontSize: 9, fontWeight: 800, color: D.gold, letterSpacing: 0.35, textTransform: 'uppercase' }}>
                                     Now {nowTimeLabel}
                                   </span>
                                 )}
@@ -1486,7 +1481,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                   <div className={isActive ? 'itin-dot-active itin-now-dot' : ''} style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, zIndex: 1, boxShadow: (isActive || a.mustDo) ? `0 0 0 3px ${D.goldTint}` : 'none', transition: 'background .35s ease' }} />
                                 </div>
                                 {!isLast && (
-                                  <div style={{ position: 'relative', width: 1.5, flex: 1, background: D.divider, marginTop: 1, overflow: 'hidden' }}>
+                                  <div style={{ position: 'relative', width: 1.5, flex: 1, background: D.divider, marginTop: 1, overflow: 'visible' }}>
                                     <div
                                       style={{
                                         position: 'absolute', left: 0, right: 0, bottom: 0,
@@ -1496,12 +1491,29 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                       }}
                                     />
                                     {isActive && (
-                                      <div className="itin-live-walker" style={{ position: 'absolute', left: '50%', bottom: `calc(${connectorPct}% - 7px)`, width: 14, height: 14, borderRadius: '50%', transform: 'translateX(-50%)', background: '#fff', border: `1px solid ${isSolo ? '#7F77DD' : D.gold}`, boxShadow: '0 2px 10px rgba(28,20,16,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'bottom 0.7s cubic-bezier(0.2,0.7,0.2,1)' }}>
-                                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#7F77DD' : D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                          <circle cx="12" cy="5" r="2.4" />
-                                          <path d="M12 8.5v5M12 11.5l-4 2.5M12 11.5l4 2.5M12 13.5l-3 5M12 13.5l3 5" />
-                                        </svg>
-                                      </div>
+                                      <>
+                                        <button
+                                          type="button"
+                                          className="itin-live-walker"
+                                          title={liveWhatText}
+                                          aria-label={liveWhatText}
+                                          onMouseEnter={() => setLiveHintHoverKey(liveHintKey)}
+                                          onMouseLeave={() => setLiveHintHoverKey(prev => (prev === liveHintKey ? null : prev))}
+                                          onClick={() => setLiveHintPinnedKey(prev => (prev === liveHintKey ? null : liveHintKey))}
+                                          style={{ position: 'absolute', left: '50%', bottom: `calc(${connectorPct}% - 8px)`, width: 16, height: 16, borderRadius: '50%', transform: 'translateX(-50%)', background: '#fff', border: `1px solid ${isSolo ? '#7F77DD' : D.gold}`, boxShadow: '0 2px 10px rgba(28,20,16,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'bottom 0.7s cubic-bezier(0.2,0.7,0.2,1)', cursor: 'pointer', padding: 0, zIndex: 3 }}
+                                        >
+                                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#7F77DD' : D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                            <circle cx="12" cy="5" r="2.4" />
+                                            <path d="M12 8.5v5M12 11.5l-4 2.5M12 11.5l4 2.5M12 13.5l-3 5M12 13.5l3 5" />
+                                          </svg>
+                                        </button>
+                                        {isHintVisible && (
+                                          <div style={{ position: 'absolute', left: 12, bottom: `calc(${connectorPct}% - 14px)`, transform: 'translateX(0)', minWidth: 168, maxWidth: 240, background: '#1F1713', color: '#fff', borderRadius: 10, padding: '8px 9px', boxShadow: '0 10px 24px rgba(0,0,0,0.24)', zIndex: 4 }}>
+                                            <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.45, textTransform: 'uppercase', color: '#F5D9A8', marginBottom: 4 }}>Live status</div>
+                                            <div style={{ fontSize: 11, lineHeight: 1.45 }}>{liveWhatText}</div>
+                                          </div>
+                                        )}
+                                      </>
                                     )}
                                   </div>
                                 )}
