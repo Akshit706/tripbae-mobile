@@ -35,6 +35,66 @@ const HERO_GREETINGS = {
   night: ['Night owl travels', 'Stars out, bags ready', 'Late night routes', 'Moon & destinations', 'Plotting after dark'],
 };
 
+const BUDGET_CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED', 'AUD', 'CAD', 'JPY', 'SGD', 'THB'];
+
+const COUNTRY_TO_CURRENCY = {
+  India: 'INR',
+  'United States': 'USD',
+  USA: 'USD',
+  Canada: 'CAD',
+  Mexico: 'MXN',
+  'United Kingdom': 'GBP',
+  England: 'GBP',
+  Scotland: 'GBP',
+  Wales: 'GBP',
+  Ireland: 'EUR',
+  France: 'EUR',
+  Germany: 'EUR',
+  Italy: 'EUR',
+  Spain: 'EUR',
+  Portugal: 'EUR',
+  Netherlands: 'EUR',
+  Belgium: 'EUR',
+  Austria: 'EUR',
+  Greece: 'EUR',
+  Switzerland: 'CHF',
+  Turkey: 'TRY',
+  'United Arab Emirates': 'AED',
+  UAE: 'AED',
+  Singapore: 'SGD',
+  Thailand: 'THB',
+  Indonesia: 'IDR',
+  Japan: 'JPY',
+  'South Korea': 'KRW',
+  Korea: 'KRW',
+  Vietnam: 'VND',
+  Malaysia: 'MYR',
+  Australia: 'AUD',
+  'New Zealand': 'NZD',
+  Nepal: 'NPR',
+  Bhutan: 'BTN',
+  'Sri Lanka': 'LKR',
+};
+
+function normalizeCountryName(country) {
+  return String(country || '').trim();
+}
+
+async function inferDestinationCurrency(country) {
+  const normalized = normalizeCountryName(country);
+  if (!normalized) return '';
+  if (COUNTRY_TO_CURRENCY[normalized]) return COUNTRY_TO_CURRENCY[normalized];
+  try {
+    const res = await fetch(`https://restcountries.com/v3.1/name/${encodeURIComponent(normalized)}?fields=currencies`);
+    const data = await res.json();
+    const first = Array.isArray(data) ? data[0] : null;
+    const currencies = first?.currencies ? Object.keys(first.currencies) : [];
+    return currencies[0] || '';
+  } catch {
+    return '';
+  }
+}
+
 function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, setConfirmComplete, setConfirmDelete }) {
   const [photos, setPhotos] = useState([]);
   const [photoIdx, setPhotoIdx] = useState(0);
@@ -220,6 +280,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
 
 function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive, profileName }) {
   const [showCreate, setShowCreate] = useState(false);
+  const [createStep, setCreateStep] = useState(0);
   const [showJoin, setShowJoin] = useState(false);
   const [showPast, setShowPast] = useState(false);
   const [joinCode, setJoinCode] = useState('');
@@ -249,6 +310,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [destQuery, setDestQuery] = useState('');
   const [destSuggestions, setDestSuggestions] = useState([]);
   const [destLoading, setDestLoading] = useState(false);
+  const [fxRate, setFxRate] = useState(1);
+  const [fxLoading, setFxLoading] = useState(false);
+  const [fxError, setFxError] = useState('');
   const destDebounce = useRef(null);
   const tagSwapRef = useRef(null);
 
@@ -304,12 +368,61 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [form, setForm] = useState({
     groupName: '', destination: '', arrival: today, departure: '',
     arrivalSlot: 'morning', departureSlot: 'morning',
-    createdBy: profileName || '', budget: '', travelNotes: '',
+    createdBy: profileName || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '',
   });
 
   useEffect(() => {
     setForm(f => ({ ...f, createdBy: profileName || '' }));
   }, [profileName]);
+
+  useEffect(() => {
+    if (!showCreate) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [showCreate]);
+
+  useEffect(() => {
+    const from = (form.budgetCurrency || '').toUpperCase();
+    const to = (form.destinationCurrency || '').toUpperCase();
+    if (!from || !to) {
+      setFxRate(1);
+      setFxError('');
+      return;
+    }
+    if (from === to) {
+      setFxRate(1);
+      setFxError('');
+      return;
+    }
+
+    let cancelled = false;
+    setFxLoading(true);
+    setFxError('');
+    fetch(`https://api.frankfurter.app/latest?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        const rate = data?.rates?.[to];
+        if (!rate || Number.isNaN(Number(rate))) throw new Error('Rate unavailable');
+        setFxRate(Number(rate));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setFxRate(1);
+        setFxError('Live FX unavailable, using 1:1 temporarily.');
+      })
+      .finally(() => {
+        if (!cancelled) setFxLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.budgetCurrency, form.destinationCurrency]);
+
+  const budgetNum = form.budget ? Number(form.budget) : 0;
+  const convertedBudget = budgetNum > 0 ? (budgetNum * fxRate) : 0;
 
   useEffect(() => {
     const tick = () => {
@@ -357,11 +470,16 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         isSolo: isSoloMode,
         people: isSoloMode ? 1 : 2,
         budget: form.budget ? parseFloat(form.budget) : null,
+        budgetCurrency: form.budget ? (form.budgetCurrency || 'INR') : null,
+        destinationCurrency: form.destinationCurrency || null,
+        budgetInDestination: form.budget ? Number(convertedBudget.toFixed(2)) : null,
         travelNotes: form.travelNotes || null,
         nickname: (profileName || form.createdBy || 'Me').trim(),
       });
       setShowCreate(false);
-      setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '', travelNotes: '' });
+      setCreateStep(0);
+      setFxError('');
+      setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '' });
     } catch (err) {
       alert('Could not create trip: ' + err.message);
     }
@@ -387,6 +505,20 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     navigator.clipboard?.writeText(code).catch(() => {});
     setCopied(id);
     setTimeout(() => setCopied(null), 1800);
+  };
+
+  const totalCreateSteps = 7;
+  const nextCreateStep = () => setCreateStep((s) => Math.min(totalCreateSteps - 1, s + 1));
+  const prevCreateStep = () => setCreateStep((s) => Math.max(0, s - 1));
+  const autoAdvance = () => {
+    setTimeout(() => nextCreateStep(), 180);
+  };
+  const canAdvanceCurrentStep = () => {
+    if (createStep === 0) return !!form.groupName.trim();
+    if (createStep === 1) return !!form.destination.trim();
+    if (createStep === 2) return !!form.arrival;
+    if (createStep === 3) return !!form.departure;
+    return true;
   };
 
   if (showPast) {
@@ -565,7 +697,12 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             <button
               className="tb-new-btn"
               style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 14, padding: '13px 24px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)', flex: 1, justifyContent: 'center' }}
-              onClick={() => { setShowCreate(true); setShowJoin(false); }}>
+              onClick={() => {
+                setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '' });
+                setCreateStep(0);
+                setShowCreate(true);
+                setShowJoin(false);
+              }}>
               + New Trip
             </button>
             <button
@@ -619,155 +756,249 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {showCreate && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: '#f7f6f2', display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-
-          {/* ── Gradient header ── */}
-          <div style={{ background: isSoloMode ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)', padding: '1.1rem 1.25rem 1.5rem', paddingTop: 'calc(1.1rem + env(safe-area-inset-top, 0px))', flexShrink: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-              <button onClick={() => setShowCreate(false)} style={{ width: 36, height: 36, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.18)', color: '#fff', fontSize: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>←</button>
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.6)', letterSpacing: 1.6, textTransform: 'uppercase', marginBottom: 2 }}>New Trip</div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 21, fontWeight: 700, color: '#fff', lineHeight: 1.15 }}>{isSoloMode ? '🎒 Solo Adventure' : '✈️ Group Trip'}</div>
-              </div>
-            </div>
-            <div style={{ display: 'flex', background: 'rgba(0,0,0,0.18)', borderRadius: 13, padding: 3 }}>
-              {[{ val: false, label: '👥 Group' }, { val: true, label: '🎒 Solo' }].map(opt => (
-                <button key={String(opt.val)} onClick={() => setIsSoloMode(opt.val)}
-                  style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: isSoloMode === opt.val ? 'rgba(255,255,255,0.97)' : 'transparent', color: isSoloMode === opt.val ? (opt.val ? '#534AB7' : '#0F6E56') : 'rgba(255,255,255,0.72)', fontWeight: 700, fontSize: 14, transition: 'all .2s' }}>
-                  {opt.label}
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(8,18,14,0.56)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCreate(false);
+              setCreateStep(0);
+            }
+          }}
+        >
+          <div className="tb-modal-pop" style={{ width: '100%', maxWidth: 540, maxHeight: '92svh', background: '#fff', borderRadius: 24, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 70px rgba(0,0,0,0.26)' }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ background: isSoloMode ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)', padding: '0.95rem 1.05rem 1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                <button
+                  onClick={() => {
+                    setShowCreate(false);
+                    setCreateStep(0);
+                  }}
+                  style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.16)', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  ×
                 </button>
-              ))}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.66)', letterSpacing: 1.2, textTransform: 'uppercase' }}>Create trip</div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#fff' }}>{isSoloMode ? '🎒 Solo Adventure' : '✈️ Group Trip'} · {createStep + 1}/{totalCreateSteps}</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: 11, padding: 3, marginBottom: 10 }}>
+                {[{ val: false, label: '👥 Group' }, { val: true, label: '🎒 Solo' }].map(opt => (
+                  <button key={String(opt.val)} onClick={() => setIsSoloMode(opt.val)}
+                    style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: isSoloMode === opt.val ? 'rgba(255,255,255,0.97)' : 'transparent', color: isSoloMode === opt.val ? (opt.val ? '#534AB7' : '#0F6E56') : 'rgba(255,255,255,0.72)', fontWeight: 700, fontSize: 13, transition: 'all .2s' }}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.28)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${((createStep + 1) / totalCreateSteps) * 100}%`, background: '#fff', transition: 'width .25s ease' }} />
+              </div>
+            </div>
+
+            <div style={{ flex: 1, overflow: 'hidden', background: '#f7f6f2' }}>
+              <div style={{ height: '100%', transform: `translateY(-${createStep * 100}%)`, transition: 'transform .34s cubic-bezier(.16,.84,.24,1.04)' }}>
+                <div style={{ minHeight: '100%', boxSizing: 'border-box', padding: '1rem 1.1rem', overflowY: 'auto' }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0f1a12', marginBottom: 6 }}>{isSoloMode ? 'Name your adventure' : 'Name your trip'}</div>
+                  <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 14 }}>This is what everyone will see first.</div>
+                  <input
+                    autoFocus
+                    style={{ ...S.input, fontSize: 15, padding: '13px 14px' }}
+                    value={form.groupName}
+                    onChange={(e) => {
+                      const next = e.target.value;
+                      const wasEmpty = !form.groupName.trim();
+                      setForm(f => ({ ...f, groupName: next }));
+                      if (createStep === 0 && wasEmpty && next.trim().length >= 2) autoAdvance();
+                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && form.groupName.trim()) nextCreateStep(); }}
+                    placeholder={isSoloMode ? 'e.g. My Jaipur Chapter' : 'e.g. Pink City Explorers'}
+                  />
+                </div>
+
+                <div style={{ minHeight: '100%', boxSizing: 'border-box', padding: '1rem 1.1rem', overflowY: 'auto' }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0f1a12', marginBottom: 6 }}>Where are you going?</div>
+                  <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 14 }}>Pick a place and we will auto-detect local currency.</div>
+                  <div onClick={() => { setShowDestPicker(true); setDestQuery(form.destination); setDestSuggestions([]); }}
+                    style={{ ...S.input, fontSize: 15, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', color: form.destination ? '#111' : '#aaa', userSelect: 'none' }}>
+                    <span style={{ fontSize: 17 }}>{form.destination ? '📍' : '🔍'}</span>
+                    <span style={{ flex: 1, fontWeight: form.destination ? 600 : 400 }}>{form.destination || 'Search city or place…'}</span>
+                    {form.destination
+                      ? <span onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, destination: '', destinationCountry: '', destinationCurrency: '' })); }} style={{ fontSize: 14, color: '#aaa', cursor: 'pointer' }}>✕</span>
+                      : <span style={{ fontSize: 18, color: '#ccc' }}>›</span>}
+                  </div>
+                  {!!form.destinationCurrency && (
+                    <div style={{ marginTop: 10, fontSize: 12, color: '#0F6E56', fontWeight: 600, background: '#E1F5EE', border: '1px solid #9FE1CB', borderRadius: 10, padding: '8px 10px' }}>
+                      Destination currency: {form.destinationCurrency}{form.destinationCountry ? ` (${form.destinationCountry})` : ''}
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ minHeight: '100%', boxSizing: 'border-box', padding: '1rem 1.1rem', overflowY: 'auto' }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0f1a12', marginBottom: 6 }}>When do you arrive?</div>
+                  <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 14 }}>Pick date and arrival slot.</div>
+                  <input style={{ ...S.input, fontSize: 15, padding: '13px 14px', marginBottom: 12 }} type="date" value={form.arrival} min={today} max={maxDate}
+                    onChange={e => {
+                      const value = e.target.value;
+                      setForm(f => ({ ...f, arrival: value, departure: f.departure && f.departure < value ? '' : f.departure }));
+                      if (createStep === 2 && value) autoAdvance();
+                    }}
+                    onBlur={e => { if (e.target.value && e.target.value < today) setForm(f => ({ ...f, arrival: today })); }} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    {[
+                      { id: 'night', icon: '🌙', label: 'Night', time: '12AM – 6AM' },
+                      { id: 'morning', icon: '🌅', label: 'Morning', time: '6AM – 12PM' },
+                      { id: 'afternoon', icon: '☀️', label: 'Afternoon', time: '12PM – 6PM' },
+                      { id: 'evening', icon: '🌆', label: 'Evening', time: '6PM – 12AM' },
+                    ].map(slot => {
+                      const sel = form.arrivalSlot === slot.id;
+                      const ac = isSoloMode ? '#534AB7' : '#0F6E56';
+                      const acBg = isSoloMode ? '#EEEDFE' : '#E1F5EE';
+                      const acBr = isSoloMode ? '#AFA9EC' : '#9FE1CB';
+                      return (
+                        <button key={slot.id} type="button" onClick={() => setForm(f => ({ ...f, arrivalSlot: slot.id }))}
+                          style={{ padding: '11px 10px', borderRadius: 12, border: `1.5px solid ${sel ? acBr : 'rgba(0,0,0,0.09)'}`, background: sel ? acBg : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: sel ? ac : '#1a1a18', marginBottom: 2 }}>{slot.icon} {slot.label}</div>
+                          <div style={{ fontSize: 11, color: sel ? ac : '#a8a8a5', fontWeight: 500 }}>{slot.time}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ minHeight: '100%', boxSizing: 'border-box', padding: '1rem 1.1rem', overflowY: 'auto' }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0f1a12', marginBottom: 6 }}>When do you leave?</div>
+                  <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 14 }}>Set your departure date and slot.</div>
+                  <input style={{ ...S.input, fontSize: 15, padding: '13px 14px', marginBottom: 12 }} type="date" value={form.departure} min={form.arrival || today} max={maxDate}
+                    onChange={e => {
+                      const value = e.target.value;
+                      setForm(f => ({ ...f, departure: value }));
+                      if (createStep === 3 && value) autoAdvance();
+                    }}
+                    onBlur={e => { const v = e.target.value; const minDep = form.arrival || today; if (v && v < minDep) setForm(f => ({ ...f, departure: minDep })); }} />
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                    {[
+                      { id: 'night', icon: '🌙', label: 'Night', time: '12AM – 6AM' },
+                      { id: 'morning', icon: '🌅', label: 'Morning', time: '6AM – 12PM' },
+                      { id: 'afternoon', icon: '☀️', label: 'Afternoon', time: '12PM – 6PM' },
+                      { id: 'evening', icon: '🌆', label: 'Evening', time: '6PM – 12AM' },
+                    ].map(slot => {
+                      const sel = form.departureSlot === slot.id;
+                      const ac = isSoloMode ? '#534AB7' : '#0F6E56';
+                      const acBg = isSoloMode ? '#EEEDFE' : '#E1F5EE';
+                      const acBr = isSoloMode ? '#AFA9EC' : '#9FE1CB';
+                      return (
+                        <button key={slot.id} type="button" onClick={() => setForm(f => ({ ...f, departureSlot: slot.id }))}
+                          style={{ padding: '11px 10px', borderRadius: 12, border: `1.5px solid ${sel ? acBr : 'rgba(0,0,0,0.09)'}`, background: sel ? acBg : '#fff', cursor: 'pointer', textAlign: 'left' }}>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: sel ? ac : '#1a1a18', marginBottom: 2 }}>{slot.icon} {slot.label}</div>
+                          <div style={{ fontSize: 11, color: sel ? ac : '#a8a8a5', fontWeight: 500 }}>{slot.time}</div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ minHeight: '100%', boxSizing: 'border-box', padding: '1rem 1.1rem', overflowY: 'auto' }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0f1a12', marginBottom: 6 }}>Set budget with currency calculator</div>
+                  <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 14 }}>Enter in your selected currency and compare with destination currency.</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div style={{ background: '#fff', borderRadius: 14, padding: 10, border: '1px solid rgba(0,0,0,0.08)' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#7c7c77', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Selected currency</div>
+                      <select
+                        style={{ ...S.input, padding: '10px 11px', marginBottom: 8, borderRadius: 12, boxShadow: 'none' }}
+                        value={form.budgetCurrency}
+                        onChange={(e) => setForm((f) => ({ ...f, budgetCurrency: e.target.value }))}
+                      >
+                        {BUDGET_CURRENCIES.map((code) => (
+                          <option key={code} value={code}>{code}</option>
+                        ))}
+                      </select>
+                      <input
+                        style={{ ...S.input, padding: '10px 11px', borderRadius: 12, boxShadow: 'none' }}
+                        type="number"
+                        value={form.budget}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          const wasEmpty = !form.budget;
+                          setForm((f) => ({ ...f, budget: value }));
+                          if (createStep === 4 && wasEmpty && value) autoAdvance();
+                        }}
+                        placeholder="e.g. 1500"
+                      />
+                    </div>
+                    <div style={{ background: '#fff', borderRadius: 14, padding: 10, border: '1px solid rgba(0,0,0,0.08)' }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#7c7c77', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 8 }}>Destination currency</div>
+                      <input
+                        style={{ ...S.input, padding: '10px 11px', marginBottom: 8, borderRadius: 12, boxShadow: 'none', fontWeight: 700 }}
+                        value={form.destinationCurrency || 'Not detected yet'}
+                        readOnly
+                      />
+                      <input
+                        style={{ ...S.input, padding: '10px 11px', borderRadius: 12, boxShadow: 'none' }}
+                        value={form.budget ? convertedBudget.toFixed(2) : ''}
+                        placeholder="Converted amount"
+                        readOnly
+                      />
+                    </div>
+                  </div>
+                  <div style={{ marginTop: 10, fontSize: 12, color: '#6b6b68' }}>
+                    {fxLoading
+                      ? 'Fetching live FX rate...'
+                      : form.destinationCurrency
+                        ? `1 ${form.budgetCurrency} = ${fxRate.toFixed(4)} ${form.destinationCurrency}`
+                        : 'Pick a destination to load local currency.'}
+                  </div>
+                  {!!fxError && <div style={{ marginTop: 6, fontSize: 12, color: '#993C1D' }}>{fxError}</div>}
+                </div>
+
+                <div style={{ minHeight: '100%', boxSizing: 'border-box', padding: '1rem 1.1rem', overflowY: 'auto' }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0f1a12', marginBottom: 6 }}>Any travel notes?</div>
+                  <div style={{ fontSize: 13, color: '#6b6b68', marginBottom: 14 }}>Optional, but useful for smarter itinerary suggestions.</div>
+                  <textarea
+                    style={{ ...S.input, fontSize: 14, padding: '12px 14px', resize: 'none', minHeight: 120, lineHeight: 1.55, fontFamily: 'inherit' }}
+                    value={form.travelNotes}
+                    onChange={e => setForm(f => ({ ...f, travelNotes: e.target.value }))}
+                    placeholder={isSoloMode ? 'e.g. Prefer slow travel, street food, light hikes only...' : 'e.g. Family trip with kids + elders, vegetarian food preferred...'}
+                  />
+                </div>
+
+                <div style={{ minHeight: '100%', boxSizing: 'border-box', padding: '1rem 1.1rem', overflowY: 'auto' }}>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#0f1a12', marginBottom: 10 }}>Review and create</div>
+                  <div style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(0,0,0,0.08)', padding: 12, display: 'grid', gap: 8 }}>
+                    <div><strong>Trip:</strong> {form.groupName || '-'}</div>
+                    <div><strong>Destination:</strong> {form.destination || '-'}</div>
+                    <div><strong>Dates:</strong> {form.arrival || '-'} to {form.departure || '-'}</div>
+                    <div><strong>Budget:</strong> {form.budget ? `${form.budgetCurrency} ${form.budget}` : 'Not set'}</div>
+                    <div><strong>Destination budget:</strong> {form.destinationCurrency && form.budget ? `${form.destinationCurrency} ${convertedBudget.toFixed(2)}` : 'Not available'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ padding: '0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom, 0px))', borderTop: '1px solid rgba(0,0,0,0.08)', display: 'flex', gap: 10, background: '#fff' }}>
+              <button style={{ ...S.btn, flex: 1, justifyContent: 'center', opacity: createStep === 0 ? 0.45 : 1 }} onClick={prevCreateStep} disabled={createStep === 0}>Back</button>
+              {createStep < totalCreateSteps - 1 ? (
+                <button
+                  style={{ ...S.btn, ...(isSoloMode ? S.btnSolo : S.btnP), flex: 2, justifyContent: 'center', opacity: canAdvanceCurrentStep() ? 1 : 0.5 }}
+                  onClick={nextCreateStep}
+                  disabled={!canAdvanceCurrentStep()}
+                >
+                  {createStep === 5 ? 'Review' : 'Next'}
+                </button>
+              ) : (
+                <button
+                  style={{ ...S.btn, ...(isSoloMode ? S.btnSolo : S.btnP), flex: 2, justifyContent: 'center', opacity: (!form.groupName || !form.destination || !form.arrival || !form.departure || creating) ? 0.5 : 1 }}
+                  onClick={handleCreate}
+                  disabled={!form.groupName || !form.destination || !form.arrival || !form.departure || creating}
+                >
+                  {creating ? 'Creating...' : (isSoloMode ? 'Start Solo Adventure' : 'Create & Get Share Code')}
+                </button>
+              )}
             </div>
           </div>
 
-          {/* ── Form sections ── */}
-          <div style={{ flex: 1, padding: '1.75rem 1.25rem 0' }}>
-
-            {/* Trip name */}
-            <div style={{ marginBottom: '1.75rem' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 8 }}>{isSoloMode ? 'Adventure Name' : 'Trip Name'}</div>
-              <input style={{ ...S.input, fontSize: 15, padding: '13px 14px' }} value={form.groupName} onChange={e => setForm(f => ({ ...f, groupName: e.target.value }))}
-                placeholder={isSoloMode ? 'e.g. My Jaipur Chapter' : 'e.g. Pink City Explorers'} />
-            </div>
-
-            {/* Destination */}
-            <div style={{ marginBottom: '1.75rem' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 8 }}>Destination</div>
-              <div onClick={() => { setShowDestPicker(true); setDestQuery(form.destination); setDestSuggestions([]); }}
-                style={{ ...S.input, fontSize: 15, padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', color: form.destination ? '#111' : '#aaa', userSelect: 'none' }}>
-                <span style={{ fontSize: 17 }}>{form.destination ? '📍' : '🔍'}</span>
-                <span style={{ flex: 1, fontWeight: form.destination ? 600 : 400 }}>{form.destination || 'Search city or place…'}</span>
-                {form.destination
-                  ? <span onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, destination: '' })); }} style={{ fontSize: 14, color: '#aaa', cursor: 'pointer' }}>✕</span>
-                  : <span style={{ fontSize: 18, color: '#ccc' }}>›</span>}
-              </div>
-            </div>
-
-            {/* Arrival */}
-            <div style={{ marginBottom: '1.75rem' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 8 }}>Arrival</div>
-              <input style={{ ...S.input, fontSize: 15, padding: '13px 14px', marginBottom: 12 }} type="date" value={form.arrival} min={today} max={maxDate}
-                onChange={e => setForm(f => ({ ...f, arrival: e.target.value, departure: f.departure && f.departure < e.target.value ? '' : f.departure }))}
-                onBlur={e => { if (e.target.value && e.target.value < today) setForm(f => ({ ...f, arrival: today })); }} />
-              <div style={{ fontSize: 12, color: '#6b6b68', fontWeight: 500, marginBottom: 10 }}>When do you land / arrive?</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {[
-                  { id: 'night',     icon: '🌙', label: 'Night',     time: '12AM – 6AM' },
-                  { id: 'morning',   icon: '🌅', label: 'Morning',   time: '6AM – 12PM' },
-                  { id: 'afternoon', icon: '☀️', label: 'Afternoon', time: '12PM – 6PM' },
-                  { id: 'evening',   icon: '🌆', label: 'Evening',   time: '6PM – 12AM' },
-                ].map(slot => {
-                  const sel = form.arrivalSlot === slot.id;
-                  const ac = isSoloMode ? '#534AB7' : '#0F6E56';
-                  const acBg = isSoloMode ? '#EEEDFE' : '#E1F5EE';
-                  const acBr = isSoloMode ? '#AFA9EC' : '#9FE1CB';
-                  return (
-                    <button key={slot.id} type="button" onClick={() => setForm(f => ({ ...f, arrivalSlot: slot.id }))}
-                      style={{ padding: '12px 12px', borderRadius: 12, border: `1.5px solid ${sel ? acBr : 'rgba(0,0,0,0.09)'}`, background: sel ? acBg : '#fff', cursor: 'pointer', textAlign: 'left', transition: 'all .15s', boxShadow: sel ? `0 2px 8px ${acBr}88` : 'none' }}>
-                      <div style={{ fontSize: 22, marginBottom: 5 }}>{slot.icon}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: sel ? ac : '#1a1a18', marginBottom: 2, fontFamily: "'DM Sans',sans-serif" }}>{slot.label}</div>
-                      <div style={{ fontSize: 11, color: sel ? ac : '#a8a8a5', fontWeight: 500 }}>{slot.time}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Departure */}
-            <div style={{ marginBottom: '1.75rem' }}>
-              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 8 }}>Departure</div>
-              <input style={{ ...S.input, fontSize: 15, padding: '13px 14px', marginBottom: 12 }} type="date" value={form.departure} min={form.arrival || today} max={maxDate}
-                onChange={e => setForm(f => ({ ...f, departure: e.target.value }))}
-                onBlur={e => { const v = e.target.value; const minDep = form.arrival || today; if (v && v < minDep) setForm(f => ({ ...f, departure: minDep })); }} />
-              <div style={{ fontSize: 12, color: '#6b6b68', fontWeight: 500, marginBottom: 10 }}>When do you head back?</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                {[
-                  { id: 'night',     icon: '🌙', label: 'Night',     time: '12AM – 6AM' },
-                  { id: 'morning',   icon: '🌅', label: 'Morning',   time: '6AM – 12PM' },
-                  { id: 'afternoon', icon: '☀️', label: 'Afternoon', time: '12PM – 6PM' },
-                  { id: 'evening',   icon: '🌆', label: 'Evening',   time: '6PM – 12AM' },
-                ].map(slot => {
-                  const sel = form.departureSlot === slot.id;
-                  const ac = isSoloMode ? '#534AB7' : '#0F6E56';
-                  const acBg = isSoloMode ? '#EEEDFE' : '#E1F5EE';
-                  const acBr = isSoloMode ? '#AFA9EC' : '#9FE1CB';
-                  return (
-                    <button key={slot.id} type="button" onClick={() => setForm(f => ({ ...f, departureSlot: slot.id }))}
-                      style={{ padding: '12px 12px', borderRadius: 12, border: `1.5px solid ${sel ? acBr : 'rgba(0,0,0,0.09)'}`, background: sel ? acBg : '#fff', cursor: 'pointer', textAlign: 'left', transition: 'all .15s', boxShadow: sel ? `0 2px 8px ${acBr}88` : 'none' }}>
-                      <div style={{ fontSize: 22, marginBottom: 5 }}>{slot.icon}</div>
-                      <div style={{ fontSize: 13, fontWeight: 700, color: sel ? ac : '#1a1a18', marginBottom: 2, fontFamily: "'DM Sans',sans-serif" }}>{slot.label}</div>
-                      <div style={{ fontSize: 11, color: sel ? ac : '#a8a8a5', fontWeight: 500 }}>{slot.time}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Budget */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase' }}>Budget</div>
-                <span style={{ fontSize: 11, color: '#c8c8c4', fontStyle: 'italic' }}>optional</span>
-              </div>
-              <div style={{ position: 'relative' }}>
-                <span style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 16, color: '#6b6b68', fontWeight: 700, pointerEvents: 'none' }}>₹</span>
-                <input style={{ ...S.input, fontSize: 15, padding: '13px 14px 13px 30px' }} type="number" value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
-              </div>
-              <div style={{ fontSize: 12, color: '#b0b0aa', marginTop: 5 }}>Total trip budget for the group</div>
-            </div>
-
-            {/* Travel Notes */}
-            <div style={{ marginBottom: '2.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase' }}>Trip Notes</div>
-                <span style={{ fontSize: 11, color: '#c8c8c4', fontStyle: 'italic' }}>optional</span>
-              </div>
-              <textarea
-                style={{ ...S.input, fontSize: 14, padding: '12px 14px', resize: 'none', minHeight: 80, lineHeight: 1.55, fontFamily: 'inherit' }}
-                value={form.travelNotes}
-                onChange={e => setForm(f => ({ ...f, travelNotes: e.target.value }))}
-                placeholder={isSoloMode ? 'e.g. I prefer slow travel, love street food, have bad knees so skip strenuous treks...' : 'e.g. Group of 6 with 2 elderly grandparents, kids aged 8 & 12, prefer vegetarian food, no alcohol...'}
-              />
-              <div style={{ fontSize: 12, color: '#b0b0aa', marginTop: 5 }}>Gemini reads this to personalise your itinerary — mention ages, preferences, dietary needs, mobility, anything special</div>
-            </div>
-          </div>
-
-          {/* ── Sticky create button ── */}
-          <div style={{ padding: '1rem 1.25rem', paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 16px))', borderTop: '0.5px solid rgba(0,0,0,0.08)', background: '#fff', flexShrink: 0, position: 'sticky', bottom: 0 }}>
-            {(!form.groupName || !form.destination || !form.arrival || !form.departure) && (
-              <div style={{ fontSize: 12, color: '#b0b0aa', textAlign: 'center', marginBottom: 8 }}>Fill in name, destination and dates to continue</div>
-            )}
-            <button
-              style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '15px', fontSize: 15, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", borderRadius: 14, border: 'none', cursor: 'pointer', background: isSoloMode ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)', color: '#fff', boxShadow: isSoloMode ? '0 8px 24px rgba(127,119,221,0.38)' : '0 8px 24px rgba(29,158,117,0.38)', opacity: (!form.groupName || !form.destination || !form.arrival || !form.departure || creating) ? 0.45 : 1, transition: 'opacity .2s' }}
-              onClick={handleCreate}
-              disabled={!form.groupName || !form.destination || !form.arrival || !form.departure || creating}>
-              {creating ? '✨ Creating your trip…' : isSoloMode ? '🎒 Start Solo Adventure' : '🚀 Create & Get Share Code'}
-            </button>
-          </div>
-
-          {/* ── Destination search overlay (layers above this full-page form) ── */}
+          {/* ── Destination search overlay (layers above wizard) ── */}
           {showDestPicker && (
-            <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1001 }}>
+            <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0, zIndex: 1010 }}>
               <div className="tb-sheet-panel" style={{ background: '#fff', display: 'flex', flexDirection: 'column', position: 'absolute', inset: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', borderBottom: '0.5px solid rgba(0,0,0,0.08)', background: '#fff', flexShrink: 0 }}>
                   <button onClick={() => { setShowDestPicker(false); setDestSuggestions([]); }}
@@ -793,7 +1024,15 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                     const subText = [a.state, a.country].filter(Boolean).join(', ');
                     return (
                       <div key={item.osm_id + item.osm_type}
-                        onClick={() => { setForm(f => ({ ...f, destination: formatDestName(item) })); setShowDestPicker(false); setDestSuggestions([]); setDestQuery(''); }}
+                        onClick={async () => {
+                          const country = a.country || '';
+                          const destinationCurrency = await inferDestinationCurrency(country);
+                          setForm(f => ({ ...f, destination: formatDestName(item), destinationCountry: country, destinationCurrency: destinationCurrency || f.destinationCurrency }));
+                          setShowDestPicker(false);
+                          setDestSuggestions([]);
+                          setDestQuery('');
+                          if (createStep === 1) autoAdvance();
+                        }}
                         style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: '0.5px solid #f0f0f0', cursor: 'pointer' }}
                         onMouseEnter={e => e.currentTarget.style.background = '#f7f6f2'}
                         onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
