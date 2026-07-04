@@ -57,6 +57,48 @@ function getActivityLiveState(time, endTime, nowMinutes) {
   return 'active';
 }
 
+function getZonedNow(nowMs, timeZone) {
+  const baseDate = new Date(nowMs);
+  if (!timeZone) {
+    const hours = baseDate.getHours();
+    const minutes = baseDate.getMinutes();
+    return {
+      hours,
+      minutes,
+      label: baseDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+  }
+  try {
+    const numericParts = new Intl.DateTimeFormat('en-GB', {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    }).formatToParts(baseDate);
+    const hourPart = numericParts.find(p => p.type === 'hour')?.value;
+    const minutePart = numericParts.find(p => p.type === 'minute')?.value;
+    const hours = parseInt(hourPart || '0', 10);
+    const minutes = parseInt(minutePart || '0', 10);
+    const label = new Intl.DateTimeFormat([], {
+      timeZone,
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }).format(baseDate);
+    return {
+      hours: Number.isNaN(hours) ? baseDate.getHours() : hours,
+      minutes: Number.isNaN(minutes) ? baseDate.getMinutes() : minutes,
+      label,
+    };
+  } catch {
+    return {
+      hours: baseDate.getHours(),
+      minutes: baseDate.getMinutes(),
+      label: baseDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    };
+  }
+}
+
 /* ── CSS keyframe injection (pulse dot + card entry + shimmer) ── */
 if (typeof document !== 'undefined' && !document.getElementById('itinerary-styles')) {
   const el = document.createElement('style');
@@ -891,12 +933,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     let cancelled = false;
     fetchDestinationLocalTime(form.dest)
       .then((payload) => {
-        if (cancelled || !payload?.dateTime) return;
-        const parsed = Date.parse(payload.dateTime);
-        if (Number.isNaN(parsed)) return;
+        if (cancelled || !payload?.timeZone) return;
         setDestinationClock({
-          baseDestinationMs: parsed,
-          baseClientMs: Date.now(),
           timeZone: payload.timeZone || null,
           resolvedName: payload.resolvedName || form.dest,
         });
@@ -907,11 +945,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     return () => { cancelled = true; };
   }, [form.dest]);
 
-  const nowDate = destinationClock
-    ? new Date(destinationClock.baseDestinationMs + (clockNowMs - destinationClock.baseClientMs))
-    : new Date(clockNowMs);
-  const nowMinutes = nowDate.getHours() * 60 + nowDate.getMinutes();
-  const nowTimeLabel = nowDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const zonedNow = getZonedNow(clockNowMs, destinationClock?.timeZone || null);
+  const nowMinutes = zonedNow.hours * 60 + zonedNow.minutes;
+  const nowTimeLabel = zonedNow.label;
 
   const firstLiveActivity = (() => {
     const daysList = itin?.days || [];
@@ -1413,6 +1449,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         const isActive = liveState === 'active';
                         const isPast = liveState === 'past';
                         const connectorProgress = getActivityTimeProgress(a.time, a.endTime, nowMinutes);
+                        const connectorPct = Math.max(0, Math.min(100, ((connectorProgress === null ? (isPast ? 100 : 0) : connectorProgress * 100))));
                         const dotColor = isActive ? D.gold : (isPast ? '#BCA478' : (a.mustDo ? D.gold : '#D3CFC8'));
                         const allTags  = [
                           ...(a.mustDo ? ['MUST DO'] : []),
@@ -1435,6 +1472,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                               <div style={{ width: 52, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingRight: 10, paddingTop: 5 }}>
                                 <span style={{ fontSize: 11, fontWeight: 700, color: D.espresso, lineHeight: 1, fontFamily: "'DM Sans',sans-serif" }}>{a.time}</span>
                                 {a.endTime && <span style={{ fontSize: 10, color: D.muted, marginTop: 2 }}>{a.endTime}</span>}
+                                {isActive && (
+                                  <span style={{ marginTop: 3, fontSize: 9, fontWeight: 800, color: D.gold, letterSpacing: 0.4, textTransform: 'uppercase' }}>
+                                    Now {nowTimeLabel}
+                                  </span>
+                                )}
                               </div>
 
                               {/* Connector */}
@@ -1448,11 +1490,19 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                     <div
                                       style={{
                                         position: 'absolute', left: 0, right: 0, bottom: 0,
-                                        height: `${Math.max(0, Math.min(100, ((connectorProgress === null ? (isPast ? 100 : 0) : connectorProgress * 100))))}%`,
+                                        height: `${connectorPct}%`,
                                         background: isSolo ? '#7F77DD' : D.gold,
                                         transition: 'height 0.7s cubic-bezier(0.2,0.7,0.2,1)',
                                       }}
                                     />
+                                    {isActive && (
+                                      <div className="itin-live-walker" style={{ position: 'absolute', left: '50%', bottom: `calc(${connectorPct}% - 7px)`, width: 14, height: 14, borderRadius: '50%', transform: 'translateX(-50%)', background: '#fff', border: `1px solid ${isSolo ? '#7F77DD' : D.gold}`, boxShadow: '0 2px 10px rgba(28,20,16,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'bottom 0.7s cubic-bezier(0.2,0.7,0.2,1)' }}>
+                                        <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#7F77DD' : D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                          <circle cx="12" cy="5" r="2.4" />
+                                          <path d="M12 8.5v5M12 11.5l-4 2.5M12 11.5l4 2.5M12 13.5l-3 5M12 13.5l3 5" />
+                                        </svg>
+                                      </div>
+                                    )}
                                   </div>
                                 )}
                               </div>
