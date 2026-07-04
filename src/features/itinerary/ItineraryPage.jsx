@@ -4,7 +4,7 @@ import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 import { PlacePhoto, PlacePhotosStrip, PlacePhotoCarousel } from '../media/PlaceMedia';
 import RecommendationsPage from './RecommendationsPage';
-import { fetchRecommendations, generateLocalTaste } from '../../api';
+import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime } from '../../api';
 
 /* ── Premium design tokens ─────────────────────────────────── */
 const D = {
@@ -171,10 +171,15 @@ if (typeof document !== 'undefined' && !document.getElementById('itinerary-style
       0%,100% { transform: translateY(0); box-shadow: 0 2px 10px rgba(28,20,16,0.08); }
       50% { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(201,145,58,0.22); }
     }
+    @keyframes walkerStep {
+      0%,100% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
+    }
     .itin-live-active-card {
       border-color: rgba(201,145,58,0.52) !important;
       animation: liveCardBreath 2.4s ease-in-out infinite;
     }
+    .itin-live-walker { animation: walkerStep 1.15s ease-in-out infinite; }
     .day-closing-card { animation: closingSlide 0.35s ease both; }
     .itin-day-wrap { position:relative; }
     .itin-day-wrap::before {
@@ -869,6 +874,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [showTipsPopup,      setShowTipsPopup]      = useState(false);
   const [showWelcomePopup,   setShowWelcomePopup]   = useState(false);
   const [clockNowMs,         setClockNowMs]         = useState(() => Date.now());
+  const [destinationClock,   setDestinationClock]   = useState(null);
 
   useEffect(() => {
     const tick = () => setClockNowMs(Date.now());
@@ -877,8 +883,35 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     return () => clearInterval(id);
   }, []);
 
-  const nowDate = new Date(clockNowMs);
+  useEffect(() => {
+    if (!form.dest) {
+      setDestinationClock(null);
+      return;
+    }
+    let cancelled = false;
+    fetchDestinationLocalTime(form.dest)
+      .then((payload) => {
+        if (cancelled || !payload?.dateTime) return;
+        const parsed = Date.parse(payload.dateTime);
+        if (Number.isNaN(parsed)) return;
+        setDestinationClock({
+          baseDestinationMs: parsed,
+          baseClientMs: Date.now(),
+          timeZone: payload.timeZone || null,
+          resolvedName: payload.resolvedName || form.dest,
+        });
+      })
+      .catch(() => {
+        if (!cancelled) setDestinationClock(null);
+      });
+    return () => { cancelled = true; };
+  }, [form.dest]);
+
+  const nowDate = destinationClock
+    ? new Date(destinationClock.baseDestinationMs + (clockNowMs - destinationClock.baseClientMs))
+    : new Date(clockNowMs);
   const nowMinutes = nowDate.getHours() * 60 + nowDate.getMinutes();
+  const nowTimeLabel = nowDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const firstLiveActivity = (() => {
     const daysList = itin?.days || [];
@@ -1108,6 +1141,13 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.50)', lineHeight: 1.5, marginBottom: 16 }}>
                     Every hour considered. Every detail placed.
                   </div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 12, background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.28)', borderRadius: 999, padding: '4px 10px' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F5D9A8', display: 'inline-block' }} />
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.92)', letterSpacing: 0.5, textTransform: 'uppercase' }}>Local time</span>
+                    <span style={{ width: 1, height: 11, background: 'rgba(255,255,255,0.22)' }} />
+                    <span style={{ fontSize: 11.5, color: '#fff', fontWeight: 700 }}>{nowTimeLabel}</span>
+                    {destinationClock?.timeZone && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.64)' }}>{destinationClock.timeZone}</span>}
+                  </div>
                   {/* Stats — plain text with dividers */}
                   {(() => {
                     const totalActs = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).length, 0);
@@ -1233,10 +1273,16 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               {firstLiveActivity && (
                 <div style={{ position: 'sticky', top: 72, zIndex: 40, pointerEvents: 'none', marginLeft: 56, marginBottom: 8 }}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.96)', border: `1px solid ${D.gold}`, borderRadius: 999, padding: '5px 11px', boxShadow: '0 8px 24px rgba(201,145,58,0.24)', backdropFilter: 'blur(8px)' }}>
+                    <span className="itin-live-walker" style={{ width: 14, height: 14, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="5" r="2.4" />
+                        <path d="M12 8.5v5M12 11.5l-4 2.5M12 11.5l4 2.5M12 13.5l-3 5M12 13.5l3 5" />
+                      </svg>
+                    </span>
                     <span className="itin-now-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: D.gold, display: 'inline-block' }} />
                     <span style={{ fontSize: 10, fontWeight: 800, color: D.gold, letterSpacing: 0.7, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>Now</span>
                     <span style={{ width: 1, height: 12, background: 'rgba(201,145,58,0.32)' }} />
-                    <span style={{ fontSize: 11, fontWeight: 600, color: D.espresso, maxWidth: 190, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{firstLiveActivity.time} • {firstLiveActivity.name}</span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: D.espresso, maxWidth: 190, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nowTimeLabel} • {firstLiveActivity.time} • {firstLiveActivity.name}</span>
                   </div>
                 </div>
               )}
@@ -1256,6 +1302,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   const timedPct = dayTotalCount > 0 ? (timedProgress / dayTotalCount) * 100 : 0;
                   const donePct = dayTotalCount > 0 ? (dayDoneCount / dayTotalCount) * 100 : 0;
                   const dayProgressPct = Math.max(donePct, timedPct);
+                  const dayProgressClamped = Math.max(0, Math.min(100, dayProgressPct));
                   const hasActiveNow = (d.activities || []).some(act => getActivityLiveState(act.time, act.endTime, nowMinutes) === 'active');
                   const WeatherSvg = ({ high }) => {
                     if (high > 30) return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E6A817" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
@@ -1342,8 +1389,15 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         )}
                         {/* Progress bar */}
                         {dayTotalCount > 0 && (
-                          <div style={{ height: 2.5, background: D.neutral }}>
-                            <div className={hasActiveNow ? 'itin-live-bar' : ''} style={{ height: '100%', width: `${dayProgressPct}%`, background: isSolo ? '#7F77DD' : D.gold, transition: 'width 0.6s ease' }} />
+                          <div style={{ position: 'relative', height: 20 }}>
+                            <div style={{ position: 'absolute', left: 0, right: 0, top: 9, height: 2.5, background: D.neutral }} />
+                            <div className={hasActiveNow ? 'itin-live-bar' : ''} style={{ position: 'absolute', left: 0, top: 9, height: 2.5, width: `${dayProgressClamped}%`, background: isSolo ? '#7F77DD' : D.gold, transition: 'width 0.6s ease' }} />
+                            <div className="itin-live-walker" style={{ position: 'absolute', top: 0, left: `calc(${dayProgressClamped}% - 8px)`, width: 16, height: 16, borderRadius: '50%', background: '#fff', border: `1px solid ${isSolo ? '#7F77DD' : D.gold}`, boxShadow: '0 2px 10px rgba(28,20,16,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'left 0.6s ease' }}>
+                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#7F77DD' : D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="12" cy="5" r="2.4" />
+                                <path d="M12 8.5v5M12 11.5l-4 2.5M12 11.5l4 2.5M12 13.5l-3 5M12 13.5l3 5" />
+                              </svg>
+                            </div>
                           </div>
                         )}
                       </div>

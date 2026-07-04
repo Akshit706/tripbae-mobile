@@ -8,13 +8,36 @@ const _photoInFlight = new Map();
 const _photoListCache = new Map();
 const _photoListInFlight = new Map();
 
+function normalizePhotoUrl(url) {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    return `${u.hostname.replace(/^www\./, '').toLowerCase()}${u.pathname.replace(/\/$/, '')}`;
+  } catch {
+    return String(url).trim().toLowerCase();
+  }
+}
+
+function uniquePhotos(urls = []) {
+  const seen = new Set();
+  const out = [];
+  for (const url of urls) {
+    if (!url) continue;
+    const key = normalizePhotoUrl(url);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(url);
+  }
+  return out;
+}
+
 async function fetchCached(query) {
   if (_photoCache.has(query)) return _photoCache.get(query);
   if (_photoInFlight.has(query)) return _photoInFlight.get(query);
   const { fetchPlacePhotos } = await import('../../api');
   const promise = fetchPlacePhotos(query)
     .then(data => {
-      const url = (data.urls || [])[0] || null;
+      const url = (uniquePhotos(data.urls || [])[0]) || null;
       _photoCache.set(query, url);
       _photoInFlight.delete(query);
       return url;
@@ -37,7 +60,7 @@ async function fetchCachedList(query, limit = 3) {
   const { fetchPlacePhotos } = await import('../../api');
   const promise = fetchPlacePhotos(query)
     .then(data => {
-      const urls = (data.urls || []).filter(Boolean);
+      const urls = uniquePhotos((data.urls || []).filter(Boolean));
       _photoListCache.set(query, urls);
       _photoCache.set(query, urls[0] || null);
       _photoListInFlight.delete(query);
@@ -179,7 +202,7 @@ function PlacePhotoCarousel({ query, style, delay = 0, limit = 3, alt = '', onIm
     return () => clearTimeout(timer);
   }, [query, limit, delay]);
 
-  const activePhotos = (photos || []).filter((_, i) => !imgErr.has(i));
+  const activePhotos = uniquePhotos((photos || []).filter((_, i) => !imgErr.has(i)));
   const canSlide = activePhotos.length > 1;
   const safeIdx = activePhotos.length ? (photoIdx % activePhotos.length) : 0;
   const curUrl = activePhotos[safeIdx] || null;

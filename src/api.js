@@ -23,6 +23,9 @@ async function apiFetch(path, options = {}) {
 export const fetchPlacePhotos = (q) =>
   apiFetch(`/ai/photos?q=${encodeURIComponent(q)}`);
 
+export const fetchDestinationLocalTime = (destination) =>
+  apiFetch(`/ai/local-time?destination=${encodeURIComponent(destination)}`);
+
 export const imagekitAuth = () => apiFetch('/ai/imagekit-auth');
 
 
