@@ -230,13 +230,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
       {/* card body */}
       <div style={{ padding: '20px 20px 0', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
         {/* top row */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 13 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(255,255,255,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 18px rgba(2,6,23,0.2)' }}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M8 7h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
-              <path d="M9 7V6a3 3 0 0 1 6 0v1" />
-            </svg>
-          </div>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 13 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             {trip.isSolo && (
               <span style={{ padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: 'rgba(99,102,241,0.2)', color: '#C7D2FE', border: '1px solid rgba(129,140,248,0.42)', boxShadow: '0 0 20px rgba(79,70,229,0.28)' }}>Solo</span>
@@ -662,8 +656,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 setMenuOpen={setMenuOpen}
                 setConfirmComplete={setConfirmComplete}
                 setConfirmDelete={setConfirmDelete}
-                forceMonochrome
-                showMenu={false}
               />
               <div style={{ marginTop: -4, padding: '0 6px 4px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
                 <button
@@ -709,9 +701,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes progressFill { from{width:0} to{width:var(--w)} }
         @keyframes tbMacbookFold {
-          0% { transform: perspective(1100px) translateY(0) rotateX(0deg) scale(1); opacity: 1; }
-          58% { transform: perspective(1100px) translateY(6px) rotateX(74deg) scale(0.9); opacity: 0.88; }
-          100% { transform: perspective(1100px) translateY(22px) rotateX(88deg) scale(0.68); opacity: 0; }
+          0%   { transform: scale(1) translateY(0);   opacity: 1; filter: saturate(1); }
+          40%  { transform: scale(0.97) translateY(4px); opacity: 0.9; filter: saturate(0.6); }
+          100% { transform: scale(0.88) translateY(14px); opacity: 0; filter: saturate(0) brightness(1.1); }
         }
         @keyframes tbPastFolderPulse {
           0% { transform: scale(1); box-shadow: 0 8px 26px rgba(12,20,34,0.08); }
@@ -739,7 +731,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           .tb-trip-card-new:hover { transform: translateY(-3px) translateZ(0); box-shadow: 0 8px 40px rgba(0,0,0,0.18) !important; }
         }
         .tb-trip-card-new:active { transform: scale(0.98) translateZ(0); }
-        .tb-trip-archiving { transform-origin: 50% 100%; animation: tbMacbookFold 460ms cubic-bezier(.2,.7,.2,1) forwards !important; pointer-events: none; }
+        .tb-trip-archiving { transform-origin: 50% 60%; animation: tbMacbookFold 480ms cubic-bezier(.4,0,.2,1) forwards !important; pointer-events: none; }
         .tb-past-folder-pulse { animation: tbPastFolderPulse 700ms cubic-bezier(.2,.7,.2,1) both; }
         .tb-new-btn { transition: transform 0.18s ease, box-shadow 0.18s ease; }
         @media (hover: hover) {
