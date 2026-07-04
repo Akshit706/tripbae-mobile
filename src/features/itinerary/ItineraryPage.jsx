@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
-import { PlacePhoto, PlacePhotosStrip } from '../media/PlaceMedia';
+import { PlacePhoto, PlacePhotosStrip, PlacePhotoCarousel } from '../media/PlaceMedia';
 import RecommendationsPage from './RecommendationsPage';
 import { fetchRecommendations, generateLocalTaste } from '../../api';
 
@@ -26,20 +26,35 @@ const D = {
   cardShadow:'0 2px 8px rgba(28,20,16,0.06)',
 };
 
-/* Determine if an activity time slot is currently active */
-function isActiveSlot(time, endTime) {
-  if (!time || !endTime) return false;
-  const parse = t => {
-    const [tp, period] = t.trim().split(' ');
-    const [h, m] = tp.split(':').map(Number);
-    let hrs = h;
-    if (period === 'PM' && h !== 12) hrs += 12;
-    if (period === 'AM' && h === 12) hrs = 0;
-    return hrs * 60 + (m || 0);
-  };
-  const now = new Date();
-  const cur = now.getHours() * 60 + now.getMinutes();
-  return cur >= parse(time) && cur <= parse(endTime);
+function parseClockToMinutes(value) {
+  if (!value || typeof value !== 'string') return null;
+  const txt = value.trim().toUpperCase();
+  const m = txt.match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/);
+  if (!m) return null;
+  let hours = parseInt(m[1], 10);
+  const mins = parseInt(m[2] || '0', 10);
+  const period = m[3];
+  if (Number.isNaN(hours) || Number.isNaN(mins)) return null;
+  if (period === 'PM' && hours !== 12) hours += 12;
+  if (period === 'AM' && hours === 12) hours = 0;
+  return hours * 60 + mins;
+}
+
+function getActivityTimeProgress(time, endTime, nowMinutes) {
+  const start = parseClockToMinutes(time);
+  const end = parseClockToMinutes(endTime);
+  if (start === null || end === null || end <= start) return null;
+  if (nowMinutes <= start) return 0;
+  if (nowMinutes >= end) return 1;
+  return (nowMinutes - start) / (end - start);
+}
+
+function getActivityLiveState(time, endTime, nowMinutes) {
+  const p = getActivityTimeProgress(time, endTime, nowMinutes);
+  if (p === null) return 'unknown';
+  if (p <= 0) return 'upcoming';
+  if (p >= 1) return 'past';
+  return 'active';
 }
 
 /* ── CSS keyframe injection (pulse dot + card entry + shimmer) ── */
@@ -129,6 +144,36 @@ if (typeof document !== 'undefined' && !document.getElementById('itinerary-style
     @keyframes closingSlide {
       from { opacity:0; transform:translateX(10px); }
       to   { opacity:1; transform:translateX(0); }
+    }
+    @keyframes timelineFlow {
+      0%   { box-shadow: 0 0 0 0 rgba(201,145,58,0.42); }
+      70%  { box-shadow: 0 0 0 9px rgba(201,145,58,0); }
+      100% { box-shadow: 0 0 0 0 rgba(201,145,58,0); }
+    }
+    @keyframes nowSweep {
+      0% { transform: translateX(-110%); }
+      100% { transform: translateX(210%); }
+    }
+    .itin-now-dot { animation: timelineFlow 1.6s ease-in-out infinite; }
+    .itin-live-bar {
+      position: relative;
+      overflow: hidden;
+    }
+    .itin-live-bar::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,0.45) 50%, transparent 70%);
+      animation: nowSweep 2.2s linear infinite;
+      pointer-events: none;
+    }
+    @keyframes liveCardBreath {
+      0%,100% { transform: translateY(0); box-shadow: 0 2px 10px rgba(28,20,16,0.08); }
+      50% { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(201,145,58,0.22); }
+    }
+    .itin-live-active-card {
+      border-color: rgba(201,145,58,0.52) !important;
+      animation: liveCardBreath 2.4s ease-in-out infinite;
     }
     .day-closing-card { animation: closingSlide 0.35s ease both; }
     .itin-day-wrap { position:relative; }
@@ -700,6 +745,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [localTasteStep, setLocalTasteStep] = useState(trip._cachedTaste ? 'result' : 'loading');
   const hasGenerated = useRef(false);
   const [doneActivities, setDoneActivities] = useState(new Set());
+  const activityNodeRefs = useRef({});
+  const lastAutoScrollKeyRef = useRef(null);
   const toggleActivity = (key) => setDoneActivities(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   const accentStyle = isSolo ? S.btnSolo : S.btnP;
@@ -821,6 +868,55 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [showPlannerScrollTop, setShowPlannerScrollTop] = useState(false);
   const [showTipsPopup,      setShowTipsPopup]      = useState(false);
   const [showWelcomePopup,   setShowWelcomePopup]   = useState(false);
+  const [clockNowMs,         setClockNowMs]         = useState(() => Date.now());
+
+  useEffect(() => {
+    const tick = () => setClockNowMs(Date.now());
+    tick();
+    const id = setInterval(tick, 30000);
+    return () => clearInterval(id);
+  }, []);
+
+  const nowDate = new Date(clockNowMs);
+  const nowMinutes = nowDate.getHours() * 60 + nowDate.getMinutes();
+
+  const firstLiveActivity = (() => {
+    const daysList = itin?.days || [];
+    for (const d of daysList) {
+      const acts = d.activities || [];
+      for (let i = 0; i < acts.length; i++) {
+        const a = acts[i];
+        if (getActivityLiveState(a.time, a.endTime, nowMinutes) === 'active') {
+          return {
+            key: `day-${d.day}-act-${i}`,
+            day: d.day,
+            name: a.name,
+            time: a.time,
+            endTime: a.endTime,
+          };
+        }
+      }
+    }
+    return null;
+  })();
+
+  useEffect(() => {
+    if (iTab !== 'planner') {
+      lastAutoScrollKeyRef.current = null;
+      return;
+    }
+    if (step !== 'result' || !firstLiveActivity?.key) return;
+    if (lastAutoScrollKeyRef.current === firstLiveActivity.key) return;
+
+    const timer = setTimeout(() => {
+      const target = activityNodeRefs.current[firstLiveActivity.key];
+      if (!target) return;
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      lastAutoScrollKeyRef.current = firstLiveActivity.key;
+    }, 260);
+
+    return () => clearTimeout(timer);
+  }, [iTab, step, firstLiveActivity?.key]);
 
   // Show welcome popup only once ever (persisted in localStorage per trip)
   const WELCOME_SHOWN_KEY = `travelbae_welcome_seen_${trip.id}`;
@@ -1134,6 +1230,17 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
 
               {/* ── Day sections ─────────────────────────────────── */}
+              {firstLiveActivity && (
+                <div style={{ position: 'sticky', top: 72, zIndex: 40, pointerEvents: 'none', marginLeft: 56, marginBottom: 8 }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.96)', border: `1px solid ${D.gold}`, borderRadius: 999, padding: '5px 11px', boxShadow: '0 8px 24px rgba(201,145,58,0.24)', backdropFilter: 'blur(8px)' }}>
+                    <span className="itin-now-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: D.gold, display: 'inline-block' }} />
+                    <span style={{ fontSize: 10, fontWeight: 800, color: D.gold, letterSpacing: 0.7, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>Now</span>
+                    <span style={{ width: 1, height: 12, background: 'rgba(201,145,58,0.32)' }} />
+                    <span style={{ fontSize: 11, fontWeight: 600, color: D.espresso, maxWidth: 190, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{firstLiveActivity.time} • {firstLiveActivity.name}</span>
+                  </div>
+                </div>
+              )}
+
               {(() => {
                 let photoIndex = 0;
                 return (itin.days || []).map((d, dayIndex) => {
@@ -1142,6 +1249,14 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   const isDepartureDay = dayIndex === (itin.days.length - 1);
                   const dayTotalCount  = (d.activities || []).length;
                   const dayDoneCount   = (d.activities || []).filter((_, ai) => doneActivities.has(`day-${d.day}-act-${ai}`)).length;
+                  const timedProgress = (d.activities || []).reduce((sum, act) => {
+                    const p = getActivityTimeProgress(act.time, act.endTime, nowMinutes);
+                    return sum + (p === null ? 0 : p);
+                  }, 0);
+                  const timedPct = dayTotalCount > 0 ? (timedProgress / dayTotalCount) * 100 : 0;
+                  const donePct = dayTotalCount > 0 ? (dayDoneCount / dayTotalCount) * 100 : 0;
+                  const dayProgressPct = Math.max(donePct, timedPct);
+                  const hasActiveNow = (d.activities || []).some(act => getActivityLiveState(act.time, act.endTime, nowMinutes) === 'active');
                   const WeatherSvg = ({ high }) => {
                     if (high > 30) return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E6A817" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
                     if (high > 18) return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7B9EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>;
@@ -1173,7 +1288,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                               {d.title || d.theme}
                             </div>
                             {/* Row 3: Badges */}
-                            {(isArrivalDay || isDepartureDay || dayDoneCount > 0) && (
+                            {(isArrivalDay || isDepartureDay || dayDoneCount > 0 || dayTotalCount > 0) && (
                               <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
                                 {isArrivalDay && (
                                   <span style={{ fontSize: 10, fontWeight: 700, background: D.blueTint, color: '#2563AB', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
@@ -1191,6 +1306,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                   <span style={{ fontSize: 10, fontWeight: 600, background: D.sageTint, color: D.sage, borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                                     <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
                                     {dayDoneCount}/{dayTotalCount}
+                                  </span>
+                                )}
+                                {dayTotalCount > 0 && (
+                                  <span style={{ fontSize: 10, fontWeight: 700, background: hasActiveNow ? D.goldTint : D.neutral, color: hasActiveNow ? D.gold : D.muted, borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                    <span className={hasActiveNow ? 'itin-now-dot' : ''} style={{ width: 6, height: 6, borderRadius: '50%', background: hasActiveNow ? D.gold : '#C7C1B8', display: 'inline-block' }} />
+                                    Live {Math.round(dayProgressPct)}%
                                   </span>
                                 )}
                               </div>
@@ -1220,9 +1341,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                           </div>
                         )}
                         {/* Progress bar */}
-                        {dayDoneCount > 0 && (
+                        {dayTotalCount > 0 && (
                           <div style={{ height: 2.5, background: D.neutral }}>
-                            <div style={{ height: '100%', width: `${(dayDoneCount / dayTotalCount) * 100}%`, background: isSolo ? '#7F77DD' : D.gold, transition: 'width 0.5s ease' }} />
+                            <div className={hasActiveNow ? 'itin-live-bar' : ''} style={{ height: '100%', width: `${dayProgressPct}%`, background: isSolo ? '#7F77DD' : D.gold, transition: 'width 0.6s ease' }} />
                           </div>
                         )}
                       </div>
@@ -1234,8 +1355,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         const isLast   = i === d.activities.length - 1;
                         const doneKey  = `day-${d.day}-act-${i}`;
                         const isDone   = doneActivities.has(doneKey);
-                        const isActive = isActiveSlot(a.time, a.endTime);
-                        const dotColor = isActive ? D.gold : (a.mustDo ? D.gold : '#D3CFC8');
+                        const liveState = getActivityLiveState(a.time, a.endTime, nowMinutes);
+                        const isActive = liveState === 'active';
+                        const isPast = liveState === 'past';
+                        const connectorProgress = getActivityTimeProgress(a.time, a.endTime, nowMinutes);
+                        const dotColor = isActive ? D.gold : (isPast ? '#BCA478' : (a.mustDo ? D.gold : '#D3CFC8'));
                         const allTags  = [
                           ...(a.mustDo ? ['MUST DO'] : []),
                           ...(a.energyLevel && ENERGY_CONFIG[a.energyLevel] ? [ENERGY_CONFIG[a.energyLevel].label] : []),
@@ -1243,7 +1367,13 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         const typeAccent = a.type === 'food' ? D.coral : a.type === 'experience' ? '#7F77DD' : a.type === 'shopping' ? D.sage : a.mustDo ? D.gold : D.border;
 
                         return (
-                          <div key={i}>
+                          <div
+                            key={i}
+                            ref={(el) => {
+                              if (el) activityNodeRefs.current[doneKey] = el;
+                              else delete activityNodeRefs.current[doneKey];
+                            }}
+                          >
                             {/* Timeline row */}
                             <div style={{ display: 'flex', gap: 0, opacity: isDone ? 0.42 : 1, transition: 'opacity .3s' }}>
 
@@ -1257,14 +1387,25 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                               <div style={{ width: 20, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 7 }}>
                                 <div style={{ position: 'relative', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                   {isActive && <div className="itin-dot-glow" style={{ position: 'absolute', width: 20, height: 20, borderRadius: '50%', background: 'rgba(201,145,58,0.22)' }} />}
-                                  <div className={isActive ? 'itin-dot-active' : ''} style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, zIndex: 1, boxShadow: (isActive || a.mustDo) ? `0 0 0 3px ${D.goldTint}` : 'none' }} />
+                                  <div className={isActive ? 'itin-dot-active itin-now-dot' : ''} style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, zIndex: 1, boxShadow: (isActive || a.mustDo) ? `0 0 0 3px ${D.goldTint}` : 'none', transition: 'background .35s ease' }} />
                                 </div>
-                                {!isLast && <div style={{ width: 1.5, flex: 1, background: D.divider, marginTop: 1 }} />}
+                                {!isLast && (
+                                  <div style={{ position: 'relative', width: 1.5, flex: 1, background: D.divider, marginTop: 1, overflow: 'hidden' }}>
+                                    <div
+                                      style={{
+                                        position: 'absolute', left: 0, right: 0, bottom: 0,
+                                        height: `${Math.max(0, Math.min(100, ((connectorProgress === null ? (isPast ? 100 : 0) : connectorProgress * 100))))}%`,
+                                        background: isSolo ? '#7F77DD' : D.gold,
+                                        transition: 'height 0.7s cubic-bezier(0.2,0.7,0.2,1)',
+                                      }}
+                                    />
+                                  </div>
+                                )}
                               </div>
 
                               {/* ── PHOTO-FIRST activity card ── */}
                               <div
-                                className="itin-card-enter itin-act-enter itin-photo-card"
+                                className={`itin-card-enter itin-act-enter itin-photo-card ${isActive ? 'itin-live-active-card' : ''}`}
                                 style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}`, borderLeft: showPhoto ? `0.5px solid ${D.border}` : `3px solid ${typeAccent}`, minWidth: 0, animationDelay: `${i * 60}ms` }}
                               >
                                 {/* Photo at top (non-hotel/transport only) */}
@@ -1273,10 +1414,13 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                     style={{ position: 'relative', height: 150, overflow: 'hidden', cursor: 'zoom-in', background: D.neutral }}
                                     onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}
                                   >
-                                    <PlacePhoto
-                                      query={`${a.name} ${form.dest} ${a.type === 'food' ? 'restaurant dish food' : a.type === 'experience' ? 'travel experience' : a.type === 'shopping' ? 'market shopping' : 'tourist attraction landmark'}`}
+                                    <PlacePhotoCarousel
+                                      query={`${a.name} ${form.dest} photo`}
                                       style={{ height: 150, borderRadius: 0 }}
                                       delay={currentDelay}
+                                      limit={3}
+                                      alt={a.name}
+                                      onImageClick={(url) => setLightboxUrl(url)}
                                     />
                                     {/* gradient on photo */}
                                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(28,20,16,0.62) 100%)', pointerEvents: 'none' }} />

@@ -4,6 +4,9 @@ import { useState, useEffect } from 'react';
 const _photoCache = new Map();
 // In-flight promises to deduplicate concurrent requests for the same query.
 const _photoInFlight = new Map();
+// Multi-photo cache for slider use-cases (day planner, hotels, etc.).
+const _photoListCache = new Map();
+const _photoListInFlight = new Map();
 
 async function fetchCached(query) {
   if (_photoCache.has(query)) return _photoCache.get(query);
@@ -23,6 +26,32 @@ async function fetchCached(query) {
     });
   _photoInFlight.set(query, promise);
   return promise;
+}
+
+async function fetchCachedList(query, limit = 3) {
+  if (_photoListCache.has(query)) return (_photoListCache.get(query) || []).slice(0, limit);
+  if (_photoListInFlight.has(query)) {
+    const inFlight = await _photoListInFlight.get(query);
+    return (inFlight || []).slice(0, limit);
+  }
+  const { fetchPlacePhotos } = await import('../../api');
+  const promise = fetchPlacePhotos(query)
+    .then(data => {
+      const urls = (data.urls || []).filter(Boolean);
+      _photoListCache.set(query, urls);
+      _photoCache.set(query, urls[0] || null);
+      _photoListInFlight.delete(query);
+      return urls;
+    })
+    .catch(() => {
+      _photoListCache.set(query, []);
+      _photoCache.set(query, null);
+      _photoListInFlight.delete(query);
+      return [];
+    });
+  _photoListInFlight.set(query, promise);
+  const resolved = await promise;
+  return (resolved || []).slice(0, limit);
 }
 
 // Deterministic gradient from query string — looks good, never blank
@@ -123,7 +152,126 @@ function PlacePhotosStrip({ queries, style }) {
   );
 }
 
+function PlacePhotoCarousel({ query, style, delay = 0, limit = 3, alt = '', onImageClick }) {
+  const [photos, setPhotos] = useState(() => (_photoListCache.get(query) || []).slice(0, limit));
+  const [photoIdx, setPhotoIdx] = useState(0);
+  const [loading, setLoading] = useState(!_photoListCache.has(query));
+  const [imgErr, setImgErr] = useState(new Set());
+
+  useEffect(() => {
+    if (!query) return;
+    setPhotoIdx(0);
+    setImgErr(new Set());
+
+    if (_photoListCache.has(query)) {
+      setPhotos((_photoListCache.get(query) || []).slice(0, limit));
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const timer = setTimeout(() => {
+      fetchCachedList(query, limit).then(urls => {
+        setPhotos(urls || []);
+        setLoading(false);
+      });
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [query, limit, delay]);
+
+  const activePhotos = (photos || []).filter((_, i) => !imgErr.has(i));
+  const canSlide = activePhotos.length > 1;
+  const safeIdx = activePhotos.length ? (photoIdx % activePhotos.length) : 0;
+  const curUrl = activePhotos[safeIdx] || null;
+  const fallbackBg = gradientFromQuery(query);
+
+  const rootStyle = {
+    position: 'relative',
+    width: '100%',
+    height: 140,
+    borderRadius: 12,
+    overflow: 'hidden',
+    background: fallbackBg,
+    ...style,
+  };
+
+  if (loading) {
+    return (
+      <div style={{ ...rootStyle, background: '#1A1A2E' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.05) 50%,rgba(255,255,255,0) 100%)', backgroundSize: '400px 100%', animation: 'phSpin 1.4s ease-in-out infinite' }} />
+      </div>
+    );
+  }
+
+  return (
+    <div style={rootStyle}>
+      {curUrl ? (
+        <img
+          src={curUrl}
+          alt={alt || query}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          onError={() => setImgErr(prev => {
+            const next = new Set(prev);
+            next.add(safeIdx);
+            return next;
+          })}
+          onClick={onImageClick ? () => onImageClick(curUrl) : undefined}
+        />
+      ) : (
+        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: fallbackBg }}>
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+      )}
+
+      {canSlide && (
+        <>
+          <button
+            onClick={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPhotoIdx(i => (i - 1 + activePhotos.length) % activePhotos.length);
+            }}
+            style={{
+              position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)',
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.22)',
+              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', backdropFilter: 'blur(4px)', zIndex: 2,
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button
+            onClick={e => {
+              e.preventDefault();
+              e.stopPropagation();
+              setPhotoIdx(i => (i + 1) % activePhotos.length);
+            }}
+            style={{
+              position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.22)',
+              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer', backdropFilter: 'blur(4px)', zIndex: 2,
+            }}
+          >
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+
+          <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 4, pointerEvents: 'none', zIndex: 2 }}>
+            {activePhotos.map((_, i) => (
+              <div key={i} style={{ width: i === safeIdx ? 14 : 5, height: 5, borderRadius: 99, background: i === safeIdx ? '#fff' : 'rgba(255,255,255,0.42)', transition: 'all .2s' }} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 
 
-export { PlacePhoto, PlacePhotosStrip };
+
+export { PlacePhoto, PlacePhotosStrip, PlacePhotoCarousel };
