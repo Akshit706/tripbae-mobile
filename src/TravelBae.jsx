@@ -292,6 +292,7 @@ export default function App() {
   const [tab, setTab] = useState('main');
   const [profileOpen, setProfileOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
   const [sharedFlight, setSharedFlight] = useState(null);
   const [sharedFlightActive, setSharedFlightActive] = useState(false);
   const [profile, setProfile] = useState(() => {
@@ -344,6 +345,8 @@ export default function App() {
         const up = d?.userProfile;
         if (!up || up.onboardingDone === false) {
           setShowOnboarding(true);
+        } else {
+          setUserProfile(up);
         }
       })
       .catch(() => {});
@@ -954,7 +957,7 @@ export default function App() {
       {showOnboarding && (
         <UserProfileWizard
           userName={profile?.name || ''}
-          onDone={() => setShowOnboarding(false)}
+          onDone={(savedProfile) => { setShowOnboarding(false); setUserProfile({ ...savedProfile, onboardingDone: true }); }}
         />
       )}
       {sharedFlight && (
@@ -1294,6 +1297,9 @@ export default function App() {
           onLogout={() => { setProfileOpen(false); handleLogout(); }}
           onDeleteAccount={() => { setProfileOpen(false); handleDeleteAccount(); }}
           trips={trips}
+          userProfile={userProfile}
+          onUpdateProfile={(up) => setUserProfile(up)}
+          onOpenOnboarding={() => { setProfileOpen(false); setShowOnboarding(true); }}
         />
       )}
     </div>

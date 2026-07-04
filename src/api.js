@@ -46,6 +46,9 @@ export const deleteAccount = () => apiFetch('/auth/me', { method: 'DELETE' });
 export const updateUserProfile = (data) =>
   apiFetch('/auth/profile', { method: 'PATCH', body: data });
 
+export const getFxRatesFromBackend = (from) =>
+  apiFetch(`/ai/fx-rates?from=${encodeURIComponent(from)}`);
+
 // Trips
 export const getTrips  = ()     => apiFetch('/trips');
 export const getTrip   = (id)   => apiFetch(`/trips/${id}`);

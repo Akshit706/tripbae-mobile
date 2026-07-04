@@ -52,7 +52,7 @@ function computeProfileStats(trips) {
   };
 }
 
-function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trips }) {
+function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trips, userProfile, onUpdateProfile, onOpenOnboarding }) {
   const [view, setView] = useState('hub'); // 'hub' | 'badges' | 'stats' | 'history' | 'notifications' | 'currency' | 'privacy' | 'help' | 'about'
   const [spanFilter, setSpanFilter] = useState('all'); 
   const [name, setName] = useState(profile.name || '');
@@ -578,6 +578,57 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               </div>
             ))}
           </div>
+
+          {/* ── Traveller Profile Card ── */}
+          {userProfile && (
+            <div style={{ padding: '0 1.25rem', paddingBottom: 0, paddingTop: '1.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>Traveller profile</div>
+                <button onClick={onOpenOnboarding}
+                  style={{ fontSize: 11, color: '#1D9E75', fontWeight: 700, background: '#E1F5EE', border: '1px solid #9FE1CB', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' }}>
+                  Edit
+                </button>
+              </div>
+              <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 20px rgba(0,0,0,0.045)' }}>
+                {[
+                  userProfile.hometown || userProfile.country
+                    ? { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, label: 'From', value: [userProfile.hometown, userProfile.country].filter(Boolean).join(', ') }
+                    : null,
+                  userProfile.gender
+                    ? { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label: 'Gender', value: userProfile.gender.charAt(0).toUpperCase() + userProfile.gender.slice(1).replace(/-/g, ' ') }
+                    : null,
+                  userProfile.bloodGroup
+                    ? { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4537E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>, label: 'Blood group', value: userProfile.bloodGroup }
+                    : null,
+                  userProfile.emergencyName
+                    ? { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D85A30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label: 'Emergency', value: `${userProfile.emergencyName}${userProfile.emergencyRelation ? ` (${userProfile.emergencyRelation})` : ''}` }
+                    : null,
+                ].filter(Boolean).map((row, i, arr) => (
+                  <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none' }}>
+                    <span style={{ flexShrink: 0, display: 'flex' }}>{row.icon}</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 1 }}>{row.label}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.value}</div>
+                    </div>
+                  </div>
+                ))}
+                {!userProfile.hometown && !userProfile.gender && !userProfile.bloodGroup && !userProfile.emergencyName && (
+                  <div style={{ padding: '16px', textAlign: 'center', fontSize: 13, color: '#9a9a96' }}>
+                    Tap <strong>Edit</strong> to complete your traveller profile
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {!userProfile && onOpenOnboarding && (
+            <div style={{ padding: '1.25rem 1.25rem 0' }}>
+              <button onClick={onOpenOnboarding}
+                style={{ width: '100%', padding: '14px', background: '#E1F5EE', border: '1.5px dashed #9FE1CB', borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: '#0F6E56' }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                Set up your traveller profile
+              </button>
+            </div>
+          )}
 
           {/* Menu list — grouped sections */}
           {MENU_SECTIONS.map(section => (

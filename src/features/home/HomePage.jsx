@@ -7,7 +7,7 @@ import {
 } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
-import { fetchPlacePhotos } from '../../api';
+import { fetchPlacePhotos, getFxRatesFromBackend } from '../../api';
 import currencyData from '../../../currency.json';
 import CreateTripWizard from './CreateTripWizard';
 
@@ -49,8 +49,10 @@ export async function getFxRate(from, to) {
   if (!from || !to || from === to) return 1;
   const today = new Date().toISOString().slice(0, 10);
   const cacheKey = `fx_v2_${from}`;
+  // 1. In-memory (instant, no I/O)
   const mem = _fxMemCache[cacheKey];
   if (mem && mem.date === today && mem.rates?.[to] != null) return mem.rates[to];
+  // 2. localStorage (instant, survives refresh)
   try {
     const raw = localStorage.getItem(cacheKey);
     if (raw) {
@@ -61,6 +63,17 @@ export async function getFxRate(from, to) {
       }
     }
   } catch { /* ignore */ }
+  // 3. Backend / Supabase DB (globally shared, once per day per currency)
+  try {
+    const data = await getFxRatesFromBackend(from);
+    if (data.rates?.[to] != null) {
+      const entry = { date: data.date || today, rates: data.rates };
+      _fxMemCache[cacheKey] = entry;
+      try { localStorage.setItem(cacheKey, JSON.stringify(entry)); } catch { /* ignore */ }
+      return data.rates[to];
+    }
+  } catch { /* ignore */ }
+  // 4. Direct ExchangeRate API (last resort, no backend)
   try {
     const res = await fetch(`https://v6.exchangerate-api.com/v6/${FX_API_KEY}/latest/${from}`);
     const data = await res.json();
