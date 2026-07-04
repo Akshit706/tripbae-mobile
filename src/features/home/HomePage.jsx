@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   formatDateRange,
   normalizeMembers,
@@ -115,7 +115,7 @@ const HERO_GREETINGS = {
 
 // currency utilities — see top of file (getFxRate, getCurrencyForCountry)
 
-function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, setConfirmComplete, setConfirmDelete }) {
+function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, setConfirmComplete, setConfirmDelete, forceMonochrome = false, showMenu = true, isArchiving = false }) {
   const [photos, setPhotos] = useState([]);
   const [photoIdx, setPhotoIdx] = useState(0);
   const touchStartX = useRef(null);
@@ -148,8 +148,13 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
   const memberNames = normalizeMembers(trip.members);
   const budgetBase = trip.budget || 0;
   const budgetPct = budgetBase > 0 ? Math.min(100, Math.round((totalSpend / budgetBase) * 100)) : 0;
+  const budgetLeft = Math.max(0, Math.round(budgetBase - totalSpend));
   const isMenuOpen = menuOpen === trip.id;
   const isPast = status.label === 'Past' || status.label === 'Completed';
+  const daysToStart = trip.arrival ? Math.ceil((new Date(trip.arrival).getTime() - Date.now()) / 86400000) : null;
+  const statusPillLabel = status.label === 'Ongoing'
+    ? 'Live'
+    : (daysToStart != null && daysToStart > 0 ? `In ${daysToStart}d` : (isPast ? 'Past' : status.label));
   const cardBg = trip.isSolo
     ? 'linear-gradient(145deg,#121a42 0%,#27316c 52%,#171d4a 100%)'
     : 'linear-gradient(145deg,#083433 0%,#0f5a55 52%,#0a3c38 100%)';
@@ -161,18 +166,18 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
     : 'linear-gradient(90deg,#1D9E75,#5DCAA5)';
   let statusBadgeStyle;
   if (isPast) {
-    statusBadgeStyle = { background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.16)', backdropFilter: 'blur(7px)' };
+    statusBadgeStyle = { background: 'rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.78)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(7px)' };
   } else if (status.label === 'Ongoing') {
-    statusBadgeStyle = { background: 'rgba(29,158,117,0.24)', color: '#B2F5DD', border: '1px solid rgba(132,232,199,0.55)', backdropFilter: 'blur(7px)' };
+    statusBadgeStyle = { background: 'rgba(29,158,117,0.22)', color: '#86EFC9', border: '1px solid rgba(94,232,184,0.36)', backdropFilter: 'blur(7px)' };
   } else {
-    statusBadgeStyle = { background: 'rgba(29,158,117,0.24)', color: '#B2F5DD', border: '1px solid rgba(132,232,199,0.55)', backdropFilter: 'blur(7px)' };
+    statusBadgeStyle = { background: 'rgba(29,158,117,0.22)', color: '#86EFC9', border: '1px solid rgba(94,232,184,0.36)', backdropFilter: 'blur(7px)' };
   }
   const cardDelay = idx * 70;
 
   return (
     <div
-      className="tb-trip-card-new"
-      style={{ background: cardBg, opacity: isPast ? 0.72 : 1, animation: `fadeUp 0.45s ease both`, animationDelay: `${cardDelay}ms`, border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 18px 42px rgba(16,24,40,0.22), 0 4px 10px rgba(16,24,40,0.14)' }}
+      className={`tb-trip-card-new${isArchiving ? ' tb-trip-archiving' : ''}`}
+      style={{ background: cardBg, opacity: isPast ? 0.72 : 1, animation: `fadeUp 0.45s ease both`, animationDelay: `${cardDelay}ms`, border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 18px 42px rgba(16,24,40,0.22), 0 4px 10px rgba(16,24,40,0.14)', filter: forceMonochrome ? 'grayscale(1) saturate(0.02) contrast(1.06)' : 'none' }}
       onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
       onTouchEnd={e => {
         if (touchStartX.current === null || photos.length < 2) return;
@@ -226,72 +231,82 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
       <div style={{ padding: '20px 20px 0', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
         {/* top row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 13 }}>
-          <div style={{ minWidth: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 9px', fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: 0.6, textTransform: 'uppercase', backdropFilter: 'blur(8px)', boxShadow: '0 6px 16px rgba(16,24,40,0.2)' }}>
-            {(trip.destination || 'TR').split(' ').slice(0, 2).map(s => s[0]).join('')}
+          <div style={{ width: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(255,255,255,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 18px rgba(2,6,23,0.2)' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M8 7h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2z" />
+              <path d="M9 7V6a3 3 0 0 1 6 0v1" />
+            </svg>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             {trip.isSolo && (
-              <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(127,119,221,0.22)', color: '#D7D3FF', border: '1px solid rgba(173,166,255,0.6)', boxShadow: '0 4px 14px rgba(127,119,221,0.26)', backdropFilter: 'blur(8px)' }}>Solo</span>
+              <span style={{ padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: 'rgba(99,102,241,0.2)', color: '#C7D2FE', border: '1px solid rgba(129,140,248,0.42)', boxShadow: '0 0 20px rgba(79,70,229,0.28)' }}>Solo</span>
             )}
-            <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...((!isPast) ? { boxShadow: '0 4px 14px rgba(29,158,117,0.24)' } : {}) }}>
-              {isPast ? 'Past' : status.label}
+            <span style={{ padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...((!isPast) ? { boxShadow: '0 0 20px rgba(34,197,94,0.22)' } : {}) }}>
+              {statusPillLabel}
             </span>
           </div>
         </div>
         {/* destination + name */}
-        <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.6px', lineHeight: 1.12, marginBottom: 4, fontFamily: "'Inter',sans-serif", textShadow: '0 2px 18px rgba(0,0,0,0.62), 0 1px 5px rgba(0,0,0,0.45)' }}>{trip.destination}</div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)', marginBottom: 12, fontWeight: 600, textShadow: '0 1px 8px rgba(0,0,0,0.55)' }}>{trip.groupName}</div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.7px', lineHeight: 1.12, marginBottom: 5, fontFamily: "'Inter',sans-serif", textShadow: '0 4px 26px rgba(0,0,0,0.78), 0 1px 4px rgba(0,0,0,0.52)' }}>{trip.destination}</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.84)', marginBottom: 12, fontWeight: 600, textShadow: '0 1px 8px rgba(0,0,0,0.62)' }}>{trip.groupName}</div>
         {/* stats line */}
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', textShadow: '0 1px 8px rgba(0,0,0,0.58)' }}>
-          <span>{formatDateRange(trip.arrival, trip.departure)}</span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span>{days} nights</span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span>{memberNames.length} {memberNames.length === 1 ? 'member' : 'members'}</span>
-          <span style={{ opacity: 0.35 }}>·</span>
-          <span>₹{Math.round(totalSpend).toLocaleString('en-IN')}</span>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.94)', fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            {formatDateRange(trip.arrival, trip.departure)}
+          </span>
+          <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.26)' }} />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-9-9"/><path d="M22 3 12 13"/><path d="M17 3h5v5"/></svg>
+            {days} nights
+          </span>
+          <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.26)' }} />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            {memberNames.length} {memberNames.length === 1 ? 'member' : 'members'}
+          </span>
+          <span style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.26)' }} />
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M12 10v4"/></svg>
+            ₹{Math.round(totalSpend).toLocaleString('en-IN')}
+          </span>
         </div>
-        {/* budget bar */}
-        {budgetBase > 0 && (
-          <div style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 5 }}>
-              <span>Budget</span>
-              <span style={{ color: trip.isSolo ? '#FFD0BC' : '#B3F5DD' }}>{budgetPct}% · ₹{Math.round(budgetBase - totalSpend).toLocaleString('en-IN')} left</span>
-            </div>
-            <div style={{ height: 5, background: 'rgba(255,255,255,0.18)', borderRadius: 99, overflow: 'hidden' }}>
-              <div style={{ height: '100%', borderRadius: 99, background: barFill, '--w': `${budgetPct}%`, animation: `progressFill 1s ease both`, animationDelay: `${cardDelay + 200}ms`, width: `${budgetPct}%`, boxShadow: trip.isSolo ? '0 0 8px rgba(255,107,53,0.5)' : '0 0 8px rgba(29,158,117,0.5)' }} />
-            </div>
-          </div>
-        )}
       </div>
       {/* card footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 20px', marginTop: budgetBase > 0 ? 0 : 14, borderTop: '1px solid rgba(255,255,255,0.15)', background: 'linear-gradient(180deg,rgba(11,18,34,0.38) 0%, rgba(7,13,26,0.58) 100%)', backdropFilter: 'blur(14px)', position: 'relative', zIndex: 3 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 20px', marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.15)', background: 'linear-gradient(180deg,rgba(6,12,26,0.5) 0%, rgba(4,9,20,0.8) 100%)', backdropFilter: 'blur(14px)', position: 'relative', zIndex: 3 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flex: 1 }} onClick={(event) => onOpen(trip.id, event)}>
           {trip.isSolo
             ? <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 5px 14px rgba(83,74,183,0.4)' }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
             : <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 5px 14px rgba(15,110,86,0.4)' }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
           }
-          <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.88)', marginLeft: 1, fontWeight: 600 }}>
+          <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.9)', marginLeft: 1, fontWeight: 700 }}>
             {memberNames[0] || (trip.isSolo ? 'You' : 'Member')}{!trip.isSolo && memberNames.length > 1 ? ` +${memberNames.length - 1}` : ''}
           </span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-          {!trip.isSolo && (
-            <div onClick={e => { e.stopPropagation(); onCopy(trip.shareCode, trip.id); }}
-              style={{ fontFamily: "'SF Mono',monospace", fontSize: 10.5, color: 'rgba(255,255,255,0.92)', background: 'rgba(255,255,255,0.16)', padding: '4px 9px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.34)', letterSpacing: '0.6px', cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
-              {copied === trip.id ? '✓ copied' : trip.shareCode}
-            </div>
-          )}
+        {budgetBase > 0 && (
+          <div style={{ marginRight: 10, paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.22)', minWidth: 150 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginBottom: 1 }}>Budget</div>
+            <div style={{ fontSize: 14, color: '#FF6B35', fontWeight: 800, letterSpacing: 0.1 }}>{budgetPct}% · ₹{budgetLeft.toLocaleString('en-IN')} left</div>
+          </div>
+        )}
+        {showMenu && <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <div style={{ position: 'relative' }}>
             <button
               onClick={e => { e.stopPropagation(); setMenuOpen(isMenuOpen ? null : trip.id); }}
-              style={{ width: 30, height: 30, borderRadius: 10, background: 'rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.95)', fontSize: 14, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.28)', cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
+              style={{ width: 42, height: 42, borderRadius: 14, background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.95)', fontSize: 22, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
               ⋯
             </button>
             {isMenuOpen && (
               <>
                 <div style={{ position: 'fixed', inset: 0, zIndex: 420 }} onClick={() => setMenuOpen(null)} />
                 <div style={{ position: 'absolute', bottom: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 421, minWidth: 180, overflow: 'hidden' }}>
+                  {!trip.isSolo && (
+                    <button
+                      onClick={e => { e.stopPropagation(); setMenuOpen(null); onCopy(trip.shareCode, trip.id); }}
+                      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#1F2937', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
+                      {copied === trip.id ? 'Code Copied' : 'Copy Share Code'}
+                    </button>
+                  )}
                   <button
                     onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmComplete(trip); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
@@ -306,7 +321,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
               </>
             )}
           </div>
-        </div>
+        </div>}
       </div>
     </div>
   );
@@ -328,6 +343,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmComplete, setConfirmComplete] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
+  const [homeTab, setHomeTab] = useState('trips');
+  const [archivingTripId, setArchivingTripId] = useState(null);
+  const [pastFolderPulse, setPastFolderPulse] = useState(false);
+  const [seenNotificationIds, setSeenNotificationIds] = useState(new Set());
   const [tagIdx, setTagIdx] = useState(() => {
     const pool = [0, 1, 2, 9, 10, 7];
     return pool[Math.floor(Math.random() * pool.length)];
@@ -463,6 +482,81 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const activeTrips = trips.filter(t => !t.completed);
   const pastTrips   = trips.filter(t =>  t.completed);
 
+  const notifications = useMemo(() => {
+    const now = new Date();
+    const notes = [];
+    trips.forEach((trip) => {
+      const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
+      const arrival = trip.arrival ? new Date(trip.arrival) : null;
+      const departure = trip.departure ? new Date(trip.departure) : null;
+      const totalSpend = (trip.expenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+      const budgetBase = Number(trip.budget) || 0;
+      const budgetPct = budgetBase > 0 ? Math.round((totalSpend / budgetBase) * 100) : 0;
+
+      if (!trip.completed && arrival) {
+        const diffDays = Math.ceil((arrival.getTime() - now.getTime()) / 86400000);
+        if (diffDays >= 0 && diffDays <= 3) {
+          notes.push({
+            id: `upcoming-${trip.id}`,
+            level: 'high',
+            title: `${trip.groupName} starts soon`,
+            body: `${trip.destination} starts in ${diffDays === 0 ? 'less than a day' : `${diffDays} day${diffDays > 1 ? 's' : ''}`}.`,
+          });
+        }
+      }
+
+      if (!trip.completed && status.label === 'Ongoing') {
+        notes.push({
+          id: `ongoing-${trip.id}`,
+          level: 'medium',
+          title: `${trip.groupName} is live`,
+          body: `Your trip to ${trip.destination} is currently ongoing.`,
+        });
+      }
+
+      if (!trip.completed && budgetBase > 0 && budgetPct >= 85) {
+        notes.push({
+          id: `budget-${trip.id}`,
+          level: budgetPct >= 100 ? 'high' : 'medium',
+          title: `${trip.groupName} budget alert`,
+          body: `${budgetPct}% of your trip budget has been used.`,
+        });
+      }
+
+      if (trip.completed && departure) {
+        const sinceDays = Math.floor((now.getTime() - departure.getTime()) / 86400000);
+        if (sinceDays >= 0 && sinceDays <= 7) {
+          notes.push({
+            id: `recent-past-${trip.id}`,
+            level: 'low',
+            title: `${trip.groupName} moved to Past Trips`,
+            body: `${trip.destination} is now in your memories folder.`,
+          });
+        }
+      }
+    });
+
+    const rank = { high: 0, medium: 1, low: 2 };
+    return notes.sort((a, b) => rank[a.level] - rank[b.level]);
+  }, [trips]);
+
+  useEffect(() => {
+    if (homeTab !== 'notifications' || notifications.length === 0) return;
+    setSeenNotificationIds(new Set(notifications.map(n => n.id)));
+  }, [homeTab, notifications]);
+
+  const unreadNotificationCount = notifications.filter(n => !seenNotificationIds.has(n.id)).length;
+
+  const markTripCompleteWithAnimation = (tripId) => {
+    setArchivingTripId(tripId);
+    setPastFolderPulse(true);
+    setTimeout(() => {
+      onMarkComplete(tripId);
+      setArchivingTripId(null);
+    }, 430);
+    setTimeout(() => setPastFolderPulse(false), 920);
+  };
+
   const handleCreate = async () => {
     if (!form.groupName || !form.destination || !form.arrival || !form.departure) return;
     setCreating(true);
@@ -543,59 +637,45 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           />
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.25rem' }}>
-          <button style={S.btn} onClick={() => setShowPast(false)}>← Back</button>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700 }}>Past Trips</div>
-          <span style={{ fontSize: 12, color: '#6b6b68', background: '#F1EFE8', border: '0.5px solid #D3D1C7', borderRadius: 10, padding: '3px 10px' }}>
+          <button style={{ ...S.btn, borderRadius: 12, padding: '7px 12px', background: '#fff', border: '1px solid rgba(15,23,42,0.12)' }} onClick={() => setShowPast(false)}>← Back</button>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#111827' }}>Past Trips</div>
+          <span style={{ fontSize: 12, color: '#4b5563', background: '#EEF2F7', border: '1px solid #D8DFEA', borderRadius: 999, padding: '4px 11px', fontWeight: 700 }}>
             {pastTrips.length} trip{pastTrips.length !== 1 ? 's' : ''}
           </span>
         </div>
         {pastTrips.length === 0 && (
           <div style={{ textAlign: 'center', padding: '3rem', color: '#6b6b68' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>🗂️</div>
+            <div style={{ fontSize: 48, marginBottom: 12 }}> </div>
             <p>No completed trips yet.</p>
           </div>
         )}
         {pastTrips.map((trip, idx) => {
-          const days = tripDuration(trip.arrival, trip.departure);
-          const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
           return (
-            <div
-              key={trip.id}
-              className="tb-trip-card"
-              style={{ ...S.card, padding: 0, overflow: 'hidden', marginBottom: 14, animationDelay: `${idx * 50}ms` }}
-            >
-              <div style={{ position: 'relative', height: 90, overflow: 'hidden', borderRadius: '14px 14px 0 0', cursor: 'pointer' }}
-                onClick={(event) => { setShowPast(false); openTripWithMotion(trip.id, event); }}>
-                {trip.coverUrl && <img src={trip.coverUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'grayscale(30%)' }} onError={e => e.target.style.display = 'none'} />}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(0,0,0,0.1) 0%,rgba(0,0,0,0.55) 100%)' }} />
-                <div style={{ position: 'absolute', top: 10, left: 12, fontSize: 24 }}>{trip.emoji}</div>
-                <div style={{ position: 'absolute', top: 9, right: 11, display: 'flex', gap: 6 }}>
-                  {trip.isSolo && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 9px', borderRadius: 10, background: '#EEEDFE', color: '#534AB7', border: '0.5px solid #AFA9EC' }}>Solo</span>}
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 9px', borderRadius: 10, background: '#F1EFE8', color: '#6b6b68', border: '0.5px solid #D3D1C7' }}>Completed</span>
-                </div>
-                <div style={{ position: 'absolute', bottom: 10, left: 12 }}>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: '#fff' }}>{trip.groupName}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)' }}>📍 {trip.destination}</div>
-                </div>
-              </div>
-              <div style={{ padding: '10px 14px', display: 'flex', gap: 14, flexWrap: 'wrap', alignItems: 'center' }}>
-                {[['📅', formatDateRange(trip.arrival, trip.departure)], ['🌙', `${days} nights`], ['💰', `₹${Math.round(totalSpend).toLocaleString('en-IN')}`]].map(([icon, val]) => (
-                  <div key={val} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#6b6b68' }}>
-                    <span>{icon}</span><span>{val}</span>
-                  </div>
-                ))}
-                <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <button
-                    onClick={() => onMarkActive(trip.id)}
-                    style={{ ...S.btn, fontSize: 11, padding: '4px 10px', color: '#0F6E56', borderColor: '#9FE1CB', background: '#E1F5EE' }}>
-                    ↩ Restore
-                  </button>
-                  <button
-                    onClick={() => setConfirmDelete(trip)}
-                    style={{ ...S.btn, fontSize: 11, padding: '4px 10px', color: '#993C1D', borderColor: '#F5C4B3', background: '#FAECE7' }}>
-                    🗑️ Delete
-                  </button>
-                </div>
+            <div key={trip.id} style={{ marginBottom: 14 }}>
+              <TripCard
+                trip={trip}
+                idx={idx}
+                onOpen={(tripId, event) => { setShowPast(false); openTripWithMotion(tripId, event); }}
+                copied={copied}
+                onCopy={copyCode}
+                menuOpen={menuOpen}
+                setMenuOpen={setMenuOpen}
+                setConfirmComplete={setConfirmComplete}
+                setConfirmDelete={setConfirmDelete}
+                forceMonochrome
+                showMenu={false}
+              />
+              <div style={{ marginTop: -4, padding: '0 6px 4px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                <button
+                  onClick={() => onMarkActive(trip.id)}
+                  style={{ ...S.btn, fontSize: 11, padding: '6px 12px', color: '#0F6E56', borderColor: '#9FE1CB', background: '#E1F5EE', borderRadius: 10 }}>
+                  Restore
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(trip)}
+                  style={{ ...S.btn, fontSize: 11, padding: '6px 12px', color: '#993C1D', borderColor: '#F5C4B3', background: '#FAECE7', borderRadius: 10 }}>
+                  Delete
+                </button>
               </div>
             </div>
           );
@@ -628,6 +708,16 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes progressFill { from{width:0} to{width:var(--w)} }
+        @keyframes tbMacbookFold {
+          0% { transform: perspective(1100px) translateY(0) rotateX(0deg) scale(1); opacity: 1; }
+          58% { transform: perspective(1100px) translateY(6px) rotateX(74deg) scale(0.9); opacity: 0.88; }
+          100% { transform: perspective(1100px) translateY(22px) rotateX(88deg) scale(0.68); opacity: 0; }
+        }
+        @keyframes tbPastFolderPulse {
+          0% { transform: scale(1); box-shadow: 0 8px 26px rgba(12,20,34,0.08); }
+          45% { transform: scale(1.02); box-shadow: 0 14px 36px rgba(20,34,60,0.18); }
+          100% { transform: scale(1); box-shadow: 0 8px 26px rgba(12,20,34,0.08); }
+        }
         .tb-hero-title { animation: fadeUp 0.5s ease both; animation-delay: 0.05s; }
         .tb-hero-greet { animation: fadeUp 0.4s ease both; }
         @keyframes taglineSlideIn {
@@ -649,6 +739,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           .tb-trip-card-new:hover { transform: translateY(-3px) translateZ(0); box-shadow: 0 8px 40px rgba(0,0,0,0.18) !important; }
         }
         .tb-trip-card-new:active { transform: scale(0.98) translateZ(0); }
+        .tb-trip-archiving { transform-origin: 50% 100%; animation: tbMacbookFold 460ms cubic-bezier(.2,.7,.2,1) forwards !important; pointer-events: none; }
+        .tb-past-folder-pulse { animation: tbPastFolderPulse 700ms cubic-bezier(.2,.7,.2,1) both; }
         .tb-new-btn { transition: transform 0.18s ease, box-shadow 0.18s ease; }
         @media (hover: hover) {
           .tb-new-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,107,53,0.4) !important; }
@@ -656,6 +748,16 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         .tb-stat-pill { transition: box-shadow 0.15s ease; }
         @media (hover: hover) {
           .tb-stat-pill:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.1) !important; }
+        }
+        .tb-home-tab {
+          display: inline-flex; align-items: center; gap: 8px; border-radius: 999px;
+          padding: 9px 14px; font-size: 12px; font-weight: 700; border: 1px solid rgba(15,23,42,0.12);
+          background: rgba(255,255,255,0.84); color: #4b5563; cursor: pointer;
+          transition: all .22s ease;
+        }
+        .tb-home-tab.active {
+          background: #111827; color: #fff; border-color: #111827;
+          box-shadow: 0 10px 24px rgba(17,24,39,0.22);
         }
       `}</style>
 
@@ -676,7 +778,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           message={`"${confirmComplete.groupName}" will be moved to Past Trips. You can restore it anytime.`}
           confirmLabel="✅ Mark Complete"
           confirmStyle="primary"
-          onConfirm={() => { onMarkComplete(confirmComplete.id); setConfirmComplete(null); setMenuOpen(null); }}
+          onConfirm={() => { markTripCompleteWithAnimation(confirmComplete.id); setConfirmComplete(null); setMenuOpen(null); }}
           onCancel={() => { setConfirmComplete(null); setMenuOpen(null); }}
         />
       )}
@@ -789,7 +891,27 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         />
       )}
 
-      {activeTrips.length === 0 && !showCreate && !showJoin && (
+      <div style={{ display: 'flex', gap: 8, marginTop: 12, marginBottom: 12 }}>
+        <button className={`tb-home-tab${homeTab === 'trips' ? ' active' : ''}`} onClick={() => setHomeTab('trips')}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <rect x="3" y="4" width="18" height="18" rx="2" />
+            <line x1="16" y1="2" x2="16" y2="6" />
+            <line x1="8" y1="2" x2="8" y2="6" />
+            <line x1="3" y1="10" x2="21" y2="10" />
+          </svg>
+          Trips
+        </button>
+        <button className={`tb-home-tab${homeTab === 'notifications' ? ' active' : ''}`} onClick={() => setHomeTab('notifications')}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+          </svg>
+          Notifications
+          {unreadNotificationCount > 0 && <span style={{ marginLeft: 2, minWidth: 18, height: 18, borderRadius: 999, background: '#FF6B35', color: '#fff', fontSize: 10, fontWeight: 800, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>{unreadNotificationCount}</span>}
+        </button>
+      </div>
+
+      {homeTab === 'trips' && activeTrips.length === 0 && !showCreate && !showJoin && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '1.5rem' }}>
           <div style={{ fontSize: 52, marginBottom: 12 }}></div>
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, marginBottom: 6 }}>No upcoming trips!</div>
@@ -797,11 +919,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       )}
 
-      {activeTrips.length > 0 && (
+      {homeTab === 'trips' && activeTrips.length > 0 && (
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', marginBottom: 14, marginTop: 12 }}>YOUR TRIPS</div>
       )}
 
-      {activeTrips.map((trip, idx) => (
+      {homeTab === 'trips' && activeTrips.map((trip, idx) => (
         <TripCard
           key={trip.id}
           trip={trip}
@@ -813,17 +935,52 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           setMenuOpen={setMenuOpen}
           setConfirmComplete={setConfirmComplete}
           setConfirmDelete={setConfirmDelete}
+          isArchiving={archivingTripId === trip.id}
         />
       ))}
 
-      {pastTrips.length > 0 && (
-        <div onClick={() => setShowPast(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '14px 18px', cursor: 'pointer', marginTop: 8, marginBottom: 4 }}>
-          <div style={{ width: 42, height: 42, borderRadius: 12, background: '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🗂️</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 2 }}>Past Trips</div>
-            <div style={{ fontSize: 12, color: '#6b6b68' }}>{pastTrips.length} completed trip{pastTrips.length !== 1 ? 's' : ''} · tap to view memories</div>
+      {homeTab === 'notifications' && (
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.34)', textTransform: 'uppercase', marginBottom: 10 }}>Recent Notifications</div>
+          {notifications.length === 0 ? (
+            <div style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)', borderRadius: 16, padding: '1.4rem 1rem', textAlign: 'center', color: '#6b7280' }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginBottom: 8 }}>
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>No new notifications</div>
+              <div style={{ fontSize: 12 }}>Trip updates and budget alerts will appear here.</div>
+            </div>
+          ) : notifications.map((n) => {
+            const isUnread = !seenNotificationIds.has(n.id);
+            const accent = n.level === 'high' ? '#B42318' : n.level === 'medium' ? '#92400E' : '#1D4ED8';
+            const bg = n.level === 'high' ? '#FEF3F2' : n.level === 'medium' ? '#FFFBEB' : '#EFF6FF';
+            return (
+              <div key={n.id} style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)', borderLeft: `4px solid ${accent}`, borderRadius: 14, padding: '12px 12px 12px 11px', marginBottom: 9, boxShadow: isUnread ? '0 8px 24px rgba(15,23,42,0.08)' : 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: accent, background: bg, border: `1px solid ${accent}30`, borderRadius: 999, padding: '2px 8px', letterSpacing: 0.45, textTransform: 'uppercase' }}>{n.level}</span>
+                  {isUnread && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF6B35', display: 'inline-block' }} />}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 3 }}>{n.title}</div>
+                <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.55 }}>{n.body}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {homeTab === 'trips' && pastTrips.length > 0 && (
+        <div className={pastFolderPulse ? 'tb-past-folder-pulse' : ''} onClick={() => setShowPast(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(145deg,#ffffff 0%,#f8fafc 100%)', border: '1px solid rgba(15,23,42,0.1)', borderRadius: 15, padding: '14px 18px', cursor: 'pointer', marginTop: 8, marginBottom: 4, boxShadow: '0 8px 26px rgba(12,20,34,0.08)' }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: '#EEF2F7', border: '1px solid #D8DFEA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
+            </svg>
           </div>
-          <div style={{ fontSize: 16, color: '#a8a8a5' }}>›</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2, color: '#0F172A' }}>Past Trips</div>
+            <div style={{ fontSize: 12, color: '#64748B' }}>{pastTrips.length} completed trip{pastTrips.length !== 1 ? 's' : ''} · open memories</div>
+          </div>
+          <div style={{ fontSize: 16, color: '#94A3B8' }}>›</div>
         </div>
       )}
 
