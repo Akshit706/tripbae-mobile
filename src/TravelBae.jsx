@@ -16,6 +16,7 @@ import {
   deletePhoto,
   deleteAccount,
   getClubHub,
+  updateUserProfile,
   upsertClubProfile,
   updateClubStatus,
   sendClubRequest,
@@ -28,12 +29,13 @@ import HomePageFeature from './features/home/HomePage';
 import ShareCodeModalFeature from './features/home/ShareCodeModal';
 import TripActionMenuFeature from './features/trips/TripActionMenu';
 import SoloExpensesPageFeature from './features/solo/SoloExpensesPage';
-import ContactsPageFeature from './features/contacts/ContactsPage';
+// import ContactsPageFeature from './features/contacts/ContactsPage'; // hidden for now
 import SplitPageFeature from './features/split/SplitPage';
 import PhotosPageFeature from './features/photos/PhotosPage';
 import ItineraryPageFeature from './features/itinerary/ItineraryPage';
 import ProfilePageFeature from './features/profile/ProfilePage';
 import ClubPageFeature from './features/club/ClubPage';
+import UserProfileWizard from './features/profile/UserProfileWizard';
 
 // Add these two to your api.js:
 // export const deleteTrip = (id) => apiFetch(`/trips/${id}`, { method: 'DELETE' });
@@ -289,6 +291,7 @@ export default function App() {
   const [newTripModal, setNewTripModal] = useState(null);
   const [tab, setTab] = useState('main');
   const [profileOpen, setProfileOpen] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [sharedFlight, setSharedFlight] = useState(null);
   const [sharedFlightActive, setSharedFlightActive] = useState(false);
   const [profile, setProfile] = useState(() => {
@@ -337,6 +340,11 @@ export default function App() {
           try { localStorage.setItem('travelbae_profile', JSON.stringify(next)); } catch (_) {}
           return next;
         });
+        // Show onboarding wizard if profile not completed yet
+        const up = d?.userProfile;
+        if (!up || up.onboardingDone === false) {
+          setShowOnboarding(true);
+        }
       })
       .catch(() => {});
   }, [authToken]);
@@ -663,7 +671,7 @@ export default function App() {
   };
   const groupTabs = [
     { id: 'main',      iconKey: 'split',    label: 'Split' },
-    { id: 'contacts',  iconKey: 'contacts', label: 'Contacts' },
+    // { id: 'contacts',  iconKey: 'contacts', label: 'Contacts' }, // temporarily hidden
     { id: 'itinerary', iconKey: 'explore',  label: 'Explore' },
     { id: 'photos',    iconKey: 'photos',   label: 'Photos' },
     { id: 'club',      iconKey: 'club',     label: 'Club' },
@@ -943,6 +951,12 @@ export default function App() {
       <div style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.13) 0%, rgba(29,158,117,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: -190, left: -110, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(127,119,221,0.11) 0%, rgba(127,119,221,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <div className="tb-noise-layer" />
+      {showOnboarding && (
+        <UserProfileWizard
+          userName={profile?.name || ''}
+          onDone={() => setShowOnboarding(false)}
+        />
+      )}
       {sharedFlight && (
         <div
           className={`tb-shared-flight ${sharedFlightActive ? 'is-active' : ''}`}
@@ -1230,7 +1244,7 @@ export default function App() {
                         <SplitPageFeature trip={activeTripData} myNickname={myNickname} />
                       </div>
                     )}
-                    {tab === 'contacts' && <div className="tb-section-flow"><ContactsPageFeature trip={activeTripData} myNickname={myNickname} isSolo={false} /></div>}
+                    {/* tab === 'contacts' && <div className="tb-section-flow"><ContactsPageFeature trip={activeTripData} myNickname={myNickname} isSolo={false} /></div> */}
                     {tab === 'itinerary' && <div className="tb-section-flow"><ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} /></div>}
                     {tab === 'photos' && (
                       <div className="tb-section-flow" style={{ marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>

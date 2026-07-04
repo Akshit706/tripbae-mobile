@@ -43,6 +43,9 @@ export const getMe = () => apiFetch('/auth/me');
 
 export const deleteAccount = () => apiFetch('/auth/me', { method: 'DELETE' });
 
+export const updateUserProfile = (data) =>
+  apiFetch('/auth/profile', { method: 'PATCH', body: data });
+
 // Trips
 export const getTrips  = ()     => apiFetch('/trips');
 export const getTrip   = (id)   => apiFetch(`/trips/${id}`);
