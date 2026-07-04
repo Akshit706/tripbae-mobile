@@ -292,6 +292,27 @@ export default function App() {
   const [tab, setTab] = useState('main');
   const [profileOpen, setProfileOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [homeTab, setHomeTab] = useState('trips');
+  const [seenHomeNotifIds, setSeenHomeNotifIds] = useState(new Set());
+
+  const homeNotifCount = useMemo(() => {
+    const now = new Date();
+    let count = 0;
+    trips.forEach(trip => {
+      if (!trip.completed && trip.arrival) {
+        const diff = Math.ceil((new Date(trip.arrival) - now) / 86400000);
+        if (diff >= 0 && diff <= 3) count++;
+      }
+      if (!trip.completed) {
+        const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
+        if (status.label === 'Ongoing') count++;
+      }
+      const totalSpend = (trip.expenses || []).reduce((s, e) => s + (Number(e.amount) || 0), 0);
+      const budgetBase = Number(trip.budget) || 0;
+      if (!trip.completed && budgetBase > 0 && (totalSpend / budgetBase) >= 0.85) count++;
+    });
+    return Math.max(0, count - seenHomeNotifIds.size);
+  }, [trips, seenHomeNotifIds]);
   const [userProfile, setUserProfile] = useState(null);
   const [sharedFlight, setSharedFlight] = useState(null);
   const [sharedFlightActive, setSharedFlightActive] = useState(false);
@@ -1121,6 +1142,27 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
           <img src={bglessLogo} alt="TripBae" style={{ height: 72, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
+        {!activeTrip && !activeTripData && (
+          <button
+            onClick={() => {
+              setHomeTab(t => {
+                const next = t === 'notifications' ? 'trips' : 'notifications';
+                if (next === 'notifications') setSeenHomeNotifIds(new Set());
+                return next;
+              });
+            }}
+            title="Notifications"
+            style={{ marginLeft: 'auto', position: 'relative', width: 36, height: 36, borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a18" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            {homeNotifCount > 0 && (
+              <span style={{ position: 'absolute', top: 4, right: 4, width: 9, height: 9, borderRadius: '50%', background: '#FF6B35', border: '2px solid #fff', display: 'block' }} />
+            )}
+          </button>
+        )}
         {activeTrip && activeTripData ? (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
             {/* Home icon — bare, no box */}
@@ -1201,6 +1243,8 @@ export default function App() {
                 onMarkComplete={handleMarkComplete}
                 onMarkActive={handleMarkActive}
                 profileName={profile.name}
+                homeTab={homeTab}
+                setHomeTab={setHomeTab}
               /></div>
         )}
 
