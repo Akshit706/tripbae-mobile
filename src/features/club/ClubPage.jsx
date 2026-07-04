@@ -1400,7 +1400,7 @@ function ClubPage({ trip, onTripRefresh }) {
             <div style={{ fontSize:11, fontWeight:700, color:'#9CA3AF', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>Group Photos · {(profileForm.photoUrls||[]).length}/3</div>
             <div style={{ display:'flex', gap:10, overflowX:'auto', paddingBottom:4 }}>
               {(profileForm.photoUrls||[]).map((url, i) => (
-                <div key={i} style={{ position:'relative', flexShrink:0 }}>
+                <div key={url} style={{ position:'relative', flexShrink:0 }}>
                   <img src={url} alt={`photo ${i+1}`} style={{ width:120, height:160, borderRadius:18, objectFit:'cover', display:'block', boxShadow:'0 8px 24px rgba(0,0,0,0.12)' }} />
                   <button type="button" onClick={() => setProfileForm(f => ({ ...f, photoUrls: f.photoUrls.filter((_,j) => j !== i) }))}
                     style={{ position:'absolute', top:-8, right:-8, width:24, height:24, borderRadius:'50%', border:'2px solid #fff', background:'#EF4444', color:'#fff', fontSize:10, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, boxShadow:'0 2px 8px rgba(0,0,0,0.2)' }}>✕</button>
@@ -1884,7 +1884,7 @@ function ClubPage({ trip, onTripRefresh }) {
                         const fromMember = splitMemberById[settlement.from];
                         const toMember = splitMemberById[settlement.to];
                         return (
-                          <div key={`settlement-${index}`} style={{ background: '#fff', border: '1px solid rgba(10,18,35,0.08)', borderRadius: 12, padding: 10, display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                          <div key={`settlement-${settlement.from}-${settlement.to}`} style={{ background: '#fff', border: '1px solid rgba(10,18,35,0.08)', borderRadius: 12, padding: 10, display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                             <div style={{ fontSize: 12, color: '#344054' }}>{fromMember?.nickname || settlement.from} → {toMember?.nickname || settlement.to}</div>
                             <div style={{ fontSize: 13, fontWeight: 800, color: '#0F6E56' }}>₹{Math.round(settlement.amount).toLocaleString('en-IN')}</div>
                           </div>
@@ -2078,7 +2078,7 @@ function ClubPage({ trip, onTripRefresh }) {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
                 {chatFolderPhotos.map((photo, index) => (
                   <div
-                    key={`cp-${photo.id}-${index}`}
+                    key={`cp-${photo.id}`}
                     onClick={() => setChatPhotoLightbox({ photos: chatFolderPhotos, index })}
                     role="button"
                     tabIndex={0}

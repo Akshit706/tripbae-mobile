@@ -226,8 +226,8 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
       <div style={{ padding: '20px 20px 0', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
         {/* top row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 13 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, backdropFilter: 'blur(8px)', boxShadow: '0 6px 16px rgba(16,24,40,0.2)' }}>
-            {trip.emoji}
+          <div style={{ minWidth: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 9px', fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: 0.6, textTransform: 'uppercase', backdropFilter: 'blur(8px)', boxShadow: '0 6px 16px rgba(16,24,40,0.2)' }}>
+            {(trip.destination || 'TR').split(' ').slice(0, 2).map(s => s[0]).join('')}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             {trip.isSolo && (
@@ -295,12 +295,12 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
                   <button
                     onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmComplete(trip); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
-                    ✅ Mark as Completed
+                    Mark as Completed
                   </button>
                   <button
                     onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmDelete(trip); }}
                     style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#993C1D', fontFamily: "'DM Sans',sans-serif" }}>
-                    🗑️ Delete Trip
+                    Delete Trip
                   </button>
                 </div>
               </>

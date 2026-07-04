@@ -795,7 +795,7 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
       </div>
 
       {/* ── Active section (tab-switched with slide animation) ── */}
-      <div key={activeTab} style={{ animation: `${tabDir === 'right' ? 'rSlideRight' : 'rSlideLeft'} 0.25s cubic-bezier(0.2,0.7,0.2,1) both` }}>
+      <div style={{ animation: `${tabDir === 'right' ? 'rSlideRight' : 'rSlideLeft'} 0.25s cubic-bezier(0.2,0.7,0.2,1) both` }}>
         {activeTab === 'stays' && <StaysSection hotels={hotels} destination={destination} filtered={filteredHotels}
           onOpenFilter={()=>openFilter('stays')} filterCount={stayFilterCount} />}
         {activeTab === 'healthcare' && <HealthcareSection hospitals={hospitals} shown={filteredHospitals}
