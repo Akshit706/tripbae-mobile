@@ -133,6 +133,15 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
     return () => { cancelled = true; };
   }, [trip.destination]);
 
+  // Auto-advance photos on a loop
+  useEffect(() => {
+    if (photos.length < 2) return;
+    const timer = setInterval(() => {
+      setPhotoIdx(i => (i + 1) % photos.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [photos.length]);
+
   const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
   const days = tripDuration(trip.arrival, trip.departure);
   const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
