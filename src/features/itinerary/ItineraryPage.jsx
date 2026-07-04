@@ -366,7 +366,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   };
 
   /* ── Premium item card ── */
-  const TasteCard = ({ item, secKey, index, photoSuffix, startIndex }) => {
+  const renderTasteCard = ({ item, secKey, index, photoSuffix, startIndex }) => {
     const key = `${secKey}-${index}`;
     const isDone = doneItems.has(key);
     const isExpanded = expandedItems.has(key);
@@ -374,6 +374,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
 
     return (
       <div
+        key={key}
         className="itin-card-enter itin-taste-card"
         style={{
           background: D.surface,
@@ -431,6 +432,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           </div>
           {/* done button over photo */}
           <button
+            type="button"
             onClick={e => { e.stopPropagation(); toggleDone(key); }}
             style={{
               position: 'absolute', bottom: 10, right: 10,
@@ -514,7 +516,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   };
 
   /* ── Section block with editorial header ── */
-  const Sec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac, sectionRef, onFilter, filterCount: secFilterCount = 0 }) => {
+  const renderSec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac, sectionRef, onFilter, filterCount: secFilterCount = 0 }) => {
     const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
     if (!items.length) return null;
     return (
@@ -545,9 +547,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           )}
         </div>
         {/* Cards */}
-        {items.map((item, i) => (
-          <TasteCard key={i} item={item} secKey={secKey} index={i} photoSuffix={photoSuffix} startIndex={startIndex} />
-        ))}
+        {items.map((item, i) => renderTasteCard({ item, secKey, index: i, photoSuffix, startIndex }))}
       </div>
     );
   };
@@ -627,37 +627,49 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
       {/* ── Active section (tab-switched with animation) ── */}
       <div key={activeTab} style={{ animation: `${tabDir === 'right' ? 'rSlideRight' : 'rSlideLeft'} 0.25s cubic-bezier(0.2,0.7,0.2,1) both` }}>
         {activeTab === 'dishes' && (
-          <Sec
-            icon={<><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></>}
-            title="Must-Eat Dishes" subtitle="Iconic plates you can't leave without trying"
-            items={(data.dishes || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
-            secKey="dishes" startIndex={0} photoSuffix="food dish restaurant"
-            accentBg="#FAEEDA" accentColor={D.gold}
-            onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
-            filterCount={filters.minRating > 0 ? 1 : 0}
-          />
+          renderSec({
+            icon: <><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2v0a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></>,
+            title: 'Must-Eat Dishes',
+            subtitle: "Iconic plates you can't leave without trying",
+            items: (data.dishes || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating),
+            secKey: 'dishes',
+            startIndex: 0,
+            photoSuffix: 'food dish restaurant',
+            accentBg: '#FAEEDA',
+            accentColor: D.gold,
+            onFilter: () => { setFilterDraft(filters); setFilterOpen(true); },
+            filterCount: filters.minRating > 0 ? 1 : 0,
+          })
         )}
         {activeTab === 'places' && (
-          <Sec
-            icon={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>}
-            title="Unmissable Places" subtitle="The landmarks and streets that define this city"
-            items={(data.places || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
-            secKey="places" startIndex={5} photoSuffix="tourist attraction landmark"
-            accentBg={D.blueTint} accentColor="#2563AB"
-            onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
-            filterCount={filters.minRating > 0 ? 1 : 0}
-          />
+          renderSec({
+            icon: <><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></>,
+            title: 'Unmissable Places',
+            subtitle: 'The landmarks and streets that define this city',
+            items: (data.places || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating),
+            secKey: 'places',
+            startIndex: 5,
+            photoSuffix: 'tourist attraction landmark',
+            accentBg: D.blueTint,
+            accentColor: '#2563AB',
+            onFilter: () => { setFilterDraft(filters); setFilterOpen(true); },
+            filterCount: filters.minRating > 0 ? 1 : 0,
+          })
         )}
         {activeTab === 'exp' && (
-          <Sec
-            icon={<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>}
-            title="Local Experiences" subtitle="Things to do that no guidebook will tell you"
-            items={(data.experiences || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating)}
-            secKey="exp" startIndex={10} photoSuffix="travel experience"
-            accentBg="#EEEDFE" accentColor="#534AB7"
-            onFilter={() => { setFilterDraft(filters); setFilterOpen(true); }}
-            filterCount={filters.minRating > 0 ? 1 : 0}
-          />
+          renderSec({
+            icon: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>,
+            title: 'Local Experiences',
+            subtitle: 'Things to do that no guidebook will tell you',
+            items: (data.experiences || []).filter(it => !filters.minRating || !it.rating || parseFloat(it.rating) >= filters.minRating),
+            secKey: 'exp',
+            startIndex: 10,
+            photoSuffix: 'travel experience',
+            accentBg: '#EEEDFE',
+            accentColor: '#534AB7',
+            onFilter: () => { setFilterDraft(filters); setFilterOpen(true); },
+            filterCount: filters.minRating > 0 ? 1 : 0,
+          })
         )}
       </div>
 

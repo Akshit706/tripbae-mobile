@@ -138,7 +138,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
     if (photos.length < 2) return;
     const timer = setInterval(() => {
       setPhotoIdx(i => (i + 1) % photos.length);
-    }, 4000);
+    }, 2600);
     return () => clearInterval(timer);
   }, [photos.length]);
 
@@ -151,28 +151,28 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
   const isMenuOpen = menuOpen === trip.id;
   const isPast = status.label === 'Past' || status.label === 'Completed';
   const cardBg = trip.isSolo
-    ? 'linear-gradient(145deg,#1c0e40 0%,#2e1a60 55%,#1c0e40 100%)'
-    : 'linear-gradient(145deg,#0a2a1f 0%,#0f3d2e 55%,#0a2a1f 100%)';
+    ? 'linear-gradient(145deg,#121a42 0%,#27316c 52%,#171d4a 100%)'
+    : 'linear-gradient(145deg,#083433 0%,#0f5a55 52%,#0a3c38 100%)';
   const glowBg = trip.isSolo
-    ? 'radial-gradient(circle,rgba(127,119,221,0.3) 0%,transparent 70%)'
-    : 'radial-gradient(circle,rgba(29,158,117,0.3) 0%,transparent 70%)';
+    ? 'radial-gradient(circle,rgba(127,119,221,0.42) 0%,transparent 72%)'
+    : 'radial-gradient(circle,rgba(29,158,117,0.42) 0%,transparent 72%)';
   const barFill = trip.isSolo
     ? 'linear-gradient(90deg,#FF6B35,#FFAA80)'
     : 'linear-gradient(90deg,#1D9E75,#5DCAA5)';
   let statusBadgeStyle;
   if (isPast) {
-    statusBadgeStyle = { background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.08)' };
+    statusBadgeStyle = { background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.55)', border: '1px solid rgba(255,255,255,0.16)', backdropFilter: 'blur(7px)' };
   } else if (status.label === 'Ongoing') {
-    statusBadgeStyle = { background: 'rgba(29,158,117,0.18)', color: '#5DCAA5', border: '1px solid rgba(29,158,117,0.25)' };
+    statusBadgeStyle = { background: 'rgba(29,158,117,0.24)', color: '#B2F5DD', border: '1px solid rgba(132,232,199,0.55)', backdropFilter: 'blur(7px)' };
   } else {
-    statusBadgeStyle = { background: 'rgba(29,158,117,0.18)', color: '#5DCAA5', border: '1px solid rgba(29,158,117,0.25)' };
+    statusBadgeStyle = { background: 'rgba(29,158,117,0.24)', color: '#B2F5DD', border: '1px solid rgba(132,232,199,0.55)', backdropFilter: 'blur(7px)' };
   }
   const cardDelay = idx * 70;
 
   return (
     <div
       className="tb-trip-card-new"
-      style={{ background: cardBg, opacity: isPast ? 0.65 : 1, animation: `fadeUp 0.45s ease both`, animationDelay: `${cardDelay}ms` }}
+      style={{ background: cardBg, opacity: isPast ? 0.72 : 1, animation: `fadeUp 0.45s ease both`, animationDelay: `${cardDelay}ms`, border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 18px 42px rgba(16,24,40,0.22), 0 4px 10px rgba(16,24,40,0.14)' }}
       onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
       onTouchEnd={e => {
         if (touchStartX.current === null || photos.length < 2) return;
@@ -190,8 +190,9 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
           style={{
             position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
             opacity: i === photoIdx ? 1 : 0,
-            transition: 'opacity 0.6s ease',
-            filter: 'brightness(0.38) saturate(1.15)',
+            transition: 'opacity 0.38s ease, transform 2.1s ease',
+            transform: i === photoIdx ? 'scale(1.05)' : 'scale(1.008)',
+            filter: 'brightness(0.74) saturate(1.24) contrast(1.08)',
             zIndex: 0,
             pointerEvents: 'none',
           }}
@@ -201,14 +202,18 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
 
       {/* Bottom scrim for text contrast */}
       {photos.length > 0 && (
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.0) 35%, rgba(0,0,0,0.55) 100%)', zIndex: 1, pointerEvents: 'none' }} />
+        <>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 38%)', zIndex: 1, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(3,9,24,0.02) 0%, rgba(3,9,24,0.08) 48%, rgba(3,9,24,0.5) 100%)', zIndex: 1, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,0.14) 0%, transparent 52%)', zIndex: 1, pointerEvents: 'none' }} />
+        </>
       )}
 
       {/* Slide dot indicators */}
       {photos.length > 1 && (
-        <div style={{ position: 'absolute', bottom: 58, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 10, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', bottom: 60, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 10, pointerEvents: 'none' }}>
           {photos.map((_, i) => (
-            <div key={i} style={{ width: i === photoIdx ? 16 : 5, height: 5, borderRadius: 99, background: i === photoIdx ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.28)', transition: 'all 0.3s ease' }} />
+            <div key={i} style={{ width: i === photoIdx ? 18 : 5, height: 5, borderRadius: 99, background: i === photoIdx ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.38)', transition: 'all 0.3s ease', boxShadow: i === photoIdx ? '0 1px 8px rgba(255,255,255,0.5)' : 'none' }} />
           ))}
         </div>
       )}
@@ -216,28 +221,28 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
       {/* glow blob */}
       <div style={{ position: 'absolute', top: -20, right: -20, width: 130, height: 130, borderRadius: '50%', background: glowBg, pointerEvents: 'none', zIndex: 1 }} />
       {/* inner top shine */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 60, background: 'linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 100%)', borderRadius: '26px 26px 0 0', pointerEvents: 'none', zIndex: 2 }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 68, background: 'linear-gradient(180deg,rgba(255,255,255,0.11) 0%,transparent 100%)', borderRadius: '26px 26px 0 0', pointerEvents: 'none', zIndex: 2 }} />
       {/* card body */}
       <div style={{ padding: '20px 20px 0', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
         {/* top row */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 13 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,0.18)', border: '1px solid rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, backdropFilter: 'blur(8px)', boxShadow: '0 6px 16px rgba(16,24,40,0.2)' }}>
             {trip.emoji}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             {trip.isSolo && (
-              <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(127,119,221,0.18)', color: '#AFA9EC', border: '1px solid rgba(127,119,221,0.25)', boxShadow: '0 2px 8px rgba(127,119,221,0.2)' }}>Solo</span>
+              <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, background: 'rgba(127,119,221,0.22)', color: '#D7D3FF', border: '1px solid rgba(173,166,255,0.6)', boxShadow: '0 4px 14px rgba(127,119,221,0.26)', backdropFilter: 'blur(8px)' }}>Solo</span>
             )}
-            <span style={{ padding: '4px 9px', borderRadius: 20, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...((!isPast) ? { boxShadow: '0 2px 8px rgba(29,158,117,0.2)' } : {}) }}>
+            <span style={{ padding: '4px 10px', borderRadius: 20, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...((!isPast) ? { boxShadow: '0 4px 14px rgba(29,158,117,0.24)' } : {}) }}>
               {isPast ? 'Past' : status.label}
             </span>
           </div>
         </div>
         {/* destination + name */}
-        <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', lineHeight: 1.15, marginBottom: 4, fontFamily: "'Inter',sans-serif", textShadow: '0 1px 12px rgba(0,0,0,0.6), 0 2px 4px rgba(0,0,0,0.4)' }}>{trip.destination}</div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 12, fontWeight: 500, textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>{trip.groupName}</div>
+        <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.6px', lineHeight: 1.12, marginBottom: 4, fontFamily: "'Inter',sans-serif", textShadow: '0 2px 18px rgba(0,0,0,0.62), 0 1px 5px rgba(0,0,0,0.45)' }}>{trip.destination}</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.78)', marginBottom: 12, fontWeight: 600, textShadow: '0 1px 8px rgba(0,0,0,0.55)' }}>{trip.groupName}</div>
         {/* stats line */}
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', textShadow: '0 1px 8px rgba(0,0,0,0.58)' }}>
           <span>{formatDateRange(trip.arrival, trip.departure)}</span>
           <span style={{ opacity: 0.35 }}>·</span>
           <span>{days} nights</span>
@@ -249,38 +254,38 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
         {/* budget bar */}
         {budgetBase > 0 && (
           <div style={{ marginBottom: 14 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.3)', marginBottom: 5 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'rgba(255,255,255,0.6)', marginBottom: 5 }}>
               <span>Budget</span>
-              <span style={{ color: trip.isSolo ? '#FFAA80' : '#5DCAA5' }}>{budgetPct}% · ₹{Math.round(budgetBase - totalSpend).toLocaleString('en-IN')} left</span>
+              <span style={{ color: trip.isSolo ? '#FFD0BC' : '#B3F5DD' }}>{budgetPct}% · ₹{Math.round(budgetBase - totalSpend).toLocaleString('en-IN')} left</span>
             </div>
-            <div style={{ height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+            <div style={{ height: 5, background: 'rgba(255,255,255,0.18)', borderRadius: 99, overflow: 'hidden' }}>
               <div style={{ height: '100%', borderRadius: 99, background: barFill, '--w': `${budgetPct}%`, animation: `progressFill 1s ease both`, animationDelay: `${cardDelay + 200}ms`, width: `${budgetPct}%`, boxShadow: trip.isSolo ? '0 0 8px rgba(255,107,53,0.5)' : '0 0 8px rgba(29,158,117,0.5)' }} />
             </div>
           </div>
         )}
       </div>
       {/* card footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 20px', marginTop: budgetBase > 0 ? 0 : 14, borderTop: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.18)', backdropFilter: 'blur(10px)', position: 'relative', zIndex: 3 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 20px', marginTop: budgetBase > 0 ? 0 : 14, borderTop: '1px solid rgba(255,255,255,0.15)', background: 'linear-gradient(180deg,rgba(11,18,34,0.38) 0%, rgba(7,13,26,0.58) 100%)', backdropFilter: 'blur(14px)', position: 'relative', zIndex: 3 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flex: 1 }} onClick={(event) => onOpen(trip.id, event)}>
           {trip.isSolo
-            ? <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
-            : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 8, fontWeight: 700 }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
+            ? <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 5px 14px rgba(83,74,183,0.4)' }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
+            : <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 5px 14px rgba(15,110,86,0.4)' }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
           }
-          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginLeft: 0 }}>
+          <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.88)', marginLeft: 1, fontWeight: 600 }}>
             {memberNames[0] || (trip.isSolo ? 'You' : 'Member')}{!trip.isSolo && memberNames.length > 1 ? ` +${memberNames.length - 1}` : ''}
           </span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           {!trip.isSolo && (
             <div onClick={e => { e.stopPropagation(); onCopy(trip.shareCode, trip.id); }}
-              style={{ fontFamily: "'SF Mono',monospace", fontSize: 10, color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.07)', padding: '3px 8px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.06)', letterSpacing: '0.5px', cursor: 'pointer' }}>
+              style={{ fontFamily: "'SF Mono',monospace", fontSize: 10.5, color: 'rgba(255,255,255,0.92)', background: 'rgba(255,255,255,0.16)', padding: '4px 9px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.34)', letterSpacing: '0.6px', cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
               {copied === trip.id ? '✓ copied' : trip.shareCode}
             </div>
           )}
           <div style={{ position: 'relative' }}>
             <button
               onClick={e => { e.stopPropagation(); setMenuOpen(isMenuOpen ? null : trip.id); }}
-              style={{ width: 26, height: 26, borderRadius: 7, background: 'rgba(255,255,255,0.07)', color: 'rgba(255,255,255,0.35)', fontSize: 13, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>
+              style={{ width: 30, height: 30, borderRadius: 10, background: 'rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.95)', fontSize: 14, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.28)', cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
               ⋯
             </button>
             {isMenuOpen && (
