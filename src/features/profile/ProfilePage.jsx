@@ -316,6 +316,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
 
   const titleByView = {
     hub: 'My Profile',
+    profile: 'My Details',
     badges: 'Travel Badges',
     stats: 'Travel Stats',
     history: 'Trip History',
@@ -550,11 +551,21 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                     <button onClick={saveName} style={{ padding: '8px 12px', borderRadius: 10, border: 'none', background: '#fff', color: '#0F6E56', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>✓</button>
                   </div>
                 ) : (
-                  <div onClick={() => setEditingName(true)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px', textShadow: avatar ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>
-                      {name || 'Tap to add name'}
+                  <div>
+                    <div onClick={() => setEditingName(true)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px', textShadow: avatar ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>
+                        {name || 'Tap to add name'}
+                      </div>
+                      <span style={{ fontSize: 13, opacity: 0.75 }}>✎</span>
                     </div>
-                    <span style={{ fontSize: 13, opacity: 0.75 }}>✎</span>
+                    <div style={{ marginTop: 8 }}>
+                      <button
+                        onClick={() => setView('profile')}
+                        style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.92)', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.28)', borderRadius: 20, padding: '5px 20px', cursor: 'pointer', letterSpacing: 0.3, backdropFilter: 'blur(8px)', transition: 'background .15s' }}
+                      >
+                        View
+                      </button>
+                    </div>
                   </div>
                 )}
                 <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
@@ -578,57 +589,6 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               </div>
             ))}
           </div>
-
-          {/* ── Traveller Profile Card ── */}
-          {userProfile && (
-            <div style={{ padding: '0 1.25rem', paddingBottom: 0, paddingTop: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>Traveller profile</div>
-                <button onClick={onOpenOnboarding}
-                  style={{ fontSize: 11, color: '#1D9E75', fontWeight: 700, background: '#E1F5EE', border: '1px solid #9FE1CB', borderRadius: 20, padding: '3px 10px', cursor: 'pointer' }}>
-                  Edit
-                </button>
-              </div>
-              <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 20px rgba(0,0,0,0.045)' }}>
-                {[
-                  userProfile.hometown || userProfile.country
-                    ? { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1D9E75" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>, label: 'From', value: [userProfile.hometown, userProfile.country].filter(Boolean).join(', ') }
-                    : null,
-                  userProfile.gender
-                    ? { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#378ADD" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>, label: 'Gender', value: userProfile.gender.charAt(0).toUpperCase() + userProfile.gender.slice(1).replace(/-/g, ' ') }
-                    : null,
-                  userProfile.bloodGroup
-                    ? { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D4537E" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>, label: 'Blood group', value: userProfile.bloodGroup }
-                    : null,
-                  userProfile.emergencyName
-                    ? { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#D85A30" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>, label: 'Emergency', value: `${userProfile.emergencyName}${userProfile.emergencyRelation ? ` (${userProfile.emergencyRelation})` : ''}` }
-                    : null,
-                ].filter(Boolean).map((row, i, arr) => (
-                  <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none' }}>
-                    <span style={{ flexShrink: 0, display: 'flex' }}>{row.icon}</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 1 }}>{row.label}</div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.value}</div>
-                    </div>
-                  </div>
-                ))}
-                {!userProfile.hometown && !userProfile.gender && !userProfile.bloodGroup && !userProfile.emergencyName && (
-                  <div style={{ padding: '16px', textAlign: 'center', fontSize: 13, color: '#9a9a96' }}>
-                    Tap <strong>Edit</strong> to complete your traveller profile
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          {!userProfile && onOpenOnboarding && (
-            <div style={{ padding: '1.25rem 1.25rem 0' }}>
-              <button onClick={onOpenOnboarding}
-                style={{ width: '100%', padding: '14px', background: '#E1F5EE', border: '1.5px dashed #9FE1CB', borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 700, color: '#0F6E56' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
-                Set up your traveller profile
-              </button>
-            </div>
-          )}
 
           {/* Menu list — grouped sections */}
           {MENU_SECTIONS.map(section => (
@@ -698,6 +658,157 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               <div style={{ fontSize: 11, color: '#9a9a96', textAlign: 'center', marginTop: 4, lineHeight: 1.5 }}>
                 Deleting your account permanently wipes your profile and any trips where you're the only member.
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ════════ PROFILE DETAILS VIEW ════════ */}
+      {view === 'profile' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', paddingBottom: '2.5rem' }}>
+
+          {/* Mini hero */}
+          <div style={{
+            borderRadius: 22, padding: '1.75rem 1.25rem 1.5rem', color: '#fff',
+            textAlign: 'center', marginBottom: '1.25rem',
+            position: 'relative', overflow: 'hidden',
+            background: avatar ? 'transparent' : 'linear-gradient(135deg,#1D9E75 0%,#0d6647 100%)',
+            boxShadow: '0 12px 36px rgba(15,110,86,0.2)',
+            minHeight: 170,
+          }}>
+            {avatar && (
+              <>
+                <img src={avatar} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(22px) brightness(0.48) saturate(1.4)', transform: 'scale(1.15)', zIndex: 0, pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg,rgba(0,0,0,0.12) 0%,rgba(0,0,0,0.48) 100%)', zIndex: 0, borderRadius: 22 }} />
+              </>
+            )}
+            {!avatar && (
+              <>
+                <div style={{ position: 'absolute', top: -30, right: -30, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', bottom: -30, left: -20, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
+              </>
+            )}
+            <div style={{ position: 'relative', zIndex: 1 }}>
+              {avatar
+                ? <div style={{ width: 76, height: 76, borderRadius: '50%', background: `url(${avatar}) center/cover`, margin: '0 auto 14px', border: '3px solid rgba(255,255,255,0.55)', boxShadow: '0 6px 22px rgba(0,0,0,0.28)' }} />
+                : <div style={{ width: 76, height: 76, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: '#fff', border: '3px solid rgba(255,255,255,0.3)' }}>{initials}</div>
+              }
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 21, fontWeight: 700, letterSpacing: '-0.3px' }}>{name || 'Traveller'}</div>
+              <div style={{ fontSize: 12, opacity: 0.68, marginTop: 5 }}>
+                {stats.tripCount} trip{stats.tripCount !== 1 ? 's' : ''} · {stats.uniqueDests} destination{stats.uniqueDests !== 1 ? 's' : ''}
+              </div>
+            </div>
+          </div>
+
+          {userProfile ? (
+            <>
+              {/* Personal */}
+              {(userProfile.dateOfBirth || userProfile.gender) && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Personal</div>
+                  <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+                    {[
+                      userProfile.dateOfBirth ? { emoji: '🎂', label: 'Date of birth', value: (() => { try { const d = new Date(userProfile.dateOfBirth); const age = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000)); return `${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} · ${age} yrs`; } catch { return userProfile.dateOfBirth; } })() } : null,
+                      userProfile.gender ? { emoji: '👤', label: 'Gender', value: userProfile.gender.charAt(0).toUpperCase() + userProfile.gender.slice(1).replace(/-/g, ' ') } : null,
+                    ].filter(Boolean).map((row, i, arr) => (
+                      <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
+                        <div style={{ fontSize: 20, width: 26, textAlign: 'center', flexShrink: 0 }}>{row.emoji}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>{row.label}</div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{row.value}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Location */}
+              {(userProfile.hometown || userProfile.country) && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Location</div>
+                  <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px' }}>
+                      <div style={{ fontSize: 20, width: 26, textAlign: 'center', flexShrink: 0 }}>📍</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>From</div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{[userProfile.hometown, userProfile.country].filter(Boolean).join(', ')}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Emergency */}
+              {(userProfile.emergencyName || userProfile.phone) && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Emergency</div>
+                  <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+                    {[
+                      userProfile.emergencyName ? { emoji: '🆘', label: 'Contact', value: `${userProfile.emergencyName}${userProfile.emergencyRelation ? ` · ${userProfile.emergencyRelation}` : ''}` } : null,
+                      userProfile.emergencyPhone ? { emoji: '📞', label: 'Emergency phone', value: userProfile.emergencyPhone } : null,
+                      userProfile.phone ? { emoji: '📱', label: 'Your phone', value: userProfile.phone } : null,
+                    ].filter(Boolean).map((row, i, arr) => (
+                      <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
+                        <div style={{ fontSize: 20, width: 26, textAlign: 'center', flexShrink: 0 }}>{row.emoji}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>{row.label}</div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{row.value}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Health */}
+              {(userProfile.bloodGroup || userProfile.medicalNotes) && (
+                <div style={{ marginBottom: 20 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Health</div>
+                  <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
+                    {[
+                      userProfile.bloodGroup ? { emoji: '🩸', label: 'Blood group', value: userProfile.bloodGroup } : null,
+                      userProfile.medicalNotes ? { emoji: '💊', label: 'Medical notes', value: userProfile.medicalNotes } : null,
+                    ].filter(Boolean).map((row, i, arr) => (
+                      <div key={row.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 16px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
+                        <div style={{ fontSize: 20, width: 26, textAlign: 'center', flexShrink: 0, marginTop: 2 }}>{row.emoji}</div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>{row.label}</div>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18', lineHeight: 1.5 }}>{row.value}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Empty state */}
+              {!userProfile.dateOfBirth && !userProfile.gender && !userProfile.hometown && !userProfile.country && !userProfile.emergencyName && !userProfile.bloodGroup && (
+                <div style={{ textAlign: 'center', padding: '2.5rem 1rem 1.5rem', color: '#9a9a96' }}>
+                  <div style={{ fontSize: 40, marginBottom: 10 }}>👤</div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 600, color: '#1a1a18', marginBottom: 6 }}>Nothing filled in yet</div>
+                  <div style={{ fontSize: 13, lineHeight: 1.55 }}>Tap Update below to add your details.</div>
+                </div>
+              )}
+
+              {onOpenOnboarding && (
+                <button onClick={onOpenOnboarding} style={{ width: '100%', padding: '14px', borderRadius: 16, border: 'none', background: 'linear-gradient(135deg,#1D9E75,#0d6647)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 6px 20px rgba(29,158,117,0.3)', transition: 'opacity .15s' }}>
+                  Update profile
+                </button>
+              )}
+            </>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '3rem 1rem 1.5rem' }}>
+              <div style={{ fontSize: 46, marginBottom: 14 }}>✨</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#1a1a18', marginBottom: 8 }}>Set up your profile</div>
+              <div style={{ fontSize: 13.5, color: '#6b6b68', lineHeight: 1.65, maxWidth: 280, margin: '0 auto 28px' }}>
+                Add personal details, emergency contacts and health info — all private, all yours.
+              </div>
+              {onOpenOnboarding && (
+                <button onClick={onOpenOnboarding} style={{ padding: '13px 36px', borderRadius: 16, border: 'none', background: 'linear-gradient(135deg,#1D9E75,#0d6647)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 6px 20px rgba(29,158,117,0.3)' }}>
+                  Get started
+                </button>
+              )}
             </div>
           )}
         </div>
