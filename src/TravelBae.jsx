@@ -294,25 +294,45 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [homeTab, setHomeTab] = useState('trips');
   const [seenHomeNotifIds, setSeenHomeNotifIds] = useState(new Set());
+  const [showNotifPopover, setShowNotifPopover] = useState(false);
 
-  const homeNotifCount = useMemo(() => {
+  const tripNotifications = useMemo(() => {
     const now = new Date();
-    let count = 0;
-    trips.forEach(trip => {
-      if (!trip.completed && trip.arrival) {
-        const diff = Math.ceil((new Date(trip.arrival) - now) / 86400000);
-        if (diff >= 0 && diff <= 3) count++;
-      }
-      if (!trip.completed) {
-        const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
-        if (status.label === 'Ongoing') count++;
-      }
+    const notes = [];
+    const rank = { high: 0, medium: 1, low: 2 };
+    trips.forEach((trip) => {
+      const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
+      const arrival = trip.arrival ? new Date(trip.arrival) : null;
+      const departure = trip.departure ? new Date(trip.departure) : null;
       const totalSpend = (trip.expenses || []).reduce((s, e) => s + (Number(e.amount) || 0), 0);
       const budgetBase = Number(trip.budget) || 0;
-      if (!trip.completed && budgetBase > 0 && (totalSpend / budgetBase) >= 0.85) count++;
+      const budgetPct = budgetBase > 0 ? Math.round((totalSpend / budgetBase) * 100) : 0;
+      if (!trip.completed && arrival) {
+        const diffDays = Math.ceil((arrival.getTime() - now.getTime()) / 86400000);
+        if (diffDays >= 0 && diffDays <= 3) {
+          notes.push({ id: `upcoming-${trip.id}`, level: 'high', title: `${trip.groupName} starts soon`, body: `${trip.destination} starts in ${diffDays === 0 ? 'less than a day' : `${diffDays} day${diffDays > 1 ? 's' : ''}`}.` });
+        }
+      }
+      if (!trip.completed && status.label === 'Ongoing') {
+        notes.push({ id: `ongoing-${trip.id}`, level: 'medium', title: `${trip.groupName} is live`, body: `Your trip to ${trip.destination} is currently ongoing.` });
+      }
+      if (!trip.completed && budgetBase > 0 && budgetPct >= 85) {
+        notes.push({ id: `budget-${trip.id}`, level: budgetPct >= 100 ? 'high' : 'medium', title: `${trip.groupName} budget alert`, body: `${budgetPct}% of your trip budget has been used.` });
+      }
+      if (trip.completed && departure) {
+        const sinceDays = Math.floor((now.getTime() - departure.getTime()) / 86400000);
+        if (sinceDays >= 0 && sinceDays <= 7) {
+          notes.push({ id: `recent-past-${trip.id}`, level: 'low', title: `${trip.groupName} moved to Past Trips`, body: `${trip.destination} is now in your Past Trips.` });
+        }
+      }
     });
-    return Math.max(0, count - seenHomeNotifIds.size);
-  }, [trips, seenHomeNotifIds]);
+    return notes.sort((a, b) => rank[a.level] - rank[b.level]);
+  }, [trips]);
+
+  const homeNotifCount = useMemo(
+    () => tripNotifications.filter(n => !seenHomeNotifIds.has(n.id)).length,
+    [tripNotifications, seenHomeNotifIds]
+  );
   const [userProfile, setUserProfile] = useState(null);
   const [sharedFlight, setSharedFlight] = useState(null);
   const [sharedFlightActive, setSharedFlightActive] = useState(false);
@@ -1143,25 +1163,59 @@ export default function App() {
           <img src={bglessLogo} alt="TripBae" style={{ height: 72, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {!activeTrip && !activeTripData && (
-          <button
-            onClick={() => {
-              setHomeTab(t => {
-                const next = t === 'notifications' ? 'trips' : 'notifications';
-                if (next === 'notifications') setSeenHomeNotifIds(new Set());
-                return next;
-              });
-            }}
-            title="Notifications"
-            style={{ marginLeft: 'auto', position: 'relative', width: 36, height: 36, borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a18" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
-            {homeNotifCount > 0 && (
-              <span style={{ position: 'absolute', top: 4, right: 4, width: 9, height: 9, borderRadius: '50%', background: '#FF6B35', border: '2px solid #fff', display: 'block' }} />
+          <div style={{ marginLeft: 'auto', position: 'relative' }}>
+            <button
+              onClick={() => {
+                setShowNotifPopover(v => {
+                  if (!v) setSeenHomeNotifIds(new Set(tripNotifications.map(n => n.id)));
+                  return !v;
+                });
+              }}
+              title="Notifications"
+              style={{ position: 'relative', width: 36, height: 36, borderRadius: '50%', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a18" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+              {homeNotifCount > 0 && (
+                <span style={{ position: 'absolute', top: 4, right: 4, width: 9, height: 9, borderRadius: '50%', background: '#FF6B35', border: '2px solid #fff', display: 'block' }} />
+              )}
+            </button>
+            {showNotifPopover && (
+              <>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 498 }} onClick={() => setShowNotifPopover(false)} />
+                <div style={{ position: 'fixed', top: 62, right: 12, width: 'min(340px, calc(100vw - 24px))', maxHeight: 420, overflowY: 'auto', background: '#fff', borderRadius: 18, boxShadow: '0 8px 40px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)', border: '0.5px solid rgba(0,0,0,0.1)', zIndex: 499, animation: 'notifPopIn .18s cubic-bezier(.15,.85,.25,1)' }}>
+                  <style>{`@keyframes notifPopIn { from { opacity:0; transform:translateY(-8px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }`}</style>
+                  <div style={{ padding: '14px 16px 10px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: '#fff', zIndex: 1, borderRadius: '18px 18px 0 0' }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#0F1A12' }}>Notifications</div>
+                    <button onClick={() => setShowNotifPopover(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9a9a96', lineHeight: 1, padding: '2px 4px' }}>×</button>
+                  </div>
+                  <div style={{ padding: '10px 12px 12px' }}>
+                    {tripNotifications.length === 0 ? (
+                      <div style={{ padding: '1.25rem 0.5rem', textAlign: 'center', color: '#6b7280' }}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', margin: '0 auto 8px' }}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 3 }}>No new notifications</div>
+                        <div style={{ fontSize: 12 }}>Trip updates and budget alerts will appear here.</div>
+                      </div>
+                    ) : tripNotifications.map((n) => {
+                      const accent = n.level === 'high' ? '#B42318' : n.level === 'medium' ? '#92400E' : '#1D4ED8';
+                      const bg = n.level === 'high' ? '#FEF3F2' : n.level === 'medium' ? '#FFFBEB' : '#EFF6FF';
+                      return (
+                        <div key={n.id} style={{ borderLeft: `3px solid ${accent}`, borderRadius: 10, padding: '10px 10px 10px 11px', marginBottom: 7, background: '#fafaf8' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                            <span style={{ fontSize: 10, fontWeight: 800, color: accent, background: bg, border: `1px solid ${accent}30`, borderRadius: 999, padding: '2px 7px', letterSpacing: 0.4, textTransform: 'uppercase' }}>{n.level}</span>
+                          </div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 2 }}>{n.title}</div>
+                          <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>{n.body}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
             )}
-          </button>
+          </div>
         )}
         {activeTrip && activeTripData ? (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1344,6 +1398,8 @@ export default function App() {
           userProfile={userProfile}
           onUpdateProfile={(up) => setUserProfile(up)}
           onOpenOnboarding={() => { setProfileOpen(false); setShowOnboarding(true); }}
+          onMarkActive={handleMarkActive}
+          onDeleteTrip={handleDeleteTrip}
         />
       )}
     </div>

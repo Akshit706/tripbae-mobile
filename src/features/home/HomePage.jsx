@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   formatDateRange,
   normalizeMembers,
@@ -216,7 +216,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
 
       {/* Slide dot indicators */}
       {photos.length > 1 && (
-        <div style={{ position: 'absolute', bottom: 60, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 10, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', bottom: 46, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 10, pointerEvents: 'none' }}>
           {photos.map((_, i) => (
             <div key={i} style={{ width: i === photoIdx ? 18 : 5, height: 5, borderRadius: 99, background: i === photoIdx ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.38)', transition: 'all 0.3s ease', boxShadow: i === photoIdx ? '0 1px 8px rgba(255,255,255,0.5)' : 'none' }} />
           ))}
@@ -228,9 +228,9 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
       {/* inner top shine */}
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 68, background: 'linear-gradient(180deg,rgba(255,255,255,0.11) 0%,transparent 100%)', borderRadius: '26px 26px 0 0', pointerEvents: 'none', zIndex: 2 }} />
       {/* card body */}
-      <div style={{ padding: '20px 20px 0', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
+      <div style={{ padding: '14px 16px 0', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
         {/* top row */}
-        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 13 }}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginBottom: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             {trip.isSolo && (
               <span style={{ padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: 'rgba(99,102,241,0.2)', color: '#C7D2FE', border: '1px solid rgba(129,140,248,0.42)', boxShadow: '0 0 20px rgba(79,70,229,0.28)' }}>Solo</span>
@@ -241,10 +241,10 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
           </div>
         </div>
         {/* destination + name */}
-        <div style={{ fontSize: 26, fontWeight: 800, color: '#fff', letterSpacing: '-0.7px', lineHeight: 1.12, marginBottom: 5, fontFamily: "'Inter',sans-serif", textShadow: '0 4px 26px rgba(0,0,0,0.78), 0 1px 4px rgba(0,0,0,0.52)' }}>{trip.destination}</div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.84)', marginBottom: 12, fontWeight: 600, textShadow: '0 1px 8px rgba(0,0,0,0.62)' }}>{trip.groupName}</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.7px', lineHeight: 1.12, marginBottom: 3, fontFamily: "'Inter',sans-serif", textShadow: '0 4px 26px rgba(0,0,0,0.78), 0 1px 4px rgba(0,0,0,0.52)' }}>{trip.destination}</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.84)', marginBottom: 7, fontWeight: 600, textShadow: '0 1px 8px rgba(0,0,0,0.62)' }}>{trip.groupName}</div>
         {/* stats line */}
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.94)', fontWeight: 600, marginBottom: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.94)', fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', textShadow: '0 1px 8px rgba(0,0,0,0.6)' }}>
           <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             {formatDateRange(trip.arrival, trip.departure)}
@@ -267,7 +267,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
         </div>
       </div>
       {/* card footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 20px', marginTop: 14, borderTop: '1px solid rgba(255,255,255,0.15)', background: 'linear-gradient(180deg,rgba(6,12,26,0.5) 0%, rgba(4,9,20,0.8) 100%)', backdropFilter: 'blur(14px)', position: 'relative', zIndex: 3 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 16px', marginTop: 6, borderTop: '1px solid rgba(255,255,255,0.15)', background: 'linear-gradient(180deg,rgba(6,12,26,0.5) 0%, rgba(4,9,20,0.8) 100%)', backdropFilter: 'blur(14px)', position: 'relative', zIndex: 3 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flex: 1 }} onClick={(event) => onOpen(trip.id, event)}>
           {trip.isSolo
             ? <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 5px 14px rgba(83,74,183,0.4)' }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
@@ -280,7 +280,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
         {budgetBase > 0 && (
           <div style={{ marginRight: 10, paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.22)', minWidth: 150 }}>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginBottom: 1 }}>Budget</div>
-            <div style={{ fontSize: 14, color: '#FF6B35', fontWeight: 800, letterSpacing: 0.1 }}>{budgetPct}% · ₹{budgetLeft.toLocaleString('en-IN')} left</div>
+            <div style={{ fontSize: 13, color: '#FF6B35', fontWeight: 800, letterSpacing: 0.1 }}>{budgetPct}% · ₹{budgetLeft.toLocaleString('en-IN')} left</div>
           </div>
         )}
         {showMenu && <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -325,7 +325,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [showCreate, setShowCreate] = useState(false);
   const [createStep, setCreateStep] = useState(0);
   const [showJoin, setShowJoin] = useState(false);
-  const [showPast, setShowPast] = useState(false);
   const [joinCode, setJoinCode] = useState('');
   const [joinName, setJoinName] = useState('');
   const [joinError, setJoinError] = useState('');
@@ -338,8 +337,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [confirmComplete, setConfirmComplete] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
   const [archivingTripId, setArchivingTripId] = useState(null);
-  const [pastFolderPulse, setPastFolderPulse] = useState(false);
-  const [seenNotificationIds, setSeenNotificationIds] = useState(new Set());
   const [tagIdx, setTagIdx] = useState(() => {
     const pool = [0, 1, 2, 9, 10, 7];
     return pool[Math.floor(Math.random() * pool.length)];
@@ -473,81 +470,13 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
 
   const activeTrips = trips.filter(t => !t.completed);
-  const pastTrips   = trips.filter(t =>  t.completed);
-
-  const notifications = useMemo(() => {
-    const now = new Date();
-    const notes = [];
-    trips.forEach((trip) => {
-      const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
-      const arrival = trip.arrival ? new Date(trip.arrival) : null;
-      const departure = trip.departure ? new Date(trip.departure) : null;
-      const totalSpend = (trip.expenses || []).reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
-      const budgetBase = Number(trip.budget) || 0;
-      const budgetPct = budgetBase > 0 ? Math.round((totalSpend / budgetBase) * 100) : 0;
-
-      if (!trip.completed && arrival) {
-        const diffDays = Math.ceil((arrival.getTime() - now.getTime()) / 86400000);
-        if (diffDays >= 0 && diffDays <= 3) {
-          notes.push({
-            id: `upcoming-${trip.id}`,
-            level: 'high',
-            title: `${trip.groupName} starts soon`,
-            body: `${trip.destination} starts in ${diffDays === 0 ? 'less than a day' : `${diffDays} day${diffDays > 1 ? 's' : ''}`}.`,
-          });
-        }
-      }
-
-      if (!trip.completed && status.label === 'Ongoing') {
-        notes.push({
-          id: `ongoing-${trip.id}`,
-          level: 'medium',
-          title: `${trip.groupName} is live`,
-          body: `Your trip to ${trip.destination} is currently ongoing.`,
-        });
-      }
-
-      if (!trip.completed && budgetBase > 0 && budgetPct >= 85) {
-        notes.push({
-          id: `budget-${trip.id}`,
-          level: budgetPct >= 100 ? 'high' : 'medium',
-          title: `${trip.groupName} budget alert`,
-          body: `${budgetPct}% of your trip budget has been used.`,
-        });
-      }
-
-      if (trip.completed && departure) {
-        const sinceDays = Math.floor((now.getTime() - departure.getTime()) / 86400000);
-        if (sinceDays >= 0 && sinceDays <= 7) {
-          notes.push({
-            id: `recent-past-${trip.id}`,
-            level: 'low',
-            title: `${trip.groupName} moved to Past Trips`,
-            body: `${trip.destination} is now in your memories folder.`,
-          });
-        }
-      }
-    });
-
-    const rank = { high: 0, medium: 1, low: 2 };
-    return notes.sort((a, b) => rank[a.level] - rank[b.level]);
-  }, [trips]);
-
-  useEffect(() => {
-    if (homeTab !== 'notifications' || notifications.length === 0) return;
-    setSeenNotificationIds(new Set(notifications.map(n => n.id)));
-  }, [homeTab, notifications]);
-
-  const unreadNotificationCount = notifications.filter(n => !seenNotificationIds.has(n.id)).length;
 
   const markTripCompleteWithAnimation = (tripId) => {
     setArchivingTripId(tripId);
-    setPastFolderPulse(true);
     setTimeout(() => {
       onMarkComplete(tripId);
       setArchivingTripId(null);
     }, 430);
-    setTimeout(() => setPastFolderPulse(false), 920);
   };
 
   const handleCreate = async () => {
@@ -615,65 +544,6 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     if (createStep === 3) return !!form.departure;
     return true;
   };
-
-  if (showPast) {
-    return (
-      <div>
-        {confirmDelete && (
-          <ConfirmDialog
-            title="Delete Trip"
-            message={`Are you sure you want to delete "${confirmDelete.groupName}"? This cannot be undone.`}
-            confirmLabel="🗑️ Delete"
-            confirmStyle="danger"
-            onConfirm={() => { onDeleteTrip(confirmDelete.id); setConfirmDelete(null); }}
-            onCancel={() => setConfirmDelete(null)}
-          />
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: '1.25rem' }}>
-          <button style={{ ...S.btn, borderRadius: 12, padding: '7px 12px', background: '#fff', border: '1px solid rgba(15,23,42,0.12)' }} onClick={() => setShowPast(false)}>← Back</button>
-          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#111827' }}>Past Trips</div>
-          <span style={{ fontSize: 12, color: '#4b5563', background: '#EEF2F7', border: '1px solid #D8DFEA', borderRadius: 999, padding: '4px 11px', fontWeight: 700 }}>
-            {pastTrips.length} trip{pastTrips.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-        {pastTrips.length === 0 && (
-          <div style={{ textAlign: 'center', padding: '3rem', color: '#6b6b68' }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}> </div>
-            <p>No completed trips yet.</p>
-          </div>
-        )}
-        {pastTrips.map((trip, idx) => {
-          return (
-            <div key={trip.id} style={{ marginBottom: 14 }}>
-              <TripCard
-                trip={trip}
-                idx={idx}
-                onOpen={(tripId, event) => { setShowPast(false); openTripWithMotion(tripId, event); }}
-                copied={copied}
-                onCopy={copyCode}
-                menuOpen={menuOpen}
-                setMenuOpen={setMenuOpen}
-                setConfirmComplete={setConfirmComplete}
-                setConfirmDelete={setConfirmDelete}
-              />
-              <div style={{ marginTop: -4, padding: '0 6px 4px', display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                <button
-                  onClick={() => onMarkActive(trip.id)}
-                  style={{ ...S.btn, fontSize: 11, padding: '6px 12px', color: '#0F6E56', borderColor: '#9FE1CB', background: '#E1F5EE', borderRadius: 10 }}>
-                  Restore
-                </button>
-                <button
-                  onClick={() => setConfirmDelete(trip)}
-                  style={{ ...S.btn, fontSize: 11, padding: '6px 12px', color: '#993C1D', borderColor: '#F5C4B3', background: '#FAECE7', borderRadius: 10 }}>
-                  Delete
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    );
-  }
 
   if (joinSuccess) {
     return (
@@ -911,47 +781,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       ))}
 
       {homeTab === 'notifications' && (
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.34)', textTransform: 'uppercase', marginBottom: 10 }}>Recent Notifications</div>
-          {notifications.length === 0 ? (
-            <div style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)', borderRadius: 16, padding: '1.4rem 1rem', textAlign: 'center', color: '#6b7280' }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" style={{ marginBottom: 8 }}>
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 4 }}>No new notifications</div>
-              <div style={{ fontSize: 12 }}>Trip updates and budget alerts will appear here.</div>
-            </div>
-          ) : notifications.map((n) => {
-            const isUnread = !seenNotificationIds.has(n.id);
-            const accent = n.level === 'high' ? '#B42318' : n.level === 'medium' ? '#92400E' : '#1D4ED8';
-            const bg = n.level === 'high' ? '#FEF3F2' : n.level === 'medium' ? '#FFFBEB' : '#EFF6FF';
-            return (
-              <div key={n.id} style={{ background: '#fff', border: '1px solid rgba(15,23,42,0.08)', borderLeft: `4px solid ${accent}`, borderRadius: 14, padding: '12px 12px 12px 11px', marginBottom: 9, boxShadow: isUnread ? '0 8px 24px rgba(15,23,42,0.08)' : 'none' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: accent, background: bg, border: `1px solid ${accent}30`, borderRadius: 999, padding: '2px 8px', letterSpacing: 0.45, textTransform: 'uppercase' }}>{n.level}</span>
-                  {isUnread && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF6B35', display: 'inline-block' }} />}
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 3 }}>{n.title}</div>
-                <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.55 }}>{n.body}</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {homeTab === 'trips' && pastTrips.length > 0 && (
-        <div className={pastFolderPulse ? 'tb-past-folder-pulse' : ''} onClick={() => setShowPast(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(145deg,#ffffff 0%,#f8fafc 100%)', border: '1px solid rgba(15,23,42,0.1)', borderRadius: 15, padding: '14px 18px', cursor: 'pointer', marginTop: 8, marginBottom: 4, boxShadow: '0 8px 26px rgba(12,20,34,0.08)' }}>
-          <div style={{ width: 42, height: 42, borderRadius: 12, background: '#EEF2F7', border: '1px solid #D8DFEA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#334155" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" />
-            </svg>
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 2, color: '#0F172A' }}>Past Trips</div>
-            <div style={{ fontSize: 12, color: '#64748B' }}>{pastTrips.length} completed trip{pastTrips.length !== 1 ? 's' : ''} · open memories</div>
-          </div>
-          <div style={{ fontSize: 16, color: '#94A3B8' }}>›</div>
+        <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.34)', textTransform: 'uppercase', marginBottom: 10, padding: '12px 0 4px' }}>
+          Notifications moved — tap the 🔔 bell in the top bar to view them.
         </div>
       )}
 

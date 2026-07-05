@@ -52,7 +52,7 @@ function computeProfileStats(trips) {
   };
 }
 
-function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trips, userProfile, onUpdateProfile, onOpenOnboarding }) {
+function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trips, userProfile, onUpdateProfile, onOpenOnboarding, onMarkActive, onDeleteTrip }) {
   const [view, setView] = useState('hub'); // 'hub' | 'badges' | 'stats' | 'history' | 'notifications' | 'currency' | 'privacy' | 'help' | 'about'
   const [spanFilter, setSpanFilter] = useState('all'); 
   const [name, setName] = useState(profile.name || '');
@@ -319,7 +319,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
     profile: 'My Details',
     badges: 'Travel Badges',
     stats: 'Travel Stats',
-    history: 'Trip History',
+    history: 'Past Trips',
     notifications: 'Notifications',
     currency: 'Default Currency',
     privacy: 'Privacy & Safety',
@@ -336,7 +336,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       items: [
         { id: 'badges',  icon: '🏆', label: 'Badges',       sub: `${earned.length}/${BADGE_DEFS.length} earned · ${earnedPct}%`,                          accent: '#1D9E75', action: 'view' },
         { id: 'stats',   icon: '📊', label: 'Travel Stats', sub: `${stats.uniqueDests} places · ${totalTravelDays} days`,                                  accent: '#7F77DD', action: 'view' },
-        { id: 'history', icon: '🧳', label: 'Trip History', sub: `${stats.completedCount} completed · ${Math.max(0, stats.tripCount - stats.completedCount)} active`, accent: '#FF6B35', action: 'view' },
+        { id: 'history', icon: '🧳', label: 'Past Trips', sub: `${stats.completedCount} completed trip${stats.completedCount === 1 ? '' : 's'}`, accent: '#FF6B35', action: 'view' },
       ],
     },
     {
@@ -984,39 +984,61 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         </div>
       )}
 
-      {/* ════════ TRIP HISTORY VIEW ════════ */}
+      {/* ════════ PAST TRIPS VIEW ════════ */}
       {view === 'history' && (
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
-          {tripList.length === 0 ? (
-            <div style={{ background: '#fff', border: '0.5px dashed rgba(0,0,0,0.15)', borderRadius: 14, padding: '2rem 1rem', textAlign: 'center', color: '#6b6b68' }}>
-              <div style={{ fontSize: 38, marginBottom: 6 }}>🗺️</div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>No trips yet</div>
-              <div style={{ fontSize: 12, marginTop: 4 }}>Create one from your home screen to start your travel log.</div>
-            </div>
-          ) : (
-            tripList.map(t => {
-              const spend = (t.expenses || []).reduce((a, e) => a + (e.amount || 0), 0);
-              return (
-                <div key={t.id} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 12, background: t.isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                    {t.emoji || (t.isSolo ? '🎒' : '✈️')}
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.groupName || 'Untitled trip'}</div>
-                      {t.completed && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#E1F5EE', color: '#0F6E56' }}>DONE</span>}
-                      {t.isSolo && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#EEEDFE', color: '#534AB7' }}>SOLO</span>}
+          {(() => {
+            const pastList = tripList.filter(t => t.completed);
+            return pastList.length === 0 ? (
+              <div style={{ background: '#fff', border: '0.5px dashed rgba(0,0,0,0.15)', borderRadius: 14, padding: '2rem 1rem', textAlign: 'center', color: '#6b6b68' }}>
+                <div style={{ fontSize: 38, marginBottom: 6 }}>🧳</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>No past trips yet</div>
+                <div style={{ fontSize: 12, marginTop: 4 }}>Mark a trip as completed and it will appear here.</div>
+              </div>
+            ) : (
+              pastList.map(t => {
+                const spend = (t.expenses || []).reduce((a, e) => a + (e.amount || 0), 0);
+                return (
+                  <div key={t.id} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', marginBottom: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <div style={{ width: 44, height: 44, borderRadius: 12, background: t.isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                        {t.emoji || (t.isSolo ? '🎒' : '✈️')}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.groupName || 'Untitled trip'}</div>
+                          {t.isSolo && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#EEEDFE', color: '#534AB7' }}>SOLO</span>}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          📍 {t.destination || '—'}
+                          {spend > 0 && <> · ₹{Math.round(spend).toLocaleString('en-IN')}</>}
+                          {(t.photos || []).length > 0 && <> · {(t.photos || []).length} 📸</>}
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      📍 {t.destination || '—'}
-                      {spend > 0 && <> · ₹{Math.round(spend).toLocaleString('en-IN')}</>}
-                      {(t.photos || []).length > 0 && <> · {(t.photos || []).length} 📸</>}
-                    </div>
+                    {(onMarkActive || onDeleteTrip) && (
+                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8, paddingTop: 8, borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
+                        {onMarkActive && (
+                          <button
+                            onClick={() => onMarkActive(t.id)}
+                            style={{ fontSize: 11, padding: '5px 12px', borderRadius: 10, border: '1px solid #9FE1CB', background: '#E1F5EE', color: '#0F6E56', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: 700 }}>
+                            Restore
+                          </button>
+                        )}
+                        {onDeleteTrip && (
+                          <button
+                            onClick={() => onDeleteTrip(t.id)}
+                            style={{ fontSize: 11, padding: '5px 12px', borderRadius: 10, border: '1px solid #F5C4B3', background: '#FAECE7', color: '#993C1D', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: 700 }}>
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
-                </div>
-              );
-            })
-          )}
+                );
+              })
+            );
+          })()}
         </div>
       )}
 
