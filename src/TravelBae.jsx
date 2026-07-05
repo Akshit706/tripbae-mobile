@@ -277,7 +277,7 @@ export default function App() {
   // authMode: 'password-login' only (simplified)
   const [authMode, setAuthMode] = useState('password-login');
   const [authScreen, setAuthScreen] = useState('login');
-  const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', otp: '' });
+  const [authForm, setAuthForm] = useState({ name: '', email: 'tripbae1@gmail.com', password: 'tripbae', otp: '' });
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
   const [otpSentTo, setOtpSentTo] = useState('');
