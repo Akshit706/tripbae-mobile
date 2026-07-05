@@ -43,7 +43,7 @@ import UserProfileWizard from './features/profile/UserProfileWizard';
 
 /* ─── CONSTANTS ─────────────────────────────────────── */
 const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
-const API_BASE = 'https://travelbae-backend.onrender.com';
+const API_BASE = 'https://travelbae-backend-sg.onrender.com';
 const CATS = [
   {id:'food',icon:'🍽️',label:'Food',bg:'#FAEEDA'},
   {id:'transport',icon:'🚗',label:'Transport',bg:'#E1F5EE'},
