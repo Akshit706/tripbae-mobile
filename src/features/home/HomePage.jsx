@@ -216,7 +216,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
 
       {/* Slide dot indicators */}
       {photos.length > 1 && (
-        <div style={{ position: 'absolute', bottom: 46, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 10, pointerEvents: 'none' }}>
+        <div style={{ position: 'absolute', bottom: 38, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 5, zIndex: 10, pointerEvents: 'none' }}>
           {photos.map((_, i) => (
             <div key={i} style={{ width: i === photoIdx ? 18 : 5, height: 5, borderRadius: 99, background: i === photoIdx ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.38)', transition: 'all 0.3s ease', boxShadow: i === photoIdx ? '0 1px 8px rgba(255,255,255,0.5)' : 'none' }} />
           ))}
@@ -267,27 +267,27 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
         </div>
       </div>
       {/* card footer */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 16px', marginTop: 6, borderTop: '1px solid rgba(255,255,255,0.15)', background: 'linear-gradient(180deg,rgba(6,12,26,0.5) 0%, rgba(4,9,20,0.8) 100%)', backdropFilter: 'blur(14px)', position: 'relative', zIndex: 3 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', flex: 1 }} onClick={(event) => onOpen(trip.id, event)}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 14px', marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.12)', background: 'linear-gradient(180deg,rgba(6,12,26,0.55) 0%, rgba(4,9,20,0.84) 100%)', backdropFilter: 'blur(14px)', position: 'relative', zIndex: 3 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', flex: 1 }} onClick={(event) => onOpen(trip.id, event)}>
           {trip.isSolo
-            ? <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 5px 14px rgba(83,74,183,0.4)' }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
-            : <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 5px 14px rgba(15,110,86,0.4)' }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
+            ? <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 7, fontWeight: 700, boxShadow: '0 3px 8px rgba(83,74,183,0.4)', flexShrink: 0 }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
+            : <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 7, fontWeight: 700, boxShadow: '0 3px 8px rgba(15,110,86,0.4)', flexShrink: 0 }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
           }
-          <span style={{ fontSize: 12.5, color: 'rgba(255,255,255,0.9)', marginLeft: 1, fontWeight: 700 }}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.88)', marginLeft: 1, fontWeight: 600 }}>
             {memberNames[0] || (trip.isSolo ? 'You' : 'Member')}{!trip.isSolo && memberNames.length > 1 ? ` +${memberNames.length - 1}` : ''}
           </span>
         </div>
         {budgetBase > 0 && (
-          <div style={{ marginRight: 10, paddingLeft: 12, borderLeft: '1px solid rgba(255,255,255,0.22)', minWidth: 150 }}>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 600, marginBottom: 1 }}>Budget</div>
-            <div style={{ fontSize: 13, color: '#FF6B35', fontWeight: 800, letterSpacing: 0.1 }}>{budgetPct}% · ₹{budgetLeft.toLocaleString('en-IN')} left</div>
+          <div style={{ marginRight: 8, paddingLeft: 10, borderLeft: '1px solid rgba(255,255,255,0.18)', minWidth: 120 }}>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', fontWeight: 600, marginBottom: 0 }}>Budget</div>
+            <div style={{ fontSize: 11, color: '#FF6B35', fontWeight: 800, letterSpacing: 0.1 }}>{budgetPct}% · ₹{budgetLeft.toLocaleString('en-IN')} left</div>
           </div>
         )}
         {showMenu && <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <div style={{ position: 'relative' }}>
             <button
               onClick={e => { e.stopPropagation(); setMenuOpen(isMenuOpen ? null : trip.id); }}
-              style={{ width: 42, height: 42, borderRadius: 14, background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.95)', fontSize: 22, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.2)', cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
+              style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.92)', fontSize: 18, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.16)', cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
               ⋯
             </button>
             {isMenuOpen && (

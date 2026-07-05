@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { tripDuration, normalizeMembers } from '../shared/constants';
+import { tripDuration, normalizeMembers, formatDateRange } from '../shared/constants';
 import { S } from '../shared/styles';
 import { imagekitAuth } from '../../api';
 import bglessLogo from '../../assets/bgless.png';
@@ -998,21 +998,20 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
             ) : (
               pastList.map(t => {
                 const spend = (t.expenses || []).reduce((a, e) => a + (e.amount || 0), 0);
+                const dateRange = (t.arrival && t.departure) ? formatDateRange(t.arrival, t.departure) : null;
                 return (
                   <div key={t.id} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', marginBottom: 10 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ width: 44, height: 44, borderRadius: 12, background: t.isSolo ? 'linear-gradient(135deg,#EEEDFE,#E6F1FB)' : '#E1F5EE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                        {t.emoji || (t.isSolo ? '🎒' : '✈️')}
-                      </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.groupName || 'Untitled trip'}</div>
-                          {t.isSolo && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#EEEDFE', color: '#534AB7' }}>SOLO</span>}
+                          {t.isSolo && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#EEEDFE', color: '#534AB7', flexShrink: 0 }}>SOLO</span>}
                         </div>
-                        <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          📍 {t.destination || '—'}
-                          {spend > 0 && <> · ₹{Math.round(spend).toLocaleString('en-IN')}</>}
-                          {(t.photos || []).length > 0 && <> · {(t.photos || []).length} 📸</>}
+                        <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 3 }}>
+                          {t.destination && <span>📍 {t.destination}</span>}
+                          {dateRange && <span style={{ color: '#9a9a96' }}> · {dateRange}</span>}
+                          {spend > 0 && <span> · ₹{Math.round(spend).toLocaleString('en-IN')}</span>}
+                          {(t.photos || []).length > 0 && <span> · {(t.photos || []).length} 📸</span>}
                         </div>
                       </div>
                     </div>

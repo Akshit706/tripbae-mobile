@@ -1184,8 +1184,8 @@ export default function App() {
             </button>
             {showNotifPopover && (
               <>
-                <div style={{ position: 'fixed', inset: 0, zIndex: 498 }} onClick={() => setShowNotifPopover(false)} />
-                <div style={{ position: 'fixed', top: 62, right: 12, width: 'min(340px, calc(100vw - 24px))', maxHeight: 420, overflowY: 'auto', background: '#fff', borderRadius: 18, boxShadow: '0 8px 40px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)', border: '0.5px solid rgba(0,0,0,0.1)', zIndex: 499, animation: 'notifPopIn .18s cubic-bezier(.15,.85,.25,1)' }}>
+                <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setShowNotifPopover(false)} />
+                <div style={{ position: 'fixed', top: 62, right: 12, width: 'min(340px, calc(100vw - 24px))', maxHeight: 420, overflowY: 'auto', background: '#fff', borderRadius: 18, boxShadow: '0 8px 40px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)', border: '0.5px solid rgba(0,0,0,0.1)', zIndex: 9999, animation: 'notifPopIn .18s cubic-bezier(.15,.85,.25,1)' }}>
                   <style>{`@keyframes notifPopIn { from { opacity:0; transform:translateY(-8px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }`}</style>
                   <div style={{ padding: '14px 16px 10px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: '#fff', zIndex: 1, borderRadius: '18px 18px 0 0' }}>
                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#0F1A12' }}>Notifications</div>
