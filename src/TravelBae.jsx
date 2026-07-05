@@ -274,8 +274,8 @@ const S = {
 
 export default function App() {
   const [authToken, setAuthToken] = useState(localStorage.getItem('travelbae_token'));
-  // authMode: 'otp-email' | 'otp-code' | 'otp-name' | 'password-login' | 'password-signup'
-  const [authMode, setAuthMode] = useState('otp-email');
+  // authMode: 'password-login' only (simplified)
+  const [authMode, setAuthMode] = useState('password-login');
   const [authScreen, setAuthScreen] = useState('login');
   const [authForm, setAuthForm] = useState({ name: '', email: '', password: '', otp: '' });
   const [authError, setAuthError] = useState('');
@@ -832,154 +832,37 @@ export default function App() {
       {/* ── Card ── */}
       <div className="lg-card">
 
-        {/* ── Step: Enter email ── */}
-        {authMode === 'otp-email' && (
-          <div className="lg-content">
-            <div className="lg-tag">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              Secure Sign In
-            </div>
-            <div className="lg-title">Welcome back ✦</div>
-            <div className="lg-subtitle">Enter your email to receive a one-time sign-in code</div>
-            <div className="lg-input-wrap">
-              <span className="lg-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              </span>
-              <input className="lg-input" type="email" placeholder="your@email.com" autoFocus
-                value={authForm.email} onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleSendOtp()} />
-            </div>
-            {authError && <div className="lg-error">{authError}</div>}
-            <button className="lg-btn-primary" onClick={handleSendOtp} disabled={authLoading || !authForm.email.trim()}>
-              <div className="lg-sheen" />
-              {authLoading ? <span className="lg-spinner" /> : 'Continue with Email'}
-            </button>
-            <button className="lg-btn-ghost" onClick={() => { setAuthMode('password-login'); setAuthError(''); }}>
-              Use password instead
-            </button>
-            <div className="lg-divider">
-              <div className="lg-div-line" /><span className="lg-div-text">or continue with</span><div className="lg-div-line" />
-            </div>
-            <div className="lg-social-row">
-              <button className="lg-social-btn" type="button" onClick={() => setAuthError('Google sign-in coming soon!')}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="rgba(255,255,255,0.6)"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="rgba(255,255,255,0.5)"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="rgba(255,255,255,0.45)"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="rgba(255,255,255,0.55)"/>
-                </svg>
-                Google
-              </button>
-            </div>
-            <div className="lg-footer">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              End-to-end encrypted · Visible only to your group
-            </div>
+        {/* ── Password Login ── */}
+        <div className="lg-content">
+          <div className="lg-tag">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            Secure Sign In
           </div>
-        )}
-
-        {/* ── Step: OTP code ── */}
-        {authMode === 'otp-code' && (
-          <div className="lg-content">
-            <button className="lg-back-btn" onClick={() => { setAuthMode('otp-email'); setAuthError(''); setAuthForm(f => ({ ...f, otp:'' })); }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-              Back
-            </button>
-            <div className="lg-tag">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.36 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.11 1.2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16z"/></svg>
-              Check your inbox
-            </div>
-            <div className="lg-title">Enter your code</div>
-            <div className="lg-subtitle">We sent a 6-digit code to <strong style={{ color:'rgba(255,255,255,0.8)' }}>{otpSentTo || authForm.email}</strong></div>
-            <input className="lg-input otp" type="tel" inputMode="numeric" maxLength={6} placeholder="000000" autoFocus
-              value={authForm.otp} onChange={e => setAuthForm(f => ({ ...f, otp: e.target.value.replace(/\D/g,'').slice(0,6) }))}
-              onKeyDown={e => e.key === 'Enter' && handleVerifyOtp()} />
-            {authError && <div className="lg-error" style={{ marginTop:8 }}>{authError}</div>}
-            <button className="lg-btn-primary" style={{ marginTop:14 }} onClick={handleVerifyOtp} disabled={authLoading || authForm.otp.length < 6}>
-              <div className="lg-sheen" />
-              {authLoading ? <span className="lg-spinner" /> : 'Verify Code'}
-            </button>
-            <div style={{ textAlign:'center', fontSize:13, color:'rgba(255,255,255,0.4)' }}>
-              {otpResendCountdown > 0
-                ? <span>Resend in <strong style={{ color:'rgba(255,255,255,0.7)' }}>{otpResendCountdown}s</strong></span>
-                : <button onClick={handleSendOtp} style={{ background:'none', border:'none', color:'#5BE3B0', fontWeight:700, cursor:'pointer', fontSize:13, fontFamily:"'DM Sans',sans-serif", textDecoration:'underline' }}>Resend code</button>
-              }
-            </div>
+          <div className="lg-title">Welcome back ✦</div>
+          <div className="lg-subtitle">Sign in with your email and password</div>
+          <div className="lg-input-wrap">
+            <span className="lg-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </span>
+            <input className="lg-input" type="email" placeholder="Email address" autoFocus value={authForm.email}
+              onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && handleAuth()} />
           </div>
-        )}
-
-        {/* ── Step: Enter name (new user) ── */}
-        {authMode === 'otp-name' && (
-          <div className="lg-content">
-            <div className="lg-tag">
-              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Almost there
-            </div>
-            <div className="lg-title">One last thing</div>
-            <div className="lg-subtitle">What should your trip mates call you?</div>
-            <div className="lg-input-wrap">
-              <span className="lg-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              </span>
-              <input className="lg-input" type="text" placeholder="Your first name" autoFocus
-                value={authForm.name} onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleSubmitName()} />
-            </div>
-            {authError && <div className="lg-error">{authError}</div>}
-            <button className="lg-btn-primary" onClick={handleSubmitName} disabled={authLoading || !authForm.name.trim()}>
-              <div className="lg-sheen" />
-              {authLoading ? <span className="lg-spinner" /> : 'Get Started →'}
-            </button>
+          <div className="lg-input-wrap" style={{ marginBottom:0 }}>
+            <span className="lg-input-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </span>
+            <input className="lg-input" type="password" placeholder="Your password" value={authForm.password}
+              onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && handleAuth()} />
           </div>
-        )}
-
-        {/* ── Password flow ── */}
-        {(authMode === 'password-login' || authMode === 'password-signup') && (
-          <div className="lg-content">
-            <button className="lg-back-btn" onClick={() => { setAuthMode('otp-email'); setAuthScreen('login'); setAuthError(''); }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-              Back
-            </button>
-            <div className="lg-seg-track">
-              {[['password-login','Log In'],['password-signup','Sign Up']].map(([m, l]) => (
-                <button key={m} className={`lg-seg-btn ${authMode === m ? 'lg-seg-active' : 'lg-seg-inactive'}`}
-                  onClick={() => { setAuthMode(m); setAuthScreen(m === 'password-login' ? 'login' : 'signup'); setAuthError(''); }}>{l}</button>
-              ))}
-            </div>
-            {authMode === 'password-signup' && (
-              <div className="lg-input-wrap">
-                <span className="lg-input-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </span>
-                <input className="lg-input" type="text" placeholder="Your name" autoFocus value={authForm.name}
-                  onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))} />
-              </div>
-            )}
-            <div className="lg-input-wrap">
-              <span className="lg-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              </span>
-              <input className="lg-input" type="email" placeholder="Email address" value={authForm.email}
-                autoFocus={authMode === 'password-login'}
-                onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))} />
-            </div>
-            <div className="lg-input-wrap" style={{ marginBottom:0 }}>
-              <span className="lg-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </span>
-              <input className="lg-input" type="password" value={authForm.password}
-                onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleAuth()}
-                placeholder={authMode === 'password-signup' ? 'Min 6 characters' : 'Your password'} />
-            </div>
-            {authError && <div className="lg-error" style={{ marginTop:12 }}>{authError}</div>}
-            <button className="lg-btn-primary" style={{ marginTop:16 }} onClick={handleAuth}
-              disabled={authLoading || !authForm.email.trim() || !authForm.password.trim() || (authMode === 'password-signup' && !authForm.name.trim())}>
-              <div className="lg-sheen" />
-              {authLoading ? <span className="lg-spinner" /> : authMode === 'password-login' ? 'Log In' : 'Create Account'}
-            </button>
-          </div>
-        )}
+          {authError && <div className="lg-error" style={{ marginTop:12 }}>{authError}</div>}
+          <button className="lg-btn-primary" style={{ marginTop:16 }} onClick={handleAuth}
+            disabled={authLoading || !authForm.email.trim() || !authForm.password.trim()}>
+            <div className="lg-sheen" />
+            {authLoading ? <span className="lg-spinner" /> : 'Log In'}
+          </button>
+        </div>
       </div>
 
       <div className="lg-terms">
