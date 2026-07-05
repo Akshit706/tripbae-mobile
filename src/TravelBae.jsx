@@ -1163,7 +1163,7 @@ export default function App() {
           <img src={bglessLogo} alt="TripBae" style={{ height: 72, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {!activeTrip && !activeTripData && (
-          <div style={{ marginLeft: 'auto', position: 'relative' }}>
+          <div style={{ marginLeft: 'auto' }}>
             <button
               onClick={() => {
                 setShowNotifPopover(v => {
@@ -1182,39 +1182,6 @@ export default function App() {
                 <span style={{ position: 'absolute', top: 4, right: 4, width: 9, height: 9, borderRadius: '50%', background: '#FF6B35', border: '2px solid #fff', display: 'block' }} />
               )}
             </button>
-            {showNotifPopover && (
-              <>
-                <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setShowNotifPopover(false)} />
-                <div style={{ position: 'fixed', top: 62, right: 12, width: 'min(340px, calc(100vw - 24px))', maxHeight: 420, overflowY: 'auto', background: '#fff', borderRadius: 18, boxShadow: '0 8px 40px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)', border: '0.5px solid rgba(0,0,0,0.1)', zIndex: 9999, animation: 'notifPopIn .18s cubic-bezier(.15,.85,.25,1)' }}>
-                  <style>{`@keyframes notifPopIn { from { opacity:0; transform:translateY(-8px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }`}</style>
-                  <div style={{ padding: '14px 16px 10px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: '#fff', zIndex: 1, borderRadius: '18px 18px 0 0' }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#0F1A12' }}>Notifications</div>
-                    <button onClick={() => setShowNotifPopover(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9a9a96', lineHeight: 1, padding: '2px 4px' }}>×</button>
-                  </div>
-                  <div style={{ padding: '10px 12px 12px' }}>
-                    {tripNotifications.length === 0 ? (
-                      <div style={{ padding: '1.25rem 0.5rem', textAlign: 'center', color: '#6b7280' }}>
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', margin: '0 auto 8px' }}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 3 }}>No new notifications</div>
-                        <div style={{ fontSize: 12 }}>Trip updates and budget alerts will appear here.</div>
-                      </div>
-                    ) : tripNotifications.map((n) => {
-                      const accent = n.level === 'high' ? '#B42318' : n.level === 'medium' ? '#92400E' : '#1D4ED8';
-                      const bg = n.level === 'high' ? '#FEF3F2' : n.level === 'medium' ? '#FFFBEB' : '#EFF6FF';
-                      return (
-                        <div key={n.id} style={{ borderLeft: `3px solid ${accent}`, borderRadius: 10, padding: '10px 10px 10px 11px', marginBottom: 7, background: '#fafaf8' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                            <span style={{ fontSize: 10, fontWeight: 800, color: accent, background: bg, border: `1px solid ${accent}30`, borderRadius: 999, padding: '2px 7px', letterSpacing: 0.4, textTransform: 'uppercase' }}>{n.level}</span>
-                          </div>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 2 }}>{n.title}</div>
-                          <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>{n.body}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            )}
           </div>
         )}
         {activeTrip && activeTripData ? (
@@ -1246,6 +1213,42 @@ export default function App() {
           </div>
         ) : null}
       </div>
+
+      {/* Notification popover — must live OUTSIDE the topbar because backdrop-filter
+          creates a containing block for position:fixed children in all modern browsers */}
+      {showNotifPopover && (
+        <>
+          <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setShowNotifPopover(false)} />
+          <div style={{ position: 'fixed', top: 62, right: 12, width: 'min(340px, calc(100vw - 24px))', maxHeight: 420, overflowY: 'auto', background: '#fff', borderRadius: 18, boxShadow: '0 8px 40px rgba(0,0,0,0.16), 0 2px 8px rgba(0,0,0,0.08)', border: '0.5px solid rgba(0,0,0,0.1)', zIndex: 9999, animation: 'notifPopIn .18s cubic-bezier(.15,.85,.25,1)' }}>
+            <style>{`@keyframes notifPopIn { from { opacity:0; transform:translateY(-8px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } }`}</style>
+            <div style={{ padding: '14px 16px 10px', borderBottom: '0.5px solid rgba(0,0,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, background: '#fff', zIndex: 1, borderRadius: '18px 18px 0 0' }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#0F1A12' }}>Notifications</div>
+              <button onClick={() => setShowNotifPopover(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#9a9a96', lineHeight: 1, padding: '2px 4px' }}>×</button>
+            </div>
+            <div style={{ padding: '10px 12px 12px' }}>
+              {tripNotifications.length === 0 ? (
+                <div style={{ padding: '1.25rem 0.5rem', textAlign: 'center', color: '#6b7280' }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', margin: '0 auto 8px' }}><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 7h18s-3 0-3-7" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 3 }}>No new notifications</div>
+                  <div style={{ fontSize: 12 }}>Trip updates and budget alerts will appear here.</div>
+                </div>
+              ) : tripNotifications.map((n) => {
+                const accent = n.level === 'high' ? '#B42318' : n.level === 'medium' ? '#92400E' : '#1D4ED8';
+                const bg = n.level === 'high' ? '#FEF3F2' : n.level === 'medium' ? '#FFFBEB' : '#EFF6FF';
+                return (
+                  <div key={n.id} style={{ borderLeft: `3px solid ${accent}`, borderRadius: 10, padding: '10px 10px 10px 11px', marginBottom: 7, background: '#fafaf8' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                      <span style={{ fontSize: 10, fontWeight: 800, color: accent, background: bg, border: `1px solid ${accent}30`, borderRadius: 999, padding: '2px 7px', letterSpacing: 0.4, textTransform: 'uppercase' }}>{n.level}</span>
+                    </div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 2 }}>{n.title}</div>
+                    <div style={{ fontSize: 12, color: '#6b7280', lineHeight: 1.5 }}>{n.body}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Bottom Nav Bar */}
       {activeTrip && (
