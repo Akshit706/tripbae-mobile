@@ -354,7 +354,7 @@ export default function UserProfileWizard({ userName, onDone }) {
                   <div style={{ fontSize: 11, color: '#ccc', fontWeight: 600, letterSpacing: 0.5, marginBottom: 4 }}>Let&apos;s get to know each other</div>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 900, color: '#111', lineHeight: 1.2, marginBottom: 2 }}>Hey {first}!</div>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 900, color: AC, lineHeight: 1.05, marginBottom: 8 }}>I&apos;m Lumi.</div>
-                  <div style={{ fontSize: 12, color: '#888', lineHeight: 1.65, marginBottom: 5 }}>Your AI travel bae, planner, and memory keeper.</div>
+                  <div style={{ fontSize: 12, color: '#888', lineHeight: 1.65, marginBottom: 5 }}>Your digital travel companion, planner, and memory keeper.</div>
                   <div style={{ fontSize: 12, color: '#555', lineHeight: 1.65 }}>From your very first idea to when you get back home — <strong style={{ color: '#1a1a18', fontWeight: 800 }}>I&apos;ve got you.</strong></div>
                 </div>
               </div>
