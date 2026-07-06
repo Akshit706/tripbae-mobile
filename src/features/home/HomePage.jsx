@@ -667,12 +667,15 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.8px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'left' }}>
             {greetPhrase}{profileName ? <span style={{ color: '#043D28', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
           </div>
-          <div style={{ overflow: 'hidden', minHeight: 112, marginBottom: 22 }}>
+          <div style={{ overflow: 'hidden', minHeight: 76, marginBottom: 20 }}>
             <div
               key={tagIdx}
               style={{
-                fontFamily: "'Sora',sans-serif", fontSize: 46, fontWeight: 900, lineHeight: 1.1,
-                letterSpacing: '-1.5px', color: '#0D1108', maxWidth: '72%',
+                fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12,
+                letterSpacing: '-0.8px', maxWidth: '74%',
+                background: 'linear-gradient(170deg, #0D1108 0%, #0D1108 42%, #1a5c35 100%)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                 animation: tagPhase === 'out'
                   ? 'taglineSlideOut 0.28s cubic-bezier(.4,0,.8,.2) both'
                   : 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both',
@@ -682,15 +685,17 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             </div>
           </div>
           {/* Action cards */}
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 9 }}>
             {/* New Trip card */}
             <button
               className="tb-hero-card-btn"
               style={{
-                flex: 1, background: '#F26419', borderRadius: 22, border: 'none',
-                padding: '16px 12px 16px 14px', display: 'flex', alignItems: 'center', gap: 12,
+                flex: 1, background: 'linear-gradient(145deg, #F56B1E 0%, #E8520A 100%)',
+                borderRadius: 18, border: 'none',
+                padding: '13px 8px 13px 13px', display: 'flex', alignItems: 'center', gap: 10,
                 cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                boxShadow: '0 8px 26px rgba(242,100,25,0.36)', textAlign: 'left',
+                boxShadow: '0 6px 20px rgba(232,82,10,0.38), 0 2px 6px rgba(232,82,10,0.22)',
+                textAlign: 'left', minHeight: 72,
               }}
               onClick={() => {
                 setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '' });
@@ -699,55 +704,61 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 setShowJoin(false);
               }}
             >
-              <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F26419" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="2" y="7" width="20" height="14" rx="2"/>
-                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+              {/* Top-left inner glow */}
+              <div style={{ position: 'absolute', top: -8, left: -8, width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
+              <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'rgba(255,255,255,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                <svg width="19" height="19" viewBox="0 0 22 22" fill="none" stroke="#E8520A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="1.5" y="6" width="19" height="14" rx="2.5"/>
+                  <path d="M7.5 6V4C7.5 3.17 8.17 2.5 9 2.5h4c.83 0 1.5.67 1.5 1.5V6"/>
+                  <line x1="1.5" y1="11" x2="20.5" y2="11"/>
                 </svg>
               </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>New Trip</div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginTop: 2 }}>Plan your next adventure</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.18, letterSpacing: '-0.2px' }}>New Trip</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.76)', lineHeight: 1.4, marginTop: 2 }}>Plan your next adventure</div>
               </div>
-              <svg style={{ position: 'absolute', right: 8, bottom: 6, opacity: 0.22, pointerEvents: 'none' }} width="68" height="52" viewBox="0 0 68 52" fill="none">
-                <path d="M6 44 C 18 28, 42 18, 60 8" stroke="#fff" strokeWidth="1.5" strokeDasharray="5 4" strokeLinecap="round"/>
-                <path d="M60 8 L 55 13" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
-                <path d="M60 8 L 55 5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+              {/* Decorative dashed arrow */}
+              <svg style={{ position: 'absolute', right: 6, bottom: 5, opacity: 0.18, pointerEvents: 'none' }} width="56" height="44" viewBox="0 0 56 44" fill="none">
+                <path d="M4 36 C 14 22, 34 14, 50 4" stroke="#fff" strokeWidth="1.4" strokeDasharray="4 3" strokeLinecap="round"/>
+                <path d="M50 4 L 46 9" stroke="#fff" strokeWidth="1.4" strokeLinecap="round"/>
+                <path d="M50 4 L 45 2" stroke="#fff" strokeWidth="1.4" strokeLinecap="round"/>
               </svg>
             </button>
             {/* Join with Code card */}
             <button
               className="tb-hero-card-btn"
               style={{
-                flex: 1, background: '#fff', borderRadius: 22,
-                border: '1.5px solid rgba(0,0,0,0.07)',
-                padding: '16px 12px 16px 14px', display: 'flex', alignItems: 'center', gap: 12,
+                flex: 1, background: '#fff', borderRadius: 18,
+                border: '1px solid rgba(0,0,0,0.08)',
+                padding: '13px 8px 13px 13px', display: 'flex', alignItems: 'center', gap: 10,
                 cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                boxShadow: '0 4px 18px rgba(0,0,0,0.06)', textAlign: 'left',
+                boxShadow: '0 3px 14px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05)',
+                textAlign: 'left', minHeight: 72,
               }}
               onClick={() => { setShowJoin(true); setShowCreate(false); }}
             >
-              <div style={{ width: 46, height: 46, borderRadius: '50%', background: '#EAF1EC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="3" width="7" height="7" rx="1.2" stroke="#1D9E75" strokeWidth="1.8"/>
-                  <rect x="5" y="5" width="3" height="3" rx="0.5" fill="#1D9E75"/>
-                  <rect x="14" y="3" width="7" height="7" rx="1.2" stroke="#1D9E75" strokeWidth="1.8"/>
-                  <rect x="16" y="5" width="3" height="3" rx="0.5" fill="#1D9E75"/>
-                  <rect x="3" y="14" width="7" height="7" rx="1.2" stroke="#1D9E75" strokeWidth="1.8"/>
-                  <rect x="5" y="16" width="3" height="3" rx="0.5" fill="#1D9E75"/>
+              <div style={{ width: 42, height: 42, borderRadius: '50%', background: '#EDF5EF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 4px rgba(29,158,117,0.12)' }}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="7" height="7" rx="1.3" stroke="#1D9E75" strokeWidth="1.7"/>
+                  <rect x="5.5" y="5.5" width="2" height="2" rx="0.4" fill="#1D9E75"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1.3" stroke="#1D9E75" strokeWidth="1.7"/>
+                  <rect x="16.5" y="5.5" width="2" height="2" rx="0.4" fill="#1D9E75"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.3" stroke="#1D9E75" strokeWidth="1.7"/>
+                  <rect x="5.5" y="16.5" width="2" height="2" rx="0.4" fill="#1D9E75"/>
                   <rect x="14" y="14" width="2" height="2" rx="0.3" fill="#1D9E75"/>
                   <rect x="18" y="14" width="2" height="2" rx="0.3" fill="#1D9E75"/>
                   <rect x="14" y="18" width="2" height="2" rx="0.3" fill="#1D9E75"/>
                   <rect x="18" y="18" width="3" height="3" rx="0.5" fill="#1D9E75"/>
-                  <rect x="16" y="16" width="2" height="2" rx="0.3" fill="#1D9E75"/>
+                  <rect x="16" y="16" width="1.5" height="1.5" rx="0.3" fill="#1D9E75"/>
                 </svg>
               </div>
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#0D1108', lineHeight: 1.2 }}>Join with Code</div>
-                <div style={{ fontSize: 11, color: '#8a8a86', lineHeight: 1.4, marginTop: 2 }}>Join an existing trip</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#0D1108', lineHeight: 1.18, letterSpacing: '-0.2px' }}>Join with Code</div>
+                <div style={{ fontSize: 10, color: '#8a8a86', lineHeight: 1.4, marginTop: 2 }}>Join an existing trip</div>
               </div>
-              <svg style={{ position: 'absolute', right: 8, bottom: 6, opacity: 0.12, pointerEvents: 'none' }} width="68" height="52" viewBox="0 0 68 52" fill="none">
-                <path d="M6 44 C 18 28, 42 18, 60 8" stroke="#1D9E75" strokeWidth="1.5" strokeDasharray="5 4" strokeLinecap="round"/>
+              {/* Decorative dashed line */}
+              <svg style={{ position: 'absolute', right: 6, bottom: 5, opacity: 0.1, pointerEvents: 'none' }} width="56" height="44" viewBox="0 0 56 44" fill="none">
+                <path d="M4 36 C 14 22, 34 14, 50 4" stroke="#1D9E75" strokeWidth="1.4" strokeDasharray="4 3" strokeLinecap="round"/>
               </svg>
             </button>
           </div>
