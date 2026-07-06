@@ -410,18 +410,20 @@ export default function CreateTripWizard({
                   { icon:<Ic.cal />,   label:'Dates',       value: form.arrival && form.departure ? `${fmtDateDisplay(form.arrival)} → ${fmtDateDisplay(form.departure)}` : form.arrival ? fmtDateDisplay(form.arrival) : '—' },
                   { icon:<Ic.money />, label:'Budget',      value: form.budget ? `${form.budgetCurrency} ${Number(form.budget).toLocaleString()}${form.destinationCurrency && form.destinationCurrency !== form.budgetCurrency ? ` ≈ ${form.destinationCurrency} ${Number(convertedBudget).toLocaleString(undefined,{maximumFractionDigits:0})}` : ''}` : 'Not set' },
                 ].map(({ icon, label, value, editable, step }, i, arr) => (
-                  <div key={label} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'13px 16px', borderBottom: i < arr.length-1 ? '1px solid rgba(15,23,42,0.05)' : 'none' }}>
-                    <span style={{ color:'#ccc', marginTop:2, flexShrink:0, display:'flex' }}>{icon}</span>
-                    <div style={{ flex:1, minWidth:0 }}>
-                      <div style={{ fontSize:11, fontWeight:600, color:'#bbb', letterSpacing:0.5, textTransform:'uppercase', marginBottom:2 }}>{label}</div>
-                      <div style={{ fontSize:14, fontWeight:600, color:'#111', lineHeight:1.4, wordBreak:'break-word' }}>{value}</div>
+                  <div key={label} style={{ display:'flex', alignItems:'center', gap:0, padding:'14px 16px', borderBottom: i < arr.length-1 ? '1px solid rgba(15,23,42,0.05)' : 'none' }}>
+                    <span style={{ color:'#ccc', flexShrink:0, display:'flex', width:20 }}>{icon}</span>
+                    <div style={{ flex:1, textAlign:'center', padding:'0 8px' }}>
+                      <div style={{ fontSize:10, fontWeight:700, color:'#bbb', letterSpacing:1.2, textTransform:'uppercase', marginBottom:4 }}>{label}</div>
+                      <div style={{ fontSize:15, fontWeight:600, color:'#111', lineHeight:1.4, wordBreak:'break-word' }}>{value}</div>
                     </div>
-                    {editable && (
-                      <button type="button" onClick={() => setCreateStep(step)}
-                        style={{ background:'none', border:'none', cursor:'pointer', color:'#bbb', display:'flex', padding:4, flexShrink:0 }}>
-                        <Ic.edit />
-                      </button>
-                    )}
+                    <span style={{ width:20, flexShrink:0, display:'flex', justifyContent:'flex-end' }}>
+                      {editable && (
+                        <button type="button" onClick={() => setCreateStep(step)}
+                          style={{ background:'none', border:'none', cursor:'pointer', color:'#ccc', display:'flex', padding:0 }}>
+                          <Ic.edit />
+                        </button>
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -478,7 +480,7 @@ export default function CreateTripWizard({
               <div style={{ display:'flex', alignItems:'center', gap:8, background:'#F5F5F3', borderRadius:12, padding:'0 12px', border:'1px solid #E8E8E5' }}>
                 <Ic.search />
                 <input autoFocus
-                  style={{ border:'none', background:'transparent', flex:1, padding:'11px 0', fontSize:15, outline:'none', fontFamily:"'DM Sans',sans-serif" }}
+                  style={{ border:'none', background:'transparent', flex:1, padding:'11px 0', fontSize:15, outline:'none', fontFamily:"'DM Sans',sans-serif", color:'#111' }}
                   value={destQuery}
                   onChange={e => { setDestQuery(e.target.value); clearTimeout(destDebounce.current); destDebounce.current = setTimeout(() => searchDest(e.target.value), 350); }}
                   placeholder="Search city or place…"
