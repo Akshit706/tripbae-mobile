@@ -531,7 +531,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     setTimeout(() => setCopied(null), 1800);
   };
 
-  const totalCreateSteps = 5;
+  const totalCreateSteps = 7;
   const nextCreateStep = () => setCreateStep((s) => Math.min(totalCreateSteps - 1, s + 1));
   const prevCreateStep = () => setCreateStep((s) => Math.max(0, s - 1));
   const autoAdvance = () => {
@@ -539,8 +539,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   };
   const canAdvanceCurrentStep = () => {
     if (createStep === 0) return !!form.groupName.trim();
-    if (createStep === 1) return !!form.arrival;
-    if (createStep === 3) return !!form.destination.trim();
+    if (createStep === 1) return !!form.destination.trim();
+    if (createStep === 2) return !!form.arrival;
+    if (createStep === 3) return !!form.departure;
     return true;
   };
 

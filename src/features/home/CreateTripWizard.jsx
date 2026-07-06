@@ -253,7 +253,35 @@ export default function CreateTripWizard({
               />
             </div>
 
-            {/* ── STEP 1: When are you arriving? ── */}
+            {/* ── STEP 1: Where are you going? ── */}
+            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
+              <LumiStep
+                question="Where are you going?"
+                subtitle="Tell us your destination"
+              />
+              <div
+                onClick={() => { setShowDestPicker(true); setDestQuery(form.destination); setDestSuggestions([]); }}
+                style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderRadius:14, border:`1.5px solid ${form.destination ? AC_BR : 'rgba(15,23,42,0.12)'}`, background: form.destination ? AC_BG : '#fff', cursor:'pointer', transition:'all .15s', userSelect:'none', marginBottom: form.destination ? 0 : 4, boxShadow: form.destination ? `0 2px 10px ${AC}20` : '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <Ic.pin c={form.destination ? AC : '#bbb'} />
+                <span style={{ flex:1, fontSize:15, fontWeight: form.destination ? 600 : 400, color: form.destination ? AC : '#aaa' }}>
+                  {form.destination || 'Enter destination'}
+                </span>
+                {form.destination
+                  ? <span onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, destination:'', destinationCountry:'', destinationCurrency:'' })); }} style={{ display:'flex', color:'#aaa', cursor:'pointer' }}><Ic.close /></span>
+                  : <Ic.fwd />}
+              </div>
+              {!form.destination && (
+                <div style={{ fontSize:12, color:'#ccc', marginBottom:18, paddingLeft:2 }}>e.g. Goa, India</div>
+              )}
+              {!!form.destinationCurrency && (
+                <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:12, padding:'9px 13px', borderRadius:12, background:AC_BG, border:`1px solid ${AC_BR}` }}>
+                  <Ic.sparkle />
+                  <span style={{ fontSize:12, color:AC, fontWeight:600 }}>Local currency: <strong>{form.destinationCurrency}</strong>{form.destinationCountry ? ` · ${form.destinationCountry}` : ''}</span>
+                </div>
+              )}
+            </div>
+
+            {/* ── STEP 2: When are you arriving? ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
                 question="When are you arriving?"
@@ -273,7 +301,27 @@ export default function CreateTripWizard({
               <SlotGrid field="arrivalSlot" form={form} setForm={setForm} autoAdvance={autoAdvance} />
             </div>
 
-            {/* ── STEP 2: What's your budget? ── */}
+            {/* ── STEP 3: When are you leaving? ── */}
+            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
+              <LumiStep
+                question="When are you leaving?"
+                subtitle="Select your departure date and time"
+              />
+              <div style={{ fontSize:12, fontWeight:600, color:'#555', marginBottom:8 }}>Departure date</div>
+              <div style={{ position:'relative', marginBottom:22 }}>
+                <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'#bbb', display:'flex', pointerEvents:'none' }}><Ic.cal /></span>
+                <input
+                  style={{ width:'100%', boxSizing:'border-box', padding:'13px 16px 13px 40px', fontSize:15, borderRadius:14, border:`1.5px solid ${form.departure ? AC_BR : 'rgba(15,23,42,0.12)'}`, background: form.departure ? AC_BG : '#fff', color:'#111', outline:'none', fontFamily:"'DM Sans','Inter',sans-serif", transition:'all .15s' }}
+                  type="date" value={form.departure} min={form.arrival || today} max={maxDate}
+                  onChange={e => setForm(f => ({ ...f, departure:e.target.value }))}
+                  onBlur={e => { const v=e.target.value; const m=form.arrival||today; if (v && v < m) setForm(f => ({ ...f, departure:m })); }}
+                />
+              </div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#555', marginBottom:10 }}>Departure time</div>
+              <SlotGrid field="departureSlot" form={form} setForm={setForm} autoAdvance={autoAdvance} />
+            </div>
+
+            {/* ── STEP 4: What's your budget? ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
                 question="What's your budget?"
@@ -324,56 +372,42 @@ export default function CreateTripWizard({
               </div>
             </div>
 
-            {/* ── STEP 3: Where are you going? ── */}
+            {/* ── STEP 5: Any special plans? ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
-                question="Where are you going?"
-                subtitle="Tell us your destination"
+                question="Any special plans?"
+                subtitle="Help me personalise your trip"
               />
-              <div
-                onClick={() => { setShowDestPicker(true); setDestQuery(form.destination); setDestSuggestions([]); }}
-                style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderRadius:14, border:`1.5px solid ${form.destination ? AC_BR : 'rgba(15,23,42,0.12)'}`, background: form.destination ? AC_BG : '#fff', cursor:'pointer', transition:'all .15s', userSelect:'none', marginBottom: form.destination ? 18 : 4, boxShadow: form.destination ? `0 2px 10px ${AC}20` : '0 1px 4px rgba(0,0,0,0.04)' }}>
-                <Ic.pin c={form.destination ? AC : '#bbb'} />
-                <span style={{ flex:1, fontSize:15, fontWeight: form.destination ? 600 : 400, color: form.destination ? AC : '#aaa' }}>
-                  {form.destination || 'Enter destination'}
-                </span>
-                {form.destination
-                  ? <span onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, destination:'', destinationCountry:'', destinationCurrency:'' })); }} style={{ display:'flex', color:'#aaa', cursor:'pointer' }}><Ic.close /></span>
-                  : <Ic.fwd />}
-              </div>
-              {!form.destination && (
-                <div style={{ fontSize:12, color:'#ccc', marginBottom:18, paddingLeft:2 }}>e.g. Japi, Maharashtra, India</div>
-              )}
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-                <div style={{ fontSize:12, fontWeight:600, color:'#555' }}>Add notes</div>
+                <div style={{ fontSize:12, fontWeight:600, color:'#555' }}>Travel notes</div>
                 <span style={{ fontSize:10.5, color:'#aaa', background:'rgba(0,0,0,0.05)', borderRadius:6, padding:'2px 8px', fontStyle:'italic', fontWeight:500 }}>optional</span>
               </div>
               <textarea
-                style={{ width:'100%', boxSizing:'border-box', padding:'12px 14px', fontSize:13.5, borderRadius:14, border:'1.5px solid rgba(15,23,42,0.1)', background:'#fff', color:'#111', outline:'none', resize:'none', minHeight:108, lineHeight:1.6, fontFamily:"'DM Sans','Inter',sans-serif", transition:'border-color .15s' }}
+                style={{ width:'100%', boxSizing:'border-box', padding:'12px 14px', fontSize:13.5, borderRadius:14, border:'1.5px solid rgba(15,23,42,0.1)', background:'#fff', color:'#111', outline:'none', resize:'none', minHeight:130, lineHeight:1.6, fontFamily:"'DM Sans','Inter',sans-serif", transition:'border-color .15s' }}
                 onFocus={e => e.target.style.borderColor = AC_BR}
                 onBlur={e => e.target.style.borderColor = 'rgba(15,23,42,0.1)'}
                 value={form.travelNotes}
                 onChange={e => setForm(f => ({ ...f, travelNotes:e.target.value }))}
-                placeholder="Any specific plans or places in mind?"
+                placeholder={isSoloMode ? 'e.g. Prefer slow travel, street food, avoid strenuous hikes…' : 'e.g. Family of 6 with kids, vegetarian food, elderly included…'}
               />
               <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:6 }}>
                 <Ic.sparkle />
-                <span style={{ fontSize:12, color:'#aaa' }}>We'll use this to personalize your trip</span>
+                <span style={{ fontSize:12, color:'#aaa' }}>I'll read this to personalise your itinerary — mention dietary needs, pace, mobility.</span>
               </div>
             </div>
 
-            {/* ── STEP 4: Review your trip ── */}
+            {/* ── STEP 6: Review your trip ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
-                question="Review your trip"
+                question="All set! Review your trip"
                 subtitle="Here's a quick summary"
               />
               <div style={{ background:'#fff', borderRadius:18, border:'1.5px solid rgba(15,23,42,0.07)', overflow:'hidden', marginBottom:14, boxShadow:'0 2px 12px rgba(0,0,0,0.04)' }}>
                 {[
                   { icon:<Ic.edit />,  label:'Trip name',   value: form.groupName || '—',   editable:true, step:0 },
                   { icon:<Ic.type />,  label:'Travel type', value: isSoloMode ? 'Solo trip' : 'Group trip' },
-                  { icon:<Ic.cal />,   label:'Arrival',     value: form.arrival ? `${fmtDateDisplay(form.arrival)}${form.arrivalSlot ? ', '+slotLabel(form.arrivalSlot) : ''}` : '—' },
                   { icon:<Ic.pin />,   label:'Destination', value: form.destination || '—' },
+                  { icon:<Ic.cal />,   label:'Dates',       value: form.arrival && form.departure ? `${fmtDateDisplay(form.arrival)} → ${fmtDateDisplay(form.departure)}` : form.arrival ? fmtDateDisplay(form.arrival) : '—' },
                   { icon:<Ic.money />, label:'Budget',      value: form.budget ? `${form.budgetCurrency} ${Number(form.budget).toLocaleString()}${form.destinationCurrency && form.destinationCurrency !== form.budgetCurrency ? ` ≈ ${form.destinationCurrency} ${Number(convertedBudget).toLocaleString(undefined,{maximumFractionDigits:0})}` : ''}` : 'Not set' },
                 ].map(({ icon, label, value, editable, step }, i, arr) => (
                   <div key={label} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'13px 16px', borderBottom: i < arr.length-1 ? '1px solid rgba(15,23,42,0.05)' : 'none' }}>
@@ -467,7 +501,7 @@ export default function CreateTripWizard({
                       setShowDestPicker(false);
                       setDestSuggestions([]);
                       setDestQuery('');
-                      if (createStep === 3) autoAdvance();
+                      if (createStep === 1) autoAdvance();
                     }}
                     style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'0.5px solid #F0F0F0', cursor:'pointer', background:'#fff', transition:'background .1s' }}
                     onMouseEnter={e => e.currentTarget.style.background = '#F9F8F5'}
