@@ -201,25 +201,11 @@ function IconSelect({ icon, children, value, onChange }) {
   );
 }
 
-/* ── Lumi quote bubble ───────────────────────────────── */
+/* ── Lumi quote — plain text, no box ───────────────── */
 function LumiQuote({ text }) {
   if (!text) return null;
   return (
-    <div style={{
-      display: 'flex', gap: 9, alignItems: 'flex-start',
-      background: '#FFF6F0', borderRadius: 14,
-      border: '1px solid rgba(255,106,0,0.12)',
-      padding: '11px 14px', marginBottom: 22,
-    }}>
-      <div style={{
-        width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-        background: `linear-gradient(135deg,${AC},#FF8C3A)`,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}>
-        <IC.sparkle />
-      </div>
-      <p style={{ margin: 0, fontSize: 12.5, color: '#7a6858', lineHeight: 1.65, fontStyle: 'italic' }}>{text}</p>
-    </div>
+    <p style={{ margin: '0 0 22px', fontSize: 13, color: '#999', lineHeight: 1.7, fontStyle: 'italic' }}>{text}</p>
   );
 }
 
@@ -325,21 +311,15 @@ export default function UserProfileWizard({ userName, onDone }) {
             {/* ━━ STEP 0: Lumi intro ━━ */}
             <div style={{ width: SW, flex: `0 0 ${SW}`, height: '100%', display: 'flex', overflow: 'hidden' }}>
 
-              {/* Left: Lumi – top-aligned, white bg */}
+              {/* Left: Lumi – centred vertically */}
               <div style={{ width: '40%', flexShrink: 0, background: '#fff', overflow: 'hidden', position: 'relative' }}>
                 <img src={lumiImg} alt="Lumi"
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'top center', userSelect: 'none', pointerEvents: 'none' }}
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', userSelect: 'none', pointerEvents: 'none' }}
                 />
               </div>
 
               {/* Right: intro copy */}
-              <div style={{ flex: 1, padding: '1.4rem 1.25rem 1.4rem 0.75rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto', borderLeft: '1px solid #F5F2EE' }}>
-
-                {/* Badge */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FFF2E8', border: '1px solid rgba(255,106,0,0.18)', borderRadius: 50, padding: '4px 11px', marginBottom: 14, alignSelf: 'flex-start' }}>
-                  <IC.sparkle />
-                  <span style={{ fontSize: 9, fontWeight: 800, color: AC, letterSpacing: 1.8, textTransform: 'uppercase' }}>AI Travel Companion</span>
-                </div>
+              <div style={{ flex: 1, padding: '1.4rem 1.25rem 1.4rem 0.75rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto' }}>
 
                 {/* Kicker */}
                 <div style={{ fontSize: 11.5, fontWeight: 600, color: '#bbb', marginBottom: 5, letterSpacing: 0.3 }}>
@@ -357,18 +337,8 @@ export default function UserProfileWizard({ userName, onDone }) {
                 </div>
 
                 {/* Tagline */}
-                <div style={{ fontSize: 12.5, color: '#888', lineHeight: 1.72, marginBottom: 16 }}>
+                <div style={{ fontSize: 12.5, color: '#888', lineHeight: 1.72 }}>
                   Your digital travel companion — by your side through every adventure, every destination, every memory.
-                </div>
-
-                {/* Feature chips */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-                  {INTRO_CHIPS.map(({ Icon, label }) => (
-                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#F9F7F4', borderRadius: 9, padding: '7px 9px', border: '1px solid #EDEBE6' }}>
-                      {Icon()}
-                      <span style={{ fontSize: 11, fontWeight: 600, color: '#555' }}>{label}</span>
-                    </div>
-                  ))}
                 </div>
               </div>
             </div>
