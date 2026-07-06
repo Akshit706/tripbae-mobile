@@ -10,11 +10,11 @@ const AC_BR = '#FFCBA4';
 const AC_L  = '#FF8C3A';
 
 /* ── Lumi step header ─────────────────────────────── */
-function LumiStep({ question, subtitle }) {
+function LumiStep({ question, subtitle, img }) {
   return (
     <div style={{ marginBottom: 22 }}>
       <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:11 }}>
-        <img src={lumiImg} alt="Lumi" style={{ width:40, height:40, objectFit:'contain', flexShrink:0, filter:'drop-shadow(0 2px 6px rgba(255,106,0,0.28))' }} />
+        <img src={img || lumiImg} alt="Lumi" style={{ width:40, height:40, objectFit:'contain', flexShrink:0, filter:'drop-shadow(0 2px 6px rgba(255,106,0,0.28))' }} />
         <span style={{ fontSize:11, fontWeight:800, color:AC, letterSpacing:1.4, textTransform:'uppercase' }}>Lumi</span>
       </div>
       <div style={{ fontFamily:"'Sora',sans-serif", fontSize:21, fontWeight:800, color:'#111', lineHeight:1.25, marginBottom:5 }}>
@@ -387,6 +387,7 @@ export default function CreateTripWizard({
             {/* ── STEP 6: Review your trip ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
+                img={lumi8Img}
                 question="Looks like a banger trip!"
                 subtitle="One last look before I start planning the magic"
               />
@@ -414,12 +415,6 @@ export default function CreateTripWizard({
                     </span>
                   </div>
                 ))}
-              </div>
-              <div style={{ display:'flex', alignItems:'flex-start', gap:9, padding:'12px 14px', borderRadius:14, background:AC_BG, border:`1px solid ${AC_BR}` }}>
-                <img src={lumi8Img} alt="Lumi" style={{ width:32, height:32, objectFit:'contain', flexShrink:0, marginTop:1, filter:'drop-shadow(0 1px 4px rgba(255,106,0,0.25))' }} />
-                <span style={{ fontSize:12.5, color:'#aa4400', lineHeight:1.55 }}>
-                  Psst — you can tweak any of this after we create the trip. No biggie.
-                </span>
               </div>
             </div>
 
