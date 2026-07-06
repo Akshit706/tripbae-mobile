@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+﻿import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { supabase } from './supabase';
 import bglessLogo from './assets/bgless.png';
 import {
@@ -752,77 +752,117 @@ export default function App() {
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0}
 
-        /* ── Keyframes ── */
-        @keyframes lgSpin      { to{transform:rotate(360deg)} }
-        @keyframes lgLogoIn    { from{opacity:0;transform:translateY(-10px) scale(.94)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes lgTaglineIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lgCardSlide { from{opacity:0;transform:translateY(28px) scale(.98)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes lgF1        { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lgF2        { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lgF3        { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lgBtnIn     { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lgArrowSlide{ from{transform:translateX(0)} to{transform:translateX(4px)} }
+        @keyframes lgSpin       { to{transform:rotate(360deg)} }
+        @keyframes lgLogoIn     { from{opacity:0;transform:scale(.87)} to{opacity:1;transform:scale(1)} }
+        @keyframes lgTagIn      { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes lgCardSlide  { from{opacity:0;transform:translateY(26px) scale(.99)} to{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes lgF1         { from{opacity:0;transform:translateY(9px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes lgF2         { from{opacity:0;transform:translateY(9px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes lgF3         { from{opacity:0;transform:translateY(9px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes lgBtnIn      { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes lgStampFloat { 0%,100%{transform:rotate(-14deg) translateY(0)} 50%{transform:rotate(-14deg) translateY(-5px)} }
+        @keyframes lgTagFloat   { 0%,100%{transform:rotate(8deg) translateY(0)} 50%{transform:rotate(8deg) translateY(-4px)} }
+        @keyframes lgPlaneFloat { 0%,100%{transform:translate(0,0) rotate(-25deg)} 50%{transform:translate(3px,-4px) rotate(-25deg)} }
 
         /* ── Root ── */
         .lg-root {
-          min-height:100vh;
-          background:#F5F2EF;
+          min-height:100vh; width:100%;
+          background:#FFFFFF;
           display:flex; flex-direction:column;
           font-family:'DM Sans',sans-serif;
-          overflow-x:hidden;
+          position:relative; overflow:hidden;
         }
 
-        /* ── Hero ── */
-        .lg-hero {
-          width:100%;
-          min-height:38vh;
-          background:linear-gradient(150deg,#FF6A00 0%,#FF8F3D 55%,#FFB06A 100%);
-          display:flex; flex-direction:column;
-          align-items:center; justify-content:flex-end;
-          padding:3.5rem 1.5rem 3.75rem;
-          position:relative;
-          overflow:hidden;
+        /* ── Background layer ── */
+        .lg-bg { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+
+        /* Warm radial tint at top */
+        .lg-bg-radial {
+          position:absolute; top:-80px; left:50%; transform:translateX(-50%);
+          width:120%; height:520px;
+          background:radial-gradient(ellipse at 50% 0%, rgba(255,106,0,0.08) 0%, rgba(255,143,61,0.04) 38%, transparent 68%);
         }
-        /* subtle texture overlay */
-        .lg-hero::before {
-          content:'';
-          position:absolute; inset:0;
-          background:radial-gradient(ellipse at 30% 20%, rgba(255,255,255,0.18) 0%, transparent 60%),
-                     radial-gradient(ellipse at 80% 80%, rgba(0,0,0,0.06) 0%, transparent 55%);
-          pointer-events:none;
+
+        /* Blurred ambient circles */
+        .lg-bg-c1 {
+          position:absolute; top:-50px; right:-70px;
+          width:300px; height:300px; border-radius:50%;
+          background:radial-gradient(circle,rgba(255,106,0,0.10) 0%,transparent 68%);
+          filter:blur(50px);
         }
-        .lg-hero-inner {
+        .lg-bg-c2 {
+          position:absolute; bottom:100px; left:-90px;
+          width:260px; height:260px; border-radius:50%;
+          background:radial-gradient(circle,rgba(255,175,90,0.08) 0%,transparent 68%);
+          filter:blur(55px);
+        }
+        .lg-bg-c3 {
+          position:absolute; top:52%; right:8%;
+          width:170px; height:170px; border-radius:50%;
+          background:radial-gradient(circle,rgba(255,106,0,0.06) 0%,transparent 70%);
+          filter:blur(38px);
+        }
+
+        /* World map (continent outlines, very faint) */
+        .lg-bg-world { position:absolute; width:100%; bottom:0; left:0; opacity:0.042; }
+
+        /* Airplane route line */
+        .lg-bg-route { position:absolute; top:0; left:0; width:100%; height:48%; opacity:0.13; }
+
+        /* Passport stamp */
+        .lg-bg-stamp {
+          position:absolute; bottom:16%; right:4%;
+          width:74px; height:74px;
+          opacity:0.072;
+          animation:lgStampFloat 7s ease-in-out infinite;
+        }
+
+        /* Luggage tag */
+        .lg-bg-tag {
+          position:absolute; bottom:12%; left:4%;
+          opacity:0.065;
+          animation:lgTagFloat 9s ease-in-out infinite;
+        }
+
+        /* Floating plane dot at route tip */
+        .lg-bg-plane {
+          position:absolute; top:17%; right:14%;
+          opacity:0.13;
+          animation:lgPlaneFloat 7s ease-in-out infinite 1.5s;
+        }
+
+        /* ── Logo + tagline area ── */
+        .lg-above-card {
           position:relative; z-index:1;
           display:flex; flex-direction:column; align-items:center;
+          padding:2.25rem 1.5rem 1.1rem;
           text-align:center;
         }
         .lg-logo-img {
-          width:120px; height:auto; object-fit:contain;
+          width:160px; height:auto; object-fit:contain;
           display:block;
           animation:lgLogoIn .55s cubic-bezier(.22,.68,0,1.2) both;
         }
         .lg-hero-title {
           font-family:'Sora',sans-serif;
-          font-size:20px; font-weight:800;
-          color:#FFFFFF;
-          letter-spacing:-0.2px;
-          margin-top:18px; line-height:1.25;
-          text-shadow:0 1px 8px rgba(0,0,0,0.12);
-          animation:lgTaglineIn .5s .18s ease both;
+          font-size:16px; font-weight:800;
+          color:#FF6A00;
+          letter-spacing:0.1px;
+          margin-top:12px; line-height:1.35;
+          animation:lgTagIn .45s .15s ease both;
         }
         .lg-hero-sub {
-          font-size:13.5px; font-weight:400;
-          color:rgba(255,255,255,0.82);
-          margin-top:7px; line-height:1.55;
-          animation:lgTaglineIn .5s .3s ease both;
+          font-size:12.5px; color:#9CA3AF; font-weight:400;
+          margin-top:4px; line-height:1.55;
+          animation:lgTagIn .45s .25s ease both;
         }
 
         /* ── Card wrap ── */
         .lg-card-wrap {
+          position:relative; z-index:1;
           width:100%;
           display:flex; flex-direction:column; align-items:center;
-          padding:0 5% 2.5rem;
-          margin-top:-2rem;
+          padding:0 5% 2rem;
           flex:1;
         }
 
@@ -831,57 +871,49 @@ export default function App() {
           width:100%; max-width:460px;
           background:rgba(255,255,255,0.97);
           border-radius:28px;
-          padding:2rem 1.75rem 1.75rem;
+          padding:1.85rem 1.65rem 1.65rem;
           box-shadow:
-            0 24px 60px rgba(0,0,0,0.11),
-            0 6px 20px rgba(0,0,0,0.07),
-            0 1px 0 rgba(255,255,255,0.9) inset;
-          backdrop-filter:blur(20px);
-          -webkit-backdrop-filter:blur(20px);
-          animation:lgCardSlide .5s .08s cubic-bezier(.22,.68,0,1.15) both;
+            0 20px 60px rgba(0,0,0,0.08),
+            0 4px 18px rgba(0,0,0,0.05),
+            0 0 0 1px rgba(0,0,0,0.035);
+          animation:lgCardSlide .5s .05s cubic-bezier(.22,.68,0,1.15) both;
         }
         .lg-card-title {
           font-family:'Sora',sans-serif;
-          font-size:20px; font-weight:700;
+          font-size:19.5px; font-weight:700;
           color:#1A1A1A; line-height:1.2;
-          margin-bottom:4px;
+          margin-bottom:3px;
         }
         .lg-card-sub {
           font-size:13px; color:#6B7280;
-          margin-bottom:1.5rem; line-height:1.5;
+          margin-bottom:1.35rem; line-height:1.5;
         }
 
         /* ── Fields ── */
-        .lg-field { margin-bottom:.9rem; }
-        .lg-field:nth-child(1) { animation:lgF1 .4s .22s ease both; }
-        .lg-field:nth-child(2) { animation:lgF2 .4s .3s ease both; }
-        .lg-field:nth-child(3) { animation:lgF3 .4s .38s ease both; }
+        .lg-field { margin-bottom:.82rem; }
+        .lg-field:nth-child(1) { animation:lgF1 .38s .2s ease both; }
+        .lg-field:nth-child(2) { animation:lgF2 .38s .28s ease both; }
+        .lg-field:nth-child(3) { animation:lgF3 .38s .36s ease both; }
         .lg-label {
           display:block;
-          font-size:12px; font-weight:600; letter-spacing:0.3px;
-          color:#374151; margin-bottom:6px; text-transform:uppercase;
+          font-size:11.5px; font-weight:600; letter-spacing:0.45px;
+          color:#374151; margin-bottom:5px; text-transform:uppercase;
         }
         .lg-input-wrap { position:relative; }
         .lg-input-icon {
-          position:absolute; left:14px; top:50%;
-          transform:translateY(-50%);
-          color:#FF6A00;
-          display:flex; align-items:center; pointer-events:none;
+          position:absolute; left:13px; top:50%; transform:translateY(-50%);
+          color:#FF6A00; display:flex; align-items:center; pointer-events:none;
         }
         .lg-input-icon-right {
-          position:absolute; right:14px; top:50%;
-          transform:translateY(-50%);
-          color:#9CA3AF;
-          display:flex; align-items:center;
+          position:absolute; right:13px; top:50%; transform:translateY(-50%);
+          color:#9CA3AF; display:flex; align-items:center;
           cursor:pointer; background:none; border:none; padding:2px;
         }
         .lg-input-icon-right:hover { color:#374151; }
         .lg-input {
-          width:100%;
-          background:#F8F8FA;
-          border:1.5px solid #EBEBF0;
-          border-radius:13px;
-          padding:13px 44px 13px 42px;
+          width:100%; background:#F8F8FA;
+          border:1.5px solid #EBEBF0; border-radius:13px;
+          padding:12.5px 42px 12.5px 42px;
           font-size:14.5px; font-family:'DM Sans',sans-serif;
           color:#111827; outline:none;
           transition:border-color .18s,box-shadow .2s,background .18s;
@@ -889,15 +921,14 @@ export default function App() {
         .lg-input.no-icon-right { padding-right:14px; }
         .lg-input::placeholder { color:#B0B4BE; }
         .lg-input:focus {
-          border-color:#FF6A00;
-          background:#FFFFFF;
-          box-shadow:0 0 0 3.5px rgba(255,106,0,0.12);
+          border-color:#FF6A00; background:#FFFFFF;
+          box-shadow:0 0 0 3.5px rgba(255,106,0,0.10);
         }
 
         /* ── Extras row ── */
         .lg-extras-row {
           display:flex; align-items:center; justify-content:space-between;
-          margin:.5rem 0 1.1rem;
+          margin:.4rem 0 .95rem;
         }
         .lg-remember {
           display:flex; align-items:center; gap:7px;
@@ -918,109 +949,150 @@ export default function App() {
           width:100%; height:56px;
           background:linear-gradient(105deg,#FF6A00 0%,#FF8F3D 100%);
           border:none; border-radius:18px;
-          font-size:15px; font-weight:700;
-          font-family:'DM Sans',sans-serif;
-          color:#fff; cursor:pointer;
-          letter-spacing:0.25px;
-          box-shadow:0 6px 22px rgba(255,106,0,0.36),0 2px 6px rgba(255,106,0,0.2);
+          font-size:15px; font-weight:700; font-family:'DM Sans',sans-serif;
+          color:#fff; cursor:pointer; letter-spacing:0.25px;
+          box-shadow:0 5px 20px rgba(255,106,0,0.32),0 2px 6px rgba(255,106,0,0.16);
           display:flex; align-items:center; justify-content:center; gap:8px;
-          animation:lgBtnIn .4s .46s ease both;
-          transition:transform .14s,box-shadow .16s,filter .14s;
+          animation:lgBtnIn .38s .44s ease both;
+          transition:transform .13s,box-shadow .15s,filter .13s;
           position:relative; overflow:hidden;
         }
         .lg-btn-primary::before {
-          content:'';
-          position:absolute; inset:0;
-          background:linear-gradient(105deg,rgba(255,255,255,0.14) 0%,transparent 60%);
+          content:''; position:absolute; inset:0;
+          background:linear-gradient(105deg,rgba(255,255,255,0.15) 0%,transparent 55%);
           pointer-events:none;
         }
         .lg-btn-primary:hover:not(:disabled) {
-          filter:brightness(1.06);
-          transform:translateY(-2px);
-          box-shadow:0 10px 30px rgba(255,106,0,0.44),0 3px 8px rgba(255,106,0,0.22);
+          filter:brightness(1.07); transform:translateY(-2px);
+          box-shadow:0 9px 28px rgba(255,106,0,0.42),0 3px 8px rgba(255,106,0,0.2);
         }
         .lg-btn-primary:hover:not(:disabled) .lg-btn-arrow { transform:translateX(4px); }
-        .lg-btn-primary:active:not(:disabled) { transform:scale(0.97); box-shadow:0 3px 12px rgba(255,106,0,0.30); }
+        .lg-btn-primary:active:not(:disabled) { transform:scale(0.97); box-shadow:0 3px 12px rgba(255,106,0,0.28); }
         .lg-btn-primary:disabled { opacity:0.52; cursor:not-allowed; }
         .lg-btn-arrow { transition:transform .2s cubic-bezier(.34,1.56,.64,1); display:flex; align-items:center; }
 
         /* ── Divider ── */
-        .lg-divider {
-          display:flex; align-items:center; gap:10px;
-          margin:1.25rem 0 1rem;
-        }
+        .lg-divider { display:flex; align-items:center; gap:10px; margin:1.05rem 0 .85rem; }
         .lg-div-line { flex:1; height:1px; background:#EBEBF0; }
         .lg-div-text { font-size:11.5px; color:#B0B4BE; font-weight:500; white-space:nowrap; }
 
-        /* ── Social row ── */
-        .lg-social-row { display:flex; gap:9px; }
+        /* ── Social — icon-only ── */
+        .lg-social-row { display:flex; gap:10px; }
         .lg-social-btn {
-          flex:1; padding:11px 6px;
-          background:#F8F8FA;
-          border:1.5px solid #EBEBF0;
-          border-radius:14px;
+          flex:1; height:44px;
+          background:#F8F8FA; border:1.5px solid #EBEBF0; border-radius:14px;
           cursor:pointer;
-          display:flex; align-items:center; justify-content:center; gap:6px;
-          font-size:13px; font-weight:600;
-          font-family:'DM Sans',sans-serif;
-          color:#374151;
+          display:flex; align-items:center; justify-content:center;
           transition:background .18s,border-color .18s,transform .12s;
         }
         .lg-social-btn:hover { background:#F0F0F5; border-color:#D8D8E0; }
-        .lg-social-btn:active { transform:scale(0.96); }
+        .lg-social-btn:active { transform:scale(0.93); }
 
-        /* ── Footer link ── */
-        .lg-footer-link {
-          text-align:center; margin-top:1.4rem;
-          font-size:13.5px; color:#6B7280;
-        }
+        /* ── Footer ── */
+        .lg-footer-link { text-align:center; margin-top:1.2rem; font-size:13.5px; color:#6B7280; }
         .lg-footer-link button {
           background:none; border:none; cursor:pointer; padding:0;
-          font-size:13.5px; font-weight:600; color:#FF6A00;
-          font-family:'DM Sans',sans-serif;
+          font-size:13.5px; font-weight:600; color:#FF6A00; font-family:'DM Sans',sans-serif;
         }
         .lg-footer-link button:hover { text-decoration:underline; }
-
-        /* ── Error ── */
         .lg-error {
           font-size:12.5px; color:#DC2626;
           background:#FEF2F2; border:1px solid #FECACA;
-          border-radius:10px; padding:9px 13px;
-          margin-bottom:12px;
+          border-radius:10px; padding:8px 12px; margin-bottom:10px;
         }
-
-        /* ── Spinner ── */
         .lg-spinner {
           width:20px; height:20px;
-          border:2.5px solid rgba(255,255,255,0.4);
-          border-top-color:#fff;
-          border-radius:50%;
-          animation:lgSpin .6s linear infinite;
-          display:inline-block;
+          border:2.5px solid rgba(255,255,255,0.38); border-top-color:#fff;
+          border-radius:50%; animation:lgSpin .6s linear infinite; display:inline-block;
         }
-
-        /* ── Terms ── */
         .lg-terms {
-          text-align:center; margin-top:1.1rem;
+          text-align:center; margin-top:.9rem;
           font-size:11.5px; color:#A0A4AD; line-height:1.6;
         }
         .lg-terms a { color:#9CA3AF; text-decoration:underline; cursor:pointer; }
-        .lg-terms a:hover { color:#4B5563; }
+        .lg-terms a:hover { color:#374151; }
       `}</style>
 
-      {/* ── Hero section ── */}
-      <div className="lg-hero">
-        <div className="lg-hero-inner">
-          <img src={bglessLogo} alt="TripBae" className="lg-logo-img" />
-          <div className="lg-hero-title">Plan. Split. Explore — together</div>
-          <div className="lg-hero-sub">Start planning unforgettable trips with friends.</div>
-        </div>
+      {/* ── Decorative background ── */}
+      <div className="lg-bg" aria-hidden="true">
+        {/* Radial warm tint */}
+        <div className="lg-bg-radial" />
+        {/* Blurred ambient circles */}
+        <div className="lg-bg-c1" />
+        <div className="lg-bg-c2" />
+        <div className="lg-bg-c3" />
+
+        {/* World map — simplified continent fills */}
+        <svg className="lg-bg-world" viewBox="0 0 400 180" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#FF6A00">
+            {/* North America */}
+            <path d="M40,28 C52,20 80,16 108,22 C125,26 140,38 143,54 C146,70 135,90 120,106 C106,122 84,132 64,126 C46,120 34,104 33,84 C32,64 38,38 40,28Z"/>
+            {/* Greenland */}
+            <path d="M108,6 C120,2 136,4 140,14 C143,22 135,31 123,33 C112,34 105,27 108,17Z" opacity="0.65"/>
+            {/* South America */}
+            <path d="M78,136 C90,128 110,128 116,142 C122,158 118,180 112,200 C106,218 93,226 80,218 C68,210 65,190 68,170 C71,152 76,143 78,136Z"/>
+            {/* Europe */}
+            <path d="M162,22 C173,16 194,14 208,22 C220,28 224,44 220,58 C216,70 202,78 188,80 C175,81 162,72 160,58 C158,46 160,32 162,22Z" opacity="0.9"/>
+            {/* Africa */}
+            <path d="M168,78 C184,70 212,70 226,82 C238,94 238,120 230,152 C222,180 208,200 194,203 C181,206 170,190 165,162 C158,136 158,108 164,90Z"/>
+            {/* Asia */}
+            <path d="M213,18 C246,8 292,6 330,12 C355,18 370,36 365,54 C360,70 342,88 314,100 C287,112 250,114 226,106 C208,100 204,86 212,68 C217,52 214,34 213,18Z"/>
+            {/* Indian subcontinent */}
+            <path d="M246,98 C254,93 267,93 272,101 C278,112 272,128 263,135 C255,141 247,135 244,121 C241,110 244,102 246,98Z" opacity="0.9"/>
+            {/* SE Asia archipelago */}
+            <ellipse cx="320" cy="122" rx="16" ry="7" opacity="0.6" transform="rotate(-8,320,122)"/>
+            <ellipse cx="342" cy="62" rx="9" ry="5" opacity="0.55"/>
+            {/* Australia */}
+            <path d="M292,136 C308,128 336,128 348,142 C358,154 355,170 342,178 C329,185 312,182 304,170 C296,158 294,148 292,136Z"/>
+            {/* New Zealand */}
+            <ellipse cx="366" cy="168" rx="5" ry="9" opacity="0.5" transform="rotate(-20,366,168)"/>
+          </g>
+        </svg>
+
+        {/* Airplane route — arched dashed path */}
+        <svg className="lg-bg-route" viewBox="0 0 400 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M 18 180 Q 100 30 230 70 Q 310 96 372 52" fill="none" stroke="#FF6A00" strokeWidth="1.2" strokeDasharray="5 5"/>
+          <circle cx="18" cy="180" r="3" fill="#FF6A00"/>
+          <circle cx="230" cy="70" r="2" fill="#FF6A00" opacity="0.55"/>
+        </svg>
+
+        {/* Plane at route tip */}
+        <svg className="lg-bg-plane" width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22 2L11 13" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M22 2L15 22L11 13L2 9L22 2Z" fill="#FF6A00" stroke="#FF6A00" strokeWidth="1.2" strokeLinejoin="round"/>
+        </svg>
+
+        {/* Passport stamp */}
+        <svg className="lg-bg-stamp" viewBox="0 0 74 74" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="37" cy="37" r="33" stroke="#FF6A00" strokeWidth="2" strokeDasharray="3.5 3"/>
+          <circle cx="37" cy="37" r="26" stroke="#FF6A00" strokeWidth="1"/>
+          <text x="37" y="31" textAnchor="middle" fontFamily="'DM Sans',sans-serif" fontWeight="700" fontSize="7" fill="#FF6A00" letterSpacing="1.8">BOARDING</text>
+          <line x1="22" y1="36" x2="52" y2="36" stroke="#FF6A00" strokeWidth="0.8"/>
+          <text x="37" y="44" textAnchor="middle" fontFamily="'DM Sans',sans-serif" fontWeight="700" fontSize="7" fill="#FF6A00" letterSpacing="1.8">PASS</text>
+          <text x="37" y="55" textAnchor="middle" fontFamily="'DM Sans',sans-serif" fontSize="5.5" fill="#FF6A00" letterSpacing="0.8">TRIPBAE · 2026</text>
+        </svg>
+
+        {/* Luggage tag */}
+        <svg className="lg-bg-tag" width="38" height="56" viewBox="0 0 38 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="2" y="14" width="34" height="40" rx="6" stroke="#FF6A00" strokeWidth="1.5"/>
+          <path d="M19 14 L19 8" stroke="#FF6A00" strokeWidth="1.5" strokeLinecap="round"/>
+          <circle cx="19" cy="5.5" r="3" stroke="#FF6A00" strokeWidth="1.5"/>
+          <line x1="9" y1="27" x2="29" y2="27" stroke="#FF6A00" strokeWidth="1" strokeLinecap="round" opacity="0.7"/>
+          <line x1="9" y1="33" x2="24" y2="33" stroke="#FF6A00" strokeWidth="1" strokeLinecap="round" opacity="0.5"/>
+          <line x1="9" y1="39" x2="21" y2="39" stroke="#FF6A00" strokeWidth="1" strokeLinecap="round" opacity="0.4"/>
+        </svg>
       </div>
 
-      {/* ── Card (floats up over hero) ── */}
+      {/* ── Logo + tagline ── */}
+      <div className="lg-above-card">
+        <img src={bglessLogo} alt="TripBae" className="lg-logo-img" />
+        <div className="lg-hero-title">Plan. Split. Explore — together</div>
+        <div className="lg-hero-sub">Start planning unforgettable trips with friends.</div>
+      </div>
+
+      {/* ── Card ── */}
       <div className="lg-card-wrap">
         <div className="lg-card">
-
           <div className="lg-card-title">
             {authScreen === 'signup' ? 'Create your account' : 'Ready for your next trip?'}
           </div>
@@ -1034,7 +1106,7 @@ export default function App() {
               <label className="lg-label">Full name</label>
               <div className="lg-input-wrap">
                 <span className="lg-input-icon">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 </span>
                 <input className="lg-input no-icon-right" type="text" placeholder="Your name"
                   autoFocus={authScreen === 'signup'} value={authForm.name}
@@ -1049,7 +1121,7 @@ export default function App() {
             <label className="lg-label">Email address</label>
             <div className="lg-input-wrap">
               <span className="lg-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
               </span>
               <input className="lg-input no-icon-right" type="email" placeholder="you@example.com"
                 autoFocus={authScreen === 'login'} value={authForm.email}
@@ -1059,11 +1131,11 @@ export default function App() {
           </div>
 
           {/* Password */}
-          <div className="lg-field" style={{ marginBottom: authScreen === 'login' ? 0 : '.9rem' }}>
+          <div className="lg-field" style={{ marginBottom: authScreen === 'login' ? 0 : '.82rem' }}>
             <label className="lg-label">Password</label>
             <div className="lg-input-wrap">
               <span className="lg-input-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               </span>
               <input className="lg-input" type={lgShowPw ? 'text' : 'password'} placeholder="••••••••"
                 value={authForm.password}
@@ -1071,14 +1143,14 @@ export default function App() {
                 onKeyDown={e => e.key === 'Enter' && handleAuth()} />
               <button className="lg-input-icon-right" onClick={() => setLgShowPw(v => !v)} tabIndex={-1} type="button">
                 {lgShowPw
-                  ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 }
               </button>
             </div>
           </div>
 
-          {/* Remember me + Forgot (login only) */}
+          {/* Remember + Forgot (login only) */}
           {authScreen === 'login' && (
             <div className="lg-extras-row">
               <label className="lg-remember">
@@ -1091,7 +1163,7 @@ export default function App() {
 
           {authError && <div className="lg-error">{authError}</div>}
 
-          {/* Primary CTA */}
+          {/* CTA */}
           <button className="lg-btn-primary" onClick={handleAuth}
             disabled={authLoading || !authForm.email.trim() || !authForm.password.trim() || (authScreen === 'signup' && !authForm.name.trim())}>
             {authLoading
@@ -1111,21 +1183,18 @@ export default function App() {
             <div className="lg-div-line" />
           </div>
 
+          {/* Social — icon only */}
           <div className="lg-social-row">
-            <button className="lg-social-btn" type="button">
-              <svg width="17" height="17" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-              Google
+            <button className="lg-social-btn" type="button" title="Google">
+              <svg width="19" height="19" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
             </button>
-            <button className="lg-social-btn" type="button">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-              Apple
+            <button className="lg-social-btn" type="button" title="Apple">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="#1A1A1A"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
             </button>
-            <button className="lg-social-btn" type="button">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-              Guest
+            <button className="lg-social-btn" type="button" title="Guest">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
             </button>
           </div>
-
         </div>
 
         <div className="lg-footer-link">
@@ -1141,6 +1210,7 @@ export default function App() {
       </div>
     </div>
   );
+
 
 
 
