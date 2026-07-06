@@ -140,35 +140,43 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
     if (photos.length < 2) return;
     const timer = setInterval(() => {
       setPhotoIdx(i => (i + 1) % photos.length);
-    }, 3200);
+    }, 2600);
     return () => clearInterval(timer);
   }, [photos.length]);
 
   const status = tripStatusInfo(trip.arrival, trip.departure, trip.completed);
   const days = tripDuration(trip.arrival, trip.departure);
+  const totalSpend = (trip.expenses || []).reduce((s, e) => s + e.amount, 0);
   const memberNames = normalizeMembers(trip.members);
   const budgetBase = trip.budget || 0;
+  const budgetPct = budgetBase > 0 ? Math.min(100, Math.round((totalSpend / budgetBase) * 100)) : 0;
+  const budgetLeft = Math.max(0, Math.round(budgetBase - totalSpend));
   const isMenuOpen = menuOpen === trip.id;
   const isPast = status.label === 'Past' || status.label === 'Completed';
-  const isLive = status.label === 'Ongoing';
   const daysToStart = trip.arrival ? Math.ceil((new Date(trip.arrival).getTime() - Date.now()) / 86400000) : null;
-  const statusPillLabel = isLive ? 'Live' : (daysToStart != null && daysToStart > 0 ? `In ${daysToStart}d` : (isPast ? 'Past' : status.label));
-  const cardDelay = idx * 70;
-  const fallbackBg = trip.isSolo
+  const statusPillLabel = status.label === 'Ongoing'
+    ? 'Ongoing'
+    : (daysToStart != null && daysToStart > 0 ? `In ${daysToStart}d` : (isPast ? 'Past' : status.label));
+  const cardBg = trip.isSolo
     ? 'linear-gradient(145deg,#121a42 0%,#27316c 52%,#171d4a 100%)'
     : 'linear-gradient(145deg,#083433 0%,#0f5a55 52%,#0a3c38 100%)';
-
-  const fmtBudget = (n) => {
-    if (n >= 10000000) return `₹${(n/10000000).toFixed(1)}Cr`;
-    if (n >= 100000) return `₹${(n/100000).toFixed(1)}L`;
-    if (n >= 1000) return `₹${(n/1000).toFixed(0)}K`;
-    return `₹${n.toLocaleString('en-IN')}`;
-  };
+  const glowBg = trip.isSolo
+    ? 'radial-gradient(circle,rgba(127,119,221,0.42) 0%,transparent 72%)'
+    : 'radial-gradient(circle,rgba(29,158,117,0.42) 0%,transparent 72%)';
+  let statusBadgeStyle;
+  if (isPast) {
+    statusBadgeStyle = { background: 'rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.78)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(7px)' };
+  } else if (status.label === 'Ongoing') {
+    statusBadgeStyle = { background: 'rgba(29,158,117,0.28)', color: '#1fcea8', border: '1px solid rgba(29,158,117,0.55)', backdropFilter: 'blur(7px)' };
+  } else {
+    statusBadgeStyle = { background: 'rgba(29,158,117,0.22)', color: '#86EFC9', border: '1px solid rgba(94,232,184,0.36)', backdropFilter: 'blur(7px)' };
+  }
+  const cardDelay = idx * 70;
 
   return (
     <div
       className={`tb-trip-card-new${isArchiving ? ' tb-trip-archiving' : ''}`}
-      style={{ height: 224, background: fallbackBg, opacity: isPast ? 0.75 : 1, animation: `fadeUp 0.45s ease both`, animationDelay: `${cardDelay}ms`, filter: forceMonochrome ? 'grayscale(1) saturate(0.02) contrast(1.06)' : 'none' }}
+      style={{ background: cardBg, opacity: isPast ? 0.72 : 1, animation: `fadeUp 0.45s ease both`, animationDelay: `${cardDelay}ms`, border: '1px solid rgba(255,255,255,0.14)', boxShadow: '0 18px 42px rgba(16,24,40,0.22), 0 4px 10px rgba(16,24,40,0.14)', filter: forceMonochrome ? 'grayscale(1) saturate(0.02) contrast(1.06)' : 'none' }}
       onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
       onTouchEnd={e => {
         if (touchStartX.current === null || photos.length < 2) return;
@@ -177,133 +185,143 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
         touchStartX.current = null;
       }}
     >
-      {/* ── Photo layers (crossfade loop) ── */}
+      {/* Photo backgrounds */}
       {photos.map((url, i) => (
-        <img key={url} src={url} alt="" style={{
-          position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
-          opacity: i === photoIdx ? 1 : 0,
-          transition: 'opacity 0.9s ease, transform 3.2s ease',
-          transform: i === photoIdx ? 'scale(1.06)' : 'scale(1)',
-          filter: 'brightness(0.72) saturate(1.18) contrast(1.06)',
-          zIndex: 0, pointerEvents: 'none',
-        }} onError={e => { e.target.style.display = 'none'; }} />
+        <img
+          key={url}
+          src={url}
+          alt=""
+          style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+            opacity: i === photoIdx ? 1 : 0,
+            transition: 'opacity 0.38s ease, transform 2.1s ease',
+            transform: i === photoIdx ? 'scale(1.05)' : 'scale(1.008)',
+            filter: 'brightness(0.74) saturate(1.24) contrast(1.08)',
+            zIndex: 0,
+            pointerEvents: 'none',
+          }}
+          onError={e => { e.target.style.display = 'none'; }}
+        />
       ))}
 
-      {/* ── Gradient scrims ── */}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.06) 0%, rgba(0,0,0,0) 28%, rgba(0,0,0,0.04) 52%, rgba(0,0,0,0.78) 100%)', zIndex: 1, pointerEvents: 'none' }} />
+      {/* Scrims */}
+      {photos.length > 0 && (
+        <>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 38%)', zIndex: 1, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(3,9,24,0.02) 0%, rgba(3,9,24,0.08) 48%, rgba(3,9,24,0.5) 100%)', zIndex: 1, pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(120% 90% at 100% 0%, rgba(255,255,255,0.14) 0%, transparent 52%)', zIndex: 1, pointerEvents: 'none' }} />
+        </>
+      )}
 
-      {/* ── Photo loop dots (top-center) ── */}
-      {photos.length > 1 && (
-        <div style={{ position: 'absolute', top: 12, left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: 4, zIndex: 6, pointerEvents: 'none' }}>
-          {photos.map((_, i) => (
-            <div key={i} style={{ width: i === photoIdx ? 16 : 4, height: 4, borderRadius: 99, background: i === photoIdx ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.38)', transition: 'all 0.35s ease', boxShadow: i === photoIdx ? '0 0 6px rgba(255,255,255,0.6)' : 'none' }} />
-          ))}
+      {/* glow blob */}
+      <div style={{ position: 'absolute', top: -20, right: -20, width: 130, height: 130, borderRadius: '50%', background: glowBg, pointerEvents: 'none', zIndex: 1 }} />
+      {/* inner top shine */}
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 68, background: 'linear-gradient(180deg,rgba(255,255,255,0.11) 0%,transparent 100%)', borderRadius: '26px 26px 0 0', pointerEvents: 'none', zIndex: 2 }} />
+
+      {/* card body */}
+      <div style={{ padding: '14px 16px 0', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
+        {/* top row: icon box left + status badge right */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
+          {/* Travel icon box */}
+          <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(255,255,255,0.92)" stroke="none">
+              <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>
+            </svg>
+          </div>
+          {/* Status badges */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            {trip.isSolo && (
+              <span style={{ padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: 'rgba(99,102,241,0.2)', color: '#C7D2FE', border: '1px solid rgba(129,140,248,0.42)', boxShadow: '0 0 20px rgba(79,70,229,0.28)' }}>Solo</span>
+            )}
+            <span style={{ padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...(!isPast ? { boxShadow: '0 0 20px rgba(34,197,94,0.22)' } : {}) }}>
+              {statusPillLabel}
+            </span>
+          </div>
+        </div>
+        {/* destination */}
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', letterSpacing: '-0.7px', lineHeight: 1.12, marginBottom: 3, fontFamily: "'Inter',sans-serif", textShadow: '0 4px 26px rgba(0,0,0,0.78), 0 1px 4px rgba(0,0,0,0.52)' }}>{trip.destination}</div>
+        {/* group name */}
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.84)', marginBottom: 8, fontWeight: 600, textShadow: '0 1px 8px rgba(0,0,0,0.62)' }}>{trip.groupName}</div>
+        {/* stats line */}
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.9)', fontWeight: 600, display: 'flex', alignItems: 'center', flexWrap: 'wrap', textShadow: '0 1px 8px rgba(0,0,0,0.6)', marginBottom: 0 }}>
+          <span>{formatDateRange(trip.arrival, trip.departure)}</span>
+          <span style={{ margin: '0 5px', opacity: 0.45 }}>·</span>
+          <span>{days} {days === 1 ? 'night' : 'nights'}</span>
+          <span style={{ margin: '0 5px', opacity: 0.45 }}>·</span>
+          <span>{memberNames.length} {memberNames.length === 1 ? 'member' : 'members'}</span>
+          <span style={{ margin: '0 5px', opacity: 0.45 }}>·</span>
+          <span>₹{Math.round(totalSpend).toLocaleString('en-IN')}</span>
+        </div>
+        {/* Photo slide dots — inline, centered */}
+        {photos.length > 1 ? (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 5, marginTop: 14, marginBottom: 6, pointerEvents: 'none' }}>
+            {photos.map((_, i) => (
+              <div key={i} style={{ width: i === photoIdx ? 18 : 5, height: 5, borderRadius: 99, background: i === photoIdx ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.38)', transition: 'all 0.3s ease', boxShadow: i === photoIdx ? '0 1px 8px rgba(255,255,255,0.5)' : 'none' }} />
+            ))}
+          </div>
+        ) : (
+          <div style={{ height: 20 }} />
+        )}
+      </div>
+
+      {/* Budget row */}
+      {budgetBase > 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px', borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.14)', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.52)', fontWeight: 600 }}>Budget</span>
+          <span style={{ fontSize: 11, color: '#FF6B35', fontWeight: 800, letterSpacing: 0.1 }}>{budgetPct}% · ₹{budgetLeft.toLocaleString('en-IN')} left</span>
         </div>
       )}
 
-      {/* ── Top row: status badge + menu ── */}
-      <div style={{ position: 'absolute', top: 14, left: 14, right: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 5 }}>
-        {/* Status pill */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 13px 5px 9px', borderRadius: 999, backdropFilter: 'blur(14px)', background: isLive ? 'rgba(10,46,34,0.88)' : isPast ? 'rgba(20,20,28,0.72)' : 'rgba(14,22,44,0.82)', border: `1px solid ${isLive ? 'rgba(29,158,117,0.55)' : 'rgba(255,255,255,0.2)'}` }}>
-          {isLive && <span className="tb-live-dot" />}
-          {!isLive && trip.isSolo && <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#A78BFA', flexShrink: 0 }} />}
-          <span style={{ fontSize: 11.5, fontWeight: 700, color: isLive ? '#5DE8B4' : 'rgba(255,255,255,0.88)', letterSpacing: 0.3 }}>{statusPillLabel}</span>
-          {trip.isSolo && <span style={{ marginLeft: 2, fontSize: 10, fontWeight: 600, color: 'rgba(167,139,250,0.9)' }}>Solo</span>}
+      {/* footer */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 14px', borderTop: '1px solid rgba(255,255,255,0.12)', background: 'linear-gradient(180deg,rgba(6,12,26,0.55) 0%, rgba(4,9,20,0.84) 100%)', backdropFilter: 'blur(14px)', position: 'relative', zIndex: 3 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={(event) => onOpen(trip.id, event)}>
+          {trip.isSolo
+            ? <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 3px 8px rgba(83,74,183,0.4)', flexShrink: 0 }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
+            : <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 3px 8px rgba(15,110,86,0.4)', flexShrink: 0 }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
+          }
+          <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {memberNames[0] || (trip.isSolo ? 'You' : 'Member')}{!trip.isSolo && memberNames.length > 1 ? ` +${memberNames.length - 1}` : ''}
+          </span>
         </div>
-        {/* Menu button — white circle bookmark style */}
-        {showMenu && (
-          <div style={{ position: 'relative' }}>
-            <button
-              onClick={e => { e.stopPropagation(); setMenuOpen(isMenuOpen ? null : trip.id); }}
-              style={{ width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.94)', boxShadow: '0 4px 16px rgba(0,0,0,0.22)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a2744" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
-            </button>
-            {isMenuOpen && (
-              <>
-                <div style={{ position: 'fixed', inset: 0, zIndex: 420 }} onClick={() => setMenuOpen(null)} />
-                <div style={{ position: 'absolute', top: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 14, boxShadow: '0 10px 36px rgba(0,0,0,0.16)', zIndex: 421, minWidth: 188, overflow: 'hidden' }}>
-                  {!trip.isSolo && (
-                    <button onClick={e => { e.stopPropagation(); setMenuOpen(null); onCopy(trip.shareCode, trip.id); }}
-                      style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#1F2937', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
-                      {copied === trip.id ? '✓ Code Copied' : 'Copy Share Code'}
-                    </button>
-                  )}
-                  <button onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmComplete(trip); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
-                    Mark as Completed
+        {/* Share code pill */}
+        {!trip.isSolo && trip.shareCode && (
+          <button
+            onClick={e => { e.stopPropagation(); onCopy(trip.shareCode, trip.id); }}
+            style={{ padding: '4px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', cursor: 'pointer', marginRight: 8, flexShrink: 0 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: copied === trip.id ? '#1fcea8' : 'rgba(255,255,255,0.75)', letterSpacing: 0.4 }}>{copied === trip.id ? 'Copied' : trip.shareCode}</span>
+          </button>
+        )}
+        {showMenu && <div style={{ position: 'relative', flexShrink: 0 }}>
+          <button
+            onClick={e => { e.stopPropagation(); setMenuOpen(isMenuOpen ? null : trip.id); }}
+            style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.92)', fontSize: 18, letterSpacing: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(255,255,255,0.16)', cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
+            ⋯
+          </button>
+          {isMenuOpen && (
+            <>
+              <div style={{ position: 'fixed', inset: 0, zIndex: 420 }} onClick={() => setMenuOpen(null)} />
+              <div style={{ position: 'absolute', bottom: '110%', right: 0, background: '#fff', border: '0.5px solid rgba(0,0,0,0.12)', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', zIndex: 421, minWidth: 180, overflow: 'hidden' }}>
+                {!trip.isSolo && (
+                  <button
+                    onClick={e => { e.stopPropagation(); setMenuOpen(null); onCopy(trip.shareCode, trip.id); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#1F2937', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
+                    {copied === trip.id ? 'Code Copied' : 'Copy Share Code'}
                   </button>
-                  <button onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmDelete(trip); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#993C1D', fontFamily: "'DM Sans',sans-serif" }}>
-                    Delete Trip
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* ── Destination + group name ── */}
-      <div
-        style={{ position: 'absolute', bottom: 72, left: 18, right: 56, zIndex: 5, cursor: 'pointer' }}
-        onClick={e => onOpen(trip.id, e)}
-      >
-        <div style={{ width: 28, height: 3, borderRadius: 3, background: 'linear-gradient(90deg,#FF6B35,#FF9A5C)', marginBottom: 8 }} />
-        <div style={{ fontSize: 31, fontWeight: 850, color: '#fff', letterSpacing: '-1px', lineHeight: 1.06, fontFamily: "'Inter',sans-serif", textShadow: '0 3px 22px rgba(0,0,0,0.72)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{trip.destination}</div>
-        {trip.groupName && (
-          <div style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,0.78)', marginTop: 5, textShadow: '0 1px 10px rgba(0,0,0,0.6)', letterSpacing: 0.1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{trip.groupName}</div>
-        )}
-      </div>
-
-      {/* ── Bottom info bar ── */}
-      <div
-        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 5, display: 'flex', alignItems: 'center', padding: '0 14px 0 14px', height: 66, background: 'rgba(6,11,24,0.68)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer' }}
-        onClick={e => onOpen(trip.id, e)}
-      >
-        {/* Dates chip */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,107,53,0.95)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', lineHeight: 1.25, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{formatDateRange(trip.arrival, trip.departure)}</div>
-            <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.52)', fontWeight: 500, marginTop: 1 }}>{days} {days === 1 ? 'night' : 'nights'}</div>
-          </div>
-        </div>
-
-        <div style={{ width: 1, height: 30, background: 'rgba(255,255,255,0.14)', flexShrink: 0, margin: '0 8px' }} />
-
-        {/* Members chip */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,107,53,0.95)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', lineHeight: 1.25 }}>{memberNames.length} {memberNames.length === 1 ? 'friend' : 'friends'}</div>
-            <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.52)', fontWeight: 500, marginTop: 1 }}>{trip.isSolo ? 'Solo trip' : 'Group trip'}</div>
-          </div>
-        </div>
-
-        {budgetBase > 0 && (
-          <>
-            <div style={{ width: 1, height: 30, background: 'rgba(255,255,255,0.14)', flexShrink: 0, margin: '0 8px' }} />
-            {/* Budget chip */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
-              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="rgba(255,107,53,0.95)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+                )}
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmComplete(trip); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
+                  Mark as Completed
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmDelete(trip); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#993C1D', fontFamily: "'DM Sans',sans-serif" }}>
+                  Delete Trip
+                </button>
               </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: '#fff', lineHeight: 1.25, whiteSpace: 'nowrap' }}>{fmtBudget(budgetBase)}</div>
-                <div style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.52)', fontWeight: 500, marginTop: 1 }}>Budget</div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Arrow button */}
-        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 10 }}>
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.88)" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
+            </>
+          )}
+        </div>}
       </div>
     </div>
   );
@@ -578,24 +596,16 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           to   { transform: translateX(-112%); }
         }
         .tb-trip-card-new {
-          border-radius: 22px; margin-bottom: 16px; overflow: hidden; position: relative;
+          border-radius: 26px; margin-bottom: 16px; overflow: hidden; position: relative;
           cursor: pointer; will-change: transform; transform: translateZ(0);
-          box-shadow: 0 2px 4px rgba(0,0,0,0.08), 0 10px 28px rgba(0,0,0,0.18), 0 22px 44px rgba(0,0,0,0.10);
-          border: 1px solid rgba(255,255,255,0.08);
-          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.10), 0 24px 48px rgba(0,0,0,0.06);
+          border-top: 1px solid rgba(255,255,255,0.15);
+          transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
         @media (hover: hover) {
-          .tb-trip-card-new:hover { transform: translateY(-4px) translateZ(0); box-shadow: 0 14px 48px rgba(0,0,0,0.28) !important; }
+          .tb-trip-card-new:hover { transform: translateY(-3px) translateZ(0); box-shadow: 0 8px 40px rgba(0,0,0,0.18) !important; }
         }
         .tb-trip-card-new:active { transform: scale(0.98) translateZ(0); }
-        @keyframes tbLivePulse {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(29,200,130,0.7); }
-          50% { box-shadow: 0 0 0 5px rgba(29,200,130,0); }
-        }
-        .tb-live-dot {
-          width: 7px; height: 7px; border-radius: 50%; background: #1DC882; flex-shrink: 0;
-          animation: tbLivePulse 1.8s ease-in-out infinite;
-        }
         .tb-trip-archiving { transform-origin: 50% 60%; animation: tbMacbookFold 480ms cubic-bezier(.4,0,.2,1) forwards !important; pointer-events: none; }
         .tb-past-folder-pulse { animation: tbPastFolderPulse 700ms cubic-bezier(.2,.7,.2,1) both; }
         .tb-new-btn { transition: transform 0.18s ease, box-shadow 0.18s ease; }
