@@ -649,7 +649,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'left' }}>
         <div style={{ position: 'relative', zIndex: 2 }}>
           <div className="tb-hero-greet" style={{ fontSize: 12, fontWeight: 600, letterSpacing: '1.6px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 7, textAlign: 'left' }}>
-            {greetPhrase}{profileName ? <span style={{ color: '#1a1a18', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
+            {greetPhrase}{profileName ? <span style={{ color: '#043D28', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
           </div>
           <div style={{ overflow: 'hidden', height: 52, marginBottom: 18, display: 'flex', alignItems: 'center' }}>
             <div
