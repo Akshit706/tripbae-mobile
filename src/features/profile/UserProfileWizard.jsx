@@ -24,7 +24,7 @@ const COUNTRIES = [
 ];
 
 const TOTAL   = 6; // steps 0‑5
-const DOTS    = 4; // progress dots represent steps 1‑4
+const DOTS    = TOTAL; // one dot per step
 
 const stepMeta = [
   { title: "Let's get to know you!",  sub: 'Help us personalise your travel experience and recommend the best adventures for you.' },
@@ -79,7 +79,7 @@ function StepDots({ step }) {
       {Array.from({ length: DOTS }, (_, i) => (
         <Fragment key={i}>
           {i > 0 && (
-            <div style={{ width: 22, height: 2.5, background: i < filled ? AC : '#E5E2DC', borderRadius: 2, transition: 'background .3s' }} />
+            <div style={{ width: 14, height: 2.5, background: i < filled ? AC : '#E5E2DC', borderRadius: 2, transition: 'background .3s' }} />
           )}
           <div style={{
             width:  i === filled - 1 ? 11 : 9,
@@ -297,7 +297,6 @@ function LumiIntro({ userName, onStart }) {
    PROFILE WIZARD  (intro.png style – full screen, orange/white)
 ══════════════════════════════════════════════════════ */
 export default function UserProfileWizard({ userName, onDone }) {
-  const [lumiDone, setLumiDone] = useState(false);
   const [step, setStep]         = useState(0);
   const [saving, setSaving]     = useState(false);
   const [error, setError]       = useState('');
@@ -342,11 +341,6 @@ export default function UserProfileWizard({ userName, onDone }) {
     setSaving(false);
   };
 
-  /* Show Lumi intro first */
-  if (!lumiDone) {
-    return <LumiIntro userName={userName} onStart={() => setLumiDone(true)} />;
-  }
-
   const canNext = [
     true,             // welcome
     true,             // photo (optional)
@@ -374,7 +368,8 @@ export default function UserProfileWizard({ userName, onDone }) {
   const SW = `${100 / TOTAL}%`;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: '#fff', fontFamily: "'DM Sans',system-ui,sans-serif", display: 'flex', flexDirection: 'column' }}>
+    <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(10,10,10,0.55)', backdropFilter: 'blur(14px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem', fontFamily: "'DM Sans',system-ui,sans-serif" }}>
+      <div style={{ width: '100%', maxWidth: 490, height: 'min(640px,92svh)', background: '#fff', borderRadius: 26, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 30px 80px rgba(0,0,0,0.28), 0 0 0 1px rgba(0,0,0,0.06)' }}>
       <style>{`
         @keyframes wzIn { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:none; } }
         .wz-screen { animation:wzIn .35s ease both; }
@@ -412,27 +407,35 @@ export default function UserProfileWizard({ userName, onDone }) {
       <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
         <div style={{ display: 'flex', height: '100%', width: `${TOTAL * 100}%`, transform: `translateX(calc(${-step} * ${SW}))`, transition: 'transform .38s cubic-bezier(.16,.84,.24,1.04)' }}>
 
-          {/* ── STEP 0: Welcome ── */}
-          <div style={{ width: SW, flex: `0 0 ${SW}`, height: '100%', overflowY: 'auto', boxSizing: 'border-box', padding: '2.5rem 1.75rem 1.5rem', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 'clamp(28px,6vw,36px)', fontWeight: 900, color: '#111', lineHeight: 1.2, marginBottom: 14 }}>
-              {stepMeta[0].title}
+          {/* ── STEP 0: Combined Lumi intro + welcome ── */}
+          <div style={{ width: SW, flex: `0 0 ${SW}`, height: '100%', display: 'flex', overflow: 'hidden' }}>
+            {/* Left: Lumi – white bg, static */}
+            <div style={{ width: '40%', flexShrink: 0, background: '#fff', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden' }}>
+              <img src={lumiImg} alt="Lumi" style={{ width: '100%', objectFit: 'contain', objectPosition: 'bottom center', display: 'block', userSelect: 'none', pointerEvents: 'none' }} />
             </div>
-            <div style={{ fontSize: 14, color: '#888', lineHeight: 1.75, maxWidth: 340, marginBottom: 'auto' }}>
-              {stepMeta[0].sub}
-            </div>
-            {/* Plane illustration */}
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '2.5rem 0' }}>
-              <svg width="160" height="140" viewBox="0 0 160 140" fill="none">
-                {/* big orange circle glow */}
-                <circle cx="80" cy="72" r="54" fill="rgba(255,106,0,0.06)" />
-                <circle cx="80" cy="72" r="38" fill="rgba(255,106,0,0.08)" />
-                {/* paper plane */}
-                <path d="M112 44L76 78" stroke={AC} strokeWidth="2.5" strokeLinecap="round"/>
-                <path d="M112 44L88 108L76 78L44 66L112 44Z" stroke={AC} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,106,0,0.06)"/>
-                {/* curved dotted trail */}
-                <path d="M52 96 Q44 112 36 108" stroke={AC} strokeWidth="2" strokeLinecap="round" strokeDasharray="3 5"/>
-                <circle cx="35" cy="108" r="3" fill={AC} opacity="0.6"/>
-              </svg>
+            {/* Right: intro content */}
+            <div style={{ flex: 1, padding: '1.5rem 1.25rem 1.5rem 0.75rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FFF2E8', border: '1px solid rgba(255,106,0,0.2)', borderRadius: 50, padding: '4px 10px', marginBottom: 13, alignSelf: 'flex-start' }}>
+                <IC.star />
+                <span style={{ fontSize: 9, fontWeight: 800, color: AC, letterSpacing: 1.5, textTransform: 'uppercase' }}>AI Travel Companion</span>
+              </div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#aaa', marginBottom: 6 }}>Let&apos;s get to know each other 💬</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 900, color: '#111', lineHeight: 1.2, marginBottom: 2 }}>
+                Hey {(userName || 'Traveller').split(' ')[0]}! 👋
+              </div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 27, fontWeight: 900, color: AC, lineHeight: 1.1, marginBottom: 11 }}>
+                I&apos;m Lumi.
+              </div>
+              <div style={{ fontSize: 12.5, color: '#777', lineHeight: 1.72, marginBottom: 14 }}>
+                Your digital bae ✨ — by your side through every adventure, every destination, every memory.
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {[{icon:'✈️',label:'Smart trips'},{icon:'💰',label:'Expense split'},{icon:'🗺️',label:'Discoveries'},{icon:'📸',label:'Memories'}].map(({icon,label})=>(
+                  <div key={label} style={{ display:'flex', alignItems:'center', gap:5, background:'#F7F5F2', borderRadius:8, padding:'6px 8px', fontSize:11, fontWeight:600, color:'#444' }}>
+                    <span>{icon}</span><span>{label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
@@ -584,6 +587,7 @@ export default function UserProfileWizard({ userName, onDone }) {
             {canNext ? btnLabel : <>Continue &nbsp;<IC.fwd /></>}
           </OrangeBtn>
         )}
+      </div>
       </div>
     </div>
   );
