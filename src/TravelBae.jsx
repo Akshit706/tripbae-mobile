@@ -1251,7 +1251,7 @@ export default function App() {
         ::selection{background:#c7eedf;color:#053f31}
         input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#E1F5EE;outline:none}
         input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1D9E75;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
-        input:focus, select:focus, textarea:focus { border-color:#1D9E75 !important; box-shadow:0 0 0 3px rgba(29,158,117,0.14) !important; }
+        input:focus, select:focus, textarea:focus { border-color:#FF8C3A !important; box-shadow:0 0 0 3px rgba(255,106,0,0.14) !important; }
       `}</style>
 
       <div className="tb-bg-ambient" aria-hidden="true">
@@ -1351,7 +1351,7 @@ export default function App() {
           title="My profile"
           style={{
             width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-            background: profile.avatar ? `url(${profile.avatar}) center/cover` : (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)'),
+            background: profile.avatar ? `url(${profile.avatar}) center/cover` : (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#FF8C3A,#FF6A00)'),
             color: '#fff', fontWeight: 700, fontSize: 12, fontFamily: "'Sora',sans-serif",
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             cursor: 'pointer', padding: 0, marginRight: 4,
