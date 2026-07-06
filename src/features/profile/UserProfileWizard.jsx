@@ -354,7 +354,7 @@ export default function UserProfileWizard({ userName, onDone }) {
                   <div style={{ fontSize: 11, color: '#ccc', fontWeight: 600, letterSpacing: 0.5, marginBottom: 4 }}>Let&apos;s get to know each other</div>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 900, color: '#111', lineHeight: 1.2, marginBottom: 2 }}>Hey {first}!</div>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 900, color: AC, lineHeight: 1.05, marginBottom: 8 }}>I&apos;m Lumi.</div>
-                  <div style={{ fontSize: 12, color: '#888', lineHeight: 1.65, marginBottom: 5 }}>Your AI travel companion, planner, and memory keeper.</div>
+                  <div style={{ fontSize: 12, color: '#888', lineHeight: 1.65, marginBottom: 5 }}>Your AI travel bae, planner, and memory keeper.</div>
                   <div style={{ fontSize: 12, color: '#555', lineHeight: 1.65 }}>From your very first idea to when you get back home — <strong style={{ color: '#1a1a18', fontWeight: 800 }}>I&apos;ve got you.</strong></div>
                 </div>
               </div>
@@ -374,27 +374,7 @@ export default function UserProfileWizard({ userName, onDone }) {
                 ))}
               </div>
 
-              {/* Quote bar */}
-              <div style={{ margin: '0.65rem 1rem 0', padding: '10px 14px', background: '#FFF8F4', borderRadius: 12, border: '1px solid rgba(255,106,0,0.1)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 20, color: AC, opacity: 0.45, lineHeight: 0.8, marginTop: -2, flexShrink: 0 }}>&ldquo;</span>
-                <span style={{ flex: 1, fontSize: 12.5, color: '#999', fontStyle: 'italic' }}>Adventure starts with one hello.</span>
-                <svg width="11" height="11" viewBox="0 0 24 24" fill={AC} opacity="0.45"><path d="M12 2L13.5 10.5H22L15 15L17 22.5L12 18.5L7 22.5L9 15L2 10.5H10.5Z"/></svg>
-              </div>
-
-              {/* Stats row */}
-              <div style={{ margin: '0.6rem 1rem 1rem', display: 'flex', borderRadius: 12, border: '1px solid #EEEBE5', background: '#FAFAF8', overflow: 'hidden' }}>
-                {[
-                  { svg: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>, value: '50+', label: 'Countries' },
-                  { svg: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>, value: 'Unlimited', label: 'Trips' },
-                  { svg: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1" fill={AC}/><circle cx="15" cy="16" r="1" fill={AC}/></svg>, value: 'AI', label: 'Powered' },
-                ].map(({ svg, value, label }, i, arr) => (
-                  <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 6px', borderRight: i < arr.length - 1 ? '1px solid #EEEBE5' : 'none' }}>
-                    {svg}
-                    <div style={{ fontSize: 12, fontWeight: 800, color: '#222', marginTop: 4 }}>{value}</div>
-                    <div style={{ fontSize: 10, color: '#bbb', marginTop: 1 }}>{label}</div>
-                  </div>
-                ))}
-              </div>
+              <div style={{ height: '0.9rem' }} />
             </div>
 
             {/* ━━ STEP 1: Photo ━━ */}
