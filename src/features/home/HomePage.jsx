@@ -761,7 +761,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             style={{ width: 148, height: 'auto', marginBottom: 14, opacity: 0.92, filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.10))' }}
           />
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#1a1a18', marginBottom: 6 }}>No upcoming trips!</div>
-          <div style={{ fontSize: 13, color: '#6b6b68', maxWidth: 220, lineHeight: 1.5 }}>Create your first trip or join one with a code.</div>
+          <div style={{ fontSize: 13, color: '#6b6b68', maxWidth: 220, lineHeight: 1.5 }}>Create your trip or join one with a code.</div>
         </div>
       )}
 

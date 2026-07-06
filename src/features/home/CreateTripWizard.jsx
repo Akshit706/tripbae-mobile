@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import lumiImg from '../../assets/lumi7.png';
 import { getCurrencyForCountry } from './HomePage';
 
 /* ── Brand colors ─────────────────────────────────── */
@@ -7,26 +8,12 @@ const AC_BG = '#FFF3EB';
 const AC_BR = '#FFCBA4';
 const AC_L  = '#FF8C3A';
 
-/* ── Lumi sparkle icon ────────────────────────────── */
-const LumiIcon = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-    <path d="M12 2L14 9.5H22L15.5 14L17.5 21.5L12 17L6.5 21.5L8.5 14L2 9.5H10Z" fill="#fff"/>
-  </svg>
-);
-
 /* ── Lumi step header ─────────────────────────────── */
 function LumiStep({ question, subtitle }) {
   return (
     <div style={{ marginBottom: 22 }}>
-      <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:11 }}>
-        <div style={{
-          width:26, height:26, borderRadius:'50%',
-          background:`linear-gradient(135deg,${AC_L},${AC})`,
-          display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
-          boxShadow:`0 2px 8px ${AC}44`,
-        }}>
-          <LumiIcon />
-        </div>
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:11 }}>
+        <img src={lumiImg} alt="Lumi" style={{ width:32, height:32, objectFit:'contain', flexShrink:0, filter:'drop-shadow(0 2px 6px rgba(255,106,0,0.28))' }} />
         <span style={{ fontSize:11, fontWeight:800, color:AC, letterSpacing:1.4, textTransform:'uppercase' }}>Lumi</span>
       </div>
       <div style={{ fontFamily:"'Sora',sans-serif", fontSize:21, fontWeight:800, color:'#111', lineHeight:1.25, marginBottom:5 }}>
@@ -224,8 +211,8 @@ export default function CreateTripWizard({
             {/* ── STEP 0: Who are you traveling with? ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
-                question="Who are you traveling with?"
-                subtitle="This helps us tailor your experience"
+                question="Squad trip or flying solo?"
+                subtitle="I'll pack my advice accordingly"
               />
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:22 }}>
                 {[
@@ -256,8 +243,8 @@ export default function CreateTripWizard({
             {/* ── STEP 1: Where are you going? ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
-                question="Where are you going?"
-                subtitle="Tell us your destination"
+                question="Where are we off to?"
+                subtitle="Drop a city and I'll do my homework"
               />
               <div
                 onClick={() => { setShowDestPicker(true); setDestQuery(form.destination); setDestSuggestions([]); }}
@@ -284,8 +271,8 @@ export default function CreateTripWizard({
             {/* ── STEP 2: When are you arriving? ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
-                question="When are you arriving?"
-                subtitle="Select your arrival date and time"
+                question="When do you land?"
+                subtitle="I need to know so I don't plan brunch at 3 AM"
               />
               <div style={{ fontSize:12, fontWeight:600, color:'#555', marginBottom:8 }}>Arrival date</div>
               <div style={{ position:'relative', marginBottom:22 }}>
@@ -304,8 +291,8 @@ export default function CreateTripWizard({
             {/* ── STEP 3: When are you leaving? ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
-                question="When are you leaving?"
-                subtitle="Select your departure date and time"
+                question="When do you have to go home?"
+                subtitle="I'll squeeze every last adventure in before then"
               />
               <div style={{ fontSize:12, fontWeight:600, color:'#555', marginBottom:8 }}>Departure date</div>
               <div style={{ position:'relative', marginBottom:22 }}>
@@ -324,8 +311,8 @@ export default function CreateTripWizard({
             {/* ── STEP 4: What's your budget? ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
-                question="What's your budget?"
-                subtitle="Set your budget in your preferred currency"
+                question="What's the spend limit?"
+                subtitle="Champagne dreams or backpacker vibes — I got you"
               />
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
                 <div style={{ fontSize:12, fontWeight:600, color:'#555' }}>Budget</div>
@@ -375,8 +362,8 @@ export default function CreateTripWizard({
             {/* ── STEP 5: Any special plans? ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
-                question="Any special plans?"
-                subtitle="Help me personalise your trip"
+                question="Anything I should know?"
+                subtitle="Dietary needs, pace, allergies — spill it, I'm all ears"
               />
               <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
                 <div style={{ fontSize:12, fontWeight:600, color:'#555' }}>Travel notes</div>
@@ -392,15 +379,15 @@ export default function CreateTripWizard({
               />
               <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:6 }}>
                 <Ic.sparkle />
-                <span style={{ fontSize:12, color:'#aaa' }}>I'll read this to personalise your itinerary — mention dietary needs, pace, mobility.</span>
+                <span style={{ fontSize:12, color:'#aaa' }}>The juicier the detail, the better I cook up your itinerary — mention pace, food, mobility.</span>
               </div>
             </div>
 
             {/* ── STEP 6: Review your trip ── */}
             <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
               <LumiStep
-                question="All set! Review your trip"
-                subtitle="Here's a quick summary"
+                question="Looks like a banger trip!"
+                subtitle="One last look before I start planning the magic"
               />
               <div style={{ background:'#fff', borderRadius:18, border:'1.5px solid rgba(15,23,42,0.07)', overflow:'hidden', marginBottom:14, boxShadow:'0 2px 12px rgba(0,0,0,0.04)' }}>
                 {[
@@ -428,11 +415,9 @@ export default function CreateTripWizard({
                 ))}
               </div>
               <div style={{ display:'flex', alignItems:'flex-start', gap:9, padding:'12px 14px', borderRadius:14, background:AC_BG, border:`1px solid ${AC_BR}` }}>
-                <div style={{ width:24, height:24, borderRadius:'50%', background:`linear-gradient(135deg,${AC_L},${AC})`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
-                  <LumiIcon />
-                </div>
+                <img src={lumiImg} alt="Lumi" style={{ width:28, height:28, objectFit:'contain', flexShrink:0, marginTop:1, filter:'drop-shadow(0 1px 4px rgba(255,106,0,0.25))' }} />
                 <span style={{ fontSize:12.5, color:'#aa4400', lineHeight:1.55 }}>
-                  You can edit these details anytime after creating your trip.
+                  Psst — you can tweak any of this after we create the trip. No biggie.
                 </span>
               </div>
             </div>
