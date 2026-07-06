@@ -10,7 +10,7 @@ import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
 import { fetchPlacePhotos, getFxRatesFromBackend } from '../../api';
 import currencyData from '../../../currency.json';
 import CreateTripWizard from './CreateTripWizard';
-import lumi9 from '../../assets/lumi9.png';
+import mountainImg from '../../assets/mountain.png';
 
 const FX_API_KEY = 'cce33519f478fe73220306ed';
 const _fxMemCache = {};
@@ -607,6 +607,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @media (hover: hover) {
           .tb-new-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,107,53,0.4) !important; }
         }
+        .tb-hero-card-btn { transition: transform 0.18s ease, box-shadow 0.18s ease; }
+        @media (hover: hover) {
+          .tb-hero-card-btn:hover { transform: translateY(-2px); }
+        }
+        .tb-hero-card-btn:active { transform: scale(0.97) translateZ(0); }
         .tb-stat-pill { transition: box-shadow 0.15s ease; }
         @media (hover: hover) {
           .tb-stat-pill:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.1) !important; }
@@ -646,17 +651,28 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {/* Hero Section */}
-      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 0.55rem', position: 'relative', textAlign: 'left' }}>
+      <div style={{ background: 'transparent', padding: '1.2rem 1.35rem 1.4rem', position: 'relative', textAlign: 'left', overflow: 'hidden' }}>
+        {/* Mountain decoration */}
+        <img
+          src={mountainImg}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: 'absolute', top: -8, right: -14,
+            width: '52%', maxWidth: 195, height: 'auto',
+            pointerEvents: 'none', opacity: 0.86, zIndex: 0,
+          }}
+        />
         <div style={{ position: 'relative', zIndex: 2 }}>
-          <div className="tb-hero-greet" style={{ fontSize: 12, fontWeight: 600, letterSpacing: '1.6px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 7, textAlign: 'left' }}>
+          <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.8px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'left' }}>
             {greetPhrase}{profileName ? <span style={{ color: '#043D28', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
           </div>
-          <div style={{ overflow: 'hidden', height: 52, marginBottom: 18, display: 'flex', alignItems: 'center' }}>
+          <div style={{ overflow: 'hidden', minHeight: 112, marginBottom: 22 }}>
             <div
               key={tagIdx}
               style={{
-                fontFamily: "'Sora',sans-serif", fontSize: 25, fontWeight: 700, lineHeight: 1.25,
-                letterSpacing: '-0.2px', color: '#043D28', whiteSpace: 'nowrap',
+                fontFamily: "'Sora',sans-serif", fontSize: 46, fontWeight: 900, lineHeight: 1.1,
+                letterSpacing: '-1.5px', color: '#0D1108', maxWidth: '72%',
                 animation: tagPhase === 'out'
                   ? 'taglineSlideOut 0.28s cubic-bezier(.4,0,.8,.2) both'
                   : 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both',
@@ -665,22 +681,74 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               {HERO_TAGLINES[tagIdx].line}
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: 11, flexWrap: 'nowrap' }}>
+          {/* Action cards */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            {/* New Trip card */}
             <button
-              className="tb-new-btn"
-              style={{ ...S.btn, background: '#FF6B35', color: '#fff', border: 'none', fontWeight: 700, fontSize: 14, padding: '13px 24px', borderRadius: 999, boxShadow: '0 8px 20px rgba(255,107,53,0.36)', flex: 1, justifyContent: 'center' }}
+              className="tb-hero-card-btn"
+              style={{
+                flex: 1, background: '#F26419', borderRadius: 22, border: 'none',
+                padding: '16px 12px 16px 14px', display: 'flex', alignItems: 'center', gap: 12,
+                cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                boxShadow: '0 8px 26px rgba(242,100,25,0.36)', textAlign: 'left',
+              }}
               onClick={() => {
                 setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '' });
                 setCreateStep(0);
                 setShowCreate(true);
                 setShowJoin(false);
-              }}>
-              + New Trip
+              }}
+            >
+              <div style={{ width: 46, height: 46, borderRadius: '50%', background: 'rgba(255,255,255,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#F26419" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2"/>
+                  <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>New Trip</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', lineHeight: 1.4, marginTop: 2 }}>Plan your next adventure</div>
+              </div>
+              <svg style={{ position: 'absolute', right: 8, bottom: 6, opacity: 0.22, pointerEvents: 'none' }} width="68" height="52" viewBox="0 0 68 52" fill="none">
+                <path d="M6 44 C 18 28, 42 18, 60 8" stroke="#fff" strokeWidth="1.5" strokeDasharray="5 4" strokeLinecap="round"/>
+                <path d="M60 8 L 55 13" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M60 8 L 55 5" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
             </button>
+            {/* Join with Code card */}
             <button
-              style={{ ...S.btn, background: 'rgba(255,255,255,0.96)', color: '#1f2937', border: '1px solid rgba(15,23,42,0.15)', boxShadow: '0 4px 14px rgba(15,23,42,0.06)', fontSize: 14, fontWeight: 700, padding: '13px 24px', borderRadius: 999, flex: 1, justifyContent: 'center' }}
-              onClick={() => { setShowJoin(true); setShowCreate(false); }}>
-              Join with Code
+              className="tb-hero-card-btn"
+              style={{
+                flex: 1, background: '#fff', borderRadius: 22,
+                border: '1.5px solid rgba(0,0,0,0.07)',
+                padding: '16px 12px 16px 14px', display: 'flex', alignItems: 'center', gap: 12,
+                cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                boxShadow: '0 4px 18px rgba(0,0,0,0.06)', textAlign: 'left',
+              }}
+              onClick={() => { setShowJoin(true); setShowCreate(false); }}
+            >
+              <div style={{ width: 46, height: 46, borderRadius: '50%', background: '#EAF1EC', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="3" width="7" height="7" rx="1.2" stroke="#1D9E75" strokeWidth="1.8"/>
+                  <rect x="5" y="5" width="3" height="3" rx="0.5" fill="#1D9E75"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1.2" stroke="#1D9E75" strokeWidth="1.8"/>
+                  <rect x="16" y="5" width="3" height="3" rx="0.5" fill="#1D9E75"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.2" stroke="#1D9E75" strokeWidth="1.8"/>
+                  <rect x="5" y="16" width="3" height="3" rx="0.5" fill="#1D9E75"/>
+                  <rect x="14" y="14" width="2" height="2" rx="0.3" fill="#1D9E75"/>
+                  <rect x="18" y="14" width="2" height="2" rx="0.3" fill="#1D9E75"/>
+                  <rect x="14" y="18" width="2" height="2" rx="0.3" fill="#1D9E75"/>
+                  <rect x="18" y="18" width="3" height="3" rx="0.5" fill="#1D9E75"/>
+                  <rect x="16" y="16" width="2" height="2" rx="0.3" fill="#1D9E75"/>
+                </svg>
+              </div>
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#0D1108', lineHeight: 1.2 }}>Join with Code</div>
+                <div style={{ fontSize: 11, color: '#8a8a86', lineHeight: 1.4, marginTop: 2 }}>Join an existing trip</div>
+              </div>
+              <svg style={{ position: 'absolute', right: 8, bottom: 6, opacity: 0.12, pointerEvents: 'none' }} width="68" height="52" viewBox="0 0 68 52" fill="none">
+                <path d="M6 44 C 18 28, 42 18, 60 8" stroke="#1D9E75" strokeWidth="1.5" strokeDasharray="5 4" strokeLinecap="round"/>
+              </svg>
             </button>
           </div>
         </div>
@@ -756,9 +824,9 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       {homeTab === 'trips' && activeTrips.length === 0 && !showCreate && !showJoin && (
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '1.5rem' }}>
           <img
-            src={lumi9}
-            alt="Lumi disappointed"
-            style={{ width: 148, height: 'auto', marginBottom: 14, opacity: 0.92, filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.10))' }}
+            src={mountainImg}
+            alt=""
+            style={{ width: 190, height: 'auto', marginBottom: 14, opacity: 0.68, filter: 'drop-shadow(0 6px 18px rgba(0,0,0,0.08))' }}
           />
           <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#1a1a18', marginBottom: 6 }}>No upcoming trips!</div>
           <div style={{ fontSize: 13, color: '#6b6b68', maxWidth: 220, lineHeight: 1.5 }}>Create your trip or join one with a code.</div>
