@@ -280,6 +280,7 @@ export default function App() {
   const [authForm, setAuthForm] = useState({ name: '', email: 'tripbae1@gmail.com', password: 'tripbae', otp: '' });
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [lgShowPw, setLgShowPw] = useState(false);
   const [otpSentTo, setOtpSentTo] = useState('');
   const [otpResendCountdown, setOtpResendCountdown] = useState(0);
   const [trips, setTrips] = useState([]);
@@ -747,122 +748,312 @@ export default function App() {
   // ── AUTH SCREEN ──
   if (!authToken) return (
     <div className="lg-root">
+      <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       <style>{`
-        @keyframes lgPageIn   { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lgSheen    { 0%{left:-80%;opacity:0} 8%{opacity:1} 92%{opacity:1} 100%{left:160%;opacity:0} }
-        @keyframes lgFloat    { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-8px)} }
-        @keyframes lgSpin     { to{transform:rotate(360deg)} }
-        @keyframes lgFadeUp   { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lgGlow     { 0%,100%{box-shadow:0 0 0 0 rgba(29,158,117,0.5)} 50%{box-shadow:0 0 0 8px rgba(29,158,117,0)} }
+        @keyframes lgPageIn { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes lgSpin   { to{transform:rotate(360deg)} }
+        @keyframes lgFadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
 
         .lg-root {
           min-height:100vh;
-          background:linear-gradient(160deg,#061510 0%,#0a2e1c 25%,#0f5c38 55%,#7a5a1a 85%,#c9913a 100%);
+          background:#FFFFFF;
           display:flex; flex-direction:column;
           align-items:center; justify-content:center;
-          padding:2rem 1.25rem;
+          padding:2.5rem 1.25rem 2rem;
           font-family:'DM Sans',sans-serif;
-          position:relative; overflow:hidden;
-          animation:lgPageIn .4s ease both;
+          animation:lgPageIn .35s ease both;
         }
-        .lg-blob1 { position:absolute; width:320px; height:320px; border-radius:50%; background:rgba(29,158,117,0.12); top:-100px; left:-100px; pointer-events:none; filter:blur(40px); }
-        .lg-blob2 { position:absolute; width:240px; height:240px; border-radius:50%; background:rgba(201,145,58,0.10); bottom:-60px; right:-60px; pointer-events:none; filter:blur(50px); }
-        .lg-blob3 { position:absolute; width:160px; height:160px; border-radius:50%; background:rgba(255,255,255,0.04); top:40%; left:5%; pointer-events:none; filter:blur(30px); }
-        .lg-dots { position:absolute; inset:0; pointer-events:none; background-image:radial-gradient(circle,rgba(255,255,255,0.07) 1px,transparent 1px); background-size:22px 22px; }
-        .lg-logo-wrap { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; margin-bottom:1.75rem; animation:lgFloat 4s ease-in-out infinite; }
-        .lg-logo-icon { width:72px; height:72px; border-radius:22px; background:linear-gradient(145deg,#1D9E75,#0A5C42); display:flex; align-items:center; justify-content:center; box-shadow:0 8px 32px rgba(15,110,86,0.55),0 2px 8px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.2); margin-bottom:12px; overflow:hidden; }
-        .lg-logo-text { font-family:'Sora',sans-serif; font-size:26px; font-weight:800; letter-spacing:-0.5px; line-height:1; }
-        .lg-logo-trip { color:#ffffff; }
-        .lg-logo-bae  { color:#F4A94E; }
-        .lg-tagline { font-size:10.5px; color:rgba(255,255,255,0.42); letter-spacing:2.8px; text-transform:uppercase; font-weight:600; margin-top:6px; }
-        .lg-card { position:relative; z-index:2; width:100%; max-width:400px; background:rgba(10,30,18,0.55); border:1px solid rgba(255,255,255,0.14); border-radius:28px; padding:2rem 1.75rem 1.75rem; box-shadow:0 24px 64px rgba(0,0,0,0.45),0 2px 0 rgba(255,255,255,0.08) inset,0 -1px 0 rgba(0,0,0,0.3) inset; backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); }
-        .lg-tag { display:inline-flex; align-items:center; gap:5px; background:rgba(29,158,117,0.18); border:1px solid rgba(29,158,117,0.32); border-radius:99px; padding:4px 12px; font-size:10px; font-weight:700; color:#5BE3B0; letter-spacing:1px; text-transform:uppercase; margin-bottom:14px; }
-        .lg-title { font-family:'Sora',sans-serif; font-size:28px; font-weight:800; color:#ffffff; line-height:1.15; margin-bottom:6px; letter-spacing:-0.4px; }
-        .lg-subtitle { font-size:13.5px; color:rgba(255,255,255,0.45); margin-bottom:22px; line-height:1.55; }
-        .lg-input-wrap { position:relative; margin-bottom:14px; }
-        .lg-input-icon { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.35); display:flex; align-items:center; pointer-events:none; }
-        .lg-input { width:100%; box-sizing:border-box; background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.12); border-radius:99px; padding:14px 18px 14px 46px; font-size:14px; font-family:'DM Sans',sans-serif; color:#fff; outline:none; transition:border-color .2s,background .2s,box-shadow .2s; }
-        .lg-input::placeholder { color:rgba(255,255,255,0.28); }
-        .lg-input:focus { border-color:rgba(29,158,117,0.7); background:rgba(255,255,255,0.10); box-shadow:0 0 0 3px rgba(29,158,117,0.18); }
-        .lg-input.otp { font-size:28px; font-weight:800; letter-spacing:14px; text-align:center; padding:16px 14px; }
-        .lg-input.no-icon { padding-left:18px; }
-        .lg-btn-primary { width:100%; padding:15px; background:linear-gradient(135deg,#1D9E75 0%,#0A5C42 100%); border:none; border-radius:99px; font-size:14.5px; font-weight:700; font-family:'DM Sans',sans-serif; color:#fff; cursor:pointer; letter-spacing:0.3px; box-shadow:0 6px 28px rgba(10,92,66,0.55),0 2px 8px rgba(0,0,0,0.25); margin-bottom:10px; position:relative; overflow:hidden; transition:transform .15s,box-shadow .15s; }
-        .lg-btn-primary:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 10px 36px rgba(10,92,66,0.65); }
-        .lg-btn-primary:active:not(:disabled) { transform:scale(0.98); }
-        .lg-btn-primary:disabled { opacity:0.6; cursor:not-allowed; }
-        .lg-sheen { position:absolute; top:0; bottom:0; left:-80%; width:55%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.18),transparent); transform:skewX(-20deg); pointer-events:none; animation:lgSheen 3.5s ease-in-out infinite 1.5s; }
-        .lg-btn-ghost { width:100%; padding:13px; background:transparent; border:1px solid rgba(255,255,255,0.16); border-radius:99px; font-size:13.5px; font-weight:600; font-family:'DM Sans',sans-serif; color:rgba(255,255,255,0.6); cursor:pointer; transition:background .2s,color .2s,border-color .2s; margin-bottom:20px; }
-        .lg-btn-ghost:hover { background:rgba(255,255,255,0.07); color:#fff; border-color:rgba(255,255,255,0.28); }
-        .lg-back-btn { background:none; border:none; color:rgba(255,255,255,0.45); font-size:13px; cursor:pointer; padding:0; margin-bottom:20px; display:flex; align-items:center; gap:5px; font-family:'DM Sans',sans-serif; transition:color .15s; }
-        .lg-back-btn:hover { color:#fff; }
-        .lg-divider { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
-        .lg-div-line { flex:1; height:1px; background:rgba(255,255,255,0.1); }
-        .lg-div-text { font-size:11px; color:rgba(255,255,255,0.28); font-weight:600; }
-        .lg-social-row { display:flex; gap:10px; margin-bottom:22px; }
-        .lg-social-btn { flex:1; padding:12px 8px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:16px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px; font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif; color:rgba(255,255,255,0.65); transition:background .2s,border-color .2s,color .2s; }
-        .lg-social-btn:hover { background:rgba(255,255,255,0.12); border-color:rgba(255,255,255,0.22); color:#fff; }
-        .lg-footer { display:flex; align-items:center; justify-content:center; gap:5px; font-size:11px; color:rgba(255,255,255,0.25); }
-        .lg-terms { text-align:center; margin-top:1.25rem; font-size:11.5px; color:rgba(255,255,255,0.25); line-height:1.6; position:relative; z-index:2; }
-        .lg-terms a { color:rgba(255,255,255,0.45); text-decoration:underline; cursor:pointer; }
-        .lg-spinner { width:18px; height:18px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:lgSpin .6s linear infinite; display:inline-block; }
-        .lg-seg-track { display:flex; background:rgba(255,255,255,0.08); border-radius:99px; padding:4px; margin-bottom:22px; border:1px solid rgba(255,255,255,0.1); }
-        .lg-seg-btn { flex:1; padding:9px; font-size:13px; font-weight:600; border-radius:99px; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all .2s; }
-        .lg-seg-active { background:rgba(29,158,117,0.85); color:#fff; box-shadow:0 2px 10px rgba(10,92,66,0.4); }
-        .lg-seg-inactive { background:transparent; color:rgba(255,255,255,0.45); }
-        .lg-error { font-size:12px; color:#F4877A; margin-bottom:10px; padding-left:6px; }
-        .lg-content { animation:lgFadeUp .28s ease both; }
-      `}</style>
 
-      <div className="lg-blob1" />
-      <div className="lg-blob2" />
-      <div className="lg-blob3" />
-      <div className="lg-dots" />
+        /* ── Logo area ── */
+        .lg-logo-wrap {
+          display:flex; flex-direction:column; align-items:center;
+          margin-bottom:2rem;
+        }
+        .lg-logo-img {
+          height:52px; width:auto; object-fit:contain;
+          display:block;
+        }
+        .lg-tagline {
+          margin-top:10px;
+          font-size:12px; font-weight:500;
+          color:#9CA3AF;
+          letter-spacing:0.5px;
+        }
+
+        /* ── Card ── */
+        .lg-card {
+          width:100%; max-width:420px;
+          background:#FFFFFF;
+          border:1px solid #E5E7EB;
+          border-radius:20px;
+          padding:2rem 2rem 1.75rem;
+          box-shadow:0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+        }
+        .lg-title {
+          font-family:'Sora',sans-serif;
+          font-size:22px; font-weight:700;
+          color:#111827; line-height:1.2;
+          margin-bottom:4px;
+        }
+        .lg-subtitle {
+          font-size:13.5px; color:#6B7280;
+          margin-bottom:1.5rem; line-height:1.5;
+        }
+
+        /* ── Field group ── */
+        .lg-field { margin-bottom:1rem; }
+        .lg-label {
+          display:block;
+          font-size:12.5px; font-weight:600;
+          color:#374151; margin-bottom:6px;
+        }
+        .lg-input-wrap { position:relative; }
+        .lg-input-icon {
+          position:absolute; left:13px; top:50%;
+          transform:translateY(-50%);
+          color:#F04D00;
+          display:flex; align-items:center; pointer-events:none;
+        }
+        .lg-input-icon-right {
+          position:absolute; right:13px; top:50%;
+          transform:translateY(-50%);
+          color:#9CA3AF;
+          display:flex; align-items:center;
+          cursor:pointer; background:none; border:none; padding:0;
+        }
+        .lg-input-icon-right:hover { color:#374151; }
+        .lg-input {
+          width:100%; box-sizing:border-box;
+          background:#F9FAFB;
+          border:1.5px solid #E5E7EB;
+          border-radius:10px;
+          padding:12px 44px 12px 40px;
+          font-size:14px; font-family:'DM Sans',sans-serif;
+          color:#111827; outline:none;
+          transition:border-color .18s,box-shadow .18s,background .18s;
+        }
+        .lg-input.no-icon-right { padding-right:14px; }
+        .lg-input::placeholder { color:#9CA3AF; }
+        .lg-input:focus {
+          border-color:#F04D00;
+          background:#FFFFFF;
+          box-shadow:0 0 0 3px rgba(240,77,0,0.10);
+        }
+
+        /* ── Extras row ── */
+        .lg-extras-row {
+          display:flex; align-items:center; justify-content:space-between;
+          margin-bottom:1.25rem; margin-top:0.25rem;
+        }
+        .lg-remember {
+          display:flex; align-items:center; gap:7px;
+          font-size:13px; color:#4B5563; cursor:pointer; user-select:none;
+        }
+        .lg-remember input[type=checkbox] {
+          width:15px; height:15px; accent-color:#F04D00; cursor:pointer;
+        }
+        .lg-forgot {
+          font-size:13px; font-weight:600; color:#F04D00;
+          background:none; border:none; cursor:pointer; padding:0;
+          font-family:'DM Sans',sans-serif;
+        }
+        .lg-forgot:hover { text-decoration:underline; }
+
+        /* ── Primary button ── */
+        .lg-btn-primary {
+          width:100%; padding:13.5px;
+          background:#F04D00;
+          border:none; border-radius:10px;
+          font-size:14.5px; font-weight:700;
+          font-family:'DM Sans',sans-serif;
+          color:#fff; cursor:pointer;
+          letter-spacing:0.2px;
+          box-shadow:0 4px 14px rgba(240,77,0,0.30);
+          margin-bottom:0;
+          transition:background .15s,transform .12s,box-shadow .15s;
+        }
+        .lg-btn-primary:hover:not(:disabled) {
+          background:#D94400;
+          transform:translateY(-1px);
+          box-shadow:0 6px 20px rgba(240,77,0,0.38);
+        }
+        .lg-btn-primary:active:not(:disabled) { transform:scale(0.98); }
+        .lg-btn-primary:disabled { opacity:0.55; cursor:not-allowed; }
+
+        /* ── Divider ── */
+        .lg-divider {
+          display:flex; align-items:center; gap:10px;
+          margin:1.25rem 0 1rem;
+        }
+        .lg-div-line { flex:1; height:1px; background:#E5E7EB; }
+        .lg-div-text { font-size:12px; color:#9CA3AF; font-weight:500; white-space:nowrap; }
+
+        /* ── Social row ── */
+        .lg-social-row { display:flex; gap:10px; }
+        .lg-social-btn {
+          flex:1; padding:11px 8px;
+          background:#F9FAFB;
+          border:1.5px solid #E5E7EB;
+          border-radius:10px;
+          cursor:pointer;
+          display:flex; align-items:center; justify-content:center; gap:6px;
+          font-size:13px; font-weight:600;
+          font-family:'DM Sans',sans-serif;
+          color:#374151;
+          transition:background .18s,border-color .18s;
+        }
+        .lg-social-btn:hover { background:#F3F4F6; border-color:#D1D5DB; }
+
+        /* ── Footer link ── */
+        .lg-footer-link {
+          text-align:center; margin-top:1.5rem;
+          font-size:13.5px; color:#6B7280;
+        }
+        .lg-footer-link button {
+          background:none; border:none; cursor:pointer; padding:0;
+          font-size:13.5px; font-weight:600; color:#F04D00;
+          font-family:'DM Sans',sans-serif;
+        }
+        .lg-footer-link button:hover { text-decoration:underline; }
+
+        /* ── Error ── */
+        .lg-error {
+          font-size:12.5px; color:#DC2626;
+          background:#FEF2F2; border:1px solid #FECACA;
+          border-radius:8px; padding:8px 12px;
+          margin-bottom:12px;
+        }
+
+        /* ── Spinner ── */
+        .lg-spinner {
+          width:18px; height:18px;
+          border:2px solid rgba(255,255,255,0.4);
+          border-top-color:#fff;
+          border-radius:50%;
+          animation:lgSpin .6s linear infinite;
+          display:inline-block; vertical-align:middle;
+        }
+
+        /* ── Signup name field ── */
+        .lg-content { animation:lgFadeUp .25s ease both; }
+
+        /* ── Terms ── */
+        .lg-terms {
+          text-align:center; margin-top:1.25rem;
+          font-size:11.5px; color:#9CA3AF; line-height:1.6;
+        }
+        .lg-terms a { color:#6B7280; text-decoration:underline; cursor:pointer; }
+        .lg-terms a:hover { color:#374151; }
+      `}</style>
 
       {/* ── Logo ── */}
       <div className="lg-logo-wrap">
-        <div className="lg-logo-icon">
-          <img src={bglessLogo} alt="TripBae" style={{ width:56, height:56, objectFit:'contain' }} />
-        </div>
-        <div className="lg-logo-text">
-          <img src={bglessLogo} alt="TripBae" style={{ height: 30, width: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.18))' }} />
-        </div>
-        <div className="lg-tagline">Plan · Split · Explore · Together</div>
+        <img src={bglessLogo} alt="TripBae" className="lg-logo-img" />
+        <div className="lg-tagline">Plan. Split. Explore — together</div>
       </div>
 
       {/* ── Card ── */}
       <div className="lg-card">
-
-        {/* ── Password Login ── */}
         <div className="lg-content">
-          <div className="lg-tag">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            Secure Sign In
+          <div className="lg-title">{authScreen === 'signup' ? 'Create account' : 'Welcome back'}</div>
+          <div className="lg-subtitle">{authScreen === 'signup' ? 'Sign up to start planning trips' : 'Log in to continue your journey'}</div>
+
+          {/* Name field (signup only) */}
+          {authScreen === 'signup' && (
+            <div className="lg-field">
+              <label className="lg-label">Full name</label>
+              <div className="lg-input-wrap">
+                <span className="lg-input-icon">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <input className="lg-input no-icon-right" type="text" placeholder="Your name" autoFocus={authScreen==='signup'} value={authForm.name}
+                  onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && handleAuth()} />
+              </div>
+            </div>
+          )}
+
+          {/* Email */}
+          <div className="lg-field">
+            <label className="lg-label">Email address</label>
+            <div className="lg-input-wrap">
+              <span className="lg-input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              </span>
+              <input className="lg-input no-icon-right" type="email" placeholder="you@example.com" autoFocus={authScreen==='login'} value={authForm.email}
+                onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && handleAuth()} />
+            </div>
           </div>
-          <div className="lg-title">Welcome back ✦</div>
-          <div className="lg-subtitle">Sign in with your email and password</div>
-          <div className="lg-input-wrap">
-            <span className="lg-input-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </span>
-            <input className="lg-input" type="email" placeholder="Email address" autoFocus value={authForm.email}
-              onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
-              onKeyDown={e => e.key === 'Enter' && handleAuth()} />
+
+          {/* Password */}
+          <div className="lg-field" style={{ marginBottom: authScreen === 'login' ? 0 : '1rem' }}>
+            <label className="lg-label">Password</label>
+            <div className="lg-input-wrap">
+              <span className="lg-input-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              </span>
+              <input className="lg-input" type={lgShowPw ? 'text' : 'password'} placeholder="••••••••" value={authForm.password}
+                onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
+                onKeyDown={e => e.key === 'Enter' && handleAuth()} />
+              <button className="lg-input-icon-right" onClick={() => setLgShowPw(v => !v)} tabIndex={-1} type="button">
+                {lgShowPw
+                  ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                  : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                }
+              </button>
+            </div>
           </div>
-          <div className="lg-input-wrap" style={{ marginBottom:0 }}>
-            <span className="lg-input-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-            </span>
-            <input className="lg-input" type="password" placeholder="Your password" value={authForm.password}
-              onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
-              onKeyDown={e => e.key === 'Enter' && handleAuth()} />
-          </div>
-          {authError && <div className="lg-error" style={{ marginTop:12 }}>{authError}</div>}
-          <button className="lg-btn-primary" style={{ marginTop:16 }} onClick={handleAuth}
-            disabled={authLoading || !authForm.email.trim() || !authForm.password.trim()}>
-            <div className="lg-sheen" />
-            {authLoading ? <span className="lg-spinner" /> : 'Log In'}
+
+          {/* Remember me + Forgot (login only) */}
+          {authScreen === 'login' && (
+            <div className="lg-extras-row">
+              <label className="lg-remember">
+                <input type="checkbox" />
+                Remember me
+              </label>
+              <button className="lg-forgot" type="button">Forgot password?</button>
+            </div>
+          )}
+
+          {authError && <div className="lg-error">{authError}</div>}
+
+          <button className="lg-btn-primary" onClick={handleAuth}
+            disabled={authLoading || !authForm.email.trim() || !authForm.password.trim() || (authScreen==='signup' && !authForm.name.trim())}>
+            {authLoading ? <span className="lg-spinner" /> : (authScreen === 'signup' ? 'Create account' : 'Log in')}
           </button>
+
+          <div className="lg-divider">
+            <div className="lg-div-line" />
+            <span className="lg-div-text">or continue with</span>
+            <div className="lg-div-line" />
+          </div>
+
+          <div className="lg-social-row">
+            <button className="lg-social-btn" type="button">
+              {/* Google */}
+              <svg width="17" height="17" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+              Google
+            </button>
+            <button className="lg-social-btn" type="button">
+              {/* Apple */}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              Apple
+            </button>
+            <button className="lg-social-btn" type="button">
+              {/* Guest */}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Guest
+            </button>
+          </div>
         </div>
+      </div>
+
+      <div className="lg-footer-link">
+        {authScreen === 'signup'
+          ? <>Already have an account? <button onClick={() => { setAuthScreen('login'); setAuthError(''); }}>Log in</button></>
+          : <>New here? <button onClick={() => { setAuthScreen('signup'); setAuthError(''); }}>Create an account</button></>
+        }
       </div>
 
       <div className="lg-terms">
