@@ -731,19 +731,19 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               }}
               onClick={() => { setShowJoin(true); setShowCreate(false); }}
             >
-              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#EBF3ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FFF3EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
-                  <rect x="3" y="3" width="7" height="7" rx="1.4" stroke="#043D28" strokeWidth="1.8"/>
-                  <rect x="5.5" y="5.5" width="2" height="2" rx="0.4" fill="#043D28"/>
-                  <rect x="14" y="3" width="7" height="7" rx="1.4" stroke="#043D28" strokeWidth="1.8"/>
-                  <rect x="16.5" y="5.5" width="2" height="2" rx="0.4" fill="#043D28"/>
-                  <rect x="3" y="14" width="7" height="7" rx="1.4" stroke="#043D28" strokeWidth="1.8"/>
-                  <rect x="5.5" y="16.5" width="2" height="2" rx="0.4" fill="#043D28"/>
-                  <rect x="14" y="14" width="2" height="2" rx="0.3" fill="#043D28"/>
-                  <rect x="18" y="14" width="2" height="2" rx="0.3" fill="#043D28"/>
-                  <rect x="14" y="18" width="2" height="2" rx="0.3" fill="#043D28"/>
-                  <rect x="18" y="18" width="3" height="3" rx="0.5" fill="#043D28"/>
-                  <rect x="16" y="16" width="1.5" height="1.5" rx="0.3" fill="#043D28"/>
+                  <rect x="3" y="3" width="7" height="7" rx="1.4" stroke="#FF6A00" strokeWidth="1.8"/>
+                  <rect x="5.5" y="5.5" width="2" height="2" rx="0.4" fill="#FF6A00"/>
+                  <rect x="14" y="3" width="7" height="7" rx="1.4" stroke="#FF6A00" strokeWidth="1.8"/>
+                  <rect x="16.5" y="5.5" width="2" height="2" rx="0.4" fill="#FF6A00"/>
+                  <rect x="3" y="14" width="7" height="7" rx="1.4" stroke="#FF6A00" strokeWidth="1.8"/>
+                  <rect x="5.5" y="16.5" width="2" height="2" rx="0.4" fill="#FF6A00"/>
+                  <rect x="14" y="14" width="2" height="2" rx="0.3" fill="#FF6A00"/>
+                  <rect x="18" y="14" width="2" height="2" rx="0.3" fill="#FF6A00"/>
+                  <rect x="14" y="18" width="2" height="2" rx="0.3" fill="#FF6A00"/>
+                  <rect x="18" y="18" width="3" height="3" rx="0.5" fill="#FF6A00"/>
+                  <rect x="16" y="16" width="1.5" height="1.5" rx="0.3" fill="#FF6A00"/>
                 </svg>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -751,7 +751,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 <div style={{ fontSize: 10, color: '#7a7a76', marginTop: 1.5, lineHeight: 1.35, fontFamily: "'DM Sans',sans-serif" }}>Join an existing trip</div>
               </div>
               <svg style={{ position: 'absolute', right: 6, bottom: 6, opacity: 0.1, pointerEvents: 'none' }} width="46" height="36" viewBox="0 0 46 36" fill="none">
-                <path d="M3 30 C 12 18, 28 10, 41 3" stroke="#043D28" strokeWidth="1.2" strokeDasharray="3.5 2.8" strokeLinecap="round"/>
+                <path d="M3 30 C 12 18, 28 10, 41 3" stroke="#FF6A00" strokeWidth="1.2" strokeDasharray="3.5 2.8" strokeLinecap="round"/>
               </svg>
             </button>
           </div>
@@ -772,17 +772,17 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               <div style={{ width: 36, height: 4, borderRadius: 2, background: 'rgba(0,0,0,0.12)' }} />
             </div>
             <div style={{ padding: '4px 22px 24px' }}>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#0F1A12', marginBottom: 4 }}>🔗 Join a Trip</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#111827', marginBottom: 4 }}>🔗 Join a Trip</div>
               <div style={{ fontSize: 13, color: '#8a8a86', marginBottom: 20 }}>Enter the share code your friend sent you</div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 7 }}>Share Code</div>
               <input
                 autoFocus
-                style={{ ...S.input, letterSpacing: 3, fontFamily: "'Sora',sans-serif", fontWeight: 700, textTransform: 'uppercase', fontSize: 17, padding: '13px 14px', marginBottom: 14 }}
+                style={{ ...S.input, letterSpacing: 3, fontFamily: "'Sora',sans-serif", fontWeight: 700, textTransform: 'uppercase', fontSize: 17, padding: '13px 14px', marginBottom: 14, border: '1.5px solid #FFCBA4' }}
                 value={joinCode} onChange={e => { setJoinCode(e.target.value.toUpperCase()); setJoinError(''); }}
                 placeholder="e.g. JAI-4820" maxLength={10} />
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.3, color: '#b0b0aa', textTransform: 'uppercase', marginBottom: 7 }}>Your Name</div>
               <input
-                style={{ ...S.input, fontSize: 15, padding: '13px 14px', marginBottom: 14 }}
+                style={{ ...S.input, fontSize: 15, padding: '13px 14px', marginBottom: 14, border: '1.5px solid #FFCBA4' }}
                 value={joinName} onChange={e => { setJoinName(e.target.value); setJoinError(''); }}
                 placeholder="e.g. Rahul" />
               {joinError && (
