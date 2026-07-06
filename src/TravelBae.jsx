@@ -1350,17 +1350,15 @@ export default function App() {
           onClick={() => setProfileOpen(true)}
           title="My profile"
           style={{
-            width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
-            background: profile.avatar ? `url(${profile.avatar}) center/cover` : (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#FF8C3A,#FF6A00)'),
-            color: '#fff', fontWeight: 700, fontSize: 12, fontFamily: "'Sora',sans-serif",
+            background: 'none', border: 'none', padding: '4px', cursor: 'pointer',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer', padding: 0, marginRight: 4,
-            boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
-            border: '2.5px solid #fff',
-            outline: '1.5px solid rgba(0,0,0,0.08)',
+            flexShrink: 0,
           }}
         >
-          {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a18" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="8" r="4"/>
+            <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7"/>
+          </svg>
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
           <img src={bglessLogo} alt="TripBae" style={{ height: 72, width: 'auto', objectFit: 'contain', display: 'block' }} />
