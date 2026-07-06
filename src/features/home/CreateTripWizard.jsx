@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import lumiImg from '../../assets/lumi7.png';
+import lumi8Img from '../../assets/lumi8.png';
 import { getCurrencyForCountry } from './HomePage';
 
 /* ── Brand colors ─────────────────────────────────── */
@@ -12,8 +13,8 @@ const AC_L  = '#FF8C3A';
 function LumiStep({ question, subtitle }) {
   return (
     <div style={{ marginBottom: 22 }}>
-      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:11 }}>
-        <img src={lumiImg} alt="Lumi" style={{ width:32, height:32, objectFit:'contain', flexShrink:0, filter:'drop-shadow(0 2px 6px rgba(255,106,0,0.28))' }} />
+      <div style={{ display:'flex', alignItems:'center', gap:4, marginBottom:11 }}>
+        <img src={lumiImg} alt="Lumi" style={{ width:40, height:40, objectFit:'contain', flexShrink:0, filter:'drop-shadow(0 2px 6px rgba(255,106,0,0.28))' }} />
         <span style={{ fontSize:11, fontWeight:800, color:AC, letterSpacing:1.4, textTransform:'uppercase' }}>Lumi</span>
       </div>
       <div style={{ fontFamily:"'Sora',sans-serif", fontSize:21, fontWeight:800, color:'#111', lineHeight:1.25, marginBottom:5 }}>
@@ -415,7 +416,7 @@ export default function CreateTripWizard({
                 ))}
               </div>
               <div style={{ display:'flex', alignItems:'flex-start', gap:9, padding:'12px 14px', borderRadius:14, background:AC_BG, border:`1px solid ${AC_BR}` }}>
-                <img src={lumiImg} alt="Lumi" style={{ width:28, height:28, objectFit:'contain', flexShrink:0, marginTop:1, filter:'drop-shadow(0 1px 4px rgba(255,106,0,0.25))' }} />
+                <img src={lumi8Img} alt="Lumi" style={{ width:32, height:32, objectFit:'contain', flexShrink:0, marginTop:1, filter:'drop-shadow(0 1px 4px rgba(255,106,0,0.25))' }} />
                 <span style={{ fontSize:12.5, color:'#aa4400', lineHeight:1.55 }}>
                   Psst — you can tweak any of this after we create the trip. No biggie.
                 </span>
