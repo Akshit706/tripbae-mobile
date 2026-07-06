@@ -260,9 +260,14 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
 
       {/* Budget row */}
       {budgetBase > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px', borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.14)', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.52)', fontWeight: 600 }}>Budget</span>
-          <span style={{ fontSize: 11, color: '#FF6B35', fontWeight: 800, letterSpacing: 0.1 }}>{budgetPct}% · ₹{budgetLeft.toLocaleString('en-IN')} left</span>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.14)', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 4px' }}>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.52)', fontWeight: 600 }}>Budget</span>
+            <span style={{ fontSize: 11, color: '#FF6B35', fontWeight: 800, letterSpacing: 0.1 }}>{budgetPct}% · ₹{budgetLeft.toLocaleString('en-IN')} left</span>
+          </div>
+          <div style={{ height: 3, background: 'rgba(255,255,255,0.1)', margin: '0 16px 6px' }}>
+            <div style={{ height: '100%', width: `${budgetPct}%`, background: 'linear-gradient(90deg,#FF6B35,#FFAA60)', borderRadius: 99, transition: 'width 0.4s ease' }} />
+          </div>
         </div>
       )}
 
