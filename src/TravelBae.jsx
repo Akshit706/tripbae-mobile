@@ -1086,8 +1086,8 @@ export default function App() {
       {/* ── Logo + tagline ── */}
       <div className="lg-above-card">
         <img src={bglessLogo} alt="TripBae" className="lg-logo-img" />
-        <div className="lg-hero-title">Plan. Split. Explore — together</div>
-        <div className="lg-hero-sub">Start planning unforgettable trips with friends.</div>
+        <div className="lg-hero-title">Plan. Split. Explore — Together</div>
+        
       </div>
 
       {/* ── Card ── */}

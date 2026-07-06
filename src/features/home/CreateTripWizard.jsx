@@ -1,12 +1,47 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { S } from '../shared/styles';
-import { getCurrencyForCountry, getFxRate } from './HomePage';
+import { getCurrencyForCountry } from './HomePage';
+
+/* ── Brand colors ─────────────────────────────────── */
+const AC    = '#FF6A00';
+const AC_BG = '#FFF3EB';
+const AC_BR = '#FFCBA4';
+const AC_L  = '#FF8C3A';
+
+/* ── Lumi sparkle icon ────────────────────────────── */
+const LumiIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+    <path d="M12 2L14 9.5H22L15.5 14L17.5 21.5L12 17L6.5 21.5L8.5 14L2 9.5H10Z" fill="#fff"/>
+  </svg>
+);
+
+/* ── Lumi step header ─────────────────────────────── */
+function LumiStep({ question, subtitle }) {
+  return (
+    <div style={{ marginBottom: 22 }}>
+      <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:11 }}>
+        <div style={{
+          width:26, height:26, borderRadius:'50%',
+          background:`linear-gradient(135deg,${AC_L},${AC})`,
+          display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+          boxShadow:`0 2px 8px ${AC}44`,
+        }}>
+          <LumiIcon />
+        </div>
+        <span style={{ fontSize:11, fontWeight:800, color:AC, letterSpacing:1.4, textTransform:'uppercase' }}>Lumi</span>
+      </div>
+      <div style={{ fontFamily:"'Sora',sans-serif", fontSize:21, fontWeight:800, color:'#111', lineHeight:1.25, marginBottom:5 }}>
+        {question}
+      </div>
+      <div style={{ fontSize:13, color:'#9a9a96' }}>{subtitle}</div>
+    </div>
+  );
+}
 
 /* ── Inline SVG helpers ─────────────────────────────── */
 const Ic = {
-  close:  () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  back:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>,
-  fwd:    () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>,
+  close:   () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  back:    () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="15 18 9 12 15 6"/></svg>,
+  fwd:     () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>,
   pin:    (c='currentColor') => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
   search: () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9a9a96" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
   info:   () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>,
@@ -20,6 +55,8 @@ const Ic = {
   cal:    () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
   money:  () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
   type:   () => <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>,
+  check:  () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  sparkle:() => <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2L14 9.5H22L15.5 14L17.5 21.5L12 17L6.5 21.5L8.5 14L2 9.5H10Z" fill={AC}/></svg>,
 };
 
 const TIME_SLOTS = [
@@ -29,25 +66,43 @@ const TIME_SLOTS = [
   { id:'evening',   label:'Evening',   sub:'6PM\u201312AM',  Icon:Ic.sunset },
 ];
 
-function SlotGrid({ field, form, setForm, autoAdvance, ac, acBg, acBr }) {
+/* ── Slot grid (orange theme always) ─────────────── */
+function SlotGrid({ field, form, setForm, autoAdvance }) {
   return (
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
       {TIME_SLOTS.map(({ id, label, sub, Icon }) => {
         const sel = form[field] === id;
         return (
           <button key={id} type="button"
-            onClick={() => { setForm(f => ({ ...f, [field]:id })); autoAdvance(); }}
-            style={{ padding:'11px 10px', borderRadius:14, border:`1.5px solid ${sel ? acBr : 'rgba(15,23,42,0.09)'}`, background:sel ? acBg : '#fff', cursor:'pointer', display:'flex', alignItems:'center', gap:8, transition:'all .15s', textAlign:'left' }}>
-            <span style={{ color:sel ? ac : '#9a9a96', flexShrink:0, display:'flex' }}><Icon /></span>
+            onClick={() => { setForm(f => ({ ...f, [field]:id })); if (field === 'arrivalSlot') autoAdvance(); }}
+            style={{
+              padding:'13px 12px', borderRadius:14,
+              border:`1.5px solid ${sel ? AC_BR : 'rgba(15,23,42,0.09)'}`,
+              background: sel ? AC_BG : '#fff',
+              cursor:'pointer', display:'flex', alignItems:'center', gap:10,
+              transition:'all .15s', textAlign:'left',
+              boxShadow: sel ? `0 2px 10px ${AC}22` : 'none',
+            }}>
+            <span style={{ color: sel ? AC : '#bbb', flexShrink:0, display:'flex' }}><Icon /></span>
             <span>
-              <div style={{ fontSize:13, fontWeight:700, color:sel ? ac : '#1a1a18', lineHeight:1.2 }}>{label}</div>
-              <div style={{ fontSize:10, color:sel ? ac : '#9a9a96', fontWeight:500 }}>{sub}</div>
+              <div style={{ fontSize:13, fontWeight:700, color: sel ? AC : '#1a1a18', lineHeight:1.2 }}>{label}</div>
+              <div style={{ fontSize:10.5, color: sel ? AC_L : '#aaa', fontWeight:500, marginTop:1 }}>{sub}</div>
             </span>
           </button>
         );
       })}
     </div>
   );
+}
+
+/* ── Helpers ─────────────────────────────────────── */
+function slotLabel(slot) {
+  return { night:'Night', morning:'Morning', afternoon:'Afternoon', evening:'Evening' }[slot] || '';
+}
+function fmtDateDisplay(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
 }
 
 export default function CreateTripWizard({
@@ -104,83 +159,93 @@ export default function CreateTripWizard({
     return item.display_name.split(',').slice(0, 2).join(',').trim();
   };
 
-  /* ── Theme ───────────────────────────────── */
-  const ac   = isSoloMode ? '#534AB7' : '#0F6E56';
-  const acL  = isSoloMode ? '#7F77DD' : '#1D9E75';
-  const acBg = isSoloMode ? '#EEEDFE' : '#E1F5EE';
-  const acBr = isSoloMode ? '#AFA9EC' : '#9FE1CB';
-  const grad = isSoloMode
-    ? 'linear-gradient(135deg,#7F77DD,#534AB7)'
-    : 'linear-gradient(135deg,#1D9E75,#0F6E56)';
   const stepW = `${100 / totalCreateSteps}%`;
-  const stepLabels = ['Name', 'Destination', 'Arrival', 'Departure', 'Budget', 'Notes', 'Review'];
 
+  /* ── Render ──────────────────────────────── */
   return (
     <div
-      style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(0,0,0,0.52)', backdropFilter:'blur(10px) saturate(1.4)', display:'flex', alignItems:'center', justifyContent:'center', padding:'0.75rem' }}
+      style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(0,0,0,0.45)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center', padding:'0.75rem' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
+      <style>{`
+        @keyframes lumiPop { from{opacity:0;transform:scale(0.94) translateY(18px)} to{opacity:1;transform:scale(1) translateY(0)} }
+        @keyframes spin { to{transform:rotate(360deg)} }
+      `}</style>
+
       <div
         className="tb-modal-pop"
-        style={{ width:'100%', maxWidth:480, height:'min(640px, 92svh)', background:'#fff', borderRadius:26, overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 32px 80px rgba(0,0,0,0.28)' }}
+        style={{ width:'100%', maxWidth:460, height:'min(660px, 94svh)', background:'#fff', borderRadius:28, overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 28px 80px rgba(0,0,0,0.22)', animation:'lumiPop .32s cubic-bezier(.16,.84,.24,1.04) both' }}
         onClick={(e) => e.stopPropagation()}
       >
+
         {/* ── HEADER ── */}
-        <div style={{ background:grad, padding:'0.9rem 1.15rem 1rem', flexShrink:0 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:11 }}>
+        <div style={{ background:'#fff', padding:'1rem 1.15rem 0.85rem', borderBottom:'1px solid rgba(0,0,0,0.06)', flexShrink:0 }}>
+          <div style={{ display:'flex', alignItems:'center', marginBottom:12 }}>
             <button onClick={onClose}
-              style={{ width:32, height:32, borderRadius:'50%', border:'none', background:'rgba(255,255,255,0.18)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}>
+              style={{ width:34, height:34, borderRadius:'50%', border:'1.5px solid rgba(0,0,0,0.1)', background:'transparent', color:'#555', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0 }}>
               <Ic.close />
             </button>
-            <div style={{ flex:1 }}>
-              <div style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.58)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:2 }}>
-                New trip &middot; {createStep + 1}/{totalCreateSteps}
-              </div>
-              <div style={{ fontFamily:"'Sora',sans-serif", fontSize:16, fontWeight:700, color:'#fff', lineHeight:1.2 }}>
-                {stepLabels[createStep]}
-              </div>
+            <div style={{ flex:1, textAlign:'center' }}>
+              <div style={{ fontFamily:"'Sora',sans-serif", fontSize:16, fontWeight:700, color:'#111', lineHeight:1.2 }}>Create New Trip</div>
+              <div style={{ fontSize:12, fontWeight:700, color:AC, marginTop:2 }}>Step {createStep + 1} of {totalCreateSteps}</div>
             </div>
+            <div style={{ width:34, flexShrink:0 }} />
           </div>
-          <div style={{ display:'flex', gap:3 }}>
-            {Array.from({ length:totalCreateSteps }, (_, i) => (
-              <div key={i}
-                onClick={() => i < createStep && setCreateStep(i)}
-                style={{ flex:1, height:3, borderRadius:99, background: i <= createStep ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.22)', transition:'background .25s', cursor: i < createStep ? 'pointer' : 'default' }} />
+
+          {/* Progress dots + line */}
+          <div style={{ display:'flex', alignItems:'center' }}>
+            {Array.from({ length: totalCreateSteps }, (_, i) => (
+              <div key={i} style={{ display:'flex', alignItems:'center', flex: i < totalCreateSteps - 1 ? 1 : 'none' }}>
+                <div
+                  onClick={() => i < createStep && setCreateStep(i)}
+                  style={{
+                    width: i === createStep ? 12 : 9,
+                    height: i === createStep ? 12 : 9,
+                    borderRadius:'50%',
+                    background: i <= createStep ? AC : '#E5E5E5',
+                    transition:'all .25s',
+                    cursor: i < createStep ? 'pointer' : 'default',
+                    flexShrink:0,
+                    boxShadow: i === createStep ? `0 0 0 3px ${AC}33` : 'none',
+                  }}
+                />
+                {i < totalCreateSteps - 1 && (
+                  <div style={{ flex:1, height:2, background: i < createStep ? AC : '#E5E5E5', transition:'background .25s', margin:'0 3px' }} />
+                )}
+              </div>
             ))}
           </div>
         </div>
 
-        {/* ── HORIZONTAL SLIDES ── */}
+        {/* ── SLIDES ── */}
         <div style={{ flex:1, overflow:'hidden', position:'relative' }}>
           <div style={{ display:'flex', height:'100%', width:`${totalCreateSteps * 100}%`, transform:`translateX(calc(${-createStep} * ${100 / totalCreateSteps}%))`, transition:'transform .38s cubic-bezier(.16,.84,.24,1.04)' }}>
 
-            {/* STEP 0 — Trip type + Name */}
-            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.4rem 1.25rem', background:'#fafaf8' }}>
-              <div style={{ fontSize:11, fontWeight:700, color:'#9a9a96', letterSpacing:1.2, textTransform:'uppercase', marginBottom:10 }}>Trip type</div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:24 }}>
+            {/* ── STEP 0: Who are you traveling with? ── */}
+            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
+              <LumiStep
+                question="Who are you traveling with?"
+                subtitle="This helps us tailor your experience"
+              />
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:22 }}>
                 {[
                   { val:false, label:'Group', sub:'Travel together', Icon:Ic.group },
-                  { val:true,  label:'Solo',  sub:'Just you',        Icon:Ic.solo },
+                  { val:true,  label:'Solo',  sub:'Just me',         Icon:Ic.solo },
                 ].map(({ val, label, sub, Icon }) => {
                   const sel = isSoloMode === val;
-                  const oAc = val ? '#534AB7' : '#0F6E56';
-                  const oAcBg = val ? '#EEEDFE' : '#E1F5EE';
-                  const oAcBr = val ? '#AFA9EC' : '#9FE1CB';
                   return (
                     <button key={String(val)} type="button" onClick={() => setIsSoloMode(val)}
-                      style={{ padding:'15px 12px', borderRadius:16, border:`1.5px solid ${sel ? oAcBr : 'rgba(15,23,42,0.1)'}`, background:sel ? oAcBg : '#fff', cursor:'pointer', textAlign:'left', transition:'all .15s' }}>
-                      <div style={{ color:sel ? oAc : '#9a9a96', marginBottom:9, display:'flex' }}><Icon /></div>
-                      <div style={{ fontSize:14, fontWeight:700, color:sel ? oAc : '#1a1a18', marginBottom:2 }}>{label}</div>
-                      <div style={{ fontSize:11, color:sel ? oAc : '#9a9a96' }}>{sub}</div>
+                      style={{ padding:'16px 14px', borderRadius:16, border:`1.5px solid ${sel ? AC_BR : 'rgba(15,23,42,0.09)'}`, background: sel ? AC_BG : '#fff', cursor:'pointer', textAlign:'left', transition:'all .15s', boxShadow: sel ? `0 2px 12px ${AC}28` : '0 1px 4px rgba(0,0,0,0.04)' }}>
+                      <div style={{ color: sel ? AC : '#ccc', marginBottom:10, display:'flex' }}><Icon /></div>
+                      <div style={{ fontSize:15, fontWeight:700, color: sel ? AC : '#1a1a18', marginBottom:3 }}>{label}</div>
+                      <div style={{ fontSize:12, color: sel ? AC_L : '#aaa' }}>{sub}</div>
                     </button>
                   );
                 })}
               </div>
-              <div style={{ fontSize:11, fontWeight:700, color:'#9a9a96', letterSpacing:1.2, textTransform:'uppercase', marginBottom:8 }}>
-                {isSoloMode ? 'Adventure name' : 'Trip name'}
-              </div>
+              <div style={{ fontSize:12, fontWeight:600, color:'#555', marginBottom:8 }}>Trip name</div>
               <input
-                style={{ ...S.input, fontSize:15, padding:'13px 16px', borderRadius:16 }}
+                style={{ width:'100%', boxSizing:'border-box', padding:'13px 16px', fontSize:15, borderRadius:14, border:`1.5px solid ${form.groupName.trim() ? AC_BR : 'rgba(15,23,42,0.12)'}`, background: form.groupName.trim() ? AC_BG : '#fff', color:'#111', outline:'none', fontFamily:"'DM Sans','Inter',sans-serif", transition:'all .15s' }}
                 value={form.groupName}
                 onChange={(e) => setForm(f => ({ ...f, groupName:e.target.value }))}
                 onKeyDown={(e) => { if (e.key === 'Enter' && form.groupName.trim()) nextCreateStep(); }}
@@ -188,125 +253,151 @@ export default function CreateTripWizard({
               />
             </div>
 
-            {/* STEP 1 — Destination */}
-            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.4rem 1.25rem', background:'#fafaf8' }}>
-              <div style={{ fontSize:11, fontWeight:700, color:'#9a9a96', letterSpacing:1.2, textTransform:'uppercase', marginBottom:8 }}>Destination</div>
-              <div
-                onClick={() => { setShowDestPicker(true); setDestQuery(form.destination); setDestSuggestions([]); }}
-                style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 16px', borderRadius:16, border:`1.5px solid ${form.destination ? acBr : 'rgba(15,23,42,0.12)'}`, background:form.destination ? acBg : '#fff', cursor:'pointer', transition:'all .15s', userSelect:'none' }}>
-                <Ic.pin c={form.destination ? ac : '#9a9a96'} />
-                <span style={{ flex:1, fontSize:15, fontWeight:form.destination ? 600 : 400, color:form.destination ? ac : '#9a9a96' }}>
-                  {form.destination || 'Search a city or place\u2026'}
-                </span>
-                {form.destination
-                  ? <span onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, destination:'', destinationCountry:'', destinationCurrency:'' })); }} style={{ display:'flex', color:'#9a9a96', cursor:'pointer' }}><Ic.close /></span>
-                  : <Ic.fwd />}
+            {/* ── STEP 1: When are you arriving? ── */}
+            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
+              <LumiStep
+                question="When are you arriving?"
+                subtitle="Select your arrival date and time"
+              />
+              <div style={{ fontSize:12, fontWeight:600, color:'#555', marginBottom:8 }}>Arrival date</div>
+              <div style={{ position:'relative', marginBottom:22 }}>
+                <span style={{ position:'absolute', left:14, top:'50%', transform:'translateY(-50%)', color:'#bbb', display:'flex', pointerEvents:'none' }}><Ic.cal /></span>
+                <input
+                  style={{ width:'100%', boxSizing:'border-box', padding:'13px 16px 13px 40px', fontSize:15, borderRadius:14, border:`1.5px solid ${form.arrival ? AC_BR : 'rgba(15,23,42,0.12)'}`, background: form.arrival ? AC_BG : '#fff', color:'#111', outline:'none', fontFamily:"'DM Sans','Inter',sans-serif", transition:'all .15s' }}
+                  type="date" value={form.arrival} min={today} max={maxDate}
+                  onChange={e => { const v = e.target.value; setForm(f => ({ ...f, arrival:v, departure: f.departure && f.departure < v ? '' : f.departure })); }}
+                  onBlur={e => { if (e.target.value && e.target.value < today) setForm(f => ({ ...f, arrival:today })); }}
+                />
               </div>
-              {!!form.destinationCurrency && (
-                <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:10, padding:'9px 13px', borderRadius:12, background:acBg, border:`1px solid ${acBr}` }}>
-                  <Ic.info />
-                  <span style={{ fontSize:12, color:ac, fontWeight:600 }}>Local currency: <strong>{form.destinationCurrency}</strong>{form.destinationCountry ? ` \u00b7 ${form.destinationCountry}` : ''}</span>
-                </div>
-              )}
+              <div style={{ fontSize:12, fontWeight:600, color:'#555', marginBottom:10 }}>Arrival time</div>
+              <SlotGrid field="arrivalSlot" form={form} setForm={setForm} autoAdvance={autoAdvance} />
             </div>
 
-            {/* STEP 2 — Arrival */}
-            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.4rem 1.25rem', background:'#fafaf8' }}>
-              <div style={{ fontSize:11, fontWeight:700, color:'#9a9a96', letterSpacing:1.2, textTransform:'uppercase', marginBottom:8 }}>Arrival date</div>
-              <input style={{ ...S.input, fontSize:15, padding:'13px 16px', borderRadius:16, marginBottom:20 }} type="date"
-                value={form.arrival} min={today} max={maxDate}
-                onChange={e => { const v=e.target.value; setForm(f => ({ ...f, arrival:v, departure: f.departure && f.departure < v ? '' : f.departure })); }}
-                onBlur={e => { if (e.target.value && e.target.value < today) setForm(f => ({ ...f, arrival:today })); }} />
-              <div style={{ fontSize:11, fontWeight:700, color:'#9a9a96', letterSpacing:1.2, textTransform:'uppercase', marginBottom:10 }}>Arrival time</div>
-              <SlotGrid field="arrivalSlot" form={form} setForm={setForm} autoAdvance={autoAdvance} ac={ac} acBg={acBg} acBr={acBr} />
-            </div>
-
-            {/* STEP 3 — Departure */}
-            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.4rem 1.25rem', background:'#fafaf8' }}>
-              <div style={{ fontSize:11, fontWeight:700, color:'#9a9a96', letterSpacing:1.2, textTransform:'uppercase', marginBottom:8 }}>Departure date</div>
-              <input style={{ ...S.input, fontSize:15, padding:'13px 16px', borderRadius:16, marginBottom:20 }} type="date"
-                value={form.departure} min={form.arrival || today} max={maxDate}
-                onChange={e => setForm(f => ({ ...f, departure:e.target.value }))}
-                onBlur={e => { const v=e.target.value; const m=form.arrival||today; if (v && v < m) setForm(f => ({ ...f, departure:m })); }} />
-              <div style={{ fontSize:11, fontWeight:700, color:'#9a9a96', letterSpacing:1.2, textTransform:'uppercase', marginBottom:10 }}>Departure time</div>
-              <SlotGrid field="departureSlot" form={form} setForm={setForm} autoAdvance={autoAdvance} ac={ac} acBg={acBg} acBr={acBr} />
-            </div>
-
-            {/* STEP 4 — Budget (dual-currency calculator) */}
-            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.4rem 1.25rem', background:'#fafaf8' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:'#9a9a96', letterSpacing:1.2, textTransform:'uppercase' }}>Budget</div>
-                <span style={{ fontSize:10, color:'#b0b0aa', background:'rgba(0,0,0,0.05)', borderRadius:6, padding:'2px 7px', fontStyle:'italic' }}>optional</span>
+            {/* ── STEP 2: What's your budget? ── */}
+            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
+              <LumiStep
+                question="What's your budget?"
+                subtitle="Set your budget in your preferred currency"
+              />
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:12 }}>
+                <div style={{ fontSize:12, fontWeight:600, color:'#555' }}>Budget</div>
+                <span style={{ fontSize:10.5, color:'#aaa', background:'rgba(0,0,0,0.05)', borderRadius:6, padding:'2px 8px', fontStyle:'italic', fontWeight:500 }}>Optional</span>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', background:'#fff', borderRadius:18, border:'1px solid rgba(15,23,42,0.09)', overflow:'hidden', marginBottom:12 }}>
-                <div style={{ padding:'14px 14px 16px' }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:'#9a9a96', letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>Your currency</div>
-                  <select style={{ width:'100%', padding:'8px 10px', fontSize:13, fontFamily:"'DM Sans',sans-serif", border:'1px solid rgba(15,23,42,0.1)', borderRadius:10, background:'#f9f8f4', color:'#111', outline:'none', marginBottom:8, cursor:'pointer' }}
-                    value={form.budgetCurrency} onChange={(e) => setForm(f => ({ ...f, budgetCurrency:e.target.value }))}>
-                    {BUDGET_CURRENCIES.map(code => <option key={code} value={code}>{code}</option>)}
-                  </select>
-                  <input style={{ width:'100%', boxSizing:'border-box', padding:'10px 12px', fontSize:20, fontWeight:700, fontFamily:"'Sora',sans-serif", border:'1px solid rgba(15,23,42,0.1)', borderRadius:10, background:'#f9f8f4', color:'#111', outline:'none', letterSpacing:'-0.5px' }}
-                    type="number" min="0" value={form.budget} onChange={(e) => setForm(f => ({ ...f, budget:e.target.value }))} placeholder="0" />
-                </div>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'0 6px', background:'#f7f6f2' }}>
-                  <Ic.fwd />
-                </div>
-                <div style={{ padding:'14px 14px 16px', background: form.destinationCurrency ? (isSoloMode ? 'rgba(127,119,221,0.04)' : 'rgba(29,158,117,0.04)') : '#fafaf8' }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:'#9a9a96', letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>At destination</div>
-                  <div style={{ padding:'8px 10px', fontSize:13, fontWeight:700, color:form.destinationCurrency ? ac : '#c0c0bc', background:form.destinationCurrency ? acBg : '#f0f0ec', borderRadius:10, marginBottom:8, textAlign:'center' }}>
-                    {form.destinationCurrency || '\u2014'}
+              <div style={{ background:'#fff', borderRadius:18, border:'1.5px solid rgba(15,23,42,0.08)', overflow:'hidden', marginBottom:12 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr' }}>
+                  <div style={{ padding:'14px 14px 16px' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:'#aaa', letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>Your currency</div>
+                    <select style={{ width:'100%', padding:'8px 10px', fontSize:13, fontFamily:"'DM Sans',sans-serif", border:'1.5px solid rgba(15,23,42,0.1)', borderRadius:10, background:'#F9F8F6', color:'#111', outline:'none', marginBottom:10, cursor:'pointer' }}
+                      value={form.budgetCurrency} onChange={(e) => setForm(f => ({ ...f, budgetCurrency:e.target.value }))}>
+                      {BUDGET_CURRENCIES.map(code => <option key={code} value={code}>{code}</option>)}
+                    </select>
+                    <input
+                      style={{ width:'100%', boxSizing:'border-box', padding:'10px 12px', fontSize:22, fontWeight:800, fontFamily:"'Sora',sans-serif", border:`1.5px solid ${form.budget ? AC_BR : 'rgba(15,23,42,0.1)'}`, borderRadius:10, background: form.budget ? AC_BG : '#F9F8F6', color:'#111', outline:'none', letterSpacing:'-0.5px', transition:'all .15s' }}
+                      type="number" min="0" value={form.budget}
+                      onChange={(e) => setForm(f => ({ ...f, budget:e.target.value }))}
+                      placeholder="0"
+                    />
                   </div>
-                  <div style={{ padding:'10px 12px', fontSize:20, fontWeight:700, fontFamily:"'Sora',sans-serif", color: form.budget && form.destinationCurrency ? ac : '#c0c0bc', background: form.budget && form.destinationCurrency ? acBg : '#f0f0ec', borderRadius:10, textAlign:'center', transition:'all .2s' }}>
-                    {form.budget && form.destinationCurrency ? convertedBudget.toLocaleString(undefined, { maximumFractionDigits:0 }) : '\u2014'}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'0 6px', background:'#F7F6F2', color:'#ccc' }}>
+                    <Ic.fwd />
+                  </div>
+                  <div style={{ padding:'14px 14px 16px', background: form.destinationCurrency ? `${AC_BG}88` : '#FAFAF8' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:'#aaa', letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>At destination</div>
+                    <div style={{ padding:'8px 10px', fontSize:13, fontWeight:700, color: form.destinationCurrency ? AC : '#ccc', background: form.destinationCurrency ? AC_BG : '#F0F0EC', borderRadius:10, marginBottom:10, textAlign:'center', border:`1.5px solid ${form.destinationCurrency ? AC_BR : 'transparent'}` }}>
+                      {form.destinationCurrency || '—'}
+                    </div>
+                    <div style={{ padding:'10px 12px', fontSize:22, fontWeight:800, fontFamily:"'Sora',sans-serif", color: form.budget && form.destinationCurrency ? AC : '#ccc', background: form.budget && form.destinationCurrency ? AC_BG : '#F0F0EC', borderRadius:10, textAlign:'center', transition:'all .2s', letterSpacing:'-0.5px' }}>
+                      {form.budget && form.destinationCurrency ? Number(convertedBudget).toLocaleString(undefined, { maximumFractionDigits:0 }) : '—'}
+                    </div>
                   </div>
                 </div>
               </div>
-              <div style={{ fontSize:12, color: fxError ? '#993C1D' : '#7c7c77', display:'flex', alignItems:'center', gap:5 }}>
+              <div style={{ fontSize:12, color: fxError ? '#cc4415' : '#9a9a96', display:'flex', alignItems:'center', gap:6 }}>
                 {fxLoading
-                  ? <><div style={{ width:10, height:10, border:`1.5px solid ${acBg}`, borderTopColor:acL, borderRadius:'50%', animation:'spin .6s linear infinite', flexShrink:0 }} />Fetching live rate\u2026</>
+                  ? <><div style={{ width:10, height:10, border:`1.5px solid ${AC_BG}`, borderTopColor:AC_L, borderRadius:'50%', animation:'spin .6s linear infinite', flexShrink:0 }} />Fetching live rate…</>
                   : fxError ? fxError
                   : form.destinationCurrency && form.budgetCurrency !== form.destinationCurrency
-                    ? `1 ${form.budgetCurrency} = ${fxRate.toFixed(4)} ${form.destinationCurrency} \u00b7 refreshed daily`
-                  : form.destinationCurrency ? 'Same currency \u2014 no conversion needed'
-                  : 'Select a destination to see converted amount'
+                    ? `1 ${form.budgetCurrency} = ${fxRate.toFixed(4)} ${form.destinationCurrency} · refreshed daily`
+                  : form.destinationCurrency ? 'Same currency — no conversion needed'
+                  : 'Select destination first to see conversion'
                 }
               </div>
             </div>
 
-            {/* STEP 5 — Notes */}
-            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.4rem 1.25rem', background:'#fafaf8' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:'#9a9a96', letterSpacing:1.2, textTransform:'uppercase' }}>Trip notes</div>
-                <span style={{ fontSize:10, color:'#b0b0aa', background:'rgba(0,0,0,0.05)', borderRadius:6, padding:'2px 7px', fontStyle:'italic' }}>optional</span>
+            {/* ── STEP 3: Where are you going? ── */}
+            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
+              <LumiStep
+                question="Where are you going?"
+                subtitle="Tell us your destination"
+              />
+              <div
+                onClick={() => { setShowDestPicker(true); setDestQuery(form.destination); setDestSuggestions([]); }}
+                style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderRadius:14, border:`1.5px solid ${form.destination ? AC_BR : 'rgba(15,23,42,0.12)'}`, background: form.destination ? AC_BG : '#fff', cursor:'pointer', transition:'all .15s', userSelect:'none', marginBottom: form.destination ? 18 : 4, boxShadow: form.destination ? `0 2px 10px ${AC}20` : '0 1px 4px rgba(0,0,0,0.04)' }}>
+                <Ic.pin c={form.destination ? AC : '#bbb'} />
+                <span style={{ flex:1, fontSize:15, fontWeight: form.destination ? 600 : 400, color: form.destination ? AC : '#aaa' }}>
+                  {form.destination || 'Enter destination'}
+                </span>
+                {form.destination
+                  ? <span onClick={e => { e.stopPropagation(); setForm(f => ({ ...f, destination:'', destinationCountry:'', destinationCurrency:'' })); }} style={{ display:'flex', color:'#aaa', cursor:'pointer' }}><Ic.close /></span>
+                  : <Ic.fwd />}
               </div>
-              <textarea style={{ ...S.input, fontSize:14, padding:'13px 16px', borderRadius:16, resize:'none', minHeight:140, lineHeight:1.6, fontFamily:'inherit' }}
-                value={form.travelNotes} onChange={e => setForm(f => ({ ...f, travelNotes:e.target.value }))}
-                placeholder={isSoloMode ? 'e.g. Prefer slow travel, street food, avoid strenuous hikes\u2026' : 'e.g. Family of 6 with kids, vegetarian food, elderly included\u2026'} />
-              <div style={{ marginTop:10, padding:'9px 12px', background:'rgba(29,158,117,0.06)', borderRadius:10, border:'1px solid rgba(29,158,117,0.14)', display:'flex', gap:7, alignItems:'flex-start' }}>
-                <Ic.info />
-                <span style={{ fontSize:11, color:'#3d8a6e', lineHeight:1.5 }}>AI reads this to personalise your itinerary \u2014 mention ages, dietary needs, paces, mobility.</span>
+              {!form.destination && (
+                <div style={{ fontSize:12, color:'#ccc', marginBottom:18, paddingLeft:2 }}>e.g. Japi, Maharashtra, India</div>
+              )}
+              <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8 }}>
+                <div style={{ fontSize:12, fontWeight:600, color:'#555' }}>Add notes</div>
+                <span style={{ fontSize:10.5, color:'#aaa', background:'rgba(0,0,0,0.05)', borderRadius:6, padding:'2px 8px', fontStyle:'italic', fontWeight:500 }}>optional</span>
+              </div>
+              <textarea
+                style={{ width:'100%', boxSizing:'border-box', padding:'12px 14px', fontSize:13.5, borderRadius:14, border:'1.5px solid rgba(15,23,42,0.1)', background:'#fff', color:'#111', outline:'none', resize:'none', minHeight:108, lineHeight:1.6, fontFamily:"'DM Sans','Inter',sans-serif", transition:'border-color .15s' }}
+                onFocus={e => e.target.style.borderColor = AC_BR}
+                onBlur={e => e.target.style.borderColor = 'rgba(15,23,42,0.1)'}
+                value={form.travelNotes}
+                onChange={e => setForm(f => ({ ...f, travelNotes:e.target.value }))}
+                placeholder="Any specific plans or places in mind?"
+              />
+              <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:6 }}>
+                <Ic.sparkle />
+                <span style={{ fontSize:12, color:'#aaa' }}>We'll use this to personalize your trip</span>
               </div>
             </div>
 
-            {/* STEP 6 — Review */}
-            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.4rem 1.25rem', background:'#fafaf8' }}>
-              <div style={{ fontSize:11, fontWeight:700, color:'#9a9a96', letterSpacing:1.2, textTransform:'uppercase', marginBottom:12 }}>Summary</div>
-              <div style={{ background:'#fff', borderRadius:18, border:'1px solid rgba(15,23,42,0.08)', overflow:'hidden' }}>
+            {/* ── STEP 4: Review your trip ── */}
+            <div style={{ width:stepW, flex:`0 0 ${stepW}`, height:'100%', overflowY:'auto', boxSizing:'border-box', padding:'1.5rem 1.25rem' }}>
+              <LumiStep
+                question="Review your trip"
+                subtitle="Here's a quick summary"
+              />
+              <div style={{ background:'#fff', borderRadius:18, border:'1.5px solid rgba(15,23,42,0.07)', overflow:'hidden', marginBottom:14, boxShadow:'0 2px 12px rgba(0,0,0,0.04)' }}>
                 {[
-                  { Icon:Ic.edit,  label:'Name',        value:form.groupName || '\u2014' },
-                  { Icon:Ic.pin,   label:'Destination', value:form.destination || '\u2014' },
-                  { Icon:Ic.cal,   label:'Dates',       value: form.arrival && form.departure ? `${form.arrival} \u2192 ${form.departure}` : '\u2014' },
-                  { Icon:Ic.money, label:'Budget',      value: form.budget ? `${form.budgetCurrency} ${Number(form.budget).toLocaleString()}${form.destinationCurrency && form.destinationCurrency !== form.budgetCurrency ? ` \u2248 ${form.destinationCurrency} ${convertedBudget.toLocaleString(undefined,{maximumFractionDigits:0})}` : ''}` : 'Not set' },
-                  { Icon:Ic.type,  label:'Type',        value: isSoloMode ? 'Solo adventure' : 'Group trip' },
-                ].map(({ Icon, label, value }, i, arr) => (
-                  <div key={label} style={{ display:'flex', alignItems:'flex-start', gap:10, padding:'11px 16px', borderBottom: i < arr.length-1 ? '1px solid rgba(15,23,42,0.05)' : 'none' }}>
-                    <span style={{ color:'#9a9a96', marginTop:2, flexShrink:0, display:'flex' }}><Icon /></span>
-                    <div>
-                      <div style={{ fontSize:10, fontWeight:700, color:'#b0b0aa', letterSpacing:0.8, textTransform:'uppercase', marginBottom:1 }}>{label}</div>
-                      <div style={{ fontSize:14, fontWeight:600, color:'#111', lineHeight:1.4 }}>{value}</div>
+                  { icon:<Ic.edit />,  label:'Trip name',   value: form.groupName || '—',   editable:true, step:0 },
+                  { icon:<Ic.type />,  label:'Travel type', value: isSoloMode ? 'Solo trip' : 'Group trip' },
+                  { icon:<Ic.cal />,   label:'Arrival',     value: form.arrival ? `${fmtDateDisplay(form.arrival)}${form.arrivalSlot ? ', '+slotLabel(form.arrivalSlot) : ''}` : '—' },
+                  { icon:<Ic.pin />,   label:'Destination', value: form.destination || '—' },
+                  { icon:<Ic.money />, label:'Budget',      value: form.budget ? `${form.budgetCurrency} ${Number(form.budget).toLocaleString()}${form.destinationCurrency && form.destinationCurrency !== form.budgetCurrency ? ` ≈ ${form.destinationCurrency} ${Number(convertedBudget).toLocaleString(undefined,{maximumFractionDigits:0})}` : ''}` : 'Not set' },
+                ].map(({ icon, label, value, editable, step }, i, arr) => (
+                  <div key={label} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'13px 16px', borderBottom: i < arr.length-1 ? '1px solid rgba(15,23,42,0.05)' : 'none' }}>
+                    <span style={{ color:'#ccc', marginTop:2, flexShrink:0, display:'flex' }}>{icon}</span>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:11, fontWeight:600, color:'#bbb', letterSpacing:0.5, textTransform:'uppercase', marginBottom:2 }}>{label}</div>
+                      <div style={{ fontSize:14, fontWeight:600, color:'#111', lineHeight:1.4, wordBreak:'break-word' }}>{value}</div>
                     </div>
+                    {editable && (
+                      <button type="button" onClick={() => setCreateStep(step)}
+                        style={{ background:'none', border:'none', cursor:'pointer', color:'#bbb', display:'flex', padding:4, flexShrink:0 }}>
+                        <Ic.edit />
+                      </button>
+                    )}
                   </div>
                 ))}
+              </div>
+              <div style={{ display:'flex', alignItems:'flex-start', gap:9, padding:'12px 14px', borderRadius:14, background:AC_BG, border:`1px solid ${AC_BR}` }}>
+                <div style={{ width:24, height:24, borderRadius:'50%', background:`linear-gradient(135deg,${AC_L},${AC})`, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
+                  <LumiIcon />
+                </div>
+                <span style={{ fontSize:12.5, color:'#aa4400', lineHeight:1.55 }}>
+                  You can edit these details anytime after creating your trip.
+                </span>
               </div>
             </div>
 
@@ -314,20 +405,25 @@ export default function CreateTripWizard({
         </div>
 
         {/* ── FOOTER ── */}
-        <div style={{ padding:'0.875rem 1.1rem calc(0.875rem + env(safe-area-inset-bottom,0px))', borderTop:'1px solid rgba(0,0,0,0.06)', display:'flex', gap:8, background:'#fff', flexShrink:0 }}>
-          <button onClick={prevCreateStep} disabled={createStep === 0}
-            style={{ ...S.btn, padding:'11px 16px', opacity:createStep===0?0.3:1 }}>
-            <Ic.back />
-          </button>
+        <div style={{ padding:'0.875rem 1.1rem calc(0.875rem + env(safe-area-inset-bottom,0px))', borderTop:'1px solid rgba(0,0,0,0.06)', display:'flex', gap:10, background:'#fff', flexShrink:0 }}>
+          {createStep > 0 && (
+            <button onClick={prevCreateStep}
+              style={{ width:46, height:46, borderRadius:'50%', border:'1.5px solid rgba(0,0,0,0.12)', background:'#fff', color:'#555', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, transition:'border-color .15s' }}>
+              <Ic.back />
+            </button>
+          )}
           {createStep < totalCreateSteps - 1 ? (
             <button onClick={nextCreateStep} disabled={!canAdvanceCurrentStep()}
-              style={{ ...S.btn, ...(isSoloMode ? S.btnSolo : S.btnP), flex:1, justifyContent:'center', padding:'11px', fontSize:14, fontWeight:700, gap:6, opacity:canAdvanceCurrentStep()?1:0.42 }}>
-              Continue <Ic.fwd />
+              style={{ flex:1, height:46, borderRadius:14, background: canAdvanceCurrentStep() ? `linear-gradient(135deg,${AC_L},${AC})` : '#EBEBEB', color: canAdvanceCurrentStep() ? '#fff' : '#bbb', border:'none', cursor: canAdvanceCurrentStep() ? 'pointer' : 'not-allowed', display:'flex', alignItems:'center', justifyContent:'center', gap:8, fontSize:15, fontWeight:700, fontFamily:"'Sora',sans-serif", transition:'all .2s', boxShadow: canAdvanceCurrentStep() ? `0 4px 16px ${AC}44` : 'none' }}>
+              Continue
+              <Ic.fwd />
             </button>
           ) : (
-            <button onClick={onSubmit} disabled={creating || !form.groupName || !form.destination || !form.arrival || !form.departure}
-              style={{ ...S.btn, ...(isSoloMode ? S.btnSolo : S.btnP), flex:1, justifyContent:'center', padding:'11px', fontSize:14, fontWeight:700, opacity:(creating||!form.groupName||!form.destination||!form.arrival||!form.departure)?0.42:1 }}>
-              {creating ? 'Creating\u2026' : (isSoloMode ? 'Start Adventure' : 'Create Trip')}
+            <button onClick={onSubmit}
+              disabled={creating || !form.groupName || !form.destination || !form.arrival}
+              style={{ flex:1, height:46, borderRadius:14, background: (!creating && form.groupName && form.destination && form.arrival) ? `linear-gradient(135deg,${AC_L},${AC})` : '#EBEBEB', color: (!creating && form.groupName && form.destination && form.arrival) ? '#fff' : '#bbb', border:'none', cursor: (!creating && form.groupName && form.destination && form.arrival) ? 'pointer' : 'not-allowed', display:'flex', alignItems:'center', justifyContent:'center', gap:8, fontSize:15, fontWeight:700, fontFamily:"'Sora',sans-serif", transition:'all .2s', boxShadow: (!creating && form.groupName && form.destination && form.arrival) ? `0 4px 16px ${AC}44` : 'none' }}>
+              {creating ? 'Creating…' : 'Create Trip'}
+              {!creating && <Ic.check />}
             </button>
           )}
         </div>
@@ -339,20 +435,21 @@ export default function CreateTripWizard({
           <div className="tb-sheet-panel" style={{ background:'#fff', display:'flex', flexDirection:'column', position:'absolute', inset:0 }}>
             <div style={{ display:'flex', alignItems:'center', gap:12, padding:'1rem 1.25rem', borderBottom:'0.5px solid rgba(0,0,0,0.08)', background:'#fff', flexShrink:0 }}>
               <button onClick={() => { setShowDestPicker(false); setDestSuggestions([]); }}
-                style={{ width:36, height:36, borderRadius:'50%', border:'0.5px solid rgba(0,0,0,0.12)', background:'#f7f6f2', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
+                style={{ width:36, height:36, borderRadius:'50%', border:'1px solid rgba(0,0,0,0.1)', background:'#F7F6F2', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer' }}>
                 <Ic.back />
               </button>
               <div style={{ fontFamily:"'Sora',sans-serif", fontSize:17, fontWeight:700, flex:1 }}>Destination</div>
             </div>
             <div style={{ padding:'12px 14px', flexShrink:0 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8, background:'#F5F5F3', borderRadius:12, padding:'0 12px', border:'0.5px solid #e0e0e0' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, background:'#F5F5F3', borderRadius:12, padding:'0 12px', border:'1px solid #E8E8E5' }}>
                 <Ic.search />
                 <input autoFocus
-                  style={{ ...S.input, border:'none', background:'transparent', flex:1, padding:'10px 0', fontSize:15, outline:'none' }}
+                  style={{ border:'none', background:'transparent', flex:1, padding:'11px 0', fontSize:15, outline:'none', fontFamily:"'DM Sans',sans-serif" }}
                   value={destQuery}
                   onChange={e => { setDestQuery(e.target.value); clearTimeout(destDebounce.current); destDebounce.current = setTimeout(() => searchDest(e.target.value), 350); }}
-                  placeholder="Search city or place\u2026" />
-                {destLoading && <div style={{ width:18, height:18, border:'2px solid #E1F5EE', borderTopColor:'#1D9E75', borderRadius:'50%', animation:'spin .75s linear infinite', flexShrink:0 }} />}
+                  placeholder="Search city or place…"
+                />
+                {destLoading && <div style={{ width:18, height:18, border:`2px solid ${AC_BG}`, borderTopColor:AC, borderRadius:'50%', animation:'spin .75s linear infinite', flexShrink:0 }} />}
                 {destQuery && !destLoading && <span onClick={() => { setDestQuery(''); setDestSuggestions([]); }} style={{ color:'#aaa', cursor:'pointer', display:'flex', flexShrink:0 }}><Ic.close /></span>}
               </div>
             </div>
@@ -370,32 +467,32 @@ export default function CreateTripWizard({
                       setShowDestPicker(false);
                       setDestSuggestions([]);
                       setDestQuery('');
-                      if (createStep === 1) autoAdvance();
+                      if (createStep === 3) autoAdvance();
                     }}
-                    style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'0.5px solid #f0f0f0', cursor:'pointer' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f7f6f2'}
+                    style={{ display:'flex', alignItems:'center', gap:12, padding:'13px 16px', borderBottom:'0.5px solid #F0F0F0', cursor:'pointer', background:'#fff', transition:'background .1s' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#F9F8F5'}
                     onMouseLeave={e => e.currentTarget.style.background = '#fff'}>
-                    <div style={{ width:36, height:36, borderRadius:10, background:'#F1EFE8', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                      <Ic.pin c="#6b6b68" />
+                    <div style={{ width:38, height:38, borderRadius:11, background:'#F3F2EE', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                      <Ic.pin c="#999" />
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:15, fontWeight:600, color:'#111', marginBottom:2, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{mainText}</div>
-                      {subText && <div style={{ fontSize:12, color:'#888', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{subText}</div>}
+                      {subText && <div style={{ fontSize:12, color:'#999', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{subText}</div>}
                     </div>
-                    <Ic.fwd />
+                    <span style={{ color:'#ccc' }}><Ic.fwd /></span>
                   </div>
                 );
               })}
               {destQuery.length >= 2 && !destLoading && destSuggestions.length === 0 && (
-                <div style={{ textAlign:'center', padding:'4rem 1.5rem', color:'#6b6b68' }}>
-                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#c0c0bc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom:12, display:'block', margin:'0 auto 12px' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  <div style={{ fontSize:15, fontWeight:600, marginBottom:6 }}>No results for &ldquo;{destQuery}&rdquo;</div>
+                <div style={{ textAlign:'center', padding:'4rem 1.5rem', color:'#aaa' }}>
+                  <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#ddd" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ display:'block', margin:'0 auto 12px' }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  <div style={{ fontSize:15, fontWeight:600, color:'#555', marginBottom:6 }}>No results for "{destQuery}"</div>
                   <div style={{ fontSize:13 }}>Try a different spelling or nearby city</div>
                 </div>
               )}
-              {destQuery.length < 2 && <div style={{ textAlign:'center', paddingTop:40, color:'#bbb', fontSize:13 }}>Start typing to search destinations\u2026</div>}
+              {destQuery.length < 2 && <div style={{ textAlign:'center', paddingTop:40, color:'#ccc', fontSize:13 }}>Start typing to search destinations…</div>}
             </div>
-            <div style={{ padding:'10px', textAlign:'center', borderTop:'0.5px solid #f0f0f0', fontSize:11, color:'#bbb', flexShrink:0 }}>&copy; OpenStreetMap contributors</div>
+            <div style={{ padding:'10px', textAlign:'center', borderTop:'0.5px solid #F0F0F0', fontSize:11, color:'#ccc', flexShrink:0 }}>© OpenStreetMap contributors</div>
           </div>
         </div>
       )}
