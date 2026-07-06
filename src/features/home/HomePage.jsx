@@ -686,57 +686,53 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             </div>
           </div>
           {/* Action cards — side by side */}
-          <div style={{ display: 'flex', gap: 10 }}>
+          <div style={{ display: 'flex', gap: 9 }}>
             {/* New Trip card */}
             <button
               className="tb-hero-card-btn"
               style={{
-                flex: 1, background: '#F26419', borderRadius: 18, border: 'none',
-                padding: '14px 10px 14px 12px', display: 'flex', alignItems: 'center', gap: 11,
+                flex: 1, background: '#F26419', borderRadius: 16, border: 'none',
+                padding: '11px 9px 11px 11px', display: 'flex', alignItems: 'center', gap: 9,
                 cursor: 'pointer', position: 'relative', overflow: 'hidden', textAlign: 'left',
-                boxShadow: '0 6px 22px rgba(242,100,25,0.38), inset 0 1px 0 rgba(255,255,255,0.15)',
+                boxShadow: '0 5px 18px rgba(242,100,25,0.36), inset 0 1px 0 rgba(255,255,255,0.14)',
               }}
               onClick={() => {
                 setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '' });
                 setCreateStep(0); setShowCreate(true); setShowJoin(false);
               }}
             >
-              {/* Subtle top-left shimmer */}
-              <div style={{ position: 'absolute', top: -20, left: -20, width: 72, height: 72, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', pointerEvents: 'none' }} />
-              {/* Icon circle — warm cream, matching home.png */}
-              <div style={{ width: 54, height: 54, borderRadius: '50%', background: 'rgba(255,247,240,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
-                <svg width="26" height="26" viewBox="0 0 24 24">
+              <div style={{ position: 'absolute', top: -16, left: -16, width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.09)', pointerEvents: 'none' }} />
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,247,240,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24">
                   <rect x="3" y="6" width="18" height="15" rx="2.5" fill="#E8520A"/>
-                  <path d="M9 6V4.5C9 3.67 9.67 3 10.5 3h3c.83 0 1.5.67 1.5 1.5V6" fill="none" stroke="rgba(255,247,240,0.9)" strokeWidth="1.6" strokeLinecap="round"/>
-                  <rect x="3" y="11.5" width="18" height="2" rx="0" fill="rgba(255,255,255,0.22)"/>
+                  <path d="M9 6V4.5C9 3.67 9.67 3 10.5 3h3c.83 0 1.5.67 1.5 1.5V6" fill="none" stroke="rgba(255,247,240,0.9)" strokeWidth="1.7" strokeLinecap="round"/>
+                  <rect x="3" y="11.5" width="18" height="2" fill="rgba(255,255,255,0.22)"/>
                 </svg>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', letterSpacing: '-0.2px', lineHeight: 1.18 }}>New Trip</div>
-                <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.76)', marginTop: 2.5, lineHeight: 1.4 }}>Plan your next adventure</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', letterSpacing: '-0.1px', lineHeight: 1.2, fontFamily: "'DM Sans',sans-serif" }}>New Trip</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.72)', marginTop: 1.5, lineHeight: 1.35, fontFamily: "'DM Sans',sans-serif" }}>Plan your next adventure</div>
               </div>
-              {/* Dashed compass arc */}
-              <svg style={{ position: 'absolute', right: 7, bottom: 7, opacity: 0.2, pointerEvents: 'none' }} width="54" height="42" viewBox="0 0 54 42" fill="none">
-                <path d="M4 36 C 14 22, 32 12, 48 4" stroke="#fff" strokeWidth="1.3" strokeDasharray="4 3" strokeLinecap="round"/>
-                <path d="M48 4 L 43 9" stroke="#fff" strokeWidth="1.3" strokeLinecap="round"/>
-                <path d="M48 4 L 43 2" stroke="#fff" strokeWidth="1.3" strokeLinecap="round"/>
+              <svg style={{ position: 'absolute', right: 6, bottom: 6, opacity: 0.18, pointerEvents: 'none' }} width="46" height="36" viewBox="0 0 46 36" fill="none">
+                <path d="M3 30 C 12 18, 28 10, 41 3" stroke="#fff" strokeWidth="1.2" strokeDasharray="3.5 2.8" strokeLinecap="round"/>
+                <path d="M41 3 L 37 8" stroke="#fff" strokeWidth="1.2" strokeLinecap="round"/>
+                <path d="M41 3 L 37 1" stroke="#fff" strokeWidth="1.2" strokeLinecap="round"/>
               </svg>
             </button>
             {/* Join with Code card */}
             <button
               className="tb-hero-card-btn"
               style={{
-                flex: 1, background: '#FAFAF9', borderRadius: 18,
+                flex: 1, background: '#FAFAF9', borderRadius: 16,
                 border: '1px solid rgba(0,0,0,0.07)',
-                padding: '14px 10px 14px 12px', display: 'flex', alignItems: 'center', gap: 11,
+                padding: '11px 9px 11px 11px', display: 'flex', alignItems: 'center', gap: 9,
                 cursor: 'pointer', position: 'relative', overflow: 'hidden', textAlign: 'left',
-                boxShadow: '0 3px 14px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04)',
+                boxShadow: '0 2px 12px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04)',
               }}
               onClick={() => { setShowJoin(true); setShowCreate(false); }}
             >
-              {/* Icon circle — sage */}
-              <div style={{ width: 54, height: 54, borderRadius: '50%', background: '#EBF3ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <svg width="23" height="23" viewBox="0 0 24 24" fill="none">
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#EBF3ED', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="3" width="7" height="7" rx="1.4" stroke="#043D28" strokeWidth="1.8"/>
                   <rect x="5.5" y="5.5" width="2" height="2" rx="0.4" fill="#043D28"/>
                   <rect x="14" y="3" width="7" height="7" rx="1.4" stroke="#043D28" strokeWidth="1.8"/>
@@ -751,12 +747,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 </svg>
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#0D1108', letterSpacing: '-0.2px', lineHeight: 1.18 }}>Join with Code</div>
-                <div style={{ fontSize: 10.5, color: '#7a7a76', marginTop: 2.5, lineHeight: 1.4 }}>Join an existing trip</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#0D1108', letterSpacing: '-0.1px', lineHeight: 1.2, fontFamily: "'DM Sans',sans-serif" }}>Join with Code</div>
+                <div style={{ fontSize: 10, color: '#7a7a76', marginTop: 1.5, lineHeight: 1.35, fontFamily: "'DM Sans',sans-serif" }}>Join an existing trip</div>
               </div>
-              {/* Dashed arc */}
-              <svg style={{ position: 'absolute', right: 7, bottom: 7, opacity: 0.1, pointerEvents: 'none' }} width="54" height="42" viewBox="0 0 54 42" fill="none">
-                <path d="M4 36 C 14 22, 32 12, 48 4" stroke="#043D28" strokeWidth="1.3" strokeDasharray="4 3" strokeLinecap="round"/>
+              <svg style={{ position: 'absolute', right: 6, bottom: 6, opacity: 0.1, pointerEvents: 'none' }} width="46" height="36" viewBox="0 0 46 36" fill="none">
+                <path d="M3 30 C 12 18, 28 10, 41 3" stroke="#043D28" strokeWidth="1.2" strokeDasharray="3.5 2.8" strokeLinecap="round"/>
               </svg>
             </button>
           </div>
