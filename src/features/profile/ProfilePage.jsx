@@ -36,6 +36,19 @@ const DrawerIcon = ({ id, size = 18, color = AC }) => {
   if (id === 'logout') return <svg {...p}><path d="M10 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h4"/><path d="M15 12H7"/><path d="m12 9 3 3-3 3"/><path d="M15 12h5"/></svg>;
   if (id === 'trash') return <svg {...p}><path d="M3 6h18"/><path d="M8 6V4h8v2"/><rect x="6" y="6" width="12" height="14" rx="2"/><path d="M10 10v6"/><path d="M14 10v6"/></svg>;
   if (id === 'mail') return <svg {...p}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>;
+  if (id === 'lock') return <svg {...p}><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+  if (id === 'wallet') return <svg {...p}><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 13a1 1 0 1 0 2 0 1 1 0 0 0-2 0"/></svg>;
+  if (id === 'pin') return <svg {...p}><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>;
+  if (id === 'users') return <svg {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+  if (id === 'plane') return <svg {...p}><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>;
+  if (id === 'backpack') return <svg {...p}><path d="M4 10a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 6V5a3 3 0 0 1 6 0v1"/><line x1="8" y1="14" x2="16" y2="14"/></svg>;
+  if (id === 'flame') return <svg {...p}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>;
+  if (id === 'map') return <svg {...p}><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>;
+  if (id === 'star') return <svg {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+  if (id === 'film') return <svg {...p}><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>;
+  if (id === 'globe') return <svg {...p}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>;
+  if (id === 'leaf') return <svg {...p}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>;
+  if (id === 'suitcase') return <svg {...p}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>;
   return <svg {...p}><circle cx="12" cy="12" r="9"/></svg>;
 };
 
@@ -46,18 +59,18 @@ const withLogo = (text, h = 15) => {
   );
 };
 const BADGE_DEFS = [
-  { id: 'early_bird',     name: 'Early Bird',      emoji: '🌅', desc: 'Joined the TravelBae crew',           check: () => true },
-  { id: 'first_flight',   name: 'First Flight',    emoji: '✈️', desc: 'Created your very first trip',         check: s => s.tripCount >= 1 },
-  { id: 'group_leader',   name: 'Group Leader',    emoji: '👥', desc: 'Set off on a group adventure',         check: s => s.groupCount >= 1 },
-  { id: 'solo_voyager',   name: 'Solo Voyager',    emoji: '🎒', desc: 'Embraced a solo journey',              check: s => s.soloCount >= 1 },
-  { id: 'globe_trotter',  name: 'Globe Trotter',   emoji: '🌍', desc: 'Visited 3+ different destinations',    check: s => s.uniqueDests >= 3, progress: s => `${Math.min(s.uniqueDests, 3)}/3` },
-  { id: 'budget_pro',     name: 'Budget Pro',      emoji: '💰', desc: 'Tracked expenses on 3+ trips',         check: s => s.tripsWithExpenses >= 3, progress: s => `${Math.min(s.tripsWithExpenses, 3)}/3` },
-  { id: 'photographer',   name: 'Photographer',    emoji: '📸', desc: 'Uploaded 10+ trip photos',             check: s => s.photoCount >= 10, progress: s => `${Math.min(s.photoCount, 10)}/10` },
-  { id: 'trail_blazer',   name: 'Trail Blazer',    emoji: '🔥', desc: 'Completed 5+ trips',                   check: s => s.completedCount >= 5, progress: s => `${Math.min(s.completedCount, 5)}/5` },
-  { id: 'social_butterfly', name: 'Social Butterfly', emoji: '🦋', desc: 'Saved 5+ trip contacts',           check: s => s.contactCount >= 5, progress: s => `${Math.min(s.contactCount, 5)}/5` },
-  { id: 'master_planner', name: 'Master Planner',  emoji: '🗺️', desc: 'Built itineraries for 3+ trips',       check: s => s.itineraryCount >= 3, progress: s => `${Math.min(s.itineraryCount, 3)}/3` },
-  { id: 'globe_elite',    name: 'Globe Elite',     emoji: '🌟', desc: 'Visited 7+ destinations',              check: s => s.uniqueDests >= 7, progress: s => `${Math.min(s.uniqueDests, 7)}/7` },
-  { id: 'shutterbug',     name: 'Shutterbug',      emoji: '🎞️', desc: 'Uploaded 50+ trip photos',             check: s => s.photoCount >= 50, progress: s => `${Math.min(s.photoCount, 50)}/50` },
+  { id: 'early_bird',       name: 'Early Bird',       iconId: 'star',     desc: 'Joined the TravelBae crew',           check: () => true },
+  { id: 'first_flight',     name: 'First Flight',     iconId: 'plane',    desc: 'Created your very first trip',         check: s => s.tripCount >= 1 },
+  { id: 'group_leader',     name: 'Group Leader',     iconId: 'users',    desc: 'Set off on a group adventure',         check: s => s.groupCount >= 1 },
+  { id: 'solo_voyager',     name: 'Solo Voyager',     iconId: 'backpack', desc: 'Embraced a solo journey',              check: s => s.soloCount >= 1 },
+  { id: 'globe_trotter',    name: 'Globe Trotter',    iconId: 'globe',    desc: 'Visited 3+ different destinations',    check: s => s.uniqueDests >= 3, progress: s => `${Math.min(s.uniqueDests, 3)}/3` },
+  { id: 'budget_pro',       name: 'Budget Pro',       iconId: 'wallet',   desc: 'Tracked expenses on 3+ trips',         check: s => s.tripsWithExpenses >= 3, progress: s => `${Math.min(s.tripsWithExpenses, 3)}/3` },
+  { id: 'photographer',     name: 'Photographer',     iconId: 'camera',   desc: 'Uploaded 10+ trip photos',             check: s => s.photoCount >= 10, progress: s => `${Math.min(s.photoCount, 10)}/10` },
+  { id: 'trail_blazer',     name: 'Trail Blazer',     iconId: 'flame',    desc: 'Completed 5+ trips',                   check: s => s.completedCount >= 5, progress: s => `${Math.min(s.completedCount, 5)}/5` },
+  { id: 'social_butterfly', name: 'Social Butterfly', iconId: 'share',    desc: 'Saved 5+ trip contacts',               check: s => s.contactCount >= 5, progress: s => `${Math.min(s.contactCount, 5)}/5` },
+  { id: 'master_planner',   name: 'Master Planner',   iconId: 'map',      desc: 'Built itineraries for 3+ trips',       check: s => s.itineraryCount >= 3, progress: s => `${Math.min(s.itineraryCount, 3)}/3` },
+  { id: 'globe_elite',      name: 'Globe Elite',      iconId: 'globe',    desc: 'Visited 7+ destinations',              check: s => s.uniqueDests >= 7, progress: s => `${Math.min(s.uniqueDests, 7)}/7` },
+  { id: 'shutterbug',       name: 'Shutterbug',       iconId: 'film',     desc: 'Uploaded 50+ trip photos',             check: s => s.photoCount >= 50, progress: s => `${Math.min(s.photoCount, 50)}/50` },
 ];
 
 function computeProfileStats(trips) {
@@ -365,22 +378,22 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
     {
       title: 'Your travels',
       items: [
-        { id: 'badges',  iconId: 'badge',   label: 'Badges',       sub: `${earned.length}/${BADGE_DEFS.length} earned · ${earnedPct}%`,                          accent: '#FF6A00', action: 'view' },
-        { id: 'stats',   iconId: 'stats',   label: 'Travel Stats', sub: `${stats.uniqueDests} places · ${totalTravelDays} days`,                                  accent: '#D85B00', action: 'view' },
-        { id: 'history', iconId: 'history', label: 'Past Trips',   sub: `${stats.completedCount} completed trip${stats.completedCount === 1 ? '' : 's'}`,         accent: '#B64C00', action: 'view' },
+        { id: 'badges',  iconId: 'badge',   label: 'Badges',       sub: `${earned.length}/${BADGE_DEFS.length} earned · ${earnedPct}%`,                  accent: '#FF6A00', action: 'view' },
+        { id: 'stats',   iconId: 'stats',   label: 'Travel Stats', sub: `${stats.uniqueDests} places · ${totalTravelDays} days`,                          accent: '#D85B00', action: 'view' },
+        { id: 'history', iconId: 'history', label: 'Past Trips',   sub: `${stats.completedCount} completed trip${stats.completedCount === 1 ? '' : 's'}`, accent: '#B64C00', action: 'view' },
       ],
     },
     {
       title: 'Settings',
       items: [
         { id: 'notifications', iconId: 'notifications', label: 'Notifications', sub: 'Trip reminders and updates', accent: '#FF7A1A', action: 'view' },
-        { id: 'help',          iconId: 'help',          label: 'Help & Support', sub: 'FAQs and contact support', accent: '#CC5600', action: 'view' },
       ],
     },
     {
-      title: 'TravelBae Club',
+      title: 'Support',
       items: [
-        { id: 'support', iconId: 'club', label: 'Rate & Feedback', sub: 'Share your rating and thoughts', accent: '#FF6A00', action: 'view' },
+        { id: 'help',    iconId: 'help',  label: 'Help & Support',  sub: 'FAQs and contact the team',       accent: '#CC5600', action: 'view' },
+        { id: 'support', iconId: 'club',  label: 'Rate & Feedback', sub: 'Share your rating and thoughts',  accent: '#FF6A00', action: 'view' },
         { id: 'share',   iconId: 'share', label: 'Share TravelBae', sub: 'Invite friends to plan together', accent: '#C05000', action: 'share' },
       ],
     },
@@ -408,14 +421,20 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
     <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #fff9f3 34%, #fff4ea 100%)', zIndex: 620, overflowY: 'auto', fontFamily: "'DM Sans',sans-serif" }}>
       <style>{`
         @keyframes pfFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pfBadgePop { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: scale(1); } }
-        @keyframes pfSlideIn { from { opacity: 0; transform: translateX(8px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes pfBadgePop { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }
+        @keyframes pfSlideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes pfBgFloat { from { transform: scale(1.15) translateY(0px); } to { transform: scale(1.22) translateY(-8px); } }
-        .pf-badge:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(255,106,0,0.22); }
+        @keyframes pfItemIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .pf-badge { transition: transform .18s ease, box-shadow .18s ease; }
+        .pf-badge:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(255,106,0,0.25); }
         .pf-badge-locked:hover { transform: translateY(-2px); }
         .pf-avatar-edit:hover { background: #D85B00 !important; }
+        .pf-row { transition: background .12s ease, transform .1s ease; }
         .pf-row:hover { background: #FFF8F2 !important; }
         .pf-row:active { transform: scale(0.995); }
+        .pf-section { animation: pfItemIn .28s ease-out both; }
+        details summary::-webkit-details-marker { display: none; }
+        details[open] summary .pf-faq-chevron { transform: rotate(90deg); }
       `}</style>
 
       {/* Header */}
@@ -504,11 +523,11 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           {/* Identity card */}
           <div style={{ padding: '1.5rem 1.25rem 0' }}>
             <div style={{
-              borderRadius: 22, padding: '1.75rem 1.25rem', textAlign: 'center', color: '#fff',
+              borderRadius: 22, padding: '1rem 1.25rem', textAlign: 'center', color: '#fff',
               position: 'relative', overflow: 'hidden',
               background: avatar ? 'transparent' : 'linear-gradient(135deg,#FF6A00,#E35E00)',
               boxShadow: avatar ? '0 10px 40px rgba(0,0,0,0.28)' : '0 10px 30px rgba(227,94,0,0.25)',
-              minHeight: 220,
+              minHeight: 158,
             }}>
               {/* Blurred avatar background */}
               {avatar && (
@@ -537,11 +556,11 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               {/* Avatar ring */}
               <div style={{ position: 'relative', zIndex: 2, display: 'inline-block', marginBottom: 14 }}>
                 <div style={{
-                  width: 110, height: 110, borderRadius: '50%',
+                  width: 84, height: 84, borderRadius: '50%',
                   background: avatar ? `url(${avatar}) center/cover` : 'rgba(255,255,255,0.18)',
                   border: avatar ? '3px solid rgba(255,255,255,0.6)' : '3px solid rgba(255,255,255,0.35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 38, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: '#fff',
+                  fontSize: 28, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: '#fff',
                   boxShadow: avatar ? '0 8px 32px rgba(0,0,0,0.35), 0 0 0 5px rgba(255,255,255,0.12)' : '0 8px 24px rgba(0,0,0,0.15)',
                 }}>
                   {!avatar && initials}
@@ -565,39 +584,19 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               )}
 
               <div style={{ position: 'relative', zIndex: 2 }}>
-                {editingName ? (
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'center', maxWidth: 260, margin: '0 auto' }}>
-                    <input
-                      autoFocus
-                      value={name}
-                      onChange={e => setName(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') { setName(profile.name || ''); setEditingName(false); } }}
-                      style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: 'none', fontSize: 15, fontWeight: 600, textAlign: 'center', fontFamily: "'Sora',sans-serif", outline: 'none', background: 'rgba(255,255,255,0.95)', color: '#0F6E56' }}
-                      placeholder="Your name"
-                      maxLength={30}
-                    />
-                    <button onClick={saveName} style={{ padding: '8px 12px', borderRadius: 10, border: 'none', background: '#fff', color: '#0F6E56', fontWeight: 700, fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>✓</button>
-                  </div>
-                ) : (
-                  <div>
-                    <div onClick={() => setEditingName(true)} style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px', textShadow: avatar ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>
-                        {name || 'Tap to add name'}
-                      </div>
-                      <span style={{ fontSize: 11, opacity: 0.92, border: '1px solid rgba(255,255,255,0.45)', borderRadius: 8, padding: '1px 6px' }}>Edit</span>
-                    </div>
-                    <div style={{ marginTop: 8 }}>
-                      <button
-                        onClick={() => setView('profile')}
-                        style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.92)', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.28)', borderRadius: 20, padding: '5px 20px', cursor: 'pointer', letterSpacing: 0.3, backdropFilter: 'blur(8px)', transition: 'background .15s' }}
-                      >
-                        View
-                      </button>
-                    </div>
-                  </div>
-                )}
-                <div style={{ fontSize: 12, opacity: 0.85, marginTop: 6 }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, letterSpacing: '-0.3px', textShadow: avatar ? '0 1px 8px rgba(0,0,0,0.5)' : 'none' }}>
+                  {name || 'Traveller'}
+                </div>
+                <div style={{ fontSize: 11.5, opacity: 0.82, marginTop: 4 }}>
                   {stats.tripCount} trip{stats.tripCount === 1 ? '' : 's'} · {stats.uniqueDests} destination{stats.uniqueDests === 1 ? '' : 's'}
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <button
+                    onClick={() => setView('profile')}
+                    style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.92)', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.28)', borderRadius: 20, padding: '5px 20px', cursor: 'pointer', letterSpacing: 0.3, backdropFilter: 'blur(8px)', transition: 'background .15s' }}
+                  >
+                    View profile
+                  </button>
                 </div>
               </div>
             </div>
@@ -662,12 +661,13 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   onClick={onLogout}
                   style={{
                     width: '100%', padding: '13px', borderRadius: 14,
-                    border: '0.5px solid #F5C4B3', background: '#fff', color: '#993C1D',
+                    border: '1px solid rgba(255,106,0,0.28)', background: '#fff', color: AC,
                     fontSize: 14, fontWeight: 600, cursor: 'pointer',
                     fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    transition: 'background .15s',
                   }}
                 >
-                  <DrawerIcon id="logout" size={14} color="#993C1D" />
+                  <DrawerIcon id="logout" size={14} color={AC} />
                   <span>Log out</span>
                 </button>
               )}
@@ -676,9 +676,10 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   onClick={onDeleteAccount}
                   style={{
                     width: '100%', padding: '13px', borderRadius: 14,
-                    border: '0.5px solid #C44545', background: '#C44545', color: '#fff',
+                    border: '1px solid rgba(255,106,0,0.38)', background: AC, color: '#fff',
                     fontSize: 14, fontWeight: 600, cursor: 'pointer',
                     fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    transition: 'opacity .15s',
                   }}
                 >
                   <DrawerIcon id="trash" size={14} color="#fff" />
@@ -699,12 +700,12 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
 
           {/* Mini hero */}
           <div style={{
-            borderRadius: 22, padding: '1.75rem 1.25rem 1.5rem', color: '#fff',
+            borderRadius: 22, padding: '1.25rem 1.25rem 1.25rem', color: '#fff',
             textAlign: 'center', marginBottom: '1.25rem',
             position: 'relative', overflow: 'hidden',
-            background: avatar ? 'transparent' : 'linear-gradient(135deg,#1D9E75 0%,#0d6647 100%)',
-            boxShadow: '0 12px 36px rgba(15,110,86,0.2)',
-            minHeight: 170,
+            background: avatar ? 'transparent' : `linear-gradient(135deg,${AC} 0%,#D85B00 100%)`,
+            boxShadow: `0 12px 36px rgba(255,106,0,0.2)`,
+            minHeight: 140,
           }}>
             {avatar && (
               <>
@@ -738,11 +739,11 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Personal</div>
                   <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
                     {[
-                      userProfile.dateOfBirth ? { emoji: '🎂', label: 'Date of birth', value: (() => { try { const d = new Date(userProfile.dateOfBirth); const age = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000)); return `${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} · ${age} yrs`; } catch { return userProfile.dateOfBirth; } })() } : null,
-                      userProfile.gender ? { emoji: '👤', label: 'Gender', value: userProfile.gender.charAt(0).toUpperCase() + userProfile.gender.slice(1).replace(/-/g, ' ') } : null,
+                      userProfile.dateOfBirth ? { iconId: 'history', label: 'Date of birth', value: (() => { try { const d = new Date(userProfile.dateOfBirth); const age = Math.floor((Date.now() - d.getTime()) / (365.25 * 24 * 3600 * 1000)); return `${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} · ${age} yrs`; } catch { return userProfile.dateOfBirth; } })() } : null,
+                      userProfile.gender ? { iconId: 'about', label: 'Gender', value: userProfile.gender.charAt(0).toUpperCase() + userProfile.gender.slice(1).replace(/-/g, ' ') } : null,
                     ].filter(Boolean).map((row, i, arr) => (
                       <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
-                        <div style={{ fontSize: 20, width: 26, textAlign: 'center', flexShrink: 0 }}>{row.emoji}</div>
+                        <div style={{ width: 34, height: 34, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><DrawerIcon id={row.iconId} size={16} color={AC} /></div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>{row.label}</div>
                           <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{row.value}</div>
@@ -759,7 +760,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Location</div>
                   <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px' }}>
-                      <div style={{ fontSize: 20, width: 26, textAlign: 'center', flexShrink: 0 }}>📍</div>
+                      <div style={{ width: 34, height: 34, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><DrawerIcon id="pin" size={16} color={AC} /></div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>From</div>
                         <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{[userProfile.hometown, userProfile.country].filter(Boolean).join(', ')}</div>
@@ -775,12 +776,12 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Emergency</div>
                   <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
                     {[
-                      userProfile.emergencyName ? { emoji: '🆘', label: 'Contact', value: `${userProfile.emergencyName}${userProfile.emergencyRelation ? ` · ${userProfile.emergencyRelation}` : ''}` } : null,
-                      userProfile.emergencyPhone ? { emoji: '📞', label: 'Emergency phone', value: userProfile.emergencyPhone } : null,
-                      userProfile.phone ? { emoji: '📱', label: 'Your phone', value: userProfile.phone } : null,
+                      userProfile.emergencyName ? { iconId: 'users', label: 'Contact', value: `${userProfile.emergencyName}${userProfile.emergencyRelation ? ` · ${userProfile.emergencyRelation}` : ''}` } : null,
+                      userProfile.emergencyPhone ? { iconId: 'notifications', label: 'Emergency phone', value: userProfile.emergencyPhone } : null,
+                      userProfile.phone ? { iconId: 'mail', label: 'Your phone', value: userProfile.phone } : null,
                     ].filter(Boolean).map((row, i, arr) => (
                       <div key={row.label} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
-                        <div style={{ fontSize: 20, width: 26, textAlign: 'center', flexShrink: 0 }}>{row.emoji}</div>
+                        <div style={{ width: 34, height: 34, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><DrawerIcon id={row.iconId} size={16} color={AC} /></div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>{row.label}</div>
                           <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>{row.value}</div>
@@ -797,11 +798,11 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Health</div>
                   <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 16, overflow: 'hidden', boxShadow: '0 4px 14px rgba(0,0,0,0.04)' }}>
                     {[
-                      userProfile.bloodGroup ? { emoji: '🩸', label: 'Blood group', value: userProfile.bloodGroup } : null,
-                      userProfile.medicalNotes ? { emoji: '💊', label: 'Medical notes', value: userProfile.medicalNotes } : null,
+                      userProfile.bloodGroup ? { iconId: 'flame', label: 'Blood group', value: userProfile.bloodGroup } : null,
+                      userProfile.medicalNotes ? { iconId: 'help', label: 'Medical notes', value: userProfile.medicalNotes } : null,
                     ].filter(Boolean).map((row, i, arr) => (
                       <div key={row.label} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '13px 16px', borderBottom: i < arr.length - 1 ? '0.5px solid rgba(0,0,0,0.05)' : 'none' }}>
-                        <div style={{ fontSize: 20, width: 26, textAlign: 'center', flexShrink: 0, marginTop: 2 }}>{row.emoji}</div>
+                        <div style={{ width: 34, height: 34, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><DrawerIcon id={row.iconId} size={16} color={AC} /></div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ fontSize: 10, fontWeight: 700, color: '#9a9a96', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 2 }}>{row.label}</div>
                           <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18', lineHeight: 1.5 }}>{row.value}</div>
@@ -815,27 +816,31 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               {/* Empty state */}
               {!userProfile.dateOfBirth && !userProfile.gender && !userProfile.hometown && !userProfile.country && !userProfile.emergencyName && !userProfile.bloodGroup && (
                 <div style={{ textAlign: 'center', padding: '2.5rem 1rem 1.5rem', color: '#9a9a96' }}>
-                  <div style={{ fontSize: 40, marginBottom: 10 }}>👤</div>
+                  <div style={{ width: 52, height: 52, background: AC_SOFT, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                    <DrawerIcon id="about" size={26} color={AC} />
+                  </div>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 600, color: '#1a1a18', marginBottom: 6 }}>Nothing filled in yet</div>
                   <div style={{ fontSize: 13, lineHeight: 1.55 }}>Tap Update below to add your details.</div>
                 </div>
               )}
 
               {onOpenOnboarding && (
-                <button onClick={onOpenOnboarding} style={{ width: '100%', padding: '14px', borderRadius: 16, border: 'none', background: 'linear-gradient(135deg,#1D9E75,#0d6647)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 6px 20px rgba(29,158,117,0.3)', transition: 'opacity .15s' }}>
+                <button onClick={onOpenOnboarding} style={{ width: '100%', padding: '14px', borderRadius: 16, border: 'none', background: `linear-gradient(135deg,${AC},#D85B00)`, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 6px 20px rgba(255,106,0,0.3)', transition: 'opacity .15s' }}>
                   Update profile
                 </button>
               )}
             </>
           ) : (
             <div style={{ textAlign: 'center', padding: '3rem 1rem 1.5rem' }}>
-              <div style={{ fontSize: 46, marginBottom: 14 }}>✨</div>
+              <div style={{ width: 58, height: 58, background: AC_SOFT, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                <DrawerIcon id="star" size={30} color={AC} />
+              </div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#1a1a18', marginBottom: 8 }}>Set up your profile</div>
               <div style={{ fontSize: 13.5, color: '#6b6b68', lineHeight: 1.65, maxWidth: 280, margin: '0 auto 28px' }}>
                 Add personal details, emergency contacts and health info — all private, all yours.
               </div>
               {onOpenOnboarding && (
-                <button onClick={onOpenOnboarding} style={{ padding: '13px 36px', borderRadius: 16, border: 'none', background: 'linear-gradient(135deg,#1D9E75,#0d6647)', color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 6px 20px rgba(29,158,117,0.3)' }}>
+                <button onClick={onOpenOnboarding} style={{ padding: '13px 36px', borderRadius: 16, border: 'none', background: `linear-gradient(135deg,${AC},#D85B00)`, color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 6px 20px rgba(255,106,0,0.3)' }}>
                   Get started
                 </button>
               )}
@@ -847,32 +852,39 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       {/* ════════ BADGES VIEW ════════ */}
       {view === 'badges' && (
         <div style={{ animation: 'pfSlideIn .2s ease-out' }}>
-          <div style={{ padding: '1.25rem 1.25rem 0.5rem', display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700 }}>🏆 Travel Badges</div>
+          <div style={{ padding: '1.25rem 1.25rem 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <DrawerIcon id="badge" size={17} color={AC} />
+              </div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#1a1a18' }}>Travel Badges</div>
+            </div>
             <div style={{ fontSize: 12, color: '#6b6b68' }}>{earned.length}/{BADGE_DEFS.length} · {earnedPct}%</div>
           </div>
           <div style={{ padding: '0 1.25rem' }}>
-            <div style={{ height: 6, background: '#E8E6DE', borderRadius: 6, overflow: 'hidden' }}>
-              <div style={{ width: `${earnedPct}%`, height: '100%', background: 'linear-gradient(90deg,#1D9E75,#0F6E56)', transition: 'width .4s' }} />
+            <div style={{ height: 5, background: '#EDE9E0', borderRadius: 6, overflow: 'hidden' }}>
+              <div style={{ width: `${earnedPct}%`, height: '100%', background: `linear-gradient(90deg,${AC},#D85B00)`, transition: 'width .5s ease' }} />
             </div>
           </div>
 
           {earned.length > 0 && (
             <>
-              <div style={{ padding: '1.25rem 1.25rem 0.5rem', fontSize: 11, color: '#0F6E56', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>Earned</div>
+              <div style={{ padding: '1.25rem 1.25rem 0.5rem', fontSize: 11, color: AC, fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase' }}>Earned</div>
               <div style={{ padding: '0 1.25rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
                 {earned.map((b, i) => (
                   <div key={b.id} className="pf-badge" style={{
-                    background: 'linear-gradient(135deg,#fff,#F0FAF5)',
-                    border: '0.5px solid #9FE1CB',
+                    background: 'linear-gradient(145deg,#fff,#FFF4EA)',
+                    border: '0.5px solid rgba(255,106,0,0.22)',
                     borderRadius: 14, padding: '14px 10px', textAlign: 'center',
-                    cursor: 'default', transition: 'all .18s',
+                    cursor: 'default',
                     animation: `pfBadgePop .3s ease-out ${i * 0.04}s both`,
                     position: 'relative', overflow: 'hidden',
                   }}>
-                    <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 700, color: '#0F6E56', background: '#E1F5EE', padding: '2px 6px', borderRadius: 6 }}>✓</div>
-                    <div style={{ fontSize: 32, marginBottom: 6, lineHeight: 1 }}>{b.emoji}</div>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#0F6E56', marginBottom: 3 }}>{b.name}</div>
+                    <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 700, color: AC, background: AC_SOFT, padding: '2px 6px', borderRadius: 6, letterSpacing: 0.3 }}>earned</div>
+                    <div style={{ width: 44, height: 44, background: AC_SOFT, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
+                      <DrawerIcon id={b.iconId} size={22} color={AC} />
+                    </div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#1a1a18', marginBottom: 3 }}>{b.name}</div>
                     <div style={{ fontSize: 10.5, color: '#6b6b68', lineHeight: 1.4 }}>{b.desc}</div>
                   </div>
                 ))}
@@ -886,15 +898,17 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               <div style={{ padding: '0 1.25rem 2rem', display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(140px,1fr))', gap: 10 }}>
                 {locked.map(b => (
                   <div key={b.id} className="pf-badge-locked" style={{
-                    background: '#fff', border: '0.5px dashed rgba(0,0,0,0.15)',
+                    background: '#fff', border: '0.5px dashed rgba(0,0,0,0.12)',
                     borderRadius: 14, padding: '14px 10px', textAlign: 'center',
-                    transition: 'all .18s', opacity: 0.78, position: 'relative',
+                    transition: 'all .18s', opacity: 0.7, position: 'relative',
                   }}>
-                    <div style={{ fontSize: 32, marginBottom: 6, lineHeight: 1, filter: 'grayscale(0.7)', opacity: 0.55 }}>{b.emoji}</div>
+                    <div style={{ width: 44, height: 44, background: '#F5F3F0', borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 8px' }}>
+                      <DrawerIcon id={b.iconId} size={22} color="#C0B8AF" />
+                    </div>
                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#6b6b68', marginBottom: 3 }}>{b.name}</div>
                     <div style={{ fontSize: 10.5, color: '#9a9a96', lineHeight: 1.4 }}>{b.desc}</div>
                     {b.progress && (
-                      <div style={{ marginTop: 8, fontSize: 10, fontWeight: 700, color: '#1D9E75', background: '#F1EFE8', borderRadius: 8, padding: '2px 8px', display: 'inline-block' }}>
+                      <div style={{ marginTop: 8, fontSize: 10, fontWeight: 700, color: AC, background: AC_SOFT, borderRadius: 8, padding: '2px 8px', display: 'inline-block' }}>
                         {b.progress(stats)}
                       </div>
                     )}
@@ -928,12 +942,12 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   onClick={() => setSpanFilter(opt.id)}
                   style={{
                     flex: 1, padding: '8px 4px', borderRadius: 10, border: 'none',
-                    background: active ? '#1D9E75' : 'transparent',
+                    background: active ? AC : 'transparent',
                     color: active ? '#fff' : '#6b6b68',
                     fontSize: 12, fontWeight: active ? 700 : 500,
                     cursor: 'pointer', fontFamily: "'DM Sans',sans-serif",
                     transition: 'all .18s',
-                    boxShadow: active ? '0 3px 10px rgba(29,158,117,0.25)' : 'none',
+                    boxShadow: active ? '0 3px 10px rgba(255,106,0,0.25)' : 'none',
                   }}
                 >
                   {opt.label}
@@ -945,20 +959,22 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           {/* ── Summary cards ── */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
             {[
-              { emoji: '🧳', label: 'Trips',        val: spanStats.tripCount },
-              { emoji: '📍', label: 'Destinations', val: spanStats.uniqueDests },
-              { emoji: '📅', label: 'Travel Days',  val: spanTravelDays },
-              { emoji: '💰', label: 'Total Spent',  val: fmtMoney(spanTotalSpend) },
-              { emoji: '🤝', label: 'Group Trips',  val: spanStats.groupCount },
-              { emoji: '🎒', label: 'Solo Trips',   val: spanStats.soloCount },
+              { iconId: 'suitcase', label: 'Trips',        val: spanStats.tripCount },
+              { iconId: 'pin',      label: 'Destinations', val: spanStats.uniqueDests },
+              { iconId: 'history',  label: 'Travel Days',  val: spanTravelDays },
+              { iconId: 'wallet',   label: 'Total Spent',  val: fmtMoney(spanTotalSpend) },
+              { iconId: 'users',    label: 'Group Trips',  val: spanStats.groupCount },
+              { iconId: 'backpack', label: 'Solo Trips',   val: spanStats.soloCount },
             ].map(s => (
               <div key={s.label} style={{
-                background: 'linear-gradient(160deg,#ffffff,#fafaf7)',
+                background: '#fff',
                 border: '0.5px solid rgba(0,0,0,0.08)',
                 borderRadius: 14, padding: '14px 16px',
                 boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
               }}>
-                <div style={{ fontSize: 22, marginBottom: 6 }}>{s.emoji}</div>
+                <div style={{ width: 32, height: 32, background: AC_SOFT, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                  <DrawerIcon id={s.iconId} size={16} color={AC} />
+                </div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 20, fontWeight: 700, color: '#1a1a18' }}>{s.val}</div>
                 <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 600, marginTop: 2 }}>{s.label}</div>
               </div>
@@ -973,8 +989,9 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
               borderRadius: 14, padding: '14px 16px',
               boxShadow: '0 4px 14px rgba(0,0,0,0.04)',
             }}>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#1a1a18', marginBottom: 12 }}>
-                📍 Top Destinations
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#1a1a18', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <DrawerIcon id="pin" size={14} color={AC} />
+                Top Destinations
               </div>
               {spanTopDests.map(([dest, count], i) => {
                 const pct = Math.round((count / spanFilteredTrips.length) * 100);
@@ -988,7 +1005,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                       <div style={{
                         height: '100%', borderRadius: 99,
                         width: `${pct}%`,
-                        background: 'linear-gradient(90deg,#1D9E75,#0F6E56)',
+                        background: `linear-gradient(90deg,${AC},#D85B00)`,
                         transition: 'width .4s ease',
                       }} />
                     </div>
@@ -1001,7 +1018,9 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           {/* Empty state */}
           {spanFilteredTrips.length === 0 && (
             <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: '#9a9a96' }}>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>🗺️</div>
+              <div style={{ width: 48, height: 48, background: AC_SOFT, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                <DrawerIcon id="map" size={24} color={AC} />
+              </div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 600, color: '#1a1a18', marginBottom: 6 }}>
                 No trips in this period
               </div>
@@ -1020,8 +1039,10 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           {(() => {
             const pastList = tripList.filter(t => t.completed);
             return pastList.length === 0 ? (
-              <div style={{ background: '#fff', border: '0.5px dashed rgba(0,0,0,0.15)', borderRadius: 14, padding: '2rem 1rem', textAlign: 'center', color: '#6b6b68' }}>
-                <div style={{ fontSize: 38, marginBottom: 6 }}>🧳</div>
+              <div style={{ background: '#fff', border: '0.5px dashed rgba(255,106,0,0.2)', borderRadius: 14, padding: '2rem 1rem', textAlign: 'center', color: '#6b6b68' }}>
+                <div style={{ width: 52, height: 52, background: AC_SOFT, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                  <DrawerIcon id="suitcase" size={26} color={AC} />
+                </div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>No past trips yet</div>
                 <div style={{ fontSize: 12, marginTop: 4 }}>Mark a trip as completed and it will appear here.</div>
               </div>
@@ -1038,10 +1059,10 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                           {t.isSolo && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#EEEDFE', color: '#534AB7', flexShrink: 0 }}>SOLO</span>}
                         </div>
                         <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 3 }}>
-                          {t.destination && <span>📍 {t.destination}</span>}
+                          {t.destination && <span>{t.destination}</span>}
                           {dateRange && <span style={{ color: '#9a9a96' }}> · {dateRange}</span>}
-                          {spend > 0 && <span> · ₹{Math.round(spend).toLocaleString('en-IN')}</span>}
-                          {(t.photos || []).length > 0 && <span> · {(t.photos || []).length} 📸</span>}
+                          {spend > 0 && <span> · {currencyMeta.symbol}{Math.round(spend).toLocaleString('en-IN')}</span>}
+                          {(t.photos || []).length > 0 && <span> · {(t.photos || []).length} photos</span>}
                         </div>
                       </div>
                     </div>
@@ -1050,7 +1071,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                         {onMarkActive && (
                           <button
                             onClick={() => onMarkActive(t.id)}
-                            style={{ fontSize: 11, padding: '5px 12px', borderRadius: 10, border: '1px solid #9FE1CB', background: '#E1F5EE', color: '#0F6E56', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: 700 }}>
+                            style={{ fontSize: 11, padding: '5px 12px', borderRadius: 10, border: `1px solid rgba(255,106,0,0.28)`, background: AC_SOFT, color: AC, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: 700 }}>
                             Restore
                           </button>
                         )}
@@ -1204,7 +1225,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
             ].map((it, idx) => (
               <details key={it.q} style={{ padding: '12px 16px', borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)' }}>
                 <summary style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ color: '#1D9E75', fontWeight: 700 }}>›</span> {it.q}
+                  <span className="pf-faq-chevron" style={{ color: AC, fontWeight: 700, display: 'inline-block', transition: 'transform .2s' }}>›</span> {it.q}
                 </summary>
                 <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55, marginTop: 8, paddingLeft: 16 }}>{it.a}</div>
               </details>
@@ -1214,7 +1235,9 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', margin: '0 0 8px 4px' }}>Contact us</div>
           <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden' }}>
             <a href="mailto:support@travelbae.app" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', textDecoration: 'none', color: 'inherit' }}>
-              <div style={{ fontSize: 18, width: 22, textAlign: 'center' }}>✉️</div>
+              <div style={{ width: 34, height: 34, background: AC_SOFT, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <DrawerIcon id="mail" size={16} color={AC} />
+              </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>Email support</div>
                 <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>support@travelbae.app — usually replies within a day</div>
@@ -1228,20 +1251,24 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       {/* ════════ PRIVACY VIEW ════════ */}
       {view === 'privacy' && (
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
-          <div style={{ background: 'linear-gradient(135deg,#E1F5EE,#F0FAF5)', border: '0.5px solid #9FE1CB', borderRadius: 14, padding: '14px 16px', marginBottom: 12, display: 'flex', gap: 10 }}>
-            <div style={{ fontSize: 22, lineHeight: 1 }}>🔒</div>
-            <div style={{ fontSize: 12.5, color: '#0F6E56', lineHeight: 1.5 }}>
+          <div style={{ background: 'linear-gradient(135deg,#FFF4EA,#fff)', border: '0.5px solid rgba(255,106,0,0.22)', borderRadius: 14, padding: '14px 16px', marginBottom: 12, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+            <div style={{ width: 34, height: 34, background: AC_SOFT, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <DrawerIcon id="lock" size={16} color={AC} />
+            </div>
+            <div style={{ fontSize: 12.5, color: '#1a1a18', lineHeight: 1.55 }}>
               Your photos, expenses and trip data are <strong>end-to-end encrypted</strong> and visible only to you and your trip mates. We never share, sell, or use your content to train any models.
             </div>
           </div>
           {[
-            { icon: '📸', title: 'Photos', body: 'Stored encrypted in your private trip bucket. Only your trip mates can view them.' },
-            { icon: '💰', title: 'Expenses & contacts', body: 'Synced privately to your account. Visible only inside the specific trip.' },
-            { icon: '📍', title: 'Location', body: 'We never track your real-time location. Destinations come from what you type.' },
-            { icon: '🗑️', title: 'Right to delete', body: 'Delete a trip and all its photos, expenses and contacts disappear permanently.' },
+            { iconId: 'camera',  title: 'Photos',              body: 'Stored encrypted in your private trip bucket. Only your trip mates can view them.' },
+            { iconId: 'wallet',  title: 'Expenses & contacts', body: 'Synced privately to your account. Visible only inside the specific trip.' },
+            { iconId: 'pin',     title: 'Location',            body: 'We never track your real-time location. Destinations come from what you type.' },
+            { iconId: 'trash',   title: 'Right to delete',     body: 'Delete a trip and all its photos, expenses and contacts disappear permanently.' },
           ].map(it => (
-            <div key={it.title} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', marginBottom: 10, display: 'flex', gap: 12 }}>
-              <div style={{ fontSize: 20, lineHeight: 1, flexShrink: 0 }}>{it.icon}</div>
+            <div key={it.title} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.07)', borderRadius: 14, padding: '12px 14px', marginBottom: 10, display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+              <div style={{ width: 34, height: 34, background: AC_SOFT, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <DrawerIcon id={it.iconId} size={16} color={AC} />
+              </div>
               <div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13.5, fontWeight: 600, color: '#1a1a18', marginBottom: 3 }}>{it.title}</div>
                 <div style={{ fontSize: 11.5, color: '#6b6b68', lineHeight: 1.5 }}>{it.body}</div>
@@ -1300,19 +1327,21 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', maxWidth: 680 }}>
           {/* Hero */}
           <div style={{ textAlign: 'center', padding: '1rem 1rem 1.5rem' }}>
-            <div style={{ width: 78, height: 78, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40, margin: '0 auto 14px', boxShadow: '0 10px 28px rgba(29,158,117,0.35)' }}>✈️</div>
+            <div style={{ width: 78, height: 78, background: `linear-gradient(135deg,${AC},#D85B00)`, borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px', boxShadow: '0 10px 28px rgba(255,106,0,0.35)' }}>
+              <DrawerIcon id="plane" size={36} color="#fff" />
+            </div>
             <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto' }}>
               <img src={bglessLogo} alt="TravelBae" style={{ height: 52, width: 'auto', objectFit: 'contain' }} />
             </div>
             <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4, fontStyle: 'italic' }}>Plan, split, explore — together.</div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, padding: '4px 12px', borderRadius: 12, background: '#E1F5EE', border: '0.5px solid #9FE1CB', fontSize: 11, color: '#0F6E56', fontWeight: 600 }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, padding: '4px 12px', borderRadius: 12, background: AC_SOFT, border: `0.5px solid rgba(255,106,0,0.28)`, fontSize: 11, color: AC, fontWeight: 600 }}>
               <span>v1.0.0</span> · <span>Build 2026.05</span>
             </div>
           </div>
 
           {/* What is TravelBae */}
-          <div style={{ background: 'linear-gradient(135deg,#fff,#F0FAF5)', border: '0.5px solid #9FE1CB', borderRadius: 16, padding: '18px 18px', marginBottom: 12 }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#0F6E56', marginBottom: 8 }}>What is <TBLogo h={15} />?</div>
+          <div style={{ background: 'linear-gradient(145deg,#fff,#FFF4EA)', border: '0.5px solid rgba(255,106,0,0.18)', borderRadius: 16, padding: '18px 18px', marginBottom: 12 }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: AC, marginBottom: 8 }}>What is <TBLogo h={15} />?</div>
             <div style={{ fontSize: 13, color: '#1a1a18', lineHeight: 1.65 }}>
               <TBLogo h={13} /> is a calm, all-in-one companion for travellers who'd rather spend their energy on the journey than the logistics. From the first spark of an idea to the photos you scroll through years later, every part of a trip — planning, money, people, memories — lives in one place. No spreadsheets, no scattered group chats, no awkward "who owes whom" maths.
             </div>
@@ -1330,13 +1359,15 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 16, padding: '18px 18px 14px', marginBottom: 12 }}>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#1a1a18', marginBottom: 12 }}>What you can do</div>
             {[
-              { icon: '🗺️', title: 'Plan',    body: 'Generate AI itineraries, pin must-see places, and shape each day around your pace.' },
-              { icon: '💳', title: 'Split',   body: 'Add expenses on the go. Balances and settle-up suggestions appear instantly.' },
-              { icon: '🎒', title: 'Solo or together', body: 'Spin up a solo journey or a group trip — TravelBae adapts to either mode.' },
-              { icon: '📸', title: 'Remember', body: 'Private photo folders per traveller, encrypted and visible only to your trip mates.' },
+              { iconId: 'map',     title: 'Plan',             body: 'Generate AI itineraries, pin must-see places, and shape each day around your pace.' },
+              { iconId: 'wallet',  title: 'Split',            body: 'Add expenses on the go. Balances and settle-up suggestions appear instantly.' },
+              { iconId: 'users',   title: 'Solo or together', body: 'Spin up a solo journey or a group trip — TravelBae adapts to either mode.' },
+              { iconId: 'camera',  title: 'Remember',         body: 'Private photo folders per traveller, encrypted and visible only to your trip mates.' },
             ].map((f, idx) => (
               <div key={f.title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingTop: idx === 0 ? 0 : 10, paddingBottom: 10, borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.05)' }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, background: '#F0FAF5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, flexShrink: 0 }}>{f.icon}</div>
+                <div style={{ width: 34, height: 34, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <DrawerIcon id={f.iconId} size={16} color={AC} />
+                </div>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13.5, fontWeight: 700, color: '#1a1a18', marginBottom: 2 }}>{f.title}</div>
                   <div style={{ fontSize: 12, color: '#6b6b68', lineHeight: 1.55 }}>{withLogo(f.body, 12)}</div>
@@ -1350,13 +1381,15 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#1a1a18', marginBottom: 10 }}>What we stand for</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
               {[
-                { icon: '🔒', t: 'Privacy first',    s: 'Your data is yours. Encrypted, never sold.' },
-                { icon: '🧘', t: 'Calm by design',    s: 'No dark patterns. No noise. Just clarity.' },
-                { icon: '🤝', t: 'Built for groups',  s: 'Travelling together should feel easy.' },
-                { icon: '🌱', t: 'Made by travellers', s: 'Crafted by people who love going places.' },
+                { iconId: 'lock',    t: 'Privacy first',     s: 'Your data is yours. Encrypted, never sold.' },
+                { iconId: 'leaf',    t: 'Calm by design',    s: 'No dark patterns. No noise. Just clarity.' },
+                { iconId: 'users',   t: 'Built for groups',  s: 'Travelling together should feel easy.' },
+                { iconId: 'plane',   t: 'Made by travellers', s: 'Crafted by people who love going places.' },
               ].map(v => (
-                <div key={v.t} style={{ padding: '10px 12px', background: '#fafaf6', borderRadius: 12, border: '0.5px solid rgba(0,0,0,0.05)' }}>
-                  <div style={{ fontSize: 20, marginBottom: 4 }}>{v.icon}</div>
+                <div key={v.t} style={{ padding: '10px 12px', background: '#FAFAF8', borderRadius: 12, border: '0.5px solid rgba(0,0,0,0.05)' }}>
+                  <div style={{ width: 30, height: 30, background: AC_SOFT, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6 }}>
+                    <DrawerIcon id={v.iconId} size={15} color={AC} />
+                  </div>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 12.5, fontWeight: 700, color: '#1a1a18' }}>{v.t}</div>
                   <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2, lineHeight: 1.45 }}>{v.s}</div>
                 </div>
@@ -1376,7 +1409,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
 
           {/* Footer */}
           <div style={{ textAlign: 'center', fontSize: 12, color: '#6b6b68', marginTop: '1.25rem', paddingBottom: '0.5rem', lineHeight: 1.6 }}>
-            Made with <span style={{ color: '#1D9E75' }}>💚</span> for travellers, everywhere.
+            Made for travellers, everywhere.
           </div>
           <div style={{ textAlign: 'center', fontSize: 11, color: '#9a9a96', paddingBottom: '1rem' }}>
             © 2026 <TBLogo h={11} /> · All rights reserved
