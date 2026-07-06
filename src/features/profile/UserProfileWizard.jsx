@@ -96,12 +96,28 @@ const IC = {
   images:  (c = AC) => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
 };
 
-/* ── Intro feature chips ─────────────────────────────── */
-const INTRO_CHIPS = [
-  { Icon: IC.plane,   label: 'Trip planning'  },
-  { Icon: IC.dollar,  label: 'Expense split'  },
-  { Icon: IC.compass, label: 'Discoveries'    },
-  { Icon: IC.images,  label: 'Photo memories' },
+/* ── Feature cards (step 0) ───────────────────────────── */
+const FEATURES = [
+  {
+    title: 'Smart Day Planner',
+    desc: 'Personalized itineraries, built hour by hour.',
+    Icon: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>,
+  },
+  {
+    title: 'Nearby Essentials',
+    desc: 'Hotels, hospitals & rentals found in seconds.',
+    Icon: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>,
+  },
+  {
+    title: 'Hidden Gems',
+    desc: "Spots most travellers walk right past.",
+    Icon: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
+  },
+  {
+    title: 'Budget & Support',
+    desc: "Track every expense. I'm here 24/7.",
+    Icon: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2" strokeLinecap="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>,
+  },
 ];
 
 /* ── Step Progress Dots ───────────────────────────────── */
@@ -278,6 +294,14 @@ export default function UserProfileWizard({ userName, onDone }) {
     <div style={{ position: 'fixed', inset: 0, zIndex: 1100, background: 'rgba(10,10,10,0.6)', backdropFilter: 'blur(16px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0.75rem', fontFamily: "'DM Sans',system-ui,sans-serif" }}>
       <div style={{ width: '100%', maxWidth: 490, height: 'min(640px,92svh)', background: '#fff', borderRadius: 26, overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 32px 80px rgba(0,0,0,0.3), 0 0 0 1px rgba(0,0,0,0.05)' }}>
         <style>{`
+          @keyframes lumiGlow { 0%,100% { opacity:0.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.07); } }
+          @keyframes lumiFlt1 { 0%,100% { opacity:0.6; transform:translateY(0) scale(1); } 50% { opacity:1; transform:translateY(-5px) scale(1.15); } }
+          @keyframes lumiFlt2 { 0%,100% { opacity:0.3; transform:translateY(0); } 50% { opacity:0.65; transform:translateY(-4px); } }
+          @keyframes lumiFlt3 { 0%,100% { opacity:0.4; transform:translateY(0); } 50% { opacity:0.8; transform:translateY(-3px); } }
+          .lumi-glow { animation:lumiGlow 4s ease-in-out infinite; }
+          .lumi-sp1  { animation:lumiFlt1 2.8s ease-in-out infinite; }
+          .lumi-sp2  { animation:lumiFlt2 2.8s ease-in-out 0.9s infinite; }
+          .lumi-sp3  { animation:lumiFlt3 2.8s ease-in-out 1.7s infinite; }
           .wz-field {
             width:100%; box-sizing:border-box;
             border:1.5px solid #EBE8E2; border-radius:14px;
@@ -309,37 +333,67 @@ export default function UserProfileWizard({ userName, onDone }) {
           <div style={{ display: 'flex', height: '100%', width: `${TOTAL * 100}%`, transform: `translateX(calc(${-step} * ${SW}))`, transition: 'transform .38s cubic-bezier(.16,.84,.24,1.04)' }}>
 
             {/* ━━ STEP 0: Lumi intro ━━ */}
-            <div style={{ width: SW, flex: `0 0 ${SW}`, height: '100%', display: 'flex', overflow: 'hidden' }}>
+            <div style={{ width: SW, flex: `0 0 ${SW}`, height: '100%', overflowY: 'auto', background: '#fff' }}>
 
-              {/* Left: Lumi – centred vertically */}
-              <div style={{ width: '40%', flexShrink: 0, background: '#fff', overflow: 'hidden', position: 'relative' }}>
-                <img src={lumiImg} alt="Lumi"
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', objectPosition: 'center', userSelect: 'none', pointerEvents: 'none' }}
-                />
+              {/* Hero: Lumi + text side by side */}
+              <div style={{ display: 'flex', padding: '1rem 1.25rem 0.75rem', gap: 4, alignItems: 'flex-end' }}>
+
+                {/* Lumi with warm glow + animated sparkles */}
+                <div style={{ flexShrink: 0, width: 148, position: 'relative' }}>
+                  <div className="lumi-glow" style={{ position: 'absolute', top: '10%', left: '5%', width: '90%', height: '82%', background: 'radial-gradient(ellipse at 50% 55%, rgba(255,200,140,0.28) 0%, transparent 65%)', borderRadius: '50%', zIndex: 0 }} />
+                  <svg className="lumi-sp1" style={{ position: 'absolute', top: '10%', right: '6%', zIndex: 2 }} width="12" height="12" viewBox="0 0 24 24" fill={AC}><path d="M12 2L13.5 10.5H22L15 15L17 22.5L12 18.5L7 22.5L9 15L2 10.5H10.5Z"/></svg>
+                  <svg className="lumi-sp2" style={{ position: 'absolute', top: '38%', left: '0%', zIndex: 2 }} width="8" height="8" viewBox="0 0 24 24" fill={AC}><path d="M12 2L13.5 10.5H22L15 15L17 22.5L12 18.5L7 22.5L9 15L2 10.5H10.5Z"/></svg>
+                  <svg className="lumi-sp3" style={{ position: 'absolute', bottom: '22%', right: '10%', zIndex: 2 }} width="9" height="9" viewBox="0 0 24 24" fill={AC}><path d="M12 2L13.5 10.5H22L15 15L17 22.5L12 18.5L7 22.5L9 15L2 10.5H10.5Z"/></svg>
+                  <svg style={{ position: 'absolute', top: '4%', left: '-4%', opacity: 0.22, transform: 'rotate(-25deg)', zIndex: 2 }} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M22 2L11 13"/><path d="M22 2L15 22L11 13L2 9L22 2Z"/></svg>
+                  <svg style={{ position: 'absolute', bottom: '8%', left: '2%', opacity: 0.2, zIndex: 2 }} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <img src={lumiImg} alt="Lumi" style={{ width: '100%', position: 'relative', zIndex: 1, display: 'block' }} />
+                </div>
+
+                {/* Intro text */}
+                <div style={{ flex: 1, paddingBottom: '0.5rem' }}>
+                  <div style={{ fontSize: 11, color: '#ccc', fontWeight: 600, letterSpacing: 0.5, marginBottom: 4 }}>Let&apos;s get to know each other</div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 900, color: '#111', lineHeight: 1.2, marginBottom: 2 }}>Hey {first}!</div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 900, color: AC, lineHeight: 1.05, marginBottom: 8 }}>I&apos;m Lumi.</div>
+                  <div style={{ fontSize: 12, color: '#888', lineHeight: 1.65, marginBottom: 5 }}>Your AI travel companion, planner, and memory keeper.</div>
+                  <div style={{ fontSize: 12, color: '#555', lineHeight: 1.65 }}>From your very first idea to when you get back home — <strong style={{ color: '#1a1a18', fontWeight: 800 }}>I&apos;ve got you.</strong></div>
+                </div>
               </div>
 
-              {/* Right: intro copy */}
-              <div style={{ flex: 1, padding: '1.4rem 1.25rem 1.4rem 0.75rem', display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto' }}>
+              {/* Feature cards 2×2 */}
+              <div style={{ padding: '0 1rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                {FEATURES.map(({ Icon, title, desc }) => (
+                  <div key={title} style={{ background: '#FAFAF8', borderRadius: 14, padding: '11px 10px', border: '1px solid #EEEBE5', display: 'flex', gap: 9, alignItems: 'flex-start' }}>
+                    <div style={{ flexShrink: 0, width: 30, height: 30, borderRadius: 9, background: '#FFF2E8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Icon />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 800, color: '#222', lineHeight: 1.25, marginBottom: 3 }}>{title}</div>
+                      <div style={{ fontSize: 10.5, color: '#999', lineHeight: 1.5 }}>{desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-                {/* Kicker */}
-                <div style={{ fontSize: 11.5, fontWeight: 600, color: '#bbb', marginBottom: 5, letterSpacing: 0.3 }}>
-                  Let&apos;s get to know each other
-                </div>
+              {/* Quote bar */}
+              <div style={{ margin: '0.65rem 1rem 0', padding: '10px 14px', background: '#FFF8F4', borderRadius: 12, border: '1px solid rgba(255,106,0,0.1)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 20, color: AC, opacity: 0.45, lineHeight: 0.8, marginTop: -2, flexShrink: 0 }}>&ldquo;</span>
+                <span style={{ flex: 1, fontSize: 12.5, color: '#999', fontStyle: 'italic' }}>Adventure starts with one hello.</span>
+                <svg width="11" height="11" viewBox="0 0 24 24" fill={AC} opacity="0.45"><path d="M12 2L13.5 10.5H22L15 15L17 22.5L12 18.5L7 22.5L9 15L2 10.5H10.5Z"/></svg>
+              </div>
 
-                {/* Greeting */}
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 900, color: '#111', lineHeight: 1.25, marginBottom: 2 }}>
-                  Hey {first}!
-                </div>
-
-                {/* I'm Lumi */}
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 26, fontWeight: 900, color: AC, lineHeight: 1.1, marginBottom: 10 }}>
-                  I&apos;m Lumi.
-                </div>
-
-                {/* Tagline */}
-                <div style={{ fontSize: 12.5, color: '#888', lineHeight: 1.72 }}>
-                  Your digital travel companion — by your side through every adventure, every destination, every memory.
-                </div>
+              {/* Stats row */}
+              <div style={{ margin: '0.6rem 1rem 1rem', display: 'flex', borderRadius: 12, border: '1px solid #EEEBE5', background: '#FAFAF8', overflow: 'hidden' }}>
+                {[
+                  { svg: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>, value: '50+', label: 'Countries' },
+                  { svg: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>, value: 'Unlimited', label: 'Trips' },
+                  { svg: <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/><circle cx="9" cy="16" r="1" fill={AC}/><circle cx="15" cy="16" r="1" fill={AC}/></svg>, value: 'AI', label: 'Powered' },
+                ].map(({ svg, value, label }, i, arr) => (
+                  <div key={label} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 6px', borderRight: i < arr.length - 1 ? '1px solid #EEEBE5' : 'none' }}>
+                    {svg}
+                    <div style={{ fontSize: 12, fontWeight: 800, color: '#222', marginTop: 4 }}>{value}</div>
+                    <div style={{ fontSize: 10, color: '#bbb', marginTop: 1 }}>{label}</div>
+                  </div>
+                ))}
               </div>
             </div>
 

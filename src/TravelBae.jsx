@@ -1077,9 +1077,7 @@ export default function App() {
           <div className="lg-card-title">
             {authScreen === 'signup' ? 'Create your account' : 'Ready for your next trip?'}
           </div>
-          <div className="lg-card-sub">
-            {authScreen === 'signup' ? 'Sign up and start planning together.' : 'Log in to continue your journey.'}
-          </div>
+          
 
           {/* Name (signup only) */}
           {authScreen === 'signup' && (
