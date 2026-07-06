@@ -776,32 +776,13 @@ export default function App() {
         /* ── Background layer ── */
         .lg-bg { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
 
-        /* Warm radial tint at top */
-        .lg-bg-radial {
-          position:absolute; top:-80px; left:50%; transform:translateX(-50%);
-          width:120%; height:520px;
-          background:radial-gradient(ellipse at 50% 0%, rgba(255,106,0,0.08) 0%, rgba(255,143,61,0.04) 38%, transparent 68%);
-        }
+        /* No tint — pure white background */
+        .lg-bg-radial { display:none; }
 
-        /* Blurred ambient circles */
-        .lg-bg-c1 {
-          position:absolute; top:-50px; right:-70px;
-          width:300px; height:300px; border-radius:50%;
-          background:radial-gradient(circle,rgba(255,106,0,0.10) 0%,transparent 68%);
-          filter:blur(50px);
-        }
-        .lg-bg-c2 {
-          position:absolute; bottom:100px; left:-90px;
-          width:260px; height:260px; border-radius:50%;
-          background:radial-gradient(circle,rgba(255,175,90,0.08) 0%,transparent 68%);
-          filter:blur(55px);
-        }
-        .lg-bg-c3 {
-          position:absolute; top:52%; right:8%;
-          width:170px; height:170px; border-radius:50%;
-          background:radial-gradient(circle,rgba(255,106,0,0.06) 0%,transparent 70%);
-          filter:blur(38px);
-        }
+        /* Blurred ambient circles — removed to keep bg white */
+        .lg-bg-c1 { display:none; }
+        .lg-bg-c2 { display:none; }
+        .lg-bg-c3 { display:none; }
 
         /* World map (continent outlines, very faint) */
         .lg-bg-world { position:absolute; width:100%; bottom:0; left:0; opacity:0.042; }
