@@ -90,22 +90,22 @@ export async function getFxRate(from, to) {
 }
 
 const HERO_TAGLINES = [
-{ icon: '🌿', line: 'Rishikesh, fix me!' },
-{ icon: '🐘', line: 'Coorg said "stay"' },
-{ icon: '🌊', line: 'Goa, off-season vibes?' },
-{ icon: '🎭', line: "Vienna's old town" },
-{ icon: '📵', line: 'Spiti, no signal!' },
-{ icon: '🎒', line: 'Kasol, lost again?' },
-{ icon: '🏔️', line: 'Ladakh called again!' },
-{ icon: '🌿', line: 'Meghalaya, clouds live here' },
-{ icon: '☕', line: 'Hidden cafes, Lisbon' },
-{ icon: '🌴', line: 'Andamans, who needs wifi?' },
-{ icon: '🏯', line: 'Jaipur, dress accordingly!' },
-{ icon: '🌸', line: 'Cherry blossoms, Tokyo' },
-{ icon: '🚂', line: 'Darjeeling, sip slowly.' },
-{ icon: '🌊', line: 'Sunrise surf, Bali' },
-{ icon: '🍵', line: 'Munnar stole me' },
-{ icon: '🛺', line: 'Varanasi never sleeps!' },
+{ icon: '🌿', line1: 'Rishikesh,', line2: 'fix me!' },
+{ icon: '🐘', line1: 'Coorg said', line2: '"stay"' },
+{ icon: '🌊', line1: 'Goa,', line2: 'off-season vibes?' },
+{ icon: '🎭', line1: "Vienna's", line2: 'old town' },
+{ icon: '📵', line1: 'Spiti,', line2: 'no signal!' },
+{ icon: '🎒', line1: 'Kasol,', line2: 'lost again?' },
+{ icon: '🏔️', line1: 'Ladakh', line2: 'called again!' },
+{ icon: '🌿', line1: 'Meghalaya,', line2: 'clouds live here' },
+{ icon: '☕', line1: 'Hidden cafes,', line2: 'Lisbon' },
+{ icon: '🌴', line1: 'Andamans,', line2: 'who needs wifi?' },
+{ icon: '🏯', line1: 'Jaipur,', line2: 'dress accordingly!' },
+{ icon: '🌸', line1: 'Cherry blossoms,', line2: 'Tokyo' },
+{ icon: '🚂', line1: 'Darjeeling,', line2: 'sip slowly.' },
+{ icon: '🌊', line1: 'Sunrise surf,', line2: 'Bali' },
+{ icon: '🍵', line1: 'Munnar', line2: 'stole me' },
+{ icon: '🛺', line1: 'Varanasi', line2: 'never sleeps!' },
 ];
 
 const HERO_GREETINGS = {
@@ -668,78 +668,71 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.8px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'left' }}>
             {greetPhrase}{profileName ? <span style={{ color: '#043D28', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
           </div>
-          <div style={{ overflow: 'hidden', minHeight: 76, marginBottom: 20 }}>
+          <div style={{ overflow: 'hidden', minHeight: 74, marginBottom: 20 }}>
             <div
               key={tagIdx}
               style={{
-                fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12,
-                letterSpacing: '-0.8px', maxWidth: '74%',
-                background: 'linear-gradient(170deg, #0D1108 0%, #0D1108 42%, #1a5c35 100%)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
-                display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                 animation: tagPhase === 'out'
                   ? 'taglineSlideOut 0.28s cubic-bezier(.4,0,.8,.2) both'
                   : 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both',
               }}
             >
-              {HERO_TAGLINES[tagIdx].line}
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', color: '#0D1108', whiteSpace: 'nowrap' }}>
+                {HERO_TAGLINES[tagIdx].line1}
+              </div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', whiteSpace: 'nowrap', background: 'linear-gradient(120deg, #2E7048 0%, #1B4D2C 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                {HERO_TAGLINES[tagIdx].line2}
+              </div>
             </div>
           </div>
           {/* Action cards */}
-          <div style={{ display: 'flex', gap: 9 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {/* New Trip card */}
             <button
               className="tb-hero-card-btn"
               style={{
-                flex: 1, background: 'linear-gradient(145deg, #F56B1E 0%, #E8520A 100%)',
-                borderRadius: 18, border: 'none',
-                padding: '13px 8px 13px 13px', display: 'flex', alignItems: 'center', gap: 10,
-                cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                boxShadow: '0 6px 20px rgba(232,82,10,0.38), 0 2px 6px rgba(232,82,10,0.22)',
-                textAlign: 'left', minHeight: 72,
+                width: '100%', background: '#F26419', borderRadius: 20, border: 'none',
+                padding: '15px 18px', display: 'flex', alignItems: 'center', gap: 16,
+                cursor: 'pointer', position: 'relative', overflow: 'hidden', textAlign: 'left',
+                boxShadow: '0 6px 24px rgba(242,100,25,0.34), inset 0 1px 0 rgba(255,255,255,0.14)',
               }}
               onClick={() => {
                 setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '' });
-                setCreateStep(0);
-                setShowCreate(true);
-                setShowJoin(false);
+                setCreateStep(0); setShowCreate(true); setShowJoin(false);
               }}
             >
-              {/* Top-left inner glow */}
-              <div style={{ position: 'absolute', top: -8, left: -8, width: 48, height: 48, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', pointerEvents: 'none' }} />
-              <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'rgba(255,255,255,0.96)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-                <svg width="19" height="19" viewBox="0 0 22 22" fill="none" stroke="#E8520A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="1.5" y="6" width="19" height="14" rx="2.5"/>
-                  <path d="M7.5 6V4C7.5 3.17 8.17 2.5 9 2.5h4c.83 0 1.5.67 1.5 1.5V6"/>
-                  <line x1="1.5" y1="11" x2="20.5" y2="11"/>
+              <div style={{ position: 'absolute', top: -18, left: -18, width: 66, height: 66, borderRadius: '50%', background: 'rgba(255,255,255,0.09)', pointerEvents: 'none' }} />
+              <div style={{ width: 50, height: 50, borderRadius: '50%', background: 'rgba(255,250,246,0.97)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E8520A" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2.5"/>
+                  <path d="M8 7V5a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2"/>
+                  <line x1="2" y1="12" x2="22" y2="12"/>
                 </svg>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.18, letterSpacing: '-0.2px' }}>New Trip</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.76)', lineHeight: 1.4, marginTop: 2 }}>Plan your next adventure</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', letterSpacing: '-0.3px', lineHeight: 1.2 }}>New Trip</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.76)', marginTop: 3, lineHeight: 1.35 }}>Plan your next adventure</div>
               </div>
-              {/* Decorative dashed arrow */}
-              <svg style={{ position: 'absolute', right: 6, bottom: 5, opacity: 0.18, pointerEvents: 'none' }} width="56" height="44" viewBox="0 0 56 44" fill="none">
-                <path d="M4 36 C 14 22, 34 14, 50 4" stroke="#fff" strokeWidth="1.4" strokeDasharray="4 3" strokeLinecap="round"/>
-                <path d="M50 4 L 46 9" stroke="#fff" strokeWidth="1.4" strokeLinecap="round"/>
-                <path d="M50 4 L 45 2" stroke="#fff" strokeWidth="1.4" strokeLinecap="round"/>
+              <svg style={{ position: 'absolute', right: 14, bottom: 10, opacity: 0.18, pointerEvents: 'none' }} width="72" height="54" viewBox="0 0 72 54" fill="none">
+                <path d="M6 46 C 20 30, 46 18, 64 6" stroke="#fff" strokeWidth="1.5" strokeDasharray="4.5 3.5" strokeLinecap="round"/>
+                <path d="M64 6 L 58 13" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
+                <path d="M64 6 L 57 4" stroke="#fff" strokeWidth="1.5" strokeLinecap="round"/>
               </svg>
             </button>
             {/* Join with Code card */}
             <button
               className="tb-hero-card-btn"
               style={{
-                flex: 1, background: '#fff', borderRadius: 18,
-                border: '1px solid rgba(0,0,0,0.08)',
-                padding: '13px 8px 13px 13px', display: 'flex', alignItems: 'center', gap: 10,
-                cursor: 'pointer', position: 'relative', overflow: 'hidden',
-                boxShadow: '0 3px 14px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.05)',
-                textAlign: 'left', minHeight: 72,
+                width: '100%', background: '#fff', borderRadius: 20,
+                border: '1px solid rgba(0,0,0,0.07)',
+                padding: '15px 18px', display: 'flex', alignItems: 'center', gap: 16,
+                cursor: 'pointer', position: 'relative', overflow: 'hidden', textAlign: 'left',
+                boxShadow: '0 3px 16px rgba(0,0,0,0.07), 0 1px 3px rgba(0,0,0,0.04)',
               }}
               onClick={() => { setShowJoin(true); setShowCreate(false); }}
             >
-              <div style={{ width: 42, height: 42, borderRadius: '50%', background: '#EDF5EF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 4px rgba(29,158,117,0.12)' }}>
-                <svg width="19" height="19" viewBox="0 0 24 24" fill="none">
+              <div style={{ width: 50, height: 50, borderRadius: '50%', background: '#EDF5EF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: '0 1px 5px rgba(29,158,117,0.1)' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                   <rect x="3" y="3" width="7" height="7" rx="1.3" stroke="#1D9E75" strokeWidth="1.7"/>
                   <rect x="5.5" y="5.5" width="2" height="2" rx="0.4" fill="#1D9E75"/>
                   <rect x="14" y="3" width="7" height="7" rx="1.3" stroke="#1D9E75" strokeWidth="1.7"/>
@@ -753,13 +746,12 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                   <rect x="16" y="16" width="1.5" height="1.5" rx="0.3" fill="#1D9E75"/>
                 </svg>
               </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#0D1108', lineHeight: 1.18, letterSpacing: '-0.2px' }}>Join with Code</div>
-                <div style={{ fontSize: 10, color: '#8a8a86', lineHeight: 1.4, marginTop: 2 }}>Join an existing trip</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 17, fontWeight: 800, color: '#0D1108', letterSpacing: '-0.3px', lineHeight: 1.2 }}>Join with Code</div>
+                <div style={{ fontSize: 12, color: '#8a8a86', marginTop: 3, lineHeight: 1.35 }}>Join an existing trip</div>
               </div>
-              {/* Decorative dashed line */}
-              <svg style={{ position: 'absolute', right: 6, bottom: 5, opacity: 0.1, pointerEvents: 'none' }} width="56" height="44" viewBox="0 0 56 44" fill="none">
-                <path d="M4 36 C 14 22, 34 14, 50 4" stroke="#1D9E75" strokeWidth="1.4" strokeDasharray="4 3" strokeLinecap="round"/>
+              <svg style={{ position: 'absolute', right: 14, bottom: 10, opacity: 0.1, pointerEvents: 'none' }} width="72" height="54" viewBox="0 0 72 54" fill="none">
+                <path d="M6 46 C 20 30, 46 18, 64 6" stroke="#1D9E75" strokeWidth="1.5" strokeDasharray="4.5 3.5" strokeLinecap="round"/>
               </svg>
             </button>
           </div>
