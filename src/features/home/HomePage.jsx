@@ -220,14 +220,8 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
 
       {/* card body */}
       <div style={{ padding: '14px 16px 0', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
-        {/* top row: icon box left + status badge right */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 }}>
-          {/* Travel icon box */}
-          <div style={{ width: 44, height: 44, borderRadius: 13, background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.13)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="rgba(255,255,255,0.92)" stroke="none">
-              <path d="M21 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/>
-            </svg>
-          </div>
+        {/* top row: status badge right-aligned */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', marginBottom: 10 }}>
           {/* Status badges */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             {trip.isSolo && (
@@ -243,13 +237,13 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
         {/* group name */}
         <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.84)', marginBottom: 8, fontWeight: 600, textShadow: '0 1px 8px rgba(0,0,0,0.62)' }}>{trip.groupName}</div>
         {/* stats line */}
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.9)', fontWeight: 600, display: 'flex', alignItems: 'center', flexWrap: 'wrap', textShadow: '0 1px 8px rgba(0,0,0,0.6)', marginBottom: 0 }}>
+        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.96)', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', textShadow: '0 1px 10px rgba(0,0,0,0.7)', marginBottom: 0, letterSpacing: 0.1 }}>
           <span>{formatDateRange(trip.arrival, trip.departure)}</span>
-          <span style={{ margin: '0 5px', opacity: 0.45 }}>·</span>
+          <span style={{ margin: '0 6px', opacity: 0.5 }}>·</span>
           <span>{days} {days === 1 ? 'night' : 'nights'}</span>
-          <span style={{ margin: '0 5px', opacity: 0.45 }}>·</span>
+          <span style={{ margin: '0 6px', opacity: 0.5 }}>·</span>
           <span>{memberNames.length} {memberNames.length === 1 ? 'member' : 'members'}</span>
-          <span style={{ margin: '0 5px', opacity: 0.45 }}>·</span>
+          <span style={{ margin: '0 6px', opacity: 0.5 }}>·</span>
           <span>₹{Math.round(totalSpend).toLocaleString('en-IN')}</span>
         </div>
         {/* Photo slide dots — inline, centered */}
@@ -275,10 +269,9 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
       {/* footer */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 14px', borderTop: '1px solid rgba(255,255,255,0.12)', background: 'linear-gradient(180deg,rgba(6,12,26,0.55) 0%, rgba(4,9,20,0.84) 100%)', backdropFilter: 'blur(14px)', position: 'relative', zIndex: 3 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={(event) => onOpen(trip.id, event)}>
-          {trip.isSolo
-            ? <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 3px 8px rgba(83,74,183,0.4)', flexShrink: 0 }}>{(memberNames[0] || 'ME').slice(0,2).toUpperCase()}</div>
-            : <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700, boxShadow: '0 3px 8px rgba(15,110,86,0.4)', flexShrink: 0 }}>{(memberNames[0] || '?').slice(0,2).toUpperCase()}</div>
-          }
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
           <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {memberNames[0] || (trip.isSolo ? 'You' : 'Member')}{!trip.isSolo && memberNames.length > 1 ? ` +${memberNames.length - 1}` : ''}
           </span>
