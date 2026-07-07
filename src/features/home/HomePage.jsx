@@ -584,7 +584,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
         @keyframes lumiRise { from{transform:translateY(0);opacity:0} to{transform:translateY(-100%);opacity:1} }
-        @keyframes lumiExit { from{transform:translateY(-100%);opacity:1} to{transform:translateY(0);opacity:0} }
+        @keyframes lumiExit { from{transform:translateY(-100%)} to{transform:translateY(0)} }
         @keyframes progressFill { from{width:0} to{width:var(--w)} }
         @keyframes tbMacbookFold {
           0%   { transform: scale(1) translateY(0);   opacity: 1; filter: saturate(1); }
