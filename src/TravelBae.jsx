@@ -1571,7 +1571,7 @@ export default function App() {
                   <>
                     {tab === 'main' && (
                       <div className="tb-section-flow" style={{ marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
-                        <SplitPageFeature trip={activeTripData} myNickname={myNickname} />
+                        <SplitPageFeature trip={activeTripData} myNickname={myNickname} myAvatar={userProfile?.photoUrl || profile.avatar || null} />
                       </div>
                     )}
                     {/* tab === 'contacts' && <div className="tb-section-flow"><ContactsPageFeature trip={activeTripData} myNickname={myNickname} isSolo={false} /></div> */}

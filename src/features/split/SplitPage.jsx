@@ -10,7 +10,7 @@ import lumiMood3 from '../../assets/lumi_mood3.png';
 import lumiMood4 from '../../assets/lumi_mood4.png';
 import lumiMood5 from '../../assets/lumi_mood5.png';
 import lumiMood6 from '../../assets/lumi_mood6.png';
-function SplitPage({ trip, myNickname }) {
+function SplitPage({ trip, myNickname, myAvatar }) {
   const memberNames = normalizeMembers(trip.members);
   const [expenses, setExpenses] = useState(trip.expenses || []);
   const [showForm, setShowForm] = useState(false);
@@ -60,6 +60,15 @@ function SplitPage({ trip, myNickname }) {
   const mcolor = (name) => {
     const code = Math.abs(Array.from(name || '').reduce((a, c) => a + c.charCodeAt(0), 0));
     return MCOLORS_LIST[code % MCOLORS_LIST.length];
+  };
+  // Renders an avatar circle: photo for current user, initials for others
+  const memberCircle = (name, size = 32, fontSize = 11, extra = {}) => {
+    const isMe = name === myNickname && !!myAvatar;
+    return (
+      <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, ...(!isMe ? { background: mcolor(name), color: '#fff', fontSize, fontWeight: 700 } : {}), ...extra }}>
+        {isMe ? <img src={myAvatar} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : (name || '?').slice(0,2).toUpperCase()}
+      </div>
+    );
   };
   const CAT_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
 
@@ -402,7 +411,7 @@ function SplitPage({ trip, myNickname }) {
                 <button
                   onClick={() => setForm(f => ({ ...f, _paidByOpen: !f._paidByOpen, _splitOpen: false }))}
                   style={{ fontFamily: "'DM Sans',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18', background: '#fff', border: '1.5px solid rgba(0,0,0,0.15)', borderRadius: 10, padding: '6px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: '50%', background: mcolor(form.paidBy), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 9, fontWeight: 700 }}>{form.paidBy.slice(0,2).toUpperCase()}</div>
+                  {memberCircle(form.paidBy, 22, 9)}
                   {form.paidBy}
                   <span style={{ fontSize: 10, color: '#a8a8a5' }}>▾</span>
                 </button>
@@ -426,7 +435,7 @@ function SplitPage({ trip, myNickname }) {
                     <button key={m}
                       onClick={() => setForm(f => ({ ...f, paidBy: m, _paidByOpen: false }))}
                       style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: form.paidBy === m ? '#FFF3EB' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: form.paidBy === m ? '#7A2800' : '#1a1a18', marginBottom: 2 }}>
-                      <div style={{ width: 32, height: 32, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{m.slice(0,2).toUpperCase()}</div>
+                      {memberCircle(m, 32, 11)}
                       <span style={{ flex: 1, fontWeight: form.paidBy === m ? 600 : 400 }}>{m}</span>
                       {form.paidBy === m && <span style={{ fontSize: 16, color: '#FF6A00' }}>✓</span>}
                     </button>
@@ -475,7 +484,7 @@ function SplitPage({ trip, myNickname }) {
                           return { ...f, splitMode: isAll ? 'all' : 'select', splitWith: newWith };
                         })}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 10px', borderRadius: 10, border: 'none', background: sel ? '#FFF3EB' : 'transparent', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 14, color: sel ? '#7A2800' : '#1a1a18', marginBottom: 2 }}>
-                        <div style={{ width: 32, height: 32, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{m.slice(0,2).toUpperCase()}</div>
+                        {memberCircle(m, 32, 11)}
                         <span style={{ flex: 1, fontWeight: sel ? 600 : 400 }}>{m}</span>
                         {form.amount && parseFloat(form.amount) > 0 && sel && (
                           <span style={{ fontSize: 12, color: '#6b6b68', marginRight: 8 }}>
@@ -495,7 +504,7 @@ function SplitPage({ trip, myNickname }) {
                 <div style={{ borderTop: '0.5px solid rgba(0,0,0,0.07)', padding: '10px 12px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {(form.splitMode === 'all' ? memberNames : form.splitWith).map(m => (
                     <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '0.5px solid #FFCBA4', borderRadius: 20, padding: '4px 10px 4px 5px', fontSize: 12 }}>
-                      <div style={{ width: 18, height: 18, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 7, fontWeight: 700 }}>{m.slice(0,2).toUpperCase()}</div>
+                      {memberCircle(m, 18, 7)}
                       <span style={{ color: '#444' }}>{m}</span>
                       <span style={{ color: '#7A2800', fontWeight: 700 }}>₹{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : form.splitWith.length)).toFixed(0)}</span>
                     </div>
@@ -606,7 +615,7 @@ function SplitPage({ trip, myNickname }) {
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: '1rem' }}>
         {memberNames.map(m => (
           <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 20, padding: '4px 12px 4px 5px', fontSize: 13 }}>
-            <div style={{ width: 22, height: 22, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 700 }}>{m.slice(0, 2).toUpperCase()}</div>
+            {memberCircle(m, 22, 10)}
             {m}
           </div>
         ))}
@@ -667,7 +676,7 @@ function SplitPage({ trip, myNickname }) {
                       <span>{cat.label}</span>
                       <span style={{ color: '#D3D1C7' }}>·</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <div style={{ width: 14, height: 14, borderRadius: '50%', background: mcolor(exp.paidBy), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 6, fontWeight: 800 }}>{exp.paidBy.slice(0,2).toUpperCase()}</div>
+                        {memberCircle(exp.paidBy, 14, 6)}
                         <span>{exp.paidBy}</span>
                       </div>
                       <span style={{ color: '#D3D1C7' }}>·</span>
@@ -720,7 +729,7 @@ function SplitPage({ trip, myNickname }) {
             return (
               <div key={m} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '13px 14px', marginBottom: 8, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: `soloFadeUp .35s ease-out ${i * 55}ms both` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9 }}>
-                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0, boxShadow: `0 2px 8px ${mcolor(m)}55` }}>{m.slice(0, 2).toUpperCase()}</div>
+                  {memberCircle(m, 36, 12, { boxShadow: `0 2px 8px ${mcolor(m)}55` })}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{m}</div>
                     <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>paid <span style={{ color: '#374151', fontWeight: 600 }}>₹{Math.round(paid).toLocaleString('en-IN')}</span> · share <span style={{ color: '#374151', fontWeight: 600 }}>₹{Math.round(owes).toLocaleString('en-IN')}</span></div>
@@ -761,7 +770,7 @@ function SplitPage({ trip, myNickname }) {
               <div key={i} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '13px 14px', marginBottom: 8, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: `soloFadeUp .38s ease-out ${i * 60}ms both` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: mcolor(s.from), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.from.slice(0, 2).toUpperCase()}</div>
+                    {memberCircle(s.from, 34, 11)}
                     <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 500, maxWidth: 48, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{s.from}</span>
                   </div>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
@@ -775,7 +784,7 @@ function SplitPage({ trip, myNickname }) {
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: mcolor(s.to), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.to.slice(0, 2).toUpperCase()}</div>
+                    {memberCircle(s.to, 34, 11)}
                     <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 500, maxWidth: 48, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{s.to}</span>
                   </div>
                 </div>
@@ -818,7 +827,7 @@ function SplitPage({ trip, myNickname }) {
               <div key={m} style={{ background: '#fff', borderRadius: 16, marginBottom: 10, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 10px rgba(0,0,0,0.04)', overflow: 'hidden', animation: `soloFadeUp .35s ease-out ${i * 55}ms both` }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px' }}>
                   <div style={{ position: 'relative', flexShrink: 0 }}>
-                    <div style={{ width: 42, height: 42, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14, fontWeight: 700, boxShadow: `0 3px 10px ${mcolor(m)}44` }}>{m.slice(0, 2).toUpperCase()}</div>
+                    {memberCircle(m, 42, 14, { boxShadow: `0 3px 10px ${mcolor(m)}44` })}
                     <div style={{ position: 'absolute', bottom: -1, right: -1, width: 14, height: 14, borderRadius: '50%', background: accentColor, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {isPos ? <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18,15 12,9 6,15"/></svg>
                        : isNeg ? <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6,9 12,15 18,9"/></svg>
@@ -988,7 +997,7 @@ function SplitPage({ trip, myNickname }) {
             <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Who's carrying the trip</div>
             {[...memberNames].sort((a, b) => (payTotal[b] || 0) - (payTotal[a] || 0)).map((m, i) => (
               <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: i < memberNames.length - 1 ? 10 : 0 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0, boxShadow: `0 2px 8px ${mcolor(m)}44` }}>{m.slice(0, 2).toUpperCase()}</div>
+                {memberCircle(m, 32, 11, { boxShadow: `0 2px 8px ${mcolor(m)}44` })}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
                     <span style={{ fontWeight: 600, color: '#111827' }}>{m}</span>
