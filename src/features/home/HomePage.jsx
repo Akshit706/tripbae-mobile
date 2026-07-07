@@ -102,13 +102,13 @@ const HERO_TAGLINES = [
 { line1: 'Greenland,', line2: "isn't green" },
 { line1: 'Antarctica,', line2: "world's desert" },
 { line1: 'Machu Picchu,', line2: 'older than pizza' },
-{ line1: 'Great Wall,', line2: 'not visible from space' },
+{ line1: 'Great Wall,', line2: 'not from space' },
 { line1: 'Pisa Tower,', line2: "wasn't planned" },
 { line1: 'Petra,', line2: 'carved in stone' },
 { line1: 'Sushi,', line2: 'not always raw' },
 { line1: 'Pizza,', line2: "wasn't always Italian" },
 { line1: 'Tea,', line2: 'beats coffee' },
-{ line1: 'Switzerland,', line2: 'banned lonely guinea pigs' },
+{ line1: 'Switzerland,', line2: 'bans lonely pets' },
 { line1: 'Finland,', line2: 'coffee champs' },
 { line1: 'India,', line2: 'loves train rides' },
 { line1: 'Northern Lights,', line2: 'best near equinox' },
@@ -355,7 +355,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [confirmComplete, setConfirmComplete] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
   const [archivingTripId, setArchivingTripId] = useState(null);
-  const [tagIdx] = useState(() => Math.floor(Math.random() * HERO_TAGLINES.length));
+  const [tagIdx, setTagIdx] = useState(() => Math.floor(Math.random() * HERO_TAGLINES.length));
   const [tagPhase, setTagPhase] = useState('in');
   const [greetPhrase] = useState(() => {
     const h = new Date().getHours();
@@ -372,6 +372,15 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [fxLoading, setFxLoading] = useState(false);
   const [fxError, setFxError] = useState('');
   const destDebounce = useRef(null);
+  const tagSwapRef = useRef(null);
+
+  const nextFact = useCallback(() => {
+    setTagPhase('out');
+    tagSwapRef.current = setTimeout(() => {
+      setTagIdx(i => (i + 1) % HERO_TAGLINES.length);
+      setTagPhase('in');
+    }, 310);
+  }, []);
 
 
   const searchDest = useCallback(async (text) => {
@@ -671,22 +680,33 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
           <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.8px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'left' }}>
             {greetPhrase}{profileName ? <span style={{ color: '#043D28', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
           </div>
-          <div style={{ overflow: 'hidden', minHeight: 74, marginBottom: 20 }}>
-            <div
-              key={tagIdx}
-              style={{
-                animation: tagPhase === 'out'
-                  ? 'taglineSlideOut 0.28s cubic-bezier(.4,0,.8,.2) both'
-                  : 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both',
-              }}
-            >
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', color: '#0D1108', whiteSpace: 'nowrap' }}>
-                {HERO_TAGLINES[tagIdx].line1}
-              </div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', whiteSpace: 'nowrap', color: '#043D28' }}>
-                {HERO_TAGLINES[tagIdx].line2}
+          <div style={{ position: 'relative', marginBottom: 20 }}>
+            <div style={{ overflow: 'hidden', minHeight: 74 }}>
+              <div
+                key={tagIdx}
+                style={{
+                  animation: tagPhase === 'out'
+                    ? 'taglineSlideOut 0.28s cubic-bezier(.4,0,.8,.2) both'
+                    : 'taglineSlideIn 0.38s cubic-bezier(.15,.85,.25,1) both',
+                }}
+              >
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', color: '#0D1108', whiteSpace: 'nowrap' }}>
+                  {HERO_TAGLINES[tagIdx].line1}
+                </div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', whiteSpace: 'nowrap', color: '#043D28' }}>
+                  {HERO_TAGLINES[tagIdx].line2}
+                </div>
               </div>
             </div>
+            <button
+              onClick={nextFact}
+              style={{ position: 'absolute', right: 0, bottom: 0, background: 'none', border: 'none', padding: 0, cursor: 'pointer', lineHeight: 0, opacity: 0.55 }}
+              aria-label="Next fact"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <polyline points="9 18 15 12 9 6" stroke="#043D28" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
           {/* Action cards — side by side */}
           <div style={{ display: 'flex', gap: 9 }}>
