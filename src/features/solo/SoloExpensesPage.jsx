@@ -212,12 +212,12 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   };
 
   const CAT_COLORS = { food: '#BA7517', transport: '#0F6E56', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E', other: '#6b6b68' };
-  const SOLO_ACCENT = '#534AB7';
-  const SOLO_ACCENT_2 = '#7F77DD';
-  const SOLO_ACCENT_BG = '#EEEDFE';
-  const SOLO_ACCENT_BORDER = '#AFA9EC';
-  const SOLO_ACCENT_TEXT = '#26215C';
-  const SOLO_WARN = '#D85A30';
+  const SOLO_ACCENT = '#FF6A00';
+  const SOLO_ACCENT_2 = '#FF8C3A';
+  const SOLO_ACCENT_BG = '#FFF3EB';
+  const SOLO_ACCENT_BORDER = '#FFCBA4';
+  const SOLO_ACCENT_TEXT = '#7A2800';
+  const SOLO_WARN = '#D85B00';
   const SECTION_TABS = [
     { id: 'expenses', label: 'Expenses' },
     { id: 'insights', label: 'Insights' },
@@ -321,7 +321,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        <div style={{ background: 'linear-gradient(135deg,#534AB7,#7F77DD)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
+        <div style={{ background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .6, textTransform: 'uppercase', marginBottom: 12 }}>How much?</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>₹</span>
@@ -385,7 +385,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           to { opacity: 1; transform: translateY(0); }
         }
       `}</style>
-      <div style={{ background: 'linear-gradient(135deg,#26215C,#534AB7 48%,#7F77DD)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ background: 'linear-gradient(135deg,#7A2800,#FF6A00 48%,#FF8C3A)', borderRadius: 18, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden' }}>
         <svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,1)" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', top: -18, right: -18, opacity: 0.08, pointerEvents: 'none' }}>
           <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="14.5" r="1.5" fill="rgba(255,255,255,1)" stroke="none"/>
         </svg>
@@ -399,7 +399,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           {budget && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', marginBottom: 4 }}>Budget Left</div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#DAD7FF' }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#FFD0B0' }}>
                 {budgetLeft < 0 ? '-' : ''}₹{Math.abs(Math.round(budgetLeft)).toLocaleString('en-IN')}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of ₹{budget.toLocaleString('en-IN')}</div>
@@ -427,7 +427,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{budgetMsg}</span>
               </div>
               <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? '#FFD3C4' : '#DAD7FF', transition: 'width .6s' }} />
+                <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? '#FFD3C4' : '#FFD0B0', transition: 'width .6s' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5, fontSize: 11, color: 'rgba(255,255,255,0.5)' }}>
                 <span>{budgetPct}% used</span><span>{100 - budgetPct}% remaining</span>
@@ -505,25 +505,24 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           {sortedFiltered.map(exp => {
             const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
             const timeLabel = getExpenseTimeLabel(exp);
-            const accentColor = CAT_COLORS?.[exp.cat] || '#b0a8a0';
+            const dateLabel = new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
             return (
-              <div key={exp.id} style={{ background: '#fff', borderRadius: 18, marginBottom: 10, boxShadow: '0 4px 18px rgba(15,23,42,0.07)', overflow: 'hidden', border: '0.5px solid rgba(0,0,0,0.06)' }}>
-                <div style={{ height: 3, background: `linear-gradient(90deg, ${accentColor}, ${accentColor}88)` }} />
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0, boxShadow: `0 2px 8px ${accentColor}44` }}><CatIcon id={cat.id} size={22} /></div>
+              <div key={exp.id} style={{ background: '#fff', borderRadius: 16, marginBottom: 10, boxShadow: '0 2px 12px rgba(15,23,42,0.06)', border: '1px solid rgba(0,0,0,0.08)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px' }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0 }}><CatIcon id={cat.id} size={20} /></div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
-                    <div style={{ fontSize: 11, color: '#9ca3af' }}>
-                      {cat.label} · {new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
-                      {timeLabel && <span> · {timeLabel}</span>}
+                    <div style={{ fontSize: 12, color: '#6b7280' }}>
+                      {cat.label}
+                      {timeLabel ? ` · ${dateLabel}, ${timeLabel}` : ` · ${dateLabel}`}
                       {exp.note && <span style={{ fontStyle: 'italic', color: '#b0a8a0' }}> · {exp.note}</span>}
                     </div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: '#111827' }}>₹{exp.amount.toLocaleString('en-IN')}</div>
-                    <div style={{ display: 'flex', gap: 3 }}>
-                      <button onClick={() => handleEdit(exp)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#6b7280', border: 'none', background: 'rgba(0,0,0,0.04)', borderRadius: 6 }}>✎</button>
-                      <button onClick={() => handleDelete(exp.id)} style={{ ...S.btn, padding: '2px 7px', fontSize: 11, color: '#ef4444', border: 'none', background: 'rgba(239,68,68,0.06)', borderRadius: 6 }}>✕</button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 5, marginTop: 6 }}>
+                      <button onClick={() => handleEdit(exp)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(0,0,0,0.1)', background: '#f8f8f6', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>✎</button>
+                      <button onClick={() => handleDelete(exp.id)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>✕</button>
                     </div>
                   </div>
                 </div>
@@ -544,12 +543,12 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
               <div key={s.label} style={{ background: s.warn ? '#FAECE7' : '#f7f6f2', borderRadius: 12, padding: '10px 12px', border: s.warn ? '0.5px solid #F5C4B3' : 'none', animation: 'soloFadeUp .35s ease-out both', animationDelay: `${idx * 55}ms` }}>
                 <div style={{ fontSize: 11, color: s.warn ? '#993C1D' : '#6b6b68', marginBottom: 3 }}>{s.label}</div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: s.warn ? '#993C1D' : '#1a1a18' }}>{s.value}</div>
-                <div style={{ fontSize: 11, color: s.warn ? '#D85A30' : '#a8a8a5', marginTop: 2 }}>{s.sub}</div>
+                <div style={{ fontSize: 11, color: s.warn ? '#D85B00' : '#a8a8a5', marginTop: 2 }}>{s.sub}</div>
               </div>
             ))}
           </div>
 
-          <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#EEEDFE,#F3F2FF)', border: `0.5px solid ${SOLO_ACCENT_BORDER}`, position: 'relative', overflow: 'hidden', animation: 'soloFadeUp .4s ease-out both', animationDelay: '120ms' }}>
+          <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FFF3EB,#FFF0E6)', border: `0.5px solid ${SOLO_ACCENT_BORDER}`, position: 'relative', overflow: 'hidden', animation: 'soloFadeUp .4s ease-out both', animationDelay: '120ms' }}>
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={SOLO_ACCENT_TEXT} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: 10, top: 6, opacity: 0.3 }}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="14.5" x2="15" y2="14.5"/></svg>
             <div style={{ fontSize: 11, color: SOLO_ACCENT_TEXT, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Solo money mood</div>
             <div style={{ fontSize: 14, color: SOLO_ACCENT_TEXT, lineHeight: 1.55, paddingRight: 20 }}>{soloInsightLine}</div>
@@ -568,7 +567,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           )}
 
           {budget && (
-            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FEFEFF,#F7F6FF)', animation: 'soloFadeUp .42s ease-out both', animationDelay: '170ms' }}>
+            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FEFEFE,#FFF7F2)', animation: 'soloFadeUp .42s ease-out both', animationDelay: '170ms' }}>
               <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Budget health</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                 <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '8px 10px' }}>
@@ -617,13 +616,13 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                       <div style={{ flex: 1 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <span style={{ fontSize: 13, fontWeight: 600 }}>{c.label}</span>
-                          <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: CAT_COLORS[c.id] || '#534AB7' }}>₹{Math.round(catTotals[c.id]).toLocaleString('en-IN')}</span>
+                          <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: CAT_COLORS[c.id] || '#FF6A00' }}>₹{Math.round(catTotals[c.id]).toLocaleString('en-IN')}</span>
                         </div>
                       </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <div style={{ flex: 1, height: 6, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 4, background: CAT_COLORS[c.id] || '#7F77DD', transition: 'width .5s' }} />
+                        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 4, background: CAT_COLORS[c.id] || '#FF6A00', transition: 'width .5s' }} />
                       </div>
                       <span style={{ fontSize: 11, color: '#6b6b68', width: 32, textAlign: 'right' }}>{pct}%</span>
                     </div>
@@ -647,7 +646,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                       <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
                       <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2 }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
                       <div style={{ height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 4, overflow: 'hidden', marginTop: 6 }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: CAT_COLORS[exp.cat] || '#7F77DD', borderRadius: 4 }} />
+                        <div style={{ height: '100%', width: `${pct}%`, background: CAT_COLORS[exp.cat] || '#FF6A00', borderRadius: 4 }} />
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -665,7 +664,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       {section === 'expenses' && (
         <button
           onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: todayStr, time: getNow().time, note: '' }); setShowForm(true); }}
-          style={{ position: 'fixed', bottom: 24, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#7F77DD,#534AB7)', border: 'none', boxShadow: '0 4px 20px rgba(127,119,221,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
+          style={{ position: 'fixed', bottom: 88, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', border: 'none', boxShadow: '0 4px 20px rgba(255,106,0,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
           +
