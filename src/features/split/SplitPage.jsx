@@ -694,49 +694,95 @@ function SplitPage({ trip, myNickname }) {
 
       {/* ══ SHARES TAB ══ */}
       {section === 'shares' && (
-        <div>
-          <div style={{ ...S.card, background: 'linear-gradient(135deg,#FFF3EB,#FFF0E6)', border: '0.5px solid #FFCBA4', marginBottom: '1rem' }}>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: '#7A2800' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
-            <div style={{ fontSize: 12, color: '#7A2800', marginTop: 3 }}>{memberNames.length} members · {expenses.length} expenses · {days} days</div>
+        <div style={{ paddingBottom: '5rem' }}>
+          {/* stat strip */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            {[
+              { label: 'Total spent', value: `₹${Math.round(total).toLocaleString('en-IN')}`, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> },
+              { label: 'Members', value: memberNames.length, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
+              { label: 'Trip days', value: days, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+            ].map((s, i) => (
+              <div key={i} style={{ flex: 1, background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 14, padding: '11px 10px', textAlign: 'center', boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: `soloFadeUp .3s ease-out ${i * 60}ms both` }}>
+                <div style={{ color: '#FF6A00', display: 'flex', justifyContent: 'center', marginBottom: 5 }}>{s.icon}</div>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: '#111827', letterSpacing: '-0.3px' }}>{s.value}</div>
+                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2, fontWeight: 500 }}>{s.label}</div>
+              </div>
+            ))}
           </div>
-          <div style={{ ...S.card, marginBottom: '0.75rem' }}>
-            {memberNames.map((m, i) => {
-              const paid = expenses.filter(e => e.paidBy === m).reduce((s, e) => s + e.amount, 0);
-              const owes = expenses.reduce((s, e) => {
-                const sp = Array.isArray(e.split) && e.split.length > 0 ? e.split : memberNames;
-                return sp.includes(m) ? s + e.amount / sp.length : s;
-              }, 0);
-              const net = paid - owes;
-              return (
-                <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: i < memberNames.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none' }}>
-                  <div style={{ width: 34, height: 34, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0 }}>{m.slice(0, 2).toUpperCase()}</div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 500 }}>{m}</div>
-                    <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 1 }}>paid ₹{Math.round(paid).toLocaleString('en-IN')} · share ₹{Math.round(owes).toLocaleString('en-IN')}</div>
+
+          {/* member breakdown */}
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>Payment breakdown</div>
+          {memberNames.map((m, i) => {
+            const paid = expenses.filter(e => e.paidBy === m).reduce((s, e) => s + e.amount, 0);
+            const owes = expenses.reduce((s, e) => {
+              const sp = Array.isArray(e.split) && e.split.length > 0 ? e.split : memberNames;
+              return sp.includes(m) ? s + e.amount / sp.length : s;
+            }, 0);
+            const net = paid - owes;
+            const isPos = net > 0.5, isNeg = net < -0.5;
+            const paidPct = total > 0 ? Math.round((paid / total) * 100) : 0;
+            return (
+              <div key={m} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '13px 14px', marginBottom: 8, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: `soloFadeUp .35s ease-out ${i * 55}ms both` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 9 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700, flexShrink: 0, boxShadow: `0 2px 8px ${mcolor(m)}55` }}>{m.slice(0, 2).toUpperCase()}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{m}</div>
+                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>paid <span style={{ color: '#374151', fontWeight: 600 }}>₹{Math.round(paid).toLocaleString('en-IN')}</span> · share <span style={{ color: '#374151', fontWeight: 600 }}>₹{Math.round(owes).toLocaleString('en-IN')}</span></div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: net >= 0 ? '#7A2800' : '#993C1D' }}>{net >= 0 ? '+' : '−'}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}</div>
-                    <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 1 }}>{net > 0.5 ? 'gets back' : net < -0.5 ? 'owes' : 'settled'}</div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: isPos ? '#FF6A00' : isNeg ? '#DC2626' : '#6b7280' }}>{isPos ? '+' : isNeg ? '−' : ''}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}</div>
+                    <div style={{ display: 'inline-block', marginTop: 3, fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: isPos ? '#FFF3EB' : isNeg ? '#FFF1F0' : '#F3F4F6', color: isPos ? '#FF6A00' : isNeg ? '#DC2626' : '#6b7280' }}>
+                      {isPos ? 'gets back' : isNeg ? 'owes' : 'settled ✓'}
+                    </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
-          <div style={{ fontSize: 12, fontWeight: 600, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.04em', marginBottom: 8 }}>Who pays whom</div>
+                {/* contribution bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, height: 5, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${paidPct}%`, background: `linear-gradient(90deg,${mcolor(m)},${mcolor(m)}cc)`, borderRadius: 99, transition: 'width .5s cubic-bezier(.2,.8,.2,1)' }} />
+                  </div>
+                  <span style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, minWidth: 28, textAlign: 'right' }}>{paidPct}%</span>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* settlements */}
+          <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginTop: 16 }}>Who pays whom</div>
           {settlements.length === 0
-            ? <div style={{ background: '#FFF3EB', border: '0.5px solid #FFCBA4', borderRadius: 12, padding: '1rem 1.25rem', fontSize: 14, color: '#7A2800', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 8 }}><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="20,6 9,17 4,12"/></svg>Everyone is squared up!</div>
-            : settlements.map((s, i) => (
-              <div key={i} style={{ ...S.card, display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(s.from), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.from.slice(0, 2).toUpperCase()}</div>
-                <span style={{ fontSize: 13, fontWeight: 500 }}>{s.from}</span>
-                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <div style={{ height: 1, flex: 1, background: 'rgba(0,0,0,0.09)' }} />
-                  <span style={{ fontSize: 11, color: '#FF6A00', padding: '2px 6px', background: '#FFF3EB', borderRadius: 8, fontWeight: 600 }}>→</span>
-                  <div style={{ height: 1, flex: 1, background: 'rgba(0,0,0,0.09)' }} />
+            ? (
+              <div style={{ background: 'linear-gradient(135deg,#F0FFF8,#EAFBF3)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 16, padding: '1.1rem 1.25rem', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20,6 9,17 4,12"/></svg>
                 </div>
-                <span style={{ fontSize: 13, fontWeight: 500 }}>{s.to}</span>
-                <div style={{ width: 30, height: 30, borderRadius: '50%', background: mcolor(s.to), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.to.slice(0, 2).toUpperCase()}</div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#7A2800', marginLeft: 6 }}>₹{Math.round(s.amt).toLocaleString('en-IN')}</div>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#166534' }}>All settled up!</div>
+                  <div style={{ fontSize: 12, color: '#4ade80', marginTop: 2 }}>Everyone's square. No payments needed.</div>
+                </div>
+              </div>
+            )
+            : settlements.map((s, i) => (
+              <div key={i} style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '13px 14px', marginBottom: 8, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: `soloFadeUp .38s ease-out ${i * 60}ms both` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: mcolor(s.from), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.from.slice(0, 2).toUpperCase()}</div>
+                    <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 500, maxWidth: 48, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{s.from}</span>
+                  </div>
+                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#FFE9D9)', border: '1px solid rgba(255,106,0,0.18)', borderRadius: 20, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: '#FF6A00' }}>₹{Math.round(s.amt).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
+                      <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,rgba(255,106,0,0.15),rgba(255,106,0,0.5))' }} />
+                      <span style={{ fontSize: 12, color: '#FF6A00' }}>→</span>
+                      <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,rgba(255,106,0,0.5),rgba(255,106,0,0.15))' }} />
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: '50%', background: mcolor(s.to), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700 }}>{s.to.slice(0, 2).toUpperCase()}</div>
+                    <span style={{ fontSize: 10, color: '#6b7280', fontWeight: 500, maxWidth: 48, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', textAlign: 'center' }}>{s.to}</span>
+                  </div>
+                </div>
               </div>
             ))
           }
@@ -745,22 +791,56 @@ function SplitPage({ trip, myNickname }) {
 
       {/* ══ BALANCES TAB ══ */}
       {section === 'balances' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10 }}>
-          {memberNames.map(m => {
+        <div style={{ paddingBottom: '5rem' }}>
+          {/* summary pills */}
+          <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+            {[
+              { label: 'Gets back', count: memberNames.filter(m => balances[m] >= 0.5).length, color: '#FF6A00', bg: '#FFF3EB' },
+              { label: 'Owes', count: memberNames.filter(m => balances[m] < -0.5).length, color: '#DC2626', bg: '#FFF1F0' },
+              { label: 'Settled', count: memberNames.filter(m => Math.abs(balances[m]) < 0.5).length, color: '#22c55e', bg: '#F0FFF8' },
+            ].map((s, i) => (
+              <div key={i} style={{ flex: 1, background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '10px 8px', textAlign: 'center', animation: `soloFadeUp .3s ease-out ${i * 55}ms both` }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: s.color }}>{s.count}</div>
+                <div style={{ fontSize: 10, color: s.color, fontWeight: 600, marginTop: 2, opacity: 0.8 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* member balance cards */}
+          {[
+            ...memberNames.filter(m => balances[m] >= 0.5).sort((a, b) => balances[b] - balances[a]),
+            ...memberNames.filter(m => Math.abs(balances[m]) < 0.5),
+            ...memberNames.filter(m => balances[m] < -0.5).sort((a, b) => balances[a] - balances[b]),
+          ].map((m, i) => {
             const b = balances[m];
             const isPos = b >= 0.5, isNeg = b < -0.5;
+            const accentColor = isPos ? '#FF6A00' : isNeg ? '#DC2626' : '#9ca3af';
+            const accentBg = isPos ? '#FFF3EB' : isNeg ? '#FFF1F0' : '#F9F9F8';
+            const maxAbs = Math.max(...memberNames.map(n => Math.abs(balances[n] || 0)), 1);
+            const barPct = Math.round((Math.abs(b) / maxAbs) * 100);
             return (
-              <div key={m} style={{ ...S.card, borderTop: `3px solid ${isPos ? '#FF6A00' : isNeg ? '#D85B00' : '#D3D1C7'}`, borderRadius: '0 0 14px 14px', padding: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 12, fontWeight: 700 }}>{m.slice(0, 2).toUpperCase()}</div>
-                  <div style={{ fontSize: 14, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m}</div>
-                </div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: isPos ? '#7A2800' : isNeg ? '#993C1D' : '#6b6b68' }}>
-                  {isPos ? '+' : ''}₹{Math.abs(Math.round(b)).toLocaleString('en-IN')}
-                </div>
-                <div style={{ fontSize: 11, color: '#a8a8a5', marginTop: 4 }}>
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: isPos ? '#FF6A00' : isNeg ? '#D85B00' : '#D3D1C7', display: 'inline-block', marginRight: 4 }} />
-                  {isPos ? 'gets back' : isNeg ? 'owes' : 'all settled'}
+              <div key={m} style={{ background: '#fff', borderRadius: 16, marginBottom: 10, border: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 10px rgba(0,0,0,0.04)', overflow: 'hidden', animation: `soloFadeUp .35s ease-out ${i * 55}ms both` }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px' }}>
+                  <div style={{ position: 'relative', flexShrink: 0 }}>
+                    <div style={{ width: 42, height: 42, borderRadius: '50%', background: mcolor(m), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 14, fontWeight: 700, boxShadow: `0 3px 10px ${mcolor(m)}44` }}>{m.slice(0, 2).toUpperCase()}</div>
+                    <div style={{ position: 'absolute', bottom: -1, right: -1, width: 14, height: 14, borderRadius: '50%', background: accentColor, border: '2px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {isPos ? <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="18,15 12,9 6,15"/></svg>
+                       : isNeg ? <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="6,9 12,15 18,9"/></svg>
+                       : <svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20,6 9,17 4,12"/></svg>}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{m}</div>
+                    <div style={{ marginTop: 6, height: 4, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', maxWidth: 140 }}>
+                      <div style={{ height: '100%', width: `${barPct}%`, background: `linear-gradient(90deg,${accentColor},${accentColor}88)`, borderRadius: 99, transition: 'width .6s cubic-bezier(.2,.8,.2,1)' }} />
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 800, color: accentColor }}>{isPos ? '+' : isNeg ? '−' : ''}₹{Math.abs(Math.round(b)).toLocaleString('en-IN')}</div>
+                    <div style={{ marginTop: 4, display: 'inline-block', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: accentBg, color: accentColor, border: `1px solid ${accentColor}33` }}>
+                      {isPos ? 'gets back' : isNeg ? 'owes' : 'settled ✓'}
+                    </div>
+                  </div>
                 </div>
               </div>
             );
