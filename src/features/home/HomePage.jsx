@@ -875,7 +875,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               style={{
                 position: 'absolute',
                 left: -14,
-                bottom: 0,
+                top: 0,
+                transform: 'translateY(-48%)',
                 height: 78,
                 width: 'auto',
                 zIndex: 5,
