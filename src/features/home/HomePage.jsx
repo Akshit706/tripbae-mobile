@@ -875,16 +875,17 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               aria-hidden="true"
               style={{
                 position: 'absolute',
-                left: +60,
+                left: +70,
                 top: 0,
                 transform: 'translateY(-100%)',
                 height: 56,
                 width: 'auto',
-                zIndex: 5,
                 pointerEvents: 'none',
                 userSelect: 'none',
-                filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.18))',                animation: 'lumiRise 0.42s cubic-bezier(.18,.89,.32,1.28) both',
-                animationDelay: '0.32s',              }}
+                filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.18))',
+                animation: 'lumiRise 0.42s cubic-bezier(.18,.89,.32,1.28) both',
+                animationDelay: '0.45s',
+              }}
             />
             <TripCard
               trip={trip}
