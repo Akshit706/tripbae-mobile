@@ -12,6 +12,7 @@ import currencyData from '../../../currency.json';
 import CreateTripWizard from './CreateTripWizard';
 import mountainImg from '../../assets/mountain.png';
 import lumi9 from '../../assets/lumi9.png';
+import lumi5 from '../../assets/lumi5_bgless.png';
 
 const FX_API_KEY = 'cce33519f478fe73220306ed';
 const _fxMemCache = {};
@@ -865,19 +866,52 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {homeTab === 'trips' && activeTrips.map((trip, idx) => (
-        <TripCard
-          key={trip.id}
-          trip={trip}
-          idx={idx}
-          onOpen={openTripWithMotion}
-          copied={copied}
-          onCopy={copyCode}
-          menuOpen={menuOpen}
-          setMenuOpen={setMenuOpen}
-          setConfirmComplete={setConfirmComplete}
-          setConfirmDelete={setConfirmDelete}
-          isArchiving={archivingTripId === trip.id}
-        />
+        idx === 0 ? (
+          <div key={trip.id} style={{ position: 'relative' }}>
+            <img
+              src={lumi5}
+              alt=""
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                left: -14,
+                bottom: 0,
+                height: 78,
+                width: 'auto',
+                zIndex: 5,
+                pointerEvents: 'none',
+                userSelect: 'none',
+                filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.18))',
+              }}
+            />
+            <TripCard
+              trip={trip}
+              idx={idx}
+              onOpen={openTripWithMotion}
+              copied={copied}
+              onCopy={copyCode}
+              menuOpen={menuOpen}
+              setMenuOpen={setMenuOpen}
+              setConfirmComplete={setConfirmComplete}
+              setConfirmDelete={setConfirmDelete}
+              isArchiving={archivingTripId === trip.id}
+            />
+          </div>
+        ) : (
+          <TripCard
+            key={trip.id}
+            trip={trip}
+            idx={idx}
+            onOpen={openTripWithMotion}
+            copied={copied}
+            onCopy={copyCode}
+            menuOpen={menuOpen}
+            setMenuOpen={setMenuOpen}
+            setConfirmComplete={setConfirmComplete}
+            setConfirmDelete={setConfirmDelete}
+            isArchiving={archivingTripId === trip.id}
+          />
+        )
       ))}
 
       {homeTab === 'notifications' && (
