@@ -874,10 +874,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               aria-hidden="true"
               style={{
                 position: 'absolute',
-                left: -14,
+                left: -4,
                 top: 0,
                 transform: 'translateY(-100%)',
-                height: 78,
+                height: 64,
                 width: 'auto',
                 zIndex: 5,
                 pointerEvents: 'none',
