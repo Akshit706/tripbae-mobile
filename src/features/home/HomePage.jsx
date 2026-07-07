@@ -884,7 +884,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 pointerEvents: 'none',
                 userSelect: 'none',
                 filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.18))',
-                animation: 'lumiRise 0.42s ease-out both 0.45s, lumiExit 0.38s ease-in both 5.5s',
+                animation: 'lumiRise 0.42s ease-out both 0.45s, lumiExit 0.38s ease-in forwards 5.5s',
               }}
             />
             <TripCard
