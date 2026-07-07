@@ -862,22 +862,25 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {homeTab === 'trips' && activeTrips.length > 0 && (
-        <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: 14, marginTop: 12, position: 'relative' }}>
-          <img
-            src={lumi12}
-            alt="Lumi"
-            style={{
-              height: 52,
-              width: 'auto',
-              marginRight: -4,
-              marginBottom: -2,
-              filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.10))',
-              flexShrink: 0,
-              position: 'relative',
-              zIndex: 1,
-            }}
-          />
-          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', lineHeight: 1, paddingBottom: 2 }}>YOUR TRIPS</div>
+        <div style={{ textAlign: 'center', marginBottom: 14, marginTop: 12 }}>
+          <span style={{ position: 'relative', display: 'inline-block' }}>
+            <img
+              src={lumi12}
+              alt=""
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                right: 'calc(100% - 6px)',
+                bottom: -1,
+                height: 50,
+                width: 'auto',
+                filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.07))',
+                pointerEvents: 'none',
+                userSelect: 'none',
+              }}
+            />
+            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', lineHeight: 1, display: 'inline-block' }}>YOUR TRIPS</span>
+          </span>
         </div>
       )}
 
