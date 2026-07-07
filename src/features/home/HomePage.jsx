@@ -874,7 +874,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               aria-hidden="true"
               style={{
                 position: 'absolute',
-                left: -4,
+                left: +10,
                 top: 0,
                 transform: 'translateY(-100%)',
                 height: 64,
