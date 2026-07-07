@@ -321,7 +321,7 @@ function SplitPage({ trip, myNickname }) {
         <button onClick={() => { setShowForm(false); setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: getNow().date, time: getNow().time, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); }} style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>{editingExpenseId ? 'Edit Expense' : 'Add Expense'}</div>
         <button onClick={handleAdd} disabled={saving || !form.desc || !form.amount}
-          style={{ ...S.btn, ...S.btnP, padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !form.desc || !form.amount) ? 0.4 : 1 }}>
+          style={{ ...S.btn, ...S.btnSolo, padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !form.desc || !form.amount) ? 0.4 : 1 }}>
           {saving ? (editingExpenseId ? 'Updating…' : 'Saving…') : (editingExpenseId ? 'Update' : 'Save')}
         </button>
       </div>
@@ -329,7 +329,7 @@ function SplitPage({ trip, myNickname }) {
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
         {/* Amount block */}
-        <div style={{ background: 'linear-gradient(135deg,#7A2800,#FF6A00)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
+        <div style={{ background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .6, textTransform: 'uppercase', marginBottom: 12 }}>How much?</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>₹</span>
@@ -506,27 +506,36 @@ function SplitPage({ trip, myNickname }) {
   return (
     <div style={{ padding: '0 1.25rem' }}>
       <style>{`
-        @keyframes soloFadeUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes soloFadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes heroFloat { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-7px) rotate(4deg)} }
+        @keyframes heroPulse { 0%,100%{opacity:0.07;transform:scale(1)} 50%{opacity:0.14;transform:scale(1.1)} }
+        @keyframes heroShimmer { 0%{transform:translateX(-120%) skewX(-18deg)} 100%{transform:translateX(220%) skewX(-18deg)} }
+        @keyframes heroNumIn { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
       `}</style>
       {/* ── Hero ── */}
-      <div style={{ background: 'linear-gradient(135deg,#7A2800,#FF6A00 50%,#FF8C3A)', borderRadius: 18, padding: '1.4rem 1.6rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden', boxShadow: '0 8px 36px rgba(122,40,0,0.32)', borderTop: '0.5px solid rgba(255,255,255,0.22)' }}>
-        <svg width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,1)" strokeWidth="0.9" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', top: -18, right: -18, opacity: 0.08, pointerEvents: 'none' }}>
+      <div style={{ background: 'linear-gradient(135deg,#7A2800,#FF6A00 50%,#FF8C3A)', borderRadius: 20, padding: '1.4rem 1.6rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 40px rgba(255,106,0,0.38)', borderTop: '0.5px solid rgba(255,255,255,0.28)' }}>
+        {/* shimmer sweep */}
+        <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, bottom: 0, width: '35%', background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.07),transparent)', animation: 'heroShimmer 4s ease-in-out infinite', animationDelay: '1.5s' }} />
+        </div>
+        {/* decorative circles */}
+        <div style={{ position: 'absolute', right: -28, top: -28, width: 110, height: 110, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', animation: 'heroPulse 4s ease-in-out infinite', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', left: -40, bottom: -48, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', animation: 'heroPulse 4.5s ease-in-out infinite', animationDelay: '1.2s', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', right: 55, bottom: -18, width: 65, height: 65, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', animation: 'heroPulse 3.6s ease-in-out infinite', animationDelay: '0.6s', pointerEvents: 'none' }} />
+        {/* card icon */}
+        <svg width="86" height="86" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,1)" strokeWidth="0.85" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', top: -16, right: -16, opacity: 0.13, pointerEvents: 'none', animation: 'heroFloat 6s ease-in-out infinite' }}>
           <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="14.5" r="1.5" fill="rgba(255,255,255,1)" stroke="none"/>
         </svg>
-        <div style={{ position: 'absolute', left: -40, bottom: -48, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
-        <div style={{ display: 'flex', justifyContent: budget ? 'space-between' : 'center', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div style={{ display: 'flex', justifyContent: budget ? 'space-between' : 'center', alignItems: 'flex-start', marginBottom: 12, position: 'relative' }}>
           <div style={{ paddingLeft: budget ? 2 : 0, textAlign: budget ? 'left' : 'center' }}>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .5, textTransform: 'uppercase', marginBottom: 4 }}>Total Spent</div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 700, color: '#fff' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginTop: 3 }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day TSR · {expenses.length} entries</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5 }}>Total Spent</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4, fontWeight: 500 }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day · {expenses.length} entries</div>
           </div>
           {budget && (
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', marginBottom: 4 }}>Budget Left</div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#FFD0B0' }}>
+              <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5 }}>Budget Left</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#FFD0B0', textShadow: '0 1px 8px rgba(0,0,0,0.15)', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) .1s both' }}>
                 {budgetLeft < 0 ? '-' : ''}₹{Math.abs(Math.round(budgetLeft)).toLocaleString('en-IN')}
               </div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of ₹{budget.toLocaleString('en-IN')}</div>
@@ -654,15 +663,15 @@ function SplitPage({ trip, myNickname }) {
             const dateLabel = new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
             return (
               <div key={exp.id} style={{ background: '#fff', borderRadius: 16, marginBottom: 10, boxShadow: '0 2px 12px rgba(15,23,42,0.06)', border: '1px solid rgba(0,0,0,0.08)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0 }}><CatIcon id={cat.id} size={20} /></div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: '#111827', marginBottom: 3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap', fontSize: 12, color: '#6b7280' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 12px' }}>
+                  <div style={{ width: 38, height: 38, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0 }}><CatIcon id={cat.id} size={18} /></div>
+                  <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, flexWrap: 'wrap', fontSize: 11, color: '#6b7280' }}>
                       <span>{cat.label}</span>
                       <span style={{ color: '#D3D1C7' }}>·</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                        <div style={{ width: 16, height: 16, borderRadius: '50%', background: mcolor(exp.paidBy), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 7, fontWeight: 800 }}>{exp.paidBy.slice(0,2).toUpperCase()}</div>
+                        <div style={{ width: 14, height: 14, borderRadius: '50%', background: mcolor(exp.paidBy), display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 6, fontWeight: 800 }}>{exp.paidBy.slice(0,2).toUpperCase()}</div>
                         <span>{exp.paidBy}</span>
                       </div>
                       <span style={{ color: '#D3D1C7' }}>·</span>
@@ -670,11 +679,10 @@ function SplitPage({ trip, myNickname }) {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: '#111827' }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
-                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>₹{Math.round(exp.amount / splitArr.length).toLocaleString('en-IN')} each</div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 5, marginTop: 6 }}>
-                      <button onClick={() => handleEditExpense(exp)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(0,0,0,0.1)', background: '#f8f8f6', color: '#6b7280', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>✎</button>
-                      <button onClick={() => handleDelete(exp.id)} style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid rgba(239,68,68,0.2)', background: 'rgba(239,68,68,0.06)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 13, fontFamily: "'DM Sans',sans-serif" }}>✕</button>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827' }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 5 }}>
+                      <button onClick={() => handleEditExpense(exp)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1, fontFamily: "'DM Sans',sans-serif" }}>✎</button>
+                      <button onClick={() => handleDelete(exp.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1, opacity: 0.75, fontFamily: "'DM Sans',sans-serif" }}>✕</button>
                     </div>
                   </div>
                 </div>
