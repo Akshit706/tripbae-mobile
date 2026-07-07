@@ -1,5 +1,5 @@
 import { useState, useRef, Fragment } from 'react';
-import { updateUserProfile } from '../../api';
+import { updateUserProfile, imagekitAuth } from '../../api';
 import lumiImg from '../../assets/Lumi4_bgless.png';
 
 /* ── Brand ─────────────────────────────────────────── */
@@ -229,10 +229,11 @@ function LumiQuote({ text }) {
    MAIN WIZARD
 ══════════════════════════════════════════════════════ */
 export default function UserProfileWizard({ userName, onDone }) {
-  const [step, setStep]     = useState(0);
-  const [saving, setSaving] = useState(false);
-  const [error, setError]   = useState('');
-  const fileRef             = useRef(null);
+  const [step, setStep]       = useState(0);
+  const [saving, setSaving]   = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [error, setError]     = useState('');
+  const fileRef               = useRef(null);
 
   const [profile, setProfile] = useState({
     photoUrl:          '',
@@ -257,8 +258,37 @@ export default function UserProfileWizard({ userName, onDone }) {
   const handlePhoto = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setUploading(true);
     const reader = new FileReader();
-    reader.onload = ev => set('photoUrl', ev.target.result);
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target.result;
+      // Show preview immediately
+      set('photoUrl', dataUrl);
+      // Upload to ImageKit
+      try {
+        const auth = await imagekitAuth();
+        const blob = await (await fetch(dataUrl)).blob();
+        const safeFile = (file.name || 'avatar.jpg').replace(/[^a-zA-Z0-9._-]/g, '_');
+        const fileName = `avatar_${Date.now()}_${safeFile}`;
+        const form = new FormData();
+        form.append('file', blob, fileName);
+        form.append('fileName', fileName);
+        form.append('folder', '/tb-avatars');
+        form.append('useUniqueFileName', 'false');
+        form.append('publicKey',  auth.publicKey);
+        form.append('signature',  auth.signature);
+        form.append('expire',     String(auth.expire));
+        form.append('token',      auth.token);
+        const res  = await fetch('https://upload.imagekit.io/api/v1/files/upload', { method: 'POST', body: form });
+        const data = await res.json();
+        if (data.url) {
+          set('photoUrl', data.url + '?tr=w-300,h-300,fo-face,q-85');
+        }
+      } catch {
+        // IK upload failed — base64 preview stays, which is fine
+      }
+      setUploading(false);
+    };
     reader.readAsDataURL(file);
   };
 
@@ -273,7 +303,7 @@ export default function UserProfileWizard({ userName, onDone }) {
     setSaving(false);
   };
 
-  const canNext = [true, true, !!profile.gender, !!profile.country, true, true][step];
+  const canNext = [true, !!profile.photoUrl && !uploading, !!profile.gender, !!profile.country, true, true][step];
 
   const ageQuip = getAgeQuip(profile.dateOfBirth);
 
@@ -399,6 +429,18 @@ export default function UserProfileWizard({ userName, onDone }) {
                   <IC.camera />
                 </div>
               </div>
+
+              {uploading && (
+                <div style={{ fontSize: 13, color: AC, fontWeight: 600, marginTop: 4 }}>Uploading photo…</div>
+              )}
+              {!profile.photoUrl && !uploading && (
+                <div style={{ fontSize: 12, color: '#999', marginTop: 6, textAlign: 'center' }}>
+                  A profile photo is required to continue
+                </div>
+              )}
+              {profile.photoUrl && !uploading && (
+                <div style={{ fontSize: 12, color: '#0F6E56', marginTop: 6, fontWeight: 600 }}>✓ Photo uploaded</div>
+              )}
             </div>
 
             {/* ━━ STEP 2: Basic details ━━ */}
@@ -519,12 +561,13 @@ export default function UserProfileWizard({ userName, onDone }) {
         <div style={{ flexShrink: 0, padding: `1rem 1.25rem calc(1rem + env(safe-area-inset-bottom,0px))`, background: '#fff', borderTop: '1px solid #F0EDE8' }}>
           {step === 1 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9, alignItems: 'center' }}>
-              <OrangeBtn className="or-btn" onClick={() => profile.photoUrl ? next() : fileRef.current?.click()}>
-                {profile.photoUrl ? <><span>Continue</span><IC.fwd /></> : 'Upload Photo'}
+              <OrangeBtn className="or-btn" onClick={() => profile.photoUrl && !uploading ? next() : fileRef.current?.click()} disabled={uploading}>
+                {uploading
+                  ? 'Uploading…'
+                  : profile.photoUrl
+                    ? <><span>Continue</span><IC.fwd /></>
+                    : 'Upload Photo'}
               </OrangeBtn>
-              <button onClick={next} style={{ border: 'none', background: 'none', color: '#aaa', fontSize: 13, fontWeight: 600, cursor: 'pointer', padding: '2px 0', fontFamily: "'DM Sans',sans-serif" }}>
-                Skip for now
-              </button>
             </div>
           ) : step === 5 ? (
             <OrangeBtn className="or-btn" onClick={handleFinish} disabled={saving}>

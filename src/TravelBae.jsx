@@ -389,6 +389,15 @@ export default function App() {
           setShowOnboarding(true);
         } else {
           setUserProfile(up);
+          // Sync photo from backend into local profile.avatar
+          if (up.photoUrl) {
+            setProfile(prev => {
+              if (prev?.avatar === up.photoUrl) return prev;
+              const next = { ...prev, avatar: up.photoUrl };
+              try { localStorage.setItem('travelbae_profile', JSON.stringify(next)); } catch (_) {}
+              return next;
+            });
+          }
         }
       })
       .catch(() => {});
@@ -1201,7 +1210,15 @@ export default function App() {
       {showOnboarding && (
         <UserProfileWizard
           userName={profile?.name || ''}
-          onDone={(savedProfile) => { setShowOnboarding(false); setUserProfile({ ...savedProfile, onboardingDone: true }); }}
+          onDone={(savedProfile) => {
+            setShowOnboarding(false);
+            const up = { ...savedProfile, onboardingDone: true };
+            setUserProfile(up);
+            // Persist the profile photo into local profile.avatar so it shows in the top bar
+            if (savedProfile.photoUrl) {
+              saveProfile({ ...profile, avatar: savedProfile.photoUrl });
+            }
+          }}
         />
       )}
       {sharedFlight && (
@@ -1355,10 +1372,18 @@ export default function App() {
             flexShrink: 0,
           }}
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a18" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="8" r="4"/>
-            <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7"/>
-          </svg>
+          {(userProfile?.photoUrl || profile.avatar) ? (
+            <img
+              src={userProfile?.photoUrl || profile.avatar}
+              alt="profile"
+              style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,106,0,0.35)' }}
+            />
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a18" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="8" r="4"/>
+              <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7"/>
+            </svg>
+          )}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
           <img src={bglessLogo} alt="TripBae" style={{ height: 72, width: 'auto', objectFit: 'contain', display: 'block' }} />

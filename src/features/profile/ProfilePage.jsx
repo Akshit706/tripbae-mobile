@@ -114,7 +114,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const [view, setView] = useState('hub'); // 'hub' | 'badges' | 'stats' | 'history' | 'notifications' | 'support' | 'privacy' | 'help' | 'about'
   const [spanFilter, setSpanFilter] = useState('all'); 
   const [name, setName] = useState(profile.name || '');
-  const [avatar, setAvatar] = useState(profile.avatar || null);
+  const [avatar, setAvatar] = useState(userProfile?.photoUrl || profile.avatar || null);
   const [editingName, setEditingName] = useState(false);
   const [saved, setSaved] = useState(false);
   const [toast, setToast] = useState('');
@@ -247,6 +247,10 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
             const ikUrl = data.url + '?tr=w-240,h-240,fo-face,q-85';
             setAvatar(ikUrl);
             persist({ name, avatar: ikUrl });
+            // Persist to backend
+            updateUserProfile({ photoUrl: ikUrl }).then(r => {
+              if (onUpdateProfile && r?.userProfile) onUpdateProfile(r.userProfile);
+            }).catch(() => {});
           }
         } catch {
           // IK upload failed — base64 preview stays, no issue
@@ -267,6 +271,10 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const removeAvatar = () => {
     setAvatar(null);
     persist({ name, avatar: null });
+    // Persist removal to backend
+    updateUserProfile({ photoUrl: null }).then(r => {
+      if (onUpdateProfile && r?.userProfile) onUpdateProfile(r.userProfile);
+    }).catch(() => {});
   };
 
   const initials = (name || '?').trim().slice(0, 2).toUpperCase();
