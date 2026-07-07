@@ -735,7 +735,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', letterSpacing: '-0.1px', lineHeight: 1.2, fontFamily: "'DM Sans',sans-serif" }}>New Trip</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.72)', marginTop: 1.5, lineHeight: 1.35, fontFamily: "'DM Sans',sans-serif" }}>Plan you adventure</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.72)', marginTop: 1.5, lineHeight: 1.35, fontFamily: "'DM Sans',sans-serif" }}>Plan your adventure</div>
               </div>
               <svg style={{ position: 'absolute', right: 6, bottom: 6, opacity: 0.18, pointerEvents: 'none' }} width="46" height="36" viewBox="0 0 46 36" fill="none">
                 <path d="M3 30 C 12 18, 28 10, 41 3" stroke="#fff" strokeWidth="1.2" strokeDasharray="3.5 2.8" strokeLinecap="round"/>
@@ -862,25 +862,23 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {homeTab === 'trips' && activeTrips.length > 0 && (
-        <div style={{ textAlign: 'center', marginBottom: 14, marginTop: 12 }}>
-          <span style={{ position: 'relative', display: 'inline-block' }}>
-            <img
-              src={lumi12}
-              alt=""
-              aria-hidden="true"
-              style={{
-                position: 'absolute',
-                right: 'calc(100% - 6px)',
-                bottom: -1,
-                height: 50,
-                width: 'auto',
-                filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.07))',
-                pointerEvents: 'none',
-                userSelect: 'none',
-              }}
-            />
-            <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', lineHeight: 1, display: 'inline-block' }}>YOUR TRIPS</span>
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', marginBottom: 14, marginTop: 12 }}>
+          <img
+            src={lumi12}
+            alt=""
+            aria-hidden="true"
+            style={{
+              height: 44,
+              width: 'auto',
+              marginRight: -3,
+              marginBottom: -3,
+              filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.07))',
+              pointerEvents: 'none',
+              userSelect: 'none',
+              flexShrink: 0,
+            }}
+          />
+          <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', lineHeight: 1 }}>YOUR TRIPS</span>
         </div>
       )}
 
