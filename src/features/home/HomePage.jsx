@@ -583,6 +583,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         @keyframes float { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-5px)} }
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes lumiRise { from{transform:translateY(0);opacity:0} to{transform:translateY(-100%);opacity:1} }
         @keyframes progressFill { from{width:0} to{width:var(--w)} }
         @keyframes tbMacbookFold {
           0%   { transform: scale(1) translateY(0);   opacity: 1; filter: saturate(1); }
@@ -735,7 +736,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', letterSpacing: '-0.1px', lineHeight: 1.2, fontFamily: "'DM Sans',sans-serif" }}>New Trip</div>
-                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.72)', marginTop: 1.5, lineHeight: 1.35, fontFamily: "'DM Sans',sans-serif" }}>Plan you adventure</div>
+                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.72)', marginTop: 1.5, lineHeight: 1.35, fontFamily: "'DM Sans',sans-serif" }}>Plan your adventure</div>
               </div>
               <svg style={{ position: 'absolute', right: 6, bottom: 6, opacity: 0.18, pointerEvents: 'none' }} width="46" height="36" viewBox="0 0 46 36" fill="none">
                 <path d="M3 30 C 12 18, 28 10, 41 3" stroke="#fff" strokeWidth="1.2" strokeDasharray="3.5 2.8" strokeLinecap="round"/>
@@ -874,7 +875,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               aria-hidden="true"
               style={{
                 position: 'absolute',
-                left: +40,
+                left: +60,
                 top: 0,
                 transform: 'translateY(-100%)',
                 height: 56,
@@ -882,8 +883,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 zIndex: 5,
                 pointerEvents: 'none',
                 userSelect: 'none',
-                filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.18))',
-              }}
+                filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.18))',                animation: 'lumiRise 0.42s cubic-bezier(.18,.89,.32,1.28) both',
+                animationDelay: '0.32s',              }}
             />
             <TripCard
               trip={trip}
