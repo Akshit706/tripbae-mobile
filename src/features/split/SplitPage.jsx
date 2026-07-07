@@ -726,8 +726,8 @@ function SplitPage({ trip, myNickname }) {
                     <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>paid <span style={{ color: '#374151', fontWeight: 600 }}>₹{Math.round(paid).toLocaleString('en-IN')}</span> · share <span style={{ color: '#374151', fontWeight: 600 }}>₹{Math.round(owes).toLocaleString('en-IN')}</span></div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: isPos ? '#FF6A00' : isNeg ? '#DC2626' : '#6b7280' }}>{isPos ? '+' : isNeg ? '−' : ''}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}</div>
-                    <div style={{ display: 'inline-block', marginTop: 3, fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: isPos ? '#FFF3EB' : isNeg ? '#FFF1F0' : '#F3F4F6', color: isPos ? '#FF6A00' : isNeg ? '#DC2626' : '#6b7280' }}>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: isPos ? '#FF6A00' : isNeg ? '#D85B00' : '#6b7280' }}>{isPos ? '+' : isNeg ? '−' : ''}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}</div>
+                    <div style={{ display: 'inline-block', marginTop: 3, fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: isPos ? '#FFF3EB' : isNeg ? '#FFF8F4' : '#F3F4F6', color: isPos ? '#FF6A00' : isNeg ? '#D85B00' : '#6b7280' }}>
                       {isPos ? 'gets back' : isNeg ? 'owes' : 'settled ✓'}
                     </div>
                   </div>
@@ -747,13 +747,13 @@ function SplitPage({ trip, myNickname }) {
           <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8, marginTop: 16 }}>Who pays whom</div>
           {settlements.length === 0
             ? (
-              <div style={{ background: 'linear-gradient(135deg,#F0FFF8,#EAFBF3)', border: '1px solid rgba(34,197,94,0.2)', borderRadius: 16, padding: '1.1rem 1.25rem', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#22c55e,#16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#FFF0E4)', border: '1px solid rgba(255,106,0,0.2)', borderRadius: 16, padding: '1.1rem 1.25rem', display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20,6 9,17 4,12"/></svg>
                 </div>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: '#166534' }}>All settled up!</div>
-                  <div style={{ fontSize: 12, color: '#4ade80', marginTop: 2 }}>Everyone's square. No payments needed.</div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#7A2800' }}>All settled up!</div>
+                  <div style={{ fontSize: 12, color: '#FF8C3A', marginTop: 2 }}>Everyone's square. No payments needed.</div>
                 </div>
               </div>
             )
@@ -792,8 +792,8 @@ function SplitPage({ trip, myNickname }) {
           <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
             {[
               { label: 'Gets back', count: memberNames.filter(m => balances[m] >= 0.5).length, color: '#FF6A00', bg: '#FFF3EB' },
-              { label: 'Owes', count: memberNames.filter(m => balances[m] < -0.5).length, color: '#DC2626', bg: '#FFF1F0' },
-              { label: 'Settled', count: memberNames.filter(m => Math.abs(balances[m]) < 0.5).length, color: '#22c55e', bg: '#F0FFF8' },
+              { label: 'Owes', count: memberNames.filter(m => balances[m] < -0.5).length, color: '#D85B00', bg: '#FFF8F4' },
+              { label: 'Settled', count: memberNames.filter(m => Math.abs(balances[m]) < 0.5).length, color: '#9ca3af', bg: '#F9F9F8' },
             ].map((s, i) => (
               <div key={i} style={{ flex: 1, background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '10px 8px', textAlign: 'center', animation: `soloFadeUp .3s ease-out ${i * 55}ms both` }}>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: s.color }}>{s.count}</div>
@@ -810,8 +810,8 @@ function SplitPage({ trip, myNickname }) {
           ].map((m, i) => {
             const b = balances[m];
             const isPos = b >= 0.5, isNeg = b < -0.5;
-            const accentColor = isPos ? '#FF6A00' : isNeg ? '#DC2626' : '#9ca3af';
-            const accentBg = isPos ? '#FFF3EB' : isNeg ? '#FFF1F0' : '#F9F9F8';
+            const accentColor = isPos ? '#FF6A00' : isNeg ? '#D85B00' : '#9ca3af';
+            const accentBg = isPos ? '#FFF3EB' : isNeg ? '#FFF8F4' : '#F9F9F8';
             const maxAbs = Math.max(...memberNames.map(n => Math.abs(balances[n] || 0)), 1);
             const barPct = Math.round((Math.abs(b) / maxAbs) * 100);
             return (
@@ -852,7 +852,7 @@ function SplitPage({ trip, myNickname }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
             {[
               { label: 'Daily rate', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB' },
-              { label: 'Projected', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, sub: budget && projected > budget ? `+₹${Math.round(overBy).toLocaleString('en-IN')} over` : 'on track', color: budget && projected > budget ? '#DC2626' : '#22c55e', bg: budget && projected > budget ? '#FFF1F0' : '#F0FFF8' },
+              { label: 'Projected', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, sub: budget && projected > budget ? `+₹${Math.round(overBy).toLocaleString('en-IN')} over` : 'on track', color: budget && projected > budget ? '#D85B00' : '#FF8C3A', bg: budget && projected > budget ? '#FFF8F4' : '#FFF3EB' },
               { label: 'Days left', value: daysLeft, sub: `${daysElapsed}d elapsed`, color: '#6366f1', bg: '#EEF2FF' },
             ].map((s, idx) => (
               <div key={idx} style={{ background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '11px 10px', textAlign: 'center', animation: `soloFadeUp .3s ease-out ${idx * 55}ms both` }}>
@@ -879,10 +879,10 @@ function SplitPage({ trip, myNickname }) {
             <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '13px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .4s ease-out 120ms both' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1 }}>Crew pace</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: pacePct > 115 ? '#DC2626' : pacePct > 95 ? '#FF6A00' : '#22c55e', fontFamily: "'Sora',sans-serif" }}>{pacePct}% of plan</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: pacePct > 115 ? '#D85B00' : '#FF6A00', fontFamily: "'Sora',sans-serif" }}>{pacePct}% of plan</div>
               </div>
               <div style={{ height: 7, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
-                <div style={{ height: '100%', width: `${Math.min(pacePct, 100)}%`, borderRadius: 99, transition: 'width .6s cubic-bezier(.2,.8,.2,1)', background: pacePct > 115 ? 'linear-gradient(90deg,#DC2626,#ef4444)' : pacePct > 95 ? 'linear-gradient(90deg,#FF6A00,#FF8C3A)' : 'linear-gradient(90deg,#22c55e,#4ade80)' }} />
+                <div style={{ height: '100%', width: `${Math.min(pacePct, 100)}%`, borderRadius: 99, transition: 'width .6s cubic-bezier(.2,.8,.2,1)', background: pacePct > 115 ? 'linear-gradient(90deg,#D85B00,#FF6A00)' : 'linear-gradient(90deg,#FF6A00,#FF8C3A)' }} />
               </div>
               <div style={{ fontSize: 11, color: '#9ca3af' }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day actual · ₹{Math.round(plannedDailyBudget).toLocaleString('en-IN')}/day planned</div>
             </div>
@@ -895,7 +895,7 @@ function SplitPage({ trip, myNickname }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 {[
                   { label: 'Trip budget', value: `₹${Math.round(budget).toLocaleString('en-IN')}`, color: '#374151' },
-                  { label: 'Projected end', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, color: projected > budget ? '#DC2626' : '#22c55e' },
+                  { label: 'Projected end', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, color: projected > budget ? '#D85B00' : '#FF8C3A' },
                 ].map(s => (
                   <div key={s.label} style={{ background: '#F9F9F8', borderRadius: 12, padding: '9px 11px', border: '1px solid rgba(0,0,0,0.06)' }}>
                     <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, marginBottom: 3 }}>{s.label}</div>
@@ -911,7 +911,7 @@ function SplitPage({ trip, myNickname }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
-                  <div style={{ padding: '9px 11px', background: projected > budget ? '#FFF1F0' : '#F0FFF8', border: `1px solid ${projected > budget ? '#fca5a5' : '#86efac'}`, borderRadius: 12, fontSize: 12, color: projected > budget ? '#DC2626' : '#166534', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
+                  <div style={{ padding: '9px 11px', background: projected > budget ? '#FFF8F4' : '#FFF3EB', border: `1px solid ${projected > budget ? '#FFCBA4' : '#FFD5A8'}`, borderRadius: 12, fontSize: 12, color: projected > budget ? '#D85B00' : '#FF6A00', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>{projected > budget ? <><path d="M10.3 3.3L2 19h20L13.7 3.3a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></> : <polyline points="20,6 9,17 4,12"/>}</svg>
                     {projected > budget ? `Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `₹${Math.round(underBy).toLocaleString('en-IN')} under pace`}
                   </div>
@@ -920,7 +920,7 @@ function SplitPage({ trip, myNickname }) {
                       <span>Spent</span><span>{budgetPct}%</span>
                     </div>
                     <div style={{ height: 7, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden' }}>
-                      <div style={{ height: '100%', borderRadius: 99, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? 'linear-gradient(90deg,#DC2626,#ef4444)' : budgetPct > 60 ? 'linear-gradient(90deg,#FF6A00,#FF8C3A)' : 'linear-gradient(90deg,#22c55e,#4ade80)', transition: 'width .6s' }} />
+                      <div style={{ height: '100%', borderRadius: 99, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? 'linear-gradient(90deg,#D85B00,#FF6A00)' : 'linear-gradient(90deg,#FF6A00,#FF8C3A)', transition: 'width .6s' }} />
                     </div>
                   </div>
                 </div>
@@ -961,7 +961,7 @@ function SplitPage({ trip, myNickname }) {
               {top3.map((exp, idx) => {
                 const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
                 const pct = total > 0 ? Math.round(exp.amount / total * 100) : 0;
-                const rankColors = ['#FF6A00', '#6366f1', '#22c55e'];
+                const rankColors = ['#FF6A00', '#D85B00', '#9ca3af'];
                 return (
                   <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: idx < top3.length - 1 ? 10 : 0, borderBottom: idx < top3.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none', marginBottom: idx < top3.length - 1 ? 10 : 0 }}>
                     <div style={{ width: 22, height: 22, borderRadius: '50%', background: rankColors[idx], display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>{idx + 1}</div>
@@ -998,7 +998,7 @@ function SplitPage({ trip, myNickname }) {
                     <div style={{ height: '100%', width: `${Math.round((payTotal[m] || 0) / maxPay * 100)}%`, background: `linear-gradient(90deg,${mcolor(m)},${mcolor(m)}cc)`, borderRadius: 99, transition: 'width .5s cubic-bezier(.2,.8,.2,1)' }} />
                   </div>
                 </div>
-                <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, flexShrink: 0, background: balances[m] >= 0.5 ? '#FFF3EB' : balances[m] <= -0.5 ? '#FFF1F0' : '#F3F4F6', color: balances[m] >= 0.5 ? '#FF6A00' : balances[m] <= -0.5 ? '#DC2626' : '#9ca3af', border: `1px solid ${balances[m] >= 0.5 ? '#FF6A0033' : balances[m] <= -0.5 ? '#DC262633' : 'transparent'}` }}>
+                <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, flexShrink: 0, background: balances[m] >= 0.5 ? '#FFF3EB' : balances[m] <= -0.5 ? '#FFF8F4' : '#F3F4F6', color: balances[m] >= 0.5 ? '#FF6A00' : balances[m] <= -0.5 ? '#D85B00' : '#9ca3af', border: `1px solid ${balances[m] >= 0.5 ? '#FF6A0033' : balances[m] <= -0.5 ? '#D85B0033' : 'transparent'}` }}>
                   {balances[m] >= 0.5 ? '+' : ''}₹{Math.abs(Math.round(balances[m])).toLocaleString('en-IN')}
                 </div>
               </div>
