@@ -883,7 +883,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 pointerEvents: 'none',
                 userSelect: 'none',
                 filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.18))',
-                animation: 'lumiRise 0.42s cubic-bezier(.18,.89,.32,1.28) both',
+                animation: 'lumiRise 0.42s ease-out both',
                 animationDelay: '0.45s',
               }}
             />
