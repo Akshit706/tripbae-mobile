@@ -90,22 +90,36 @@ export async function getFxRate(from, to) {
 }
 
 const HERO_TAGLINES = [
-{ icon: '🌿', line1: 'Rishikesh,', line2: 'fix me!' },
-{ icon: '🐘', line1: 'Coorg said', line2: '"stay"' },
-{ icon: '🌊', line1: 'Goa,', line2: 'off-season vibes?' },
-{ icon: '🎭', line1: "Vienna's", line2: 'old town' },
-{ icon: '📵', line1: 'Spiti,', line2: 'no signal!' },
-{ icon: '🎒', line1: 'Kasol,', line2: 'lost again?' },
-{ icon: '🏔️', line1: 'Ladakh', line2: 'called again!' },
-{ icon: '🌿', line1: 'Meghalaya,', line2: 'clouds live here' },
-{ icon: '☕', line1: 'Hidden cafes,', line2: 'Lisbon' },
-{ icon: '🌴', line1: 'Andamans,', line2: 'who needs wifi?' },
-{ icon: '🏯', line1: 'Jaipur,', line2: 'dress accordingly!' },
-{ icon: '🌸', line1: 'Cherry blossoms,', line2: 'Tokyo' },
-{ icon: '🚂', line1: 'Darjeeling,', line2: 'sip slowly.' },
-{ icon: '🌊', line1: 'Sunrise surf,', line2: 'Bali' },
-{ icon: '🍵', line1: 'Munnar', line2: 'stole me' },
-{ icon: '🛺', line1: 'Varanasi', line2: 'never sleeps!' },
+{ line1: 'Meghalaya,', line2: 'clouds live here' },
+{ line1: 'Australia,', line2: 'wider than Moon' },
+{ line1: 'Iceland,', line2: 'no mosquitoes' },
+{ line1: 'France,', line2: "world's top spot" },
+{ line1: 'Maldives,', line2: 'beaches glow' },
+{ line1: 'Dead Sea,', line2: 'floats everyone' },
+{ line1: 'Bhutan,', line2: 'happiness first' },
+{ line1: 'Japan,', line2: 'forest bath culture' },
+{ line1: 'Venice,', line2: 'keeps sinking' },
+{ line1: 'Greenland,', line2: "isn't green" },
+{ line1: 'Antarctica,', line2: "world's desert" },
+{ line1: 'Machu Picchu,', line2: 'older than pizza' },
+{ line1: 'Great Wall,', line2: 'not visible from space' },
+{ line1: 'Pisa Tower,', line2: "wasn't planned" },
+{ line1: 'Petra,', line2: 'carved in stone' },
+{ line1: 'Sushi,', line2: 'not always raw' },
+{ line1: 'Pizza,', line2: "wasn't always Italian" },
+{ line1: 'Tea,', line2: 'beats coffee' },
+{ line1: 'Switzerland,', line2: 'banned lonely guinea pigs' },
+{ line1: 'Finland,', line2: 'coffee champs' },
+{ line1: 'India,', line2: 'loves train rides' },
+{ line1: 'Northern Lights,', line2: 'best near equinox' },
+{ line1: 'Volcanoes,', line2: 'create islands' },
+{ line1: 'Coral reefs,', line2: 'are alive' },
+{ line1: 'Camels,', line2: 'three eyelids' },
+{ line1: 'Penguins,', line2: 'love hot springs' },
+{ line1: 'Bananas,', line2: 'are berries' },
+{ line1: 'Everest,', line2: 'still growing' },
+{ line1: '53-second flight,', line2: "yes it's real" },
+{ line1: 'Airplane food,', line2: 'tastes different' },
 ];
 
 const HERO_GREETINGS = {
@@ -341,10 +355,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [confirmComplete, setConfirmComplete] = useState(null);
   const [menuOpen, setMenuOpen] = useState(null);
   const [archivingTripId, setArchivingTripId] = useState(null);
-  const [tagIdx, setTagIdx] = useState(() => {
-    const pool = [0, 1, 2, 9, 10, 7];
-    return pool[Math.floor(Math.random() * pool.length)];
-  });
+  const [tagIdx] = useState(() => Math.floor(Math.random() * HERO_TAGLINES.length));
   const [tagPhase, setTagPhase] = useState('in');
   const [greetPhrase] = useState(() => {
     const h = new Date().getHours();
@@ -361,7 +372,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [fxLoading, setFxLoading] = useState(false);
   const [fxError, setFxError] = useState('');
   const destDebounce = useRef(null);
-  const tagSwapRef = useRef(null);
+
 
   const searchDest = useCallback(async (text) => {
     if (text.length < 2) { setDestSuggestions([]); return; }
@@ -445,17 +456,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const budgetNum = form.budget ? Number(form.budget) : 0;
   const convertedBudget = budgetNum > 0 ? (budgetNum * fxRate) : 0;
 
-  useEffect(() => {
-    const tick = () => {
-      setTagPhase('out');
-      tagSwapRef.current = setTimeout(() => {
-        setTagIdx(i => (i + 1) % HERO_TAGLINES.length);
-        setTagPhase('in');
-      }, 350);
-    };
-    const id = setInterval(tick, 3200);
-    return () => { clearInterval(id); clearTimeout(tagSwapRef.current); };
-  }, []);
+
 
   const openTripWithMotion = (tripId, event) => {
     const rect = event?.currentTarget?.getBoundingClientRect?.();
