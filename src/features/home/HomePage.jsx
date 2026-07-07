@@ -12,6 +12,7 @@ import currencyData from '../../../currency.json';
 import CreateTripWizard from './CreateTripWizard';
 import mountainImg from '../../assets/mountain.png';
 import lumi9 from '../../assets/lumi9.png';
+import lumi12 from '../../assets/lumi12.png';
 
 const FX_API_KEY = 'cce33519f478fe73220306ed';
 const _fxMemCache = {};
@@ -861,7 +862,23 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {homeTab === 'trips' && activeTrips.length > 0 && (
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', marginBottom: 14, marginTop: 12 }}>YOUR TRIPS</div>
+        <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: 14, marginTop: 12, position: 'relative' }}>
+          <img
+            src={lumi12}
+            alt="Lumi"
+            style={{
+              height: 52,
+              width: 'auto',
+              marginRight: -4,
+              marginBottom: -2,
+              filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.10))',
+              flexShrink: 0,
+              position: 'relative',
+              zIndex: 1,
+            }}
+          />
+          <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', lineHeight: 1, paddingBottom: 2 }}>YOUR TRIPS</div>
+        </div>
       )}
 
       {homeTab === 'trips' && activeTrips.map((trip, idx) => (
