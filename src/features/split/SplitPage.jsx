@@ -4,6 +4,12 @@ import { CATS, normalizeMembers, tripDuration, tripStatusInfo } from '../shared/
 import { S } from '../shared/styles';
 import { Avatar, CatIcon } from '../shared/ui';
 import lumi8Img from '../../assets/lumi8.png';
+import lumiMood1 from '../../assets/lumi_mood1.png';
+import lumiMood2 from '../../assets/lumi_mood2.png';
+import lumiMood3 from '../../assets/lumi_mood3.png';
+import lumiMood4 from '../../assets/lumi_mood4.png';
+import lumiMood5 from '../../assets/lumi_mood5.png';
+import lumiMood6 from '../../assets/lumi_mood6.png';
 function SplitPage({ trip, myNickname }) {
   const memberNames = normalizeMembers(trip.members);
   const [expenses, setExpenses] = useState(trip.expenses || []);
@@ -544,24 +550,13 @@ function SplitPage({ trip, myNickname }) {
           )}
         </div>
         {budget && (() => {
-          const statusColor = budgetPct <= 25 ? '#6EE7B7' : budgetPct <= 50 ? '#A7F3D0' : budgetPct <= 70 ? '#FDE68A' : budgetPct <= 85 ? '#FCA5A5' : budgetPct <= 95 ? '#FB923C' : '#EF4444';
           const budgetMsg = budgetPct <= 25 ? 'Crushing it!' : budgetPct <= 50 ? 'Looking good' : budgetPct <= 70 ? 'Keep an eye' : budgetPct <= 85 ? 'Getting close' : budgetPct <= 95 ? 'Almost gone!' : 'Budget blown!';
-          const statusIcon = budgetPct <= 25
-            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="8,12 11,15 16,9"/></svg>
-            : budgetPct <= 50
-            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14z"/><path d="M7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/></svg>
-            : budgetPct <= 70
-            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-            : budgetPct <= 85
-            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
-            : budgetPct <= 95
-            ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-            : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={statusColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>;
+          const moodImg = budgetPct <= 25 ? lumiMood1 : budgetPct <= 50 ? lumiMood6 : budgetPct <= 70 ? lumiMood3 : budgetPct <= 85 ? lumiMood2 : budgetPct <= 95 ? lumiMood4 : lumiMood5;
           return (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}>
-                <span style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>{statusIcon}</span>
-                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>{budgetMsg}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <img src={moodImg} alt="" style={{ width: 30, height: 30, objectFit: 'contain', flexShrink: 0 }} />
+                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{budgetMsg}</span>
               </div>
               <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
                 <div style={{ height: '100%', borderRadius: 4, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? 'linear-gradient(90deg,#FF9970,#FFD3C4)' : 'linear-gradient(90deg,#FF8050,#FFD0B0)', transition: 'width .6s' }} />
@@ -856,12 +851,11 @@ function SplitPage({ trip, myNickname }) {
           {/* stat strip */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
             {[
-              { label: 'Daily rate', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg> },
-              { label: 'Projected', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, sub: budget && projected > budget ? `+₹${Math.round(overBy).toLocaleString('en-IN')} over` : 'on track', color: budget && projected > budget ? '#DC2626' : '#22c55e', bg: budget && projected > budget ? '#FFF1F0' : '#F0FFF8', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
-              { label: 'Days left', value: daysLeft, sub: `${daysElapsed}d elapsed`, color: '#6366f1', bg: '#EEF2FF', icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg> },
+              { label: 'Daily rate', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB' },
+              { label: 'Projected', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, sub: budget && projected > budget ? `+₹${Math.round(overBy).toLocaleString('en-IN')} over` : 'on track', color: budget && projected > budget ? '#DC2626' : '#22c55e', bg: budget && projected > budget ? '#FFF1F0' : '#F0FFF8' },
+              { label: 'Days left', value: daysLeft, sub: `${daysElapsed}d elapsed`, color: '#6366f1', bg: '#EEF2FF' },
             ].map((s, idx) => (
               <div key={idx} style={{ background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '11px 10px', textAlign: 'center', animation: `soloFadeUp .3s ease-out ${idx * 55}ms both` }}>
-                <div style={{ color: s.color, display: 'flex', justifyContent: 'center', marginBottom: 5 }}>{s.icon}</div>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827', letterSpacing: '-0.3px', lineHeight: 1.1 }}>{s.value}</div>
                 <div style={{ fontSize: 9, color: s.color, marginTop: 3, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .8 }}>{s.label}</div>
                 <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1 }}>{s.sub}</div>
