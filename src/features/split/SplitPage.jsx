@@ -554,8 +554,8 @@ function SplitPage({ trip, myNickname }) {
           const moodImg = budgetPct <= 25 ? lumiMood1 : budgetPct <= 50 ? lumiMood6 : budgetPct <= 70 ? lumiMood3 : budgetPct <= 85 ? lumiMood2 : budgetPct <= 95 ? lumiMood4 : lumiMood5;
           return (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <img src={moodImg} alt="" style={{ width: 30, height: 30, objectFit: 'contain', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+                <img src={moodImg} alt="" style={{ width: 42, height: 42, objectFit: 'contain', flexShrink: 0 }} />
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{budgetMsg}</span>
               </div>
               <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
@@ -865,7 +865,7 @@ function SplitPage({ trip, myNickname }) {
 
           {/* Lumi mood card */}
           <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#FFE9D9)', border: '1px solid rgba(255,106,0,0.18)', borderRadius: 20, marginBottom: 12, overflow: 'hidden', animation: 'soloFadeUp .38s ease-out 80ms both' }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
               <img src={lumi8Img} alt="Lumi" style={{ width: 78, height: 78, objectFit: 'contain', flexShrink: 0, marginLeft: 4 }} />
               <div style={{ flex: 1, padding: '14px 16px 14px 8px' }}>
                 <div style={{ fontSize: 9, color: '#FF6A00', fontWeight: 700, letterSpacing: 1.1, textTransform: 'uppercase', marginBottom: 5 }}>Group money mood</div>

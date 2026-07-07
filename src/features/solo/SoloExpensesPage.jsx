@@ -426,8 +426,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           const moodImg = budgetPct <= 25 ? lumiMood1 : budgetPct <= 50 ? lumiMood6 : budgetPct <= 70 ? lumiMood3 : budgetPct <= 85 ? lumiMood2 : budgetPct <= 95 ? lumiMood4 : lumiMood5;
           return (
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <img src={moodImg} alt="" style={{ width: 30, height: 30, objectFit: 'contain', flexShrink: 0 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 6 }}>
+                <img src={moodImg} alt="" style={{ width: 42, height: 42, objectFit: 'contain', flexShrink: 0 }} />
                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600 }}>{budgetMsg}</span>
               </div>
               <div style={{ height: 7, background: 'rgba(255,255,255,0.15)', borderRadius: 4, overflow: 'hidden' }}>
