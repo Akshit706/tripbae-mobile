@@ -5,7 +5,7 @@ import { Spinner } from '../shared/ui';
 import { PlacePhoto, PlacePhotosStrip, PlacePhotoCarousel } from '../media/PlaceMedia';
 import RecommendationsPage from './RecommendationsPage';
 import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime } from '../../api';
-import lumi10Img from '../../assets/lumi10.png';
+import lumi15Img from '../../assets/lumi15.png';
 
 /* ── Premium design tokens ─────────────────────────────────── */
 const D = {
@@ -1153,7 +1153,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                     {/* Side-by-side: Lumi + text */}
                     <div style={{ display:'flex', alignItems:'center', padding:'1.25rem 1.25rem 1rem', gap:14 }}>
                       <div style={{ width:92, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                        <img src={lumi10Img} alt="Lumi" style={{ width:86, height:116, objectFit:'contain', display:'block' }} />
+                        <img src={lumi15Img} alt="Lumi" style={{ width:86, height:116, objectFit:'contain', display:'block' }} />
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
