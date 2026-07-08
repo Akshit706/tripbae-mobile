@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import lumi8Img from '../../assets/lumi8.png';
 import lumiMood1 from '../../assets/lumi_mood1.png';
 import lumiMood2 from '../../assets/lumi_mood2.png';
 import lumiMood3 from '../../assets/lumi_mood3.png';
@@ -476,7 +477,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', borderBottom: '1.5px solid rgba(0,0,0,0.08)', marginBottom: '1rem' }}>
         {SECTION_TABS.map(t => {
           const tabIcons = {
-            expenses: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="13" y2="17"/></svg>,
+            expenses: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M22 10H2"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>,
             insights: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
           };
           return (
@@ -537,98 +538,107 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       )}
 
       {section === 'insights' && (
-        <div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 10 }}>
+        <div style={{ paddingBottom: '5rem' }}>
+
+          {/* stat strip */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
             {[
-              { label: 'TSR/day', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: `${daysElapsed}/${days} days elapsed` },
-              { label: 'Projected', value: `₹${projected.toLocaleString('en-IN')}`, sub: budget && projected > budget ? 'above budget pace' : 'on current pace', warn: budget && projected > budget },
-              { label: 'Top cat', value: topCatMeta?.label || '—', sub: `₹${Math.round(topCat?.[1] || 0).toLocaleString('en-IN')}` },
+              { label: 'Daily rate', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB' },
+              { label: 'Projected', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, sub: budget && projected > budget ? `+₹${Math.round(overBy).toLocaleString('en-IN')} over` : 'on track', color: budget && projected > budget ? '#D85B00' : '#FF8C3A', bg: budget && projected > budget ? '#FFF8F4' : '#FFF3EB' },
+              { label: 'Top cat', value: topCatMeta?.label || '—', sub: `₹${Math.round(topCat?.[1] || 0).toLocaleString('en-IN')}`, color: '#6366f1', bg: '#EEF2FF' },
             ].map((s, idx) => (
-              <div key={s.label} style={{ background: s.warn ? '#FAECE7' : '#f7f6f2', borderRadius: 12, padding: '10px 12px', border: s.warn ? '0.5px solid #F5C4B3' : 'none', animation: 'soloFadeUp .35s ease-out both', animationDelay: `${idx * 55}ms` }}>
-                <div style={{ fontSize: 11, color: s.warn ? '#993C1D' : '#6b6b68', marginBottom: 3 }}>{s.label}</div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: s.warn ? '#993C1D' : '#1a1a18' }}>{s.value}</div>
-                <div style={{ fontSize: 11, color: s.warn ? '#D85B00' : '#a8a8a5', marginTop: 2 }}>{s.sub}</div>
+              <div key={idx} style={{ background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '11px 10px', textAlign: 'center', animation: `soloFadeUp .3s ease-out ${idx * 55}ms both` }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827', letterSpacing: '-0.3px', lineHeight: 1.1 }}>{s.value}</div>
+                <div style={{ fontSize: 9, color: s.color, marginTop: 3, fontWeight: 700, textTransform: 'uppercase', letterSpacing: .8 }}>{s.label}</div>
+                <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1 }}>{s.sub}</div>
               </div>
             ))}
           </div>
 
-          <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FFF3EB,#FFF0E6)', border: `0.5px solid ${SOLO_ACCENT_BORDER}`, position: 'relative', overflow: 'hidden', animation: 'soloFadeUp .4s ease-out both', animationDelay: '120ms' }}>
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke={SOLO_ACCENT_TEXT} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ position: 'absolute', right: 10, top: 6, opacity: 0.3 }}><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="17"/><line x1="9" y1="14.5" x2="15" y2="14.5"/></svg>
-            <div style={{ fontSize: 11, color: SOLO_ACCENT_TEXT, textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Solo money mood</div>
-            <div style={{ fontSize: 14, color: SOLO_ACCENT_TEXT, lineHeight: 1.55, paddingRight: 20 }}>{soloInsightLine}</div>
+          {/* Lumi mood card */}
+          <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#FFE9D9)', border: '1px solid rgba(255,106,0,0.18)', borderRadius: 20, marginBottom: 12, overflow: 'hidden', animation: 'soloFadeUp .38s ease-out 80ms both' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+              <img src={lumi8Img} alt="Lumi" style={{ width: 78, height: 78, objectFit: 'contain', flexShrink: 0, marginLeft: 4 }} />
+              <div style={{ flex: 1, padding: '14px 16px 14px 8px' }}>
+                <div style={{ fontSize: 9, color: '#FF6A00', fontWeight: 700, letterSpacing: 1.1, textTransform: 'uppercase', marginBottom: 5 }}>Solo money mood</div>
+                <div style={{ fontSize: 13, color: '#7A2800', lineHeight: 1.6, fontWeight: 500 }}>{soloInsightLine}</div>
+              </div>
+            </div>
           </div>
 
+          {/* Pace meter */}
           {budget && pacePct !== null && (
-            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#F8FFF9,#F1FFFA)' }}>
-              <div style={{ fontSize: 11, color: '#0F6E56', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 6, fontWeight: 700 }}>Pace Meter</div>
-              <div style={{ fontSize: 14, color: '#1a1a18', lineHeight: 1.5 }}>
-                {pacePct <= 95 && `Nice control — you're at ${pacePct}% of planned daily budget pace.`}
-                {pacePct > 95 && pacePct <= 115 && `Balanced pace — running at ${pacePct}% of planned daily budget pace.`}
-                {pacePct > 115 && `High-burn mode — at ${pacePct}% of planned daily budget pace.`}
+            <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '13px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .4s ease-out 120ms both' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1 }}>Pace meter</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: pacePct > 115 ? '#D85B00' : '#FF6A00', fontFamily: "'Sora',sans-serif" }}>{pacePct}% of plan</div>
               </div>
-              <div style={{ marginTop: 8, fontSize: 12, color: '#6b6b68' }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day now vs ₹{Math.round(plannedDailyBudget).toLocaleString('en-IN')}/day planned</div>
+              <div style={{ height: 7, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
+                <div style={{ height: '100%', width: `${Math.min(pacePct, 100)}%`, borderRadius: 99, transition: 'width .6s cubic-bezier(.2,.8,.2,1)', background: pacePct > 115 ? 'linear-gradient(90deg,#D85B00,#FF6A00)' : 'linear-gradient(90deg,#FF6A00,#FF8C3A)' }} />
+              </div>
+              <div style={{ fontSize: 11, color: '#9ca3af' }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day actual · ₹{Math.round(plannedDailyBudget).toLocaleString('en-IN')}/day planned</div>
             </div>
           )}
 
+          {/* Budget health */}
           {budget && (
-            <div style={{ ...S.card, marginBottom: 10, background: 'linear-gradient(135deg,#FEFEFE,#FFF7F2)', animation: 'soloFadeUp .42s ease-out both', animationDelay: '170ms' }}>
-              <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>Budget health</div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 11, color: '#a8a8a5', marginBottom: 2 }}>Trip budget</div>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#1a1a18' }}>₹{Math.round(budget).toLocaleString('en-IN')}</div>
-                </div>
-                <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '8px 10px' }}>
-                  <div style={{ fontSize: 11, color: '#a8a8a5', marginBottom: 2 }}>Projected end</div>
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: projected > budget ? '#993C1D' : SOLO_ACCENT }}>₹{Math.round(projected).toLocaleString('en-IN')}</div>
-                </div>
+            <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '13px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .42s ease-out 150ms both' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Budget health</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
+                {[
+                  { label: 'Trip budget', value: `₹${Math.round(budget).toLocaleString('en-IN')}`, color: '#374151' },
+                  { label: 'Projected end', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, color: projected > budget ? '#D85B00' : '#FF8C3A' },
+                ].map(s => (
+                  <div key={s.label} style={{ background: '#F9F9F8', borderRadius: 12, padding: '9px 11px', border: '1px solid rgba(0,0,0,0.06)' }}>
+                    <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, marginBottom: 3 }}>{s.label}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: s.color }}>{s.value}</div>
+                  </div>
+                ))}
               </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-                <div style={{ ...S.card, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '1rem .75rem', marginBottom: 0 }}>
-                  <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 10 }}>Usage</div>
-                  <div style={{ position: 'relative', width: 120, height: 120 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                <div style={{ background: '#F9F9F8', borderRadius: 12, padding: '10px', border: '1px solid rgba(0,0,0,0.06)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, marginBottom: 8, textTransform: 'uppercase', letterSpacing: .8 }}>Usage</div>
+                  <div style={{ position: 'relative', width: 110, height: 110 }}>
                     <canvas ref={donutRef} role="img" aria-label={`${budgetPct}% of budget spent`}>{budgetPct}% used.</canvas>
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
-                  <div style={{ padding: '10px 11px', background: projected > budget ? '#FAECE7' : SOLO_ACCENT_BG, border: `0.5px solid ${projected > budget ? '#F5C4B3' : SOLO_ACCENT_BORDER}`, borderRadius: 10, fontSize: 12, color: projected > budget ? '#993C1D' : SOLO_ACCENT_TEXT, lineHeight: 1.45, display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ padding: '9px 11px', background: projected > budget ? '#FFF8F4' : '#FFF3EB', border: `1px solid ${projected > budget ? '#FFCBA4' : '#FFD5A8'}`, borderRadius: 12, fontSize: 12, color: projected > budget ? '#D85B00' : '#FF6A00', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>{projected > budget ? <><path d="M10.3 3.3L2 19h20L13.7 3.3a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></> : <polyline points="20,6 9,17 4,12"/>}</svg>
                     {projected > budget ? `Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `₹${Math.round(underBy).toLocaleString('en-IN')} under pace`}
                   </div>
-                  <div style={{ height: 7, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 4, width: `${budgetPct}%`, background: budgetPct > 85 ? SOLO_WARN : SOLO_ACCENT_2, transition: 'width .6s' }} />
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>
+                      <span>Spent</span><span>{budgetPct}%</span>
+                    </div>
+                    <div style={{ height: 7, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', borderRadius: 99, width: `${Math.min(100, budgetPct)}%`, background: budgetPct > 85 ? 'linear-gradient(90deg,#D85B00,#FF6A00)' : 'linear-gradient(90deg,#FF6A00,#FF8C3A)', transition: 'width .6s' }} />
+                    </div>
                   </div>
-                  <div style={{ fontSize: 11, color: '#a8a8a5' }}>{budgetPct}% used</div>
                 </div>
               </div>
             </div>
           )}
 
+          {/* Category breakdown */}
           {activeCats.length > 0 && (
-            <div style={{ ...S.card, marginBottom: 10, animation: 'soloFadeUp .44s ease-out both', animationDelay: '220ms' }}>
-              <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Category breakdown</div>
-              <div style={{ position: 'relative', height: 170, marginBottom: 12 }}>
+            <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '13px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .44s ease-out 180ms both' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Category breakdown</div>
+              <div style={{ position: 'relative', height: 155, marginBottom: 14 }}>
                 <canvas ref={barRef} role="img" aria-label="Spending by category">Category breakdown chart.</canvas>
               </div>
-              {activeCats.map(c => {
+              {activeCats.map((c, ci) => {
                 const pct = Math.round(catTotals[c.id] / total * 100);
                 return (
-                  <div key={c.id} style={{ marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 9, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon id={c.id} size={18} /></div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: 13, fontWeight: 600 }}>{c.label}</span>
-                          <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: CAT_COLORS[c.id] || '#FF6A00' }}>₹{Math.round(catTotals[c.id]).toLocaleString('en-IN')}</span>
-                        </div>
-                      </div>
+                  <div key={c.id} style={{ marginBottom: ci < activeCats.length - 1 ? 10 : 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
+                      <div style={{ width: 30, height: 30, borderRadius: 9, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon id={c.id} size={16} /></div>
+                      <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#374151' }}>{c.label}</span>
+                      <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: CAT_COLORS[c.id] || SOLO_ACCENT }}>₹{Math.round(catTotals[c.id]).toLocaleString('en-IN')}</span>
+                      <span style={{ fontSize: 11, color: '#9ca3af', width: 28, textAlign: 'right' }}>{pct}%</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1, height: 6, background: '#F1EFE8', borderRadius: 4, overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 4, background: CAT_COLORS[c.id] || '#FF6A00', transition: 'width .5s' }} />
-                      </div>
-                      <span style={{ fontSize: 11, color: '#6b6b68', width: 32, textAlign: 'right' }}>{pct}%</span>
+                    <div style={{ height: 5, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden' }}>
+                      <div style={{ height: '100%', width: `${pct}%`, borderRadius: 99, background: CAT_COLORS[c.id] || SOLO_ACCENT, transition: 'width .5s cubic-bezier(.2,.8,.2,1)' }} />
                     </div>
                   </div>
                 );
@@ -636,32 +646,35 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             </div>
           )}
 
+          {/* Top expenses */}
           {top3.length > 0 && (
-            <div style={{ ...S.card, animation: 'soloFadeUp .46s ease-out both', animationDelay: '270ms' }}>
-              <div style={{ fontSize: 11, color: '#6b6b68', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 12 }}>Top expenses</div>
+            <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '13px 14px', boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .46s ease-out 210ms both' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 }}>Top expenses</div>
               {top3.map((exp, idx) => {
                 const cat = expenseCats.find(c => c.id === exp.cat) || { id: 'other', icon: '🏷️', label: 'Other', bg: '#F1EFE8' };
                 const pct = total > 0 ? Math.round((exp.amount / total) * 100) : 0;
+                const rankColors = ['#FF6A00', '#D85B00', '#9ca3af'];
                 return (
-                  <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: idx < top3.length - 1 ? '0 0 10px' : 0, borderBottom: idx < top3.length - 1 ? '0.5px solid rgba(0,0,0,0.06)' : 'none', marginBottom: idx < top3.length - 1 ? 10 : 0, animation: 'soloFadeUp .32s ease-out both', animationDelay: `${320 + idx * 45}ms` }}>
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: idx === 0 ? '#BA7517' : idx === 1 ? '#8B9EB0' : '#9D6B3C', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{idx + 1}</div>
-                    <div style={{ width: 34, height: 34, borderRadius: 9, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon id={cat.id} size={18} /></div>
+                  <div key={exp.id} style={{ display: 'flex', alignItems: 'center', gap: 10, paddingBottom: idx < top3.length - 1 ? 10 : 0, borderBottom: idx < top3.length - 1 ? '1px solid rgba(0,0,0,0.05)' : 'none', marginBottom: idx < top3.length - 1 ? 10 : 0 }}>
+                    <div style={{ width: 22, height: 22, borderRadius: '50%', background: rankColors[idx], display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10, fontWeight: 800, flexShrink: 0 }}>{idx + 1}</div>
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon id={cat.id} size={16} /></div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
-                      <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 2 }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
-                      <div style={{ height: 4, background: 'rgba(0,0,0,0.06)', borderRadius: 4, overflow: 'hidden', marginTop: 6 }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: CAT_COLORS[exp.cat] || '#FF6A00', borderRadius: 4 }} />
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.desc}</div>
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>{new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</div>
+                      <div style={{ height: 3, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', marginTop: 5 }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: CAT_COLORS[exp.cat] || SOLO_ACCENT, borderRadius: 99, transition: 'width .5s' }} />
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700 }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
-                      <div style={{ fontSize: 11, color: '#a8a8a5' }}>{pct}%</div>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: '#111827' }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
+                      <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1 }}>{pct}% of total</div>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
+
         </div>
       )}
 
