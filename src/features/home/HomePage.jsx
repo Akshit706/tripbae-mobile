@@ -488,6 +488,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
   const [dateFilter, setDateFilter] = useState('all');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const [sortBy, setSortBy] = useState('recent');
+  const [showSortMenu, setShowSortMenu] = useState(false);
 
   const DATE_FILTER_OPTIONS = [
     { value: 'all', label: 'All time' },
@@ -495,7 +497,15 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     { value: 'this_month', label: 'This month' },
     { value: 'last_month', label: 'Last month' },
     { value: 'last_3_months', label: 'Last 3 months' },
-    { value: 'last_year', label: 'Last year' },
+  ];
+
+  const SORT_OPTIONS = [
+    { value: 'recent',      label: 'Most recent',           shortLabel: '' },
+    { value: 'budget_high', label: 'Budget: High → Low',    shortLabel: '↓ Budget' },
+    { value: 'budget_low',  label: 'Budget: Low → High',    shortLabel: '↑ Budget' },
+    { value: 'days_long',   label: 'Duration: Longest',      shortLabel: 'Longest' },
+    { value: 'days_short',  label: 'Duration: Shortest',     shortLabel: 'Shortest' },
+    { value: 'name_az',     label: 'Name: A → Z',           shortLabel: 'A → Z' },
   ];
 
   const filteredActiveTrips = (() => {
@@ -514,9 +524,19 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         return d >= lm && d < lmEnd;
       }
       if (dateFilter === 'last_3_months') return d >= new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
-      if (dateFilter === 'last_year') return d >= new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
       return true;
     });
+  })();
+
+  const sortedFilteredTrips = (() => {
+    const arr = [...filteredActiveTrips];
+    const tripDays = t => (t.arrival && t.departure) ? Math.round(Math.abs(new Date(t.departure) - new Date(t.arrival)) / 86400000) : 0;
+    if (sortBy === 'budget_high') return arr.sort((a, b) => (Number(b.budget) || 0) - (Number(a.budget) || 0));
+    if (sortBy === 'budget_low')  return arr.sort((a, b) => (Number(a.budget) || 0) - (Number(b.budget) || 0));
+    if (sortBy === 'days_long')   return arr.sort((a, b) => tripDays(b) - tripDays(a));
+    if (sortBy === 'days_short')  return arr.sort((a, b) => tripDays(a) - tripDays(b));
+    if (sortBy === 'name_az')     return arr.sort((a, b) => (a.groupName || '').localeCompare(b.groupName || ''));
+    return arr.sort((a, b) => new Date(b.arrival || b.createdAt || 0) - new Date(a.arrival || a.createdAt || 0));
   })();
 
   const markTripCompleteWithAnimation = (tripId) => {
@@ -899,24 +919,45 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       {homeTab === 'trips' && activeTrips.length > 0 && (
         <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', marginBottom: 14, marginTop: 12, position: 'relative' }}>
           YOUR TRIPS
-          {showFilterMenu && <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => setShowFilterMenu(false)} />}
-          <button
-            onClick={() => setShowFilterMenu(v => !v)}
-            style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: dateFilter !== 'all' ? '#FF6A00' : 'transparent', border: dateFilter !== 'all' ? 'none' : '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, color: dateFilter !== 'all' ? '#fff' : 'rgba(0,0,0,0.38)', zIndex: 200 }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-            {dateFilter !== 'all' && <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>{DATE_FILTER_OPTIONS.find(o => o.value === dateFilter)?.label}</span>}
-          </button>
-          {showFilterMenu && (
-            <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 200, background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden', minWidth: 155 }}>
-              {DATE_FILTER_OPTIONS.map(opt => (
-                <button key={opt.value} onClick={() => { setDateFilter(opt.value); setShowFilterMenu(false); }}
-                  style={{ display: 'block', width: '100%', padding: '10px 14px', background: dateFilter === opt.value ? '#FFF3EB' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, fontWeight: dateFilter === opt.value ? 700 : 500, color: dateFilter === opt.value ? '#FF6A00' : '#1C1410', fontFamily: "'DM Sans',sans-serif" }}>
-                  {dateFilter === opt.value ? '✓ ' : ''}{opt.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {(showFilterMenu || showSortMenu) && <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => { setShowFilterMenu(false); setShowSortMenu(false); }} />}
+          <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: 4 }}>
+            {/* Sort button */}
+            <button
+              onClick={() => { setShowSortMenu(v => !v); setShowFilterMenu(false); }}
+              style={{ background: sortBy !== 'recent' ? '#FF6A00' : 'transparent', border: sortBy !== 'recent' ? 'none' : '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, color: sortBy !== 'recent' ? '#fff' : 'rgba(0,0,0,0.38)' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><path d="M3 6h18M6 12h12M10 18h4"/></svg>
+              {sortBy !== 'recent' && <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>{SORT_OPTIONS.find(o => o.value === sortBy)?.shortLabel}</span>}
+            </button>
+            {showSortMenu && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 200, background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden', minWidth: 185 }}>
+                {SORT_OPTIONS.map(opt => (
+                  <button key={opt.value} onClick={() => { setSortBy(opt.value); setShowSortMenu(false); }}
+                    style={{ display: 'block', width: '100%', padding: '10px 14px', background: sortBy === opt.value ? '#FFF3EB' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, fontWeight: sortBy === opt.value ? 700 : 500, color: sortBy === opt.value ? '#FF6A00' : '#1C1410', fontFamily: "'DM Sans',sans-serif" }}>
+                    {sortBy === opt.value ? '✓ ' : ''}{opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {/* Filter button */}
+            <button
+              onClick={() => { setShowFilterMenu(v => !v); setShowSortMenu(false); }}
+              style={{ background: dateFilter !== 'all' ? '#FF6A00' : 'transparent', border: dateFilter !== 'all' ? 'none' : '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, color: dateFilter !== 'all' ? '#fff' : 'rgba(0,0,0,0.38)' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              {dateFilter !== 'all' && <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>{DATE_FILTER_OPTIONS.find(o => o.value === dateFilter)?.label}</span>}
+            </button>
+            {showFilterMenu && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 200, background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden', minWidth: 155 }}>
+                {DATE_FILTER_OPTIONS.map(opt => (
+                  <button key={opt.value} onClick={() => { setDateFilter(opt.value); setShowFilterMenu(false); }}
+                    style={{ display: 'block', width: '100%', padding: '10px 14px', background: dateFilter === opt.value ? '#FFF3EB' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, fontWeight: dateFilter === opt.value ? 700 : 500, color: dateFilter === opt.value ? '#FF6A00' : '#1C1410', fontFamily: "'DM Sans',sans-serif" }}>
+                    {dateFilter === opt.value ? '✓ ' : ''}{opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
 
@@ -927,7 +968,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         </div>
       )}
 
-      {homeTab === 'trips' && filteredActiveTrips.map((trip, idx) => (
+      {homeTab === 'trips' && sortedFilteredTrips.map((trip, idx) => (
         idx === 0 ? (
           <div key={trip.id} style={{ position: 'relative' }}>
             <img

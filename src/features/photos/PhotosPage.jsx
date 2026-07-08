@@ -41,7 +41,6 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       92%  { opacity:1; }
       100% { transform:translateX(220%); opacity:0; }
     }
-    @keyframes phBgZoom { 0%,100%{transform:scale(1.06)} 50%{transform:scale(1.0)} }
     @keyframes phOrbDrift { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-12px) scale(1.06)} }
     @keyframes phRingPulse {
       0%,100% { box-shadow:0 0 0 0 rgba(255,106,0,0.55); }
@@ -74,7 +73,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     }
     .ph-hero-overlay {
       position:absolute; inset:0;
-      background:linear-gradient(165deg,rgba(10,5,2,0.66) 0%,rgba(30,14,4,0.38) 55%,rgba(60,28,2,0.18) 100%);
+      background:linear-gradient(to bottom,rgba(0,0,0,0.22) 0%,rgba(0,0,0,0.62) 48%,rgba(0,0,0,0.74) 100%);
       z-index:2;
     }
     .ph-hero-scan {
@@ -92,17 +91,19 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       text-align:center;
     }
     .ph-hero-eyebrow {
-      font-size:9px; font-weight:700; color:rgba(255,255,255,0.38);
+      font-size:9px; font-weight:700; color:rgba(255,255,255,0.82);
       text-transform:uppercase; letter-spacing:2.4px;
-      margin-bottom:6px;
+      margin-bottom:6px; text-shadow:0 1px 6px rgba(0,0,0,0.4);
     }
     .ph-hero-name {
       font-family:'Sora',sans-serif; font-size:20px; font-weight:800; color:#fff;
       line-height:1.15; letter-spacing:-0.4px; margin-bottom:3px;
+      text-shadow:0 1px 14px rgba(0,0,0,0.65), 0 2px 4px rgba(0,0,0,0.4);
     }
     .ph-hero-dest {
-      font-size:11px; color:rgba(255,255,255,0.48); margin-bottom:10px;
+      font-size:11px; color:rgba(255,255,255,0.85); margin-bottom:10px;
       display:flex; align-items:center; gap:4px; justify-content:center;
+      text-shadow:0 1px 6px rgba(0,0,0,0.45);
     }
     /* inline stats row */
     .ph-hero-stats {
@@ -112,20 +113,20 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-hero-stat-item {
       display:flex; align-items:center; gap:4px;
     }
-    .ph-hero-stat-num { font-family:'Sora',sans-serif; font-size:12px; font-weight:700; color:#fff; }
-    .ph-hero-stat-lbl { font-size:11px; color:rgba(255,255,255,0.48); }
+    .ph-hero-stat-num { font-family:'Sora',sans-serif; font-size:12px; font-weight:700; color:#fff; text-shadow:0 1px 6px rgba(0,0,0,0.45); }
+    .ph-hero-stat-lbl { font-size:11px; color:rgba(255,255,255,0.75); text-shadow:0 1px 4px rgba(0,0,0,0.4); }
     .ph-hero-stat-div { width:1px; height:12px; background:rgba(255,255,255,0.18); flex-shrink:0; }
 
     /* privacy note — inside hero, below stats */
     .ph-privacy-note {
       display:flex; align-items:center; justify-content:center; gap:5px;
       margin-top:10px; padding-top:9px;
-      border-top:1px solid rgba(255,255,255,0.12);
+      border-top:1px solid rgba(255,255,255,0.25);
     }
     .ph-privacy-note svg { flex-shrink:0; display:block; }
     .ph-privacy-note-text {
-      font-size:10.5px; font-weight:600; color:rgba(255,255,255,0.55);
-      letter-spacing:0.15px; line-height:1.4;
+      font-size:10.5px; font-weight:600; color:rgba(255,255,255,0.80);
+      letter-spacing:0.15px; line-height:1.4; text-shadow:0 1px 5px rgba(0,0,0,0.4);
     }
 
     /* ── member tabs ── */
@@ -596,7 +597,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
       {/* ── Hero card (compact, left-aligned) ── */}
       <div className="ph-hero">
         {/* animated background image */}
-        <div style={{ position:'absolute', inset:0, backgroundImage:`url(${photosImg})`, backgroundSize:'cover', backgroundPosition:'center', animation:'phBgZoom 18s ease-in-out infinite', filter:'brightness(1.28) saturate(1.1)' }} />
+        <div style={{ position:'absolute', inset:0, backgroundImage:`url(${photosImg})`, backgroundSize:'cover', backgroundPosition:'center', filter:'brightness(1.28) saturate(1.1)' }} />
         {heroBgUrl && <img className="ph-hero-bg" src={heroBgUrl} alt="" />}
         <div className="ph-hero-dot-grid" />
         <div className="ph-hero-overlay" />
