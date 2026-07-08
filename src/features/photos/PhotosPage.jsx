@@ -547,12 +547,8 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
             <button onClick={dismissWelcome} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            {/* Lumi centered at top */}
-            <div style={{ background:'linear-gradient(180deg,#EBF3F0 0%,#fff 100%)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'1.5rem 0 0', minHeight:170 }}>
-              <img src={lumi13Img} alt="Lumi" style={{ height:158, width:'auto', objectFit:'contain', display:'block' }} />
-            </div>
-            {/* Text content below, centered */}
-            <div style={{ padding:'0.9rem 1.25rem 0', textAlign:'center' }}>
+            {/* Top: heading + description full width */}
+            <div style={{ padding:'1.2rem 1.25rem 0.5rem' }}>
               <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
                 <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
                 <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
@@ -560,18 +556,26 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
               <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>
                 Your trip's shared album
               </div>
-              <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:12, textAlign:'left' }}>
+              <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62 }}>
                 Everyone's snapping — but who's actually saving them? Drop your shots here and the whole group gets instant access. No cloud chaos, no "please send" texts.
               </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:'0.5rem', textAlign:'left' }}>
-                {[
-                  'Private album — only your trip group sees it',
-                  'Each member gets their own folder to browse',
-                  'One tap to select and download any photo',
-                ].map((f, i) => (
-                  <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'8px 10px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4' }}>
-                    <svg width="8" height="8" viewBox="0 0 12 10" fill="none" style={{ flexShrink:0 }}><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.4, fontWeight:500 }}>{f}</span>
+            </div>
+            {/* Middle: left boxes | Lumi centred | right boxes */}
+            <div style={{ display:'flex', alignItems:'flex-end', padding:'0.25rem 1rem 0.75rem', gap:8 }}>
+              <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6, paddingBottom:6 }}>
+                {['Private album', 'Member folders'].map((f, i) => (
+                  <div key={i} style={{ padding:'9px 8px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4', textAlign:'center' }}>
+                    <span style={{ fontSize:10.5, color:'#1C1410', lineHeight:1.3, fontWeight:700 }}>{f}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ width:92, flexShrink:0, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+                <img src={lumi13Img} alt="Lumi" style={{ height:116, width:'auto', objectFit:'contain', display:'block' }} />
+              </div>
+              <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6, paddingBottom:6 }}>
+                {['One-tap download', 'Group access only'].map((f, i) => (
+                  <div key={i} style={{ padding:'9px 8px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4', textAlign:'center' }}>
+                    <span style={{ fontSize:10.5, color:'#1C1410', lineHeight:1.3, fontWeight:700 }}>{f}</span>
                   </div>
                 ))}
               </div>

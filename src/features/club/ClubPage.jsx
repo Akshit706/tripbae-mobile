@@ -4,7 +4,7 @@ import { supabase } from '../../supabase';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 import bglessLogo from '../../assets/bgless_club.png';
-import lumi16Img from '../../assets/lumi16.png';
+import lumi17Img from '../../assets/lumi17.png';
 
 const VIBE_OPTIONS = [
   { value: 'any', label: 'Any vibe' },
@@ -486,7 +486,10 @@ function ClubPage({ trip, onTripRefresh }) {
     } catch { return 0; }
   });
   const [termsChecked, setTermsChecked] = useState(false);
+  // clubInfoOnly: opened from ⓘ button — show intro only, never advance to T&C
+  const [clubInfoOnly, setClubInfoOnly] = useState(false);
   const advanceClubGate = () => {
+    if (clubInfoOnly) { setShowClubGate(false); setClubInfoOnly(false); return; }
     try { localStorage.setItem(CLUB_INTRO_KEY, '1'); } catch {}
     if (!localStorage.getItem(CLUB_TERMS_KEY)) {
       setClubGateStep(1);
@@ -496,14 +499,14 @@ function ClubPage({ trip, onTripRefresh }) {
   };
   const dismissClubGate = () => {
     try { localStorage.setItem(CLUB_INTRO_KEY, '1'); } catch {}
-    setShowClubGate(false);
+    setShowClubGate(false); setClubInfoOnly(false);
   };
   const acceptClubTerms = () => {
     if (!termsChecked) return;
     try { localStorage.setItem(CLUB_TERMS_KEY, '1'); } catch {}
-    setShowClubGate(false);
+    setShowClubGate(false); setClubInfoOnly(false);
   };
-  const openClubInfo = () => { setClubGateStep(0); setShowClubGate(true); };
+  const openClubInfo = () => { setClubGateStep(0); setClubInfoOnly(true); setShowClubGate(true); };
 
   // ── Location (Nominatim search + optional GPS reverse-geocode) ──
   const [locQuery, setLocQuery] = useState(() => {
@@ -1322,7 +1325,7 @@ function ClubPage({ trip, onTripRefresh }) {
                 </button>
                 {/* Lumi at top, centered, big */}
                 <div style={{ background:'linear-gradient(180deg,#FFF3EB 0%,#fff 100%)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'1.5rem 0 0', minHeight:170 }}>
-                  <img src={lumi16Img} alt="Lumi" style={{ height:160, width:'auto', objectFit:'contain', display:'block' }} />
+                  <img src={lumi17Img} alt="Lumi" style={{ height:160, width:'auto', objectFit:'contain', display:'block' }} />
                 </div>
                 {/* Text below */}
                 <div style={{ padding:'0.9rem 1.25rem 0' }}>
@@ -1347,14 +1350,16 @@ function ClubPage({ trip, onTripRefresh }) {
                     ))}
                   </div>
                 </div>
-                {/* Slide dots */}
-                <div style={{ display:'flex', justifyContent:'center', gap:5, paddingBottom:10 }}>
-                  <div style={{ width:18, height:5, borderRadius:3, background:'#FF6A00' }} />
-                  <div style={{ width:5, height:5, borderRadius:3, background:'rgba(0,0,0,0.15)' }} />
-                </div>
+                {/* Slide dots — only shown on the first-time flow */}
+                {!clubInfoOnly && (
+                  <div style={{ display:'flex', justifyContent:'center', gap:5, paddingBottom:10 }}>
+                    <div style={{ width:18, height:5, borderRadius:3, background:'#FF6A00' }} />
+                    <div style={{ width:5, height:5, borderRadius:3, background:'rgba(0,0,0,0.15)' }} />
+                  </div>
+                )}
                 <div style={{ padding:'0 1.25rem 1.25rem' }}>
                   <button onClick={advanceClubGate} style={{ width:'100%', padding:'13px', fontSize:14, fontWeight:700, borderRadius:14, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', color:'#fff', boxShadow:'0 4px 16px rgba(255,106,0,0.3)' }}>
-                    Find my people 🌍
+                    {clubInfoOnly ? 'Got it 👍' : 'Next →'}
                   </button>
                 </div>
               </>
@@ -1395,7 +1400,7 @@ function ClubPage({ trip, onTripRefresh }) {
                     disabled={!termsChecked}
                     style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: termsChecked ? 'pointer' : 'not-allowed', fontFamily: "'DM Sans',sans-serif", background: termsChecked ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : '#E0E0E0', color: termsChecked ? '#fff' : '#9E9E9E', boxShadow: termsChecked ? '0 4px 16px rgba(29,158,117,0.3)' : 'none', transition: 'all .2s' }}
                   >
-                    I agree — enter Club
+                    Find my people 🌍
                   </button>
                 </div>
               </>
