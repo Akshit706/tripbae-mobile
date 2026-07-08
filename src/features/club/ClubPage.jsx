@@ -4,7 +4,7 @@ import { supabase } from '../../supabase';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 import bglessLogo from '../../assets/bgless_club.png';
-import lumiMood3 from '../../assets/lumi_mood3.png';
+import lumi16Img from '../../assets/lumi16.png';
 
 const VIBE_OPTIONS = [
   { value: 'any', label: 'Any vibe' },
@@ -470,27 +470,40 @@ function ClubPage({ trip, onTripRefresh }) {
 
   const clubLocKey = (suffix) => `travelbae_club_${trip.id}_${suffix}`;
 
-  // ── Club T&C / first-time gate ──
+  // ── Club gate: combined intro (slide 0) + T&C (slide 1) ──
   const CLUB_TERMS_KEY = `travelbae_club_terms_accepted`;
-  const [showClubTerms, setShowClubTerms] = useState(() => {
-    try { return !localStorage.getItem(CLUB_TERMS_KEY); } catch { return true; }
+  const CLUB_INTRO_KEY = `travelbae_club_intro_${trip.id}`;
+  const [showClubGate, setShowClubGate] = useState(() => {
+    try {
+      return !localStorage.getItem(CLUB_INTRO_KEY) || !localStorage.getItem(CLUB_TERMS_KEY);
+    } catch { return true; }
+  });
+  const [clubGateStep, setClubGateStep] = useState(() => {
+    try {
+      const iSeen = !!localStorage.getItem(CLUB_INTRO_KEY);
+      const tAccepted = !!localStorage.getItem(CLUB_TERMS_KEY);
+      return (iSeen && !tAccepted) ? 1 : 0;
+    } catch { return 0; }
   });
   const [termsChecked, setTermsChecked] = useState(false);
+  const advanceClubGate = () => {
+    try { localStorage.setItem(CLUB_INTRO_KEY, '1'); } catch {}
+    if (!localStorage.getItem(CLUB_TERMS_KEY)) {
+      setClubGateStep(1);
+    } else {
+      setShowClubGate(false);
+    }
+  };
+  const dismissClubGate = () => {
+    try { localStorage.setItem(CLUB_INTRO_KEY, '1'); } catch {}
+    setShowClubGate(false);
+  };
   const acceptClubTerms = () => {
     if (!termsChecked) return;
     try { localStorage.setItem(CLUB_TERMS_KEY, '1'); } catch {}
-    setShowClubTerms(false);
+    setShowClubGate(false);
   };
-
-  // ── Club Lumi intro ──
-  const CLUB_INTRO_KEY = `travelbae_club_intro_${trip.id}`;
-  const [showClubIntro, setShowClubIntro] = useState(() => {
-    try { return !localStorage.getItem(`travelbae_club_intro_${trip.id}`); } catch { return false; }
-  });
-  const dismissClubIntro = () => {
-    try { localStorage.setItem(CLUB_INTRO_KEY, '1'); } catch {}
-    setShowClubIntro(false);
-  };
+  const openClubInfo = () => { setClubGateStep(0); setShowClubGate(true); };
 
   // ── Location (Nominatim search + optional GPS reverse-geocode) ──
   const [locQuery, setLocQuery] = useState(() => {
@@ -1293,89 +1306,100 @@ function ClubPage({ trip, onTripRefresh }) {
         }
       `}</style>
 
-      {/* ── Lumi intro popup (first-time, shows before T&C) ── */}
-      {showClubIntro && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(28,20,16,0.55)', backdropFilter:'blur(6px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.25rem', animation:'clubFadeIn .22s ease both' }}>
-          <div style={{ background:'#fff', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:400, boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'clubSheetIn .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
+      {/* ── Combined club gate: slide 0 = intro, slide 1 = T&C ── */}
+      {showClubGate && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(28,20,16,0.58)', backdropFilter:'blur(6px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.25rem', animation:'clubFadeIn .22s ease both' }}
+          onClick={dismissClubGate}>
+          <div style={{ background:'#fff', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:420, boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'clubSheetIn .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ height:4, background:'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
-            <button onClick={dismissClubIntro} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <div style={{ display:'flex', alignItems:'center', padding:'1.25rem 1.25rem 1rem', gap:14 }}>
-              <div style={{ width:92, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <img src={lumiMood3} alt="Lumi" style={{ width:86, height:116, objectFit:'contain', display:'block' }} />
-              </div>
-              <div style={{ flex:1, minWidth:0 }}>
-                <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
-                  <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
-                  <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
-                </div>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>
-                  Find your travel tribe
-                </div>
-                <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:10 }}>
-                  Looking to travel with people you actually like? Club lets you discover groups heading to your destination, check out their vibe, and send a join request. Travel tribe, acquired.
-                </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                  {[
-                    'Discover trip groups matching your travel vibe',
-                    'See member count, destination & travel style',
-                    'Send a join request and chat before you go',
-                  ].map((f, i) => (
-                    <div key={i} style={{ display:'flex', gap:6, alignItems:'flex-start' }}>
-                      <div style={{ width:15, height:15, borderRadius:4, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
-                        <svg width="8" height="8" viewBox="0 0 12 10" fill="none"><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      </div>
-                      <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.5 }}>{f}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div style={{ padding:'0 1.25rem 1.25rem' }}>
-              <button onClick={dismissClubIntro} style={{ width:'100%', padding:'13px', fontSize:14, fontWeight:700, borderRadius:14, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', color:'#fff', boxShadow:'0 4px 16px rgba(255,106,0,0.3)' }}>
-                Find my people 🌍
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* ── T&C First-time gate ── */}
-      {showClubTerms && !showClubIntro && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(12,18,14,0.72)', backdropFilter: 'blur(7px)', zIndex: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem', animation: 'clubFadeIn .2s ease both' }}>
-          <div style={{ background: '#fff', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 380, boxShadow: '0 28px 80px rgba(12,18,14,0.32)', animation: 'clubSheetIn .35s cubic-bezier(0.34,1.3,0.64,1) both' }}>
-            {/* accent bar */}
-            <div style={{ height: 4, background: 'linear-gradient(90deg,#1D9E75,#0F6E56)' }} />
-            <div style={{ padding: '1.5rem 1.5rem 1.25rem' }}>
-              {/* icon */}
-              <div style={{ width: 52, height: 52, borderRadius: 17, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, boxShadow: '0 6px 20px rgba(29,158,117,0.28)' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, color: '#1C1410', marginBottom: 8, lineHeight: 1.2 }}>Welcome to Club</div>
-              <div style={{ fontSize: 12.5, color: '#5C504A', lineHeight: 1.75, marginBottom: 16 }}>
-                By joining Club, you acknowledge that all interactions with other members are <strong style={{ color: '#1C1410' }}>voluntary and at your own discretion</strong>. While we strive to maintain a safe and respectful community, we do not verify the identity, background, intentions, or conduct of users.
-                <br /><br />
-                Any communication, meetup, or relationship that occurs through or outside the platform is solely between the participating individuals. <strong style={{ color: '#1C1410' }}>You are responsible for exercising appropriate caution and judgment</strong> when interacting with others. To the maximum extent permitted by law, we are not liable for any disputes, damages, or incidents arising from user interactions, whether online or offline.
-              </div>
-              {/* checkbox */}
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '12px 14px', borderRadius: 14, background: termsChecked ? '#EBF3EC' : '#F4F2EE', border: `1.5px solid ${termsChecked ? '#1D9E75' : 'rgba(28,20,16,0.1)'}`, marginBottom: 16, transition: 'all .18s' }}>
-                <div onClick={() => setTermsChecked(v => !v)} style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${termsChecked ? '#1D9E75' : 'rgba(28,20,16,0.25)'}`, background: termsChecked ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, transition: 'all .15s', cursor: 'pointer' }}>
-                  {termsChecked && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+            {clubGateStep === 0 ? (
+              // ── Slide 1: Intro ──
+              <>
+                <div style={{ height:4, background:'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
+                <button onClick={dismissClubGate} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:10 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+                {/* Lumi at top, centered, big */}
+                <div style={{ background:'linear-gradient(180deg,#FFF3EB 0%,#fff 100%)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'1.5rem 0 0', minHeight:170 }}>
+                  <img src={lumi16Img} alt="Lumi" style={{ height:160, width:'auto', objectFit:'contain', display:'block' }} />
                 </div>
-                <span style={{ fontSize: 12.5, fontWeight: 600, color: '#1C1410', lineHeight: 1.6 }}>
-                  I understand that interactions with other Club members are at my own discretion and risk, and I agree to the <span style={{ color: '#0F6E56', textDecoration: 'underline' }}>Club Terms &amp; Safety Guidelines</span>.
-                </span>
-              </label>
-              <button
-                onClick={acceptClubTerms}
-                disabled={!termsChecked}
-                style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: termsChecked ? 'pointer' : 'not-allowed', fontFamily: "'DM Sans',sans-serif", background: termsChecked ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : '#E0E0E0', color: termsChecked ? '#fff' : '#9E9E9E', boxShadow: termsChecked ? '0 4px 16px rgba(29,158,117,0.3)' : 'none', transition: 'all .2s' }}
-              >
-                I agree — enter Club
-              </button>
-            </div>
+                {/* Text below */}
+                <div style={{ padding:'0.9rem 1.25rem 0' }}>
+                  <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
+                    <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
+                    <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
+                  </div>
+                  <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>Find your travel tribe</div>
+                  <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:12 }}>
+                    Looking to travel with people you actually like? Club lets you discover groups heading to your destination, check out their vibe, and send a join request. Travel tribe, acquired.
+                  </div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:'0.9rem' }}>
+                    {[
+                      'Discover trip groups matching your travel vibe',
+                      'See member count, destination & travel style',
+                      'Send a join request and chat before you go',
+                    ].map((f, i) => (
+                      <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'8px 10px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4' }}>
+                        <svg width="8" height="8" viewBox="0 0 12 10" fill="none" style={{ flexShrink:0 }}><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.4, fontWeight:500 }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                {/* Slide dots */}
+                <div style={{ display:'flex', justifyContent:'center', gap:5, paddingBottom:10 }}>
+                  <div style={{ width:18, height:5, borderRadius:3, background:'#FF6A00' }} />
+                  <div style={{ width:5, height:5, borderRadius:3, background:'rgba(0,0,0,0.15)' }} />
+                </div>
+                <div style={{ padding:'0 1.25rem 1.25rem' }}>
+                  <button onClick={advanceClubGate} style={{ width:'100%', padding:'13px', fontSize:14, fontWeight:700, borderRadius:14, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', color:'#fff', boxShadow:'0 4px 16px rgba(255,106,0,0.3)' }}>
+                    Find my people 🌍
+                  </button>
+                </div>
+              </>
+            ) : (
+              // ── Slide 2: T&C ──
+              <>
+                <div style={{ height: 4, background: 'linear-gradient(90deg,#1D9E75,#0F6E56)' }} />
+                <button onClick={dismissClubGate} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:10 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+                <div style={{ padding: '1.5rem 1.5rem 1.25rem' }}>
+                  {/* icon + slide dots row */}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 17, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(29,158,117,0.28)' }}>
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    </div>
+                    <div style={{ display:'flex', gap:5 }}>
+                      <div style={{ width:5, height:5, borderRadius:3, background:'rgba(0,0,0,0.15)' }} />
+                      <div style={{ width:18, height:5, borderRadius:3, background:'#1D9E75' }} />
+                    </div>
+                  </div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, color: '#1C1410', marginBottom: 8, lineHeight: 1.2 }}>Welcome to Club</div>
+                  <div style={{ fontSize: 12.5, color: '#5C504A', lineHeight: 1.75, marginBottom: 16 }}>
+                    By joining Club, you acknowledge that all interactions with other members are <strong style={{ color: '#1C1410' }}>voluntary and at your own discretion</strong>. While we strive to maintain a safe and respectful community, we do not verify the identity, background, intentions, or conduct of users.
+                    <br /><br />
+                    Any communication, meetup, or relationship that occurs through or outside the platform is solely between the participating individuals. <strong style={{ color: '#1C1410' }}>You are responsible for exercising appropriate caution and judgment</strong> when interacting with others. To the maximum extent permitted by law, we are not liable for any disputes, damages, or incidents arising from user interactions, whether online or offline.
+                  </div>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '12px 14px', borderRadius: 14, background: termsChecked ? '#EBF3EC' : '#F4F2EE', border: `1.5px solid ${termsChecked ? '#1D9E75' : 'rgba(28,20,16,0.1)'}`, marginBottom: 16, transition: 'all .18s' }}>
+                    <div onClick={() => setTermsChecked(v => !v)} style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${termsChecked ? '#1D9E75' : 'rgba(28,20,16,0.25)'}`, background: termsChecked ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, transition: 'all .15s', cursor: 'pointer' }}>
+                      {termsChecked && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </div>
+                    <span style={{ fontSize: 12.5, fontWeight: 600, color: '#1C1410', lineHeight: 1.6 }}>
+                      I understand that interactions with other Club members are at my own discretion and risk, and I agree to the <span style={{ color: '#0F6E56', textDecoration: 'underline' }}>Club Terms &amp; Safety Guidelines</span>.
+                    </span>
+                  </label>
+                  <button
+                    onClick={acceptClubTerms}
+                    disabled={!termsChecked}
+                    style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: termsChecked ? 'pointer' : 'not-allowed', fontFamily: "'DM Sans',sans-serif", background: termsChecked ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : '#E0E0E0', color: termsChecked ? '#fff' : '#9E9E9E', boxShadow: termsChecked ? '0 4px 16px rgba(29,158,117,0.3)' : 'none', transition: 'all .2s' }}
+                  >
+                    I agree — enter Club
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -1397,7 +1421,7 @@ function ClubPage({ trip, onTripRefresh }) {
           {/* content */}
           <div style={{ position:'relative', zIndex:5, padding:'1.3rem 1.2rem 1.2rem', textAlign:'center' }}>
             {/* ⓘ Lumi info button */}
-            <button onClick={() => setShowClubIntro(true)} title="About Club" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'none', background:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:6, padding:0 }}>
+            <button onClick={openClubInfo} title="About Club" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'none', background:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:6, padding:0 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             </button>
             <div style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.6)', textTransform:'uppercase', letterSpacing:'2.8px', marginBottom:10 }}>✦ TRIPBAE CLUB ✦</div>

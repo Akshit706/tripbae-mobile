@@ -414,11 +414,11 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             <button onClick={dismissWelcome} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <div style={{ display:'flex', alignItems:'center', padding:'1.25rem 1.25rem 1rem', gap:14 }}>
-              <div style={{ width:92, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <img src={lumi14Img} alt="Lumi" style={{ width:86, height:116, objectFit:'contain', display:'block' }} />
+            <div style={{ display:'flex', alignItems:'flex-end', padding:'1.5rem 1.25rem 0', gap:14 }}>
+              <div style={{ width:110, flexShrink:0, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+                <img src={lumi14Img} alt="Lumi" style={{ width:'auto', height:140, objectFit:'contain', display:'block' }} />
               </div>
-              <div style={{ flex:1, minWidth:0 }}>
+              <div style={{ flex:1, minWidth:0, paddingBottom:'1rem' }}>
                 <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
                   <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
                   <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
@@ -435,11 +435,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                     'Set a trip budget and watch the tracker',
                     'Visual insights: donut chart, daily breakdown',
                   ].map((f, i) => (
-                    <div key={i} style={{ display:'flex', gap:6, alignItems:'flex-start' }}>
-                      <div style={{ width:15, height:15, borderRadius:4, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
-                        <svg width="8" height="8" viewBox="0 0 12 10" fill="none"><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      </div>
-                      <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.5 }}>{f}</span>
+                    <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'8px 10px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4' }}>
+                      <svg width="8" height="8" viewBox="0 0 12 10" fill="none" style={{ flexShrink:0 }}><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.4, fontWeight:500 }}>{f}</span>
                     </div>
                   ))}
                 </div>
