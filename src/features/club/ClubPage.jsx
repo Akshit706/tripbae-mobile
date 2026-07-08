@@ -1397,7 +1397,7 @@ function ClubPage({ trip, onTripRefresh }) {
           {/* content */}
           <div style={{ position:'relative', zIndex:5, padding:'1.3rem 1.2rem 1.2rem', textAlign:'center' }}>
             {/* ⓘ Lumi info button */}
-            <button onClick={() => setShowClubIntro(true)} title="About Club" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'1.5px solid rgba(255,255,255,0.35)', background:'rgba(255,255,255,0.15)', backdropFilter:'blur(6px)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:6, padding:0 }}>
+            <button onClick={() => setShowClubIntro(true)} title="About Club" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'none', background:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:6, padding:0 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
             </button>
             <div style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.6)', textTransform:'uppercase', letterSpacing:'2.8px', marginBottom:10 }}>✦ TRIPBAE CLUB ✦</div>

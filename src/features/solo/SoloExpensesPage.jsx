@@ -468,7 +468,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="17" cy="14.5" r="1.5" fill="rgba(255,255,255,1)" stroke="none"/>
         </svg>
         {/* ⓘ Lumi info button */}
-        <button onClick={() => setShowWelcome(true)} title="About Expenses" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'1.5px solid rgba(255,255,255,0.35)', background:'rgba(255,255,255,0.15)', backdropFilter:'blur(6px)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:5, padding:0 }}>
+        <button onClick={() => setShowWelcome(true)} title="About Expenses" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'none', background:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:5, padding:0 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         </button>
         <div style={{ display: 'flex', justifyContent: budget ? 'space-between' : 'center', alignItems: 'flex-start', marginBottom: 12, position: 'relative' }}>

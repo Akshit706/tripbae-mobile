@@ -333,7 +333,7 @@ function ContactsPage({ trip, myNickname, isSolo }) {
         <div style={{ position:'absolute', right:-30, top:-36, width:120, height:120, borderRadius:'50%', background:'rgba(255,255,255,0.07)', pointerEvents:'none' }} />
         <div style={{ position:'absolute', left:-40, bottom:-48, width:140, height:140, borderRadius:'50%', background:'rgba(255,255,255,0.08)', pointerEvents:'none' }} />
         {/* ⓘ Lumi info button */}
-        <button onClick={() => setShowWelcome(true)} title="About Contacts" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'1.5px solid rgba(255,255,255,0.35)', background:'rgba(255,255,255,0.15)', backdropFilter:'blur(6px)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:5, padding:0 }}>
+        <button onClick={() => setShowWelcome(true)} title="About Contacts" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'none', background:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:5, padding:0 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         </button>
 
