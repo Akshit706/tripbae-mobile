@@ -497,6 +497,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     { value: 'this_month', label: 'This month' },
     { value: 'last_month', label: 'Last month' },
     { value: 'last_3_months', label: 'Last 3 months' },
+    { value: 'last_6_months', label: 'Last 6 months' },
+    { value: 'last_year', label: 'Last year' },
   ];
 
   const SORT_OPTIONS = [
@@ -524,6 +526,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         return d >= lm && d < lmEnd;
       }
       if (dateFilter === 'last_3_months') return d >= new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+      if (dateFilter === 'last_6_months') return d >= new Date(now.getFullYear(), now.getMonth() - 6, now.getDate());
+      if (dateFilter === 'last_year') return d >= new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
       return true;
     });
   })();
@@ -916,7 +920,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {homeTab === 'trips' && activeTrips.length > 0 && (
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', marginBottom: 14, marginTop: 12, position: 'relative', zIndex: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', marginBottom: 14, marginTop: 12, position: 'relative', zIndex: 210 }}>
           YOUR TRIPS
           {(showFilterMenu || showSortMenu) && <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => { setShowFilterMenu(false); setShowSortMenu(false); }} />}
           <div style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', display: 'flex', gap: 4 }}>
