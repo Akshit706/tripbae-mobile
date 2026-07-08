@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { addPhoto, deletePhoto, imagekitAuth } from '../../api';
 import { normalizeMembers } from '../shared/constants';
 import lumi13Img from '../../assets/lumi13.png';
-import lumi18Img from '../../assets/lumi18.png';
 import photosImg from '../../assets/photos.png';
 
 /* ── Design tokens ── */
@@ -43,14 +42,6 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       100% { transform:translateX(220%); opacity:0; }
     }
     @keyframes phOrbDrift { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-12px) scale(1.06)} }
-    @keyframes lumiHeroHangIn {
-      from { transform:scaleY(-1) translateY(-100%); opacity:0; }
-      to   { transform:scaleY(-1) translateY(0);     opacity:1; }
-    }
-    @keyframes lumiHeroHangOut {
-      from { transform:scaleY(-1) translateY(0);     opacity:1; }
-      to   { transform:scaleY(-1) translateY(-100%); opacity:0; }
-    }
     @keyframes phRingPulse {
       0%,100% { box-shadow:0 0 0 0 rgba(255,106,0,0.55); }
       50%     { box-shadow:0 0 0 7px rgba(255,106,0,0); }
@@ -604,7 +595,6 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
       )}
 
       {/* ── Hero card (compact, left-aligned) ── */}
-      <div style={{ position: 'relative' }}>
       <div className="ph-hero">
         {/* animated background image */}
         <div style={{ position:'absolute', inset:0, backgroundImage:`url(${photosImg})`, backgroundSize:'cover', backgroundPosition:'center', filter:'brightness(1.28) saturate(1.1)' }} />
@@ -649,26 +639,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
             <span className="ph-privacy-note-text">End-to-end encrypted · Visible only to your trip group</span>
           </div>
         </div>
-      </div>{/* end ph-hero */}
-      {/* Lumi18 hanging from hero bottom */}
-      <img
-        src={lumi18Img}
-        alt=""
-        aria-hidden="true"
-        style={{
-          position: 'absolute',
-          right: 28,
-          top: '100%',
-          height: 66,
-          width: 'auto',
-          pointerEvents: 'none',
-          userSelect: 'none',
-          filter: 'drop-shadow(0 5px 14px rgba(0,0,0,0.30))',
-          zIndex: 10,
-          animation: 'lumiHeroHangIn 0.65s cubic-bezier(0.2,0.8,0.2,1.1) both 1.8s, lumiHeroHangOut 0.42s ease-in forwards 7.8s',
-        }}
-      />
-      </div>{/* end hero wrapper */}
+      </div>
 
       {/* ── Member folder tabs ── */}
       <div className="ph-tabs">
