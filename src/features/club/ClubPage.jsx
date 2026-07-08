@@ -1411,7 +1411,7 @@ function ClubPage({ trip, onTripRefresh }) {
 
       {/* ── Hero card ── */}
       {/* outer wrapper holds shadow — inner card clips content with overflow:hidden */}
-      <div style={{ margin:'1rem 1rem 1rem', borderRadius:24, boxShadow:'0 8px 36px rgba(123,47,247,0.22), 0 2px 12px rgba(0,0,0,0.10)' }}>
+      <div style={{ margin:'0 1rem 1rem', borderRadius:24, boxShadow:'0 8px 36px rgba(123,47,247,0.22), 0 2px 12px rgba(0,0,0,0.10)' }}>
         <div style={{ position:'relative', borderRadius:24, overflow:'hidden', background:'linear-gradient(145deg,#7B2FF7 0%,#C01FAB 40%,#FF416C 72%,#FF9E00 100%)', backgroundSize:'200% 200%', animation:'clubHeroShift 8s ease-in-out infinite' }}>
           {/* orb 1 — top-right warm white */}
           <div style={{ position:'absolute', top:-40, right:-30, width:180, height:180, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,255,255,0.22) 0%,transparent 65%)', zIndex:1, pointerEvents:'none', animation:'clubOrb1 7s ease-in-out infinite' }} />

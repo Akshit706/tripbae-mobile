@@ -897,29 +897,27 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {homeTab === 'trips' && activeTrips.length > 0 && (
-        <>
+        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', marginBottom: 14, marginTop: 12, position: 'relative' }}>
+          YOUR TRIPS
           {showFilterMenu && <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => setShowFilterMenu(false)} />}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, marginTop: 12, position: 'relative', zIndex: 200 }}>
-            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase' }}>YOUR TRIPS</div>
-            <button
-              onClick={() => setShowFilterMenu(v => !v)}
-              style={{ background: dateFilter !== 'all' ? '#FF6A00' : 'transparent', border: dateFilter !== 'all' ? 'none' : '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, color: dateFilter !== 'all' ? '#fff' : 'rgba(0,0,0,0.38)' }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-              {dateFilter !== 'all' && <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>{DATE_FILTER_OPTIONS.find(o => o.value === dateFilter)?.label}</span>}
-            </button>
-            {showFilterMenu && (
-              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 200, background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden', minWidth: 155 }}>
-                {DATE_FILTER_OPTIONS.map(opt => (
-                  <button key={opt.value} onClick={() => { setDateFilter(opt.value); setShowFilterMenu(false); }}
-                    style={{ display: 'block', width: '100%', padding: '10px 14px', background: dateFilter === opt.value ? '#FFF3EB' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, fontWeight: dateFilter === opt.value ? 700 : 500, color: dateFilter === opt.value ? '#FF6A00' : '#1C1410', fontFamily: "'DM Sans',sans-serif" }}>
-                    {dateFilter === opt.value ? '✓ ' : ''}{opt.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </>
+          <button
+            onClick={() => setShowFilterMenu(v => !v)}
+            style={{ position: 'absolute', right: 0, top: '50%', transform: 'translateY(-50%)', background: dateFilter !== 'all' ? '#FF6A00' : 'transparent', border: dateFilter !== 'all' ? 'none' : '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, color: dateFilter !== 'all' ? '#fff' : 'rgba(0,0,0,0.38)', zIndex: 200 }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            {dateFilter !== 'all' && <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>{DATE_FILTER_OPTIONS.find(o => o.value === dateFilter)?.label}</span>}
+          </button>
+          {showFilterMenu && (
+            <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 200, background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden', minWidth: 155 }}>
+              {DATE_FILTER_OPTIONS.map(opt => (
+                <button key={opt.value} onClick={() => { setDateFilter(opt.value); setShowFilterMenu(false); }}
+                  style={{ display: 'block', width: '100%', padding: '10px 14px', background: dateFilter === opt.value ? '#FFF3EB' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, fontWeight: dateFilter === opt.value ? 700 : 500, color: dateFilter === opt.value ? '#FF6A00' : '#1C1410', fontFamily: "'DM Sans',sans-serif" }}>
+                  {dateFilter === opt.value ? '✓ ' : ''}{opt.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       )}
 
       {homeTab === 'trips' && filteredActiveTrips.length === 0 && activeTrips.length > 0 && (

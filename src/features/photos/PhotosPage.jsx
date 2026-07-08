@@ -41,6 +41,8 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       92%  { opacity:1; }
       100% { transform:translateX(220%); opacity:0; }
     }
+    @keyframes phBgZoom { 0%,100%{transform:scale(1.06)} 50%{transform:scale(1.0)} }
+    @keyframes phOrbDrift { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-12px) scale(1.06)} }
     @keyframes phRingPulse {
       0%,100% { box-shadow:0 0 0 0 rgba(255,106,0,0.55); }
       50%     { box-shadow:0 0 0 7px rgba(255,106,0,0); }
@@ -57,8 +59,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-hero {
       position:relative; border-radius:22px; overflow:hidden;
       background-color:#1a0d00;
-      background-size:cover; background-position:center;
-      margin:1rem 1rem 0;
+      margin:0 1rem 0;
       animation:phHeroGlow 5s ease-in-out infinite;
     }
     .ph-hero-bg {
@@ -73,7 +74,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     }
     .ph-hero-overlay {
       position:absolute; inset:0;
-      background:linear-gradient(165deg,rgba(10,5,2,0.88) 0%,rgba(30,14,4,0.64) 55%,rgba(60,28,2,0.42) 100%);
+      background:linear-gradient(165deg,rgba(10,5,2,0.66) 0%,rgba(30,14,4,0.38) 55%,rgba(60,28,2,0.18) 100%);
       z-index:2;
     }
     .ph-hero-scan {
@@ -593,11 +594,16 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
       )}
 
       {/* ── Hero card (compact, left-aligned) ── */}
-      <div className="ph-hero" style={{ backgroundImage: `url(${photosImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <div className="ph-hero">
+        {/* animated background image */}
+        <div style={{ position:'absolute', inset:0, backgroundImage:`url(${photosImg})`, backgroundSize:'cover', backgroundPosition:'center', animation:'phBgZoom 18s ease-in-out infinite', filter:'brightness(1.28) saturate(1.1)' }} />
         {heroBgUrl && <img className="ph-hero-bg" src={heroBgUrl} alt="" />}
         <div className="ph-hero-dot-grid" />
         <div className="ph-hero-overlay" />
         <div className="ph-hero-scan" />
+        {/* warm orange drift orb */}
+        <div style={{ position:'absolute', bottom:-50, right:-20, width:180, height:180, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,106,0,0.32) 0%,transparent 62%)', pointerEvents:'none', zIndex:3, animation:'phOrbDrift 9s ease-in-out infinite' }} />
+        <div style={{ position:'absolute', top:-30, left:-20, width:130, height:130, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,180,60,0.18) 0%,transparent 65%)', pointerEvents:'none', zIndex:3, animation:'phOrbDrift 12s ease-in-out infinite 3s' }} />
         <div className="ph-hero-deco-c1" />
         {/* ⓘ Lumi info button */}
         <button onClick={() => setShowWelcome(true)} title="About Photos" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'none', background:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10, padding:0 }}>
