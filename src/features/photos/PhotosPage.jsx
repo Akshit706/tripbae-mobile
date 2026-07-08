@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import { addPhoto, deletePhoto, imagekitAuth } from '../../api';
 import { normalizeMembers } from '../shared/constants';
 import lumi13Img from '../../assets/lumi13.png';
+import photosImg from '../../assets/photos.png';
 
 /* ── Design tokens ── */
 const D = {
@@ -33,7 +34,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     @keyframes phSlideUp  { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
     @keyframes phSpin     { to{transform:rotate(360deg)} }
     @keyframes phPulse    { 0%,100%{opacity:.7} 50%{opacity:1} }
-    @keyframes phHeroGlow { 0%,100%{box-shadow:0 4px 32px rgba(15,110,86,0.22)} 50%{box-shadow:0 16px 56px rgba(29,158,117,0.42)} }
+    @keyframes phHeroGlow { 0%,100%{box-shadow:0 4px 32px rgba(255,106,0,0.22)} 50%{box-shadow:0 16px 56px rgba(255,140,59,0.42)} }
     @keyframes phHeroScan {
       0%   { transform:translateX(-100%); opacity:0; }
       8%   { opacity:1; }
@@ -41,8 +42,8 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       100% { transform:translateX(220%); opacity:0; }
     }
     @keyframes phRingPulse {
-      0%,100% { box-shadow:0 0 0 0 rgba(29,158,117,0.55); }
-      50%     { box-shadow:0 0 0 7px rgba(29,158,117,0); }
+      0%,100% { box-shadow:0 0 0 0 rgba(255,106,0,0.55); }
+      50%     { box-shadow:0 0 0 7px rgba(255,106,0,0); }
     }
     @keyframes phCellIn   { from{opacity:0;transform:scale(0.93)} to{opacity:1;transform:scale(1)} }
     @keyframes phTabIn    { from{opacity:0;transform:translateY(10px) scale(0.86)} to{opacity:1;transform:translateY(0) scale(1)} }
@@ -55,7 +56,8 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     /* ── Hero card (compact, left-aligned like day planner) ── */
     .ph-hero {
       position:relative; border-radius:22px; overflow:hidden;
-      background:linear-gradient(160deg,#081510 0%,#0A2C1A 40%,#0F6E56 100%);
+      background-color:#1a0d00;
+      background-size:cover; background-position:center;
       margin:1rem 1rem 0;
       animation:phHeroGlow 5s ease-in-out infinite;
     }
@@ -71,7 +73,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     }
     .ph-hero-overlay {
       position:absolute; inset:0;
-      background:linear-gradient(165deg,rgba(6,16,11,0.88) 0%,rgba(8,30,18,0.64) 55%,rgba(15,80,50,0.44) 100%);
+      background:linear-gradient(165deg,rgba(10,5,2,0.88) 0%,rgba(30,14,4,0.64) 55%,rgba(60,28,2,0.42) 100%);
       z-index:2;
     }
     .ph-hero-scan {
@@ -143,7 +145,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       flex-shrink:0;
     }
     .ph-tab.active .ph-tab-ring {
-      border-color:#1D9E75;
+      border-color:#FF6A00;
       animation:phRingPulse 2.2s ease-in-out infinite;
     }
     .ph-tab-av {
@@ -155,13 +157,13 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-tab-av img { width:100%; height:100%; object-fit:cover; }
     .ph-tab-badge {
       position:absolute; bottom:-2px; right:-2px;
-      background:#1D9E75; color:#fff; font-size:8px; font-weight:800;
+      background:#FF6A00; color:#fff; font-size:8px; font-weight:800;
       min-width:16px; height:16px; border-radius:8px;
       display:flex; align-items:center; justify-content:center;
       padding:0 3px; border:2px solid #FAF8F4;
     }
     .ph-tab-label { font-size:10.5px; font-weight:600; color:#8A7E76; white-space:nowrap; transition:color .2s; }
-    .ph-tab.active .ph-tab-label { color:#0F6E56; font-weight:700; }
+    .ph-tab.active .ph-tab-label { color:#FF6A00; font-weight:700; }
 
     /* ── folder content ── */
     .ph-folder-wrap { padding:.85rem 1rem 0; }
@@ -182,7 +184,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       margin-bottom:1rem;
     }
     .ph-upload:hover, .ph-upload.drag {
-      border-color:#1D9E75; background:#F4FBF8;
+      border-color:#FF6A00; background:#FFF8F4;
     }
     .ph-upload-inner {
       display:flex; align-items:center; gap:14px;
@@ -190,9 +192,9 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     }
     .ph-upload-left {
       width:44px; height:44px; border-radius:13px; flex-shrink:0;
-      background:linear-gradient(135deg,#1D9E75,#0F6E56);
+      background:linear-gradient(135deg,#FF6A00,#D85A30);
       display:flex; align-items:center; justify-content:center;
-      box-shadow:0 4px 12px rgba(29,158,117,0.28);
+      box-shadow:0 4px 12px rgba(255,106,0,0.28);
     }
     .ph-upload-right { flex:1; min-width:0; }
     .ph-upload-title { font-size:13.5px; font-weight:700; color:#1C1410; margin-bottom:2px; }
@@ -207,8 +209,8 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       backdrop-filter:blur(4px); display:flex; flex-direction:column;
       align-items:center; justify-content:center; gap:8px;
     }
-    .ph-spinner { width:26px; height:26px; border:2.5px solid rgba(29,158,117,0.18); border-top-color:#1D9E75; border-radius:50%; animation:phSpin .65s linear infinite; }
-    .ph-upload-prog-text { font-size:12px; font-weight:700; color:#1D9E75; }
+    .ph-spinner { width:26px; height:26px; border:2.5px solid rgba(255,106,0,0.18); border-top-color:#FF6A00; border-radius:50%; animation:phSpin .65s linear infinite; }
+    .ph-upload-prog-text { font-size:12px; font-weight:700; color:#FF6A00; }
 
     /* viewer banner */
     .ph-viewer-banner {
@@ -235,7 +237,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       aspect-ratio:1; cursor:pointer; background:#EDE9E4;
       border:2px solid transparent; transition:opacity .15s;
     }
-    .ph-cell.sel { border-color:#1D9E75; }
+    .ph-cell.sel { border-color:#FF6A00; }
     .ph-cell img { width:100%; height:100%; object-fit:cover; display:block; transition:filter .15s; }
     .ph-cell:hover img { filter:brightness(.85); }
     .ph-check {
@@ -244,7 +246,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       display:flex; align-items:center; justify-content:center; z-index:3;
       transition:all .15s; backdrop-filter:blur(3px);
     }
-    .ph-cell.sel .ph-check { background:#1D9E75; border-color:#1D9E75; }
+    .ph-cell.sel .ph-check { background:#FF6A00; border-color:#FF6A00; }
     .ph-expand {
       position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
       opacity:0; transition:opacity .15s; pointer-events:none; z-index:2;
@@ -287,11 +289,11 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       padding:8px 14px; border-radius:10px; cursor:pointer;
     }
     .ph-btn-primary {
-      background:linear-gradient(135deg,#1D9E75,#0F6E56); border:none;
+      background:linear-gradient(135deg,#FF6A00,#D85A30); border:none;
       color:#fff; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700;
       padding:8px 16px; border-radius:10px; cursor:pointer;
       display:flex; align-items:center; gap:6px;
-      box-shadow:0 4px 14px rgba(29,158,117,0.3);
+      box-shadow:0 4px 14px rgba(255,106,0,0.3);
     }
     .ph-btn-danger {
       background:#FDF0EE; border:1px solid rgba(232,113,90,0.3);
@@ -561,20 +563,20 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
               </div>
             </div>
             {/* Middle: left boxes | Lumi centred | right boxes */}
-            <div style={{ display:'flex', alignItems:'flex-end', padding:'0.25rem 1rem 0.75rem', gap:8 }}>
-              <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6, paddingBottom:6 }}>
+            <div style={{ display:'flex', alignItems:'center', padding:'0.5rem 1rem 0.75rem', gap:8 }}>
+              <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6 }}>
                 {['Private album', 'Member folders'].map((f, i) => (
-                  <div key={i} style={{ padding:'9px 8px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4', textAlign:'center' }}>
+                  <div key={i} style={{ padding:'9px 8px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4', textAlign:'center', minHeight:42, display:'flex', alignItems:'center', justifyContent:'center' }}>
                     <span style={{ fontSize:10.5, color:'#1C1410', lineHeight:1.3, fontWeight:700 }}>{f}</span>
                   </div>
                 ))}
               </div>
-              <div style={{ width:92, flexShrink:0, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-                <img src={lumi13Img} alt="Lumi" style={{ height:116, width:'auto', objectFit:'contain', display:'block' }} />
+              <div style={{ width:88, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <img src={lumi13Img} alt="Lumi" style={{ height:106, width:'auto', objectFit:'contain', display:'block' }} />
               </div>
-              <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6, paddingBottom:6 }}>
+              <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6 }}>
                 {['One-tap download', 'Group access only'].map((f, i) => (
-                  <div key={i} style={{ padding:'9px 8px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4', textAlign:'center' }}>
+                  <div key={i} style={{ padding:'9px 8px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4', textAlign:'center', minHeight:42, display:'flex', alignItems:'center', justifyContent:'center' }}>
                     <span style={{ fontSize:10.5, color:'#1C1410', lineHeight:1.3, fontWeight:700 }}>{f}</span>
                   </div>
                 ))}
@@ -591,7 +593,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
       )}
 
       {/* ── Hero card (compact, left-aligned) ── */}
-      <div className="ph-hero">
+      <div className="ph-hero" style={{ backgroundImage: `url(${photosImg})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         {heroBgUrl && <img className="ph-hero-bg" src={heroBgUrl} alt="" />}
         <div className="ph-hero-dot-grid" />
         <div className="ph-hero-overlay" />
@@ -624,7 +626,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
             </div>
           </div>
           <div className="ph-privacy-note">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#5BE3B0" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
             <span className="ph-privacy-note-text">End-to-end encrypted · Visible only to your trip group</span>
@@ -683,7 +685,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
                 <div className="ph-spinner" />
                 <div className="ph-upload-prog-text">Uploading… {uploadProgress}%</div>
                 <div style={{ width: '55%', height: 4, background: 'rgba(28,20,16,0.08)', borderRadius: 4, overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${uploadProgress}%`, background: D.green, borderRadius: 4, transition: 'width .3s' }} />
+                  <div style={{ height: '100%', width: `${uploadProgress}%`, background: '#FF6A00', borderRadius: 4, transition: 'width .3s' }} />
                 </div>
               </div>
             )}

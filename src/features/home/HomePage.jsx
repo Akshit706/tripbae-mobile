@@ -486,6 +486,39 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
   const activeTrips = trips.filter(t => !t.completed);
 
+  const [dateFilter, setDateFilter] = useState('all');
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+
+  const DATE_FILTER_OPTIONS = [
+    { value: 'all', label: 'All time' },
+    { value: 'upcoming', label: 'Upcoming' },
+    { value: 'this_month', label: 'This month' },
+    { value: 'last_month', label: 'Last month' },
+    { value: 'last_3_months', label: 'Last 3 months' },
+    { value: 'last_year', label: 'Last year' },
+  ];
+
+  const filteredActiveTrips = (() => {
+    if (dateFilter === 'all') return activeTrips;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return activeTrips.filter(t => {
+      const d = new Date(t.arrival || t.departure || t.createdAt);
+      if (isNaN(d)) return true;
+      d.setHours(0, 0, 0, 0);
+      if (dateFilter === 'upcoming') return d >= now;
+      if (dateFilter === 'this_month') return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      if (dateFilter === 'last_month') {
+        const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lmEnd = new Date(now.getFullYear(), now.getMonth(), 1);
+        return d >= lm && d < lmEnd;
+      }
+      if (dateFilter === 'last_3_months') return d >= new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+      if (dateFilter === 'last_year') return d >= new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+      return true;
+    });
+  })();
+
   const markTripCompleteWithAnimation = (tripId) => {
     setArchivingTripId(tripId);
     setTimeout(() => {
@@ -864,10 +897,39 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       )}
 
       {homeTab === 'trips' && activeTrips.length > 0 && (
-        <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase', marginBottom: 14, marginTop: 12 }}>YOUR TRIPS</div>
+        <>
+          {showFilterMenu && <div style={{ position: 'fixed', inset: 0, zIndex: 199 }} onClick={() => setShowFilterMenu(false)} />}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, marginTop: 12, position: 'relative', zIndex: 200 }}>
+            <div style={{ fontSize: 11, fontWeight: 600, letterSpacing: '1.2px', color: 'rgba(0,0,0,0.28)', textTransform: 'uppercase' }}>YOUR TRIPS</div>
+            <button
+              onClick={() => setShowFilterMenu(v => !v)}
+              style={{ background: dateFilter !== 'all' ? '#FF6A00' : 'transparent', border: dateFilter !== 'all' ? 'none' : '1px solid rgba(0,0,0,0.12)', borderRadius: 8, padding: '4px 8px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, color: dateFilter !== 'all' ? '#fff' : 'rgba(0,0,0,0.38)' }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+              {dateFilter !== 'all' && <span style={{ fontSize: 10, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>{DATE_FILTER_OPTIONS.find(o => o.value === dateFilter)?.label}</span>}
+            </button>
+            {showFilterMenu && (
+              <div style={{ position: 'absolute', top: 'calc(100% + 4px)', right: 0, zIndex: 200, background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.14)', border: '1px solid rgba(0,0,0,0.07)', overflow: 'hidden', minWidth: 155 }}>
+                {DATE_FILTER_OPTIONS.map(opt => (
+                  <button key={opt.value} onClick={() => { setDateFilter(opt.value); setShowFilterMenu(false); }}
+                    style={{ display: 'block', width: '100%', padding: '10px 14px', background: dateFilter === opt.value ? '#FFF3EB' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 13, fontWeight: dateFilter === opt.value ? 700 : 500, color: dateFilter === opt.value ? '#FF6A00' : '#1C1410', fontFamily: "'DM Sans',sans-serif" }}>
+                    {dateFilter === opt.value ? '✓ ' : ''}{opt.label}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
       )}
 
-      {homeTab === 'trips' && activeTrips.map((trip, idx) => (
+      {homeTab === 'trips' && filteredActiveTrips.length === 0 && activeTrips.length > 0 && (
+        <div style={{ textAlign: 'center', padding: '2rem 1rem', color: '#8A7E76' }}>
+          <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 4, color: '#5C504A' }}>No trips in this period</div>
+          <div style={{ fontSize: 12 }}>Try a different time range</div>
+        </div>
+      )}
+
+      {homeTab === 'trips' && filteredActiveTrips.map((trip, idx) => (
         idx === 0 ? (
           <div key={trip.id} style={{ position: 'relative' }}>
             <img
