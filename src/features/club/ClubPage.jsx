@@ -1396,6 +1396,10 @@ function ClubPage({ trip, onTripRefresh }) {
           <div style={{ position:'absolute', top:0, bottom:0, width:'40%', background:'linear-gradient(90deg,transparent,rgba(255,255,255,0.12),transparent)', zIndex:4, animation:'clubNeonScan 7s ease-in-out infinite 1.5s', pointerEvents:'none' }} />
           {/* content */}
           <div style={{ position:'relative', zIndex:5, padding:'1.3rem 1.2rem 1.2rem', textAlign:'center' }}>
+            {/* ⓘ Lumi info button */}
+            <button onClick={() => setShowClubIntro(true)} title="About Club" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'1.5px solid rgba(255,255,255,0.35)', background:'rgba(255,255,255,0.15)', backdropFilter:'blur(6px)', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:6, padding:0 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+            </button>
             <div style={{ fontSize:9, fontWeight:700, color:'rgba(255,255,255,0.6)', textTransform:'uppercase', letterSpacing:'2.8px', marginBottom:10 }}>✦ TRIPBAE CLUB ✦</div>
             <img src={bglessLogo} alt="TripBae" style={{ height:76, width:'auto', objectFit:'contain', display:'block', margin:'0 auto 5px', filter:'brightness(0) invert(1) drop-shadow(0 2px 14px rgba(0,0,0,0.28))', opacity:0.97 }} />
             <div style={{ fontFamily:"'Sora',sans-serif", fontSize:12.5, fontWeight:700, color:'rgba(255,255,255,0.88)', letterSpacing:'0.4px', fontStyle:'italic', marginBottom:16 }}>find your people.</div>
