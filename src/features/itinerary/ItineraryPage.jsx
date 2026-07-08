@@ -5,6 +5,7 @@ import { Spinner } from '../shared/ui';
 import { PlacePhoto, PlacePhotosStrip, PlacePhotoCarousel } from '../media/PlaceMedia';
 import RecommendationsPage from './RecommendationsPage';
 import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime } from '../../api';
+import lumi10Img from '../../assets/lumi10.png';
 
 /* ── Premium design tokens ─────────────────────────────────── */
 const D = {
@@ -1131,61 +1132,63 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               {/* ── Welcome popup (first-time) ── */}
               {showWelcomePopup && (
                 <div
-                  style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.55)', zIndex: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', animation: 'welcomeFadeIn 0.25s ease both' }}
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.55)', backdropFilter: 'blur(6px)', zIndex: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem', animation: 'welcomeFadeIn 0.25s ease both' }}
                   onClick={e => { if (e.target === e.currentTarget) { try { localStorage.setItem(WELCOME_SHOWN_KEY, '1'); } catch { /* ignore */ } setShowWelcomePopup(false); } }}
                 >
                   <div style={{
-                    width: '100%', maxWidth: 360,
-                    background: '#FFFDF8',
+                    width: '100%', maxWidth: 400,
+                    background: '#fff',
                     borderRadius: 24,
                     overflow: 'hidden',
-                    boxShadow: '0 24px 80px rgba(0,0,0,0.28)',
+                    boxShadow: '0 28px 80px rgba(0,0,0,0.28)',
                     animation: 'welcomePopIn 0.45s cubic-bezier(0.34,1.3,0.64,1) both',
+                    position: 'relative',
                   }}>
-                    {/* Top gradient band */}
-                    <div style={{ height: 4, background: `linear-gradient(90deg,${D.gold},#A8731E,${D.gold})` }} />
-                    <div style={{ padding: '1.5rem 1.5rem 0' }}>
-                      {/* Icon */}
-                      <div style={{ width: 52, height: 52, borderRadius: 17, background: `linear-gradient(135deg,${D.gold},#A8731E)`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 6px 20px rgba(201,145,58,0.35)' }}>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                          <circle cx="12" cy="12" r="10"/>
-                          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>
-                        </svg>
+                    {/* Orange top strip */}
+                    <div style={{ height: 4, background: 'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
+                    {/* X close */}
+                    <button onClick={() => { try { localStorage.setItem(WELCOME_SHOWN_KEY, '1'); } catch {} setShowWelcomePopup(false); }} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                    {/* Side-by-side: Lumi + text */}
+                    <div style={{ display:'flex', alignItems:'center', padding:'1.25rem 1.25rem 1rem', gap:14 }}>
+                      <div style={{ width:92, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        <img src={lumi10Img} alt="Lumi" style={{ width:86, height:116, objectFit:'contain', display:'block' }} />
                       </div>
-                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: D.espresso, lineHeight: 1.25, marginBottom: 10 }}>
-                        Your {form.dest} itinerary is ready
-                      </div>
-                      <div style={{ fontSize: 13.5, color: D.secondary, lineHeight: 1.72, marginBottom: 18 }}>
-                        Our travel agent has curated a day-by-day plan built around <strong style={{ color: D.espresso }}>the best spots, finest eateries, and standout experiences</strong> in {form.dest}.
-                        <br /><br />
-                        Just follow this — and {form.dest} is covered.
-                      </div>
-                      {/* Stats row */}
-                      {(() => {
-                        const totalActs = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).length, 0);
-                        const mustSees  = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).filter(act => act.mustDo).length, 0);
-                        return (
-                          <div style={{ display: 'flex', gap: 0, borderRadius: 14, overflow: 'hidden', border: `0.5px solid ${D.border}`, marginBottom: 20 }}>
-                            {[
-                              { n: days,      label: 'Days' },
-                              { n: totalActs, label: 'Activities' },
-                              { n: mustSees,  label: 'Must-Sees' },
-                            ].map((s, i) => (
-                              <div key={i} style={{ flex: 1, padding: '12px 6px', textAlign: 'center', borderRight: i < 2 ? `0.5px solid ${D.border}` : 'none', background: i === 1 ? D.goldTint : D.surface, animation: `statCountUp 0.4s ease ${i * 0.1}s both` }}>
-                                <div style={{ fontSize: 20, fontWeight: 800, color: i === 1 ? D.gold : D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1 }}>{s.n}</div>
-                                <div style={{ fontSize: 10, color: D.muted, fontWeight: 600, marginTop: 3, textTransform: 'uppercase', letterSpacing: 0.5 }}>{s.label}</div>
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
+                          <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
+                          <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
+                        </div>
+                        <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>
+                          Your {form.dest} plan is ready ✦
+                        </div>
+                        <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:10 }}>
+                          Day by day, hour by hour — the must-sees, best eateries, and hidden gems, all laid out. Just follow this and {form.dest} is handled.
+                        </div>
+                        <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                          {[
+                            `${(itin?.days||[]).reduce((a,d)=>a+(d.activities||[]).length,0)} activities across ${days} day${days>1?'s':''}`,
+                            'Live local clock shows what\'s on right now',
+                            'Local life guide: food, places & experiences',
+                          ].map((f, i) => (
+                            <div key={i} style={{ display:'flex', gap:6, alignItems:'flex-start' }}>
+                              <div style={{ width:15, height:15, borderRadius:4, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
+                                <svg width="8" height="8" viewBox="0 0 12 10" fill="none"><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
                               </div>
-                            ))}
-                          </div>
-                        );
-                      })()}
+                              <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.5 }}>{f}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <div style={{ padding: '0 1.5rem 1.5rem' }}>
+                    {/* CTA */}
+                    <div style={{ padding:'0 1.25rem 1.25rem' }}>
                       <button
                         onClick={() => { try { localStorage.setItem(WELCOME_SHOWN_KEY, '1'); } catch { /* ignore */ } setShowWelcomePopup(false); }}
-                        style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', boxShadow: '0 4px 16px rgba(201,145,58,0.32)', letterSpacing: 0.2 }}
+                        style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', color: '#fff', boxShadow: '0 4px 16px rgba(255,106,0,0.3)' }}
                       >
-                        Let's explore
+                        Let's explore 🗺️
                       </button>
                     </div>
                   </div>

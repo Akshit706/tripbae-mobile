@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { addPhoto, deletePhoto, imagekitAuth } from '../../api';
 import { normalizeMembers } from '../shared/constants';
+import lumi13Img from '../../assets/lumi13.png';
 
 /* ── Design tokens ── */
 const D = {
@@ -361,7 +362,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     }
     .ph-welcome-box {
       background:#fff; border-radius:24px; overflow:hidden;
-      width:100%; max-width:360px;
+      width:100%; max-width:400px; position:relative;
       box-shadow:0 28px 80px rgba(28,20,16,0.25);
       animation:phPopIn .45s cubic-bezier(0.34,1.3,0.64,1) both;
     }
@@ -540,33 +541,48 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
       {showWelcome && (
         <div className="ph-welcome-overlay" onClick={dismissWelcome}>
           <div className="ph-welcome-box" onClick={e => e.stopPropagation()}>
-            <div style={{ height: 4, background: `linear-gradient(90deg,${D.green},${D.greenDeep})` }} />
-            <div style={{ padding: '1.5rem' }}>
-              <div style={{ width: 52, height: 52, borderRadius: 17, background: `linear-gradient(135deg,${D.green},${D.greenDeep})`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16, boxShadow: '0 6px 20px rgba(29,158,117,0.3)' }}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
-                </svg>
+            {/* Orange top strip */}
+            <div style={{ height: 4, background: 'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
+            {/* X close */}
+            <button onClick={dismissWelcome} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            {/* Side-by-side: Lumi + text */}
+            <div style={{ display:'flex', alignItems:'center', padding:'1.25rem 1.25rem 1rem', gap:14 }}>
+              <div style={{ width:92, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <img src={lumi13Img} alt="Lumi" style={{ width:86, height:116, objectFit:'contain', display:'block' }} />
               </div>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 800, color: D.espresso, marginBottom: 10, lineHeight: 1.25 }}>
-                Your trip's shared album
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
+                  <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
+                  <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
+                </div>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>
+                  Your trip's shared album
+                </div>
+                <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:10 }}>
+                  Everyone's snapping — but who's actually saving them? Drop your shots here and the whole group gets instant access. No cloud chaos, no "please send" texts.
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {[
+                    'Private album — only your trip group sees it',
+                    'Each member gets their own folder to browse',
+                    'One tap to select and download any photo',
+                  ].map((f, i) => (
+                    <div key={i} style={{ display:'flex', gap:6, alignItems:'flex-start' }}>
+                      <div style={{ width:15, height:15, borderRadius:4, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
+                        <svg width="8" height="8" viewBox="0 0 12 10" fill="none"><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                      <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.5 }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div style={{ fontSize: 13.5, color: D.secondary, lineHeight: 1.7, marginBottom: 16 }}>
-                Upload your photos here and <strong style={{ color: D.espresso }}>every trip member gets instant access</strong> — no WhatsApp groups, no Drives, no third-party apps needed.
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 9, marginBottom: 20 }}>
-                {[
-                  { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.green} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, text: 'Photos are private — only your trip group can view them' },
-                  { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.green} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>, text: 'Browse by person — each member has their own folder' },
-                  { icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.green} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>, text: 'Select and download any photos with one tap' },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 12.5, color: D.secondary }}>
-                    <div style={{ width: 28, height: 28, borderRadius: 9, background: D.sageTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{item.icon}</div>
-                    {item.text}
-                  </div>
-                ))}
-              </div>
-              <button onClick={dismissWelcome} style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: `linear-gradient(135deg,${D.green},${D.greenDeep})`, color: '#fff', boxShadow: '0 4px 16px rgba(29,158,117,0.3)' }}>
-                Got it, let's upload
+            </div>
+            {/* CTA */}
+            <div style={{ padding:'0 1.25rem 1.25rem' }}>
+              <button onClick={dismissWelcome} style={{ width:'100%', padding:'13px', fontSize:14, fontWeight:700, borderRadius:14, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', color:'#fff', boxShadow:'0 4px 16px rgba(255,106,0,0.3)' }}>
+                Got it, let's shoot 📸
               </button>
             </div>
           </div>

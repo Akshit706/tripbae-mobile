@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { addContact, deleteContact } from '../../api';
 import { CONTACT_CATS, normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
+import lumi12Img from '../../assets/lumi12.png';
 
 /* ── Category SVG icons ─────────────────────────────── */
 function CatIcon({ id, size = 15, color = 'currentColor' }) {
@@ -268,46 +269,55 @@ function ContactsPage({ trip, myNickname, isSolo }) {
 
       {/* Welcome popup */}
       {showWelcome && (
-        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:'0 20px' }}
+        <div style={{ position:'fixed', inset:0, background:'rgba(28,20,16,0.55)', backdropFilter:'blur(6px)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.25rem' }}
           onClick={dismissWelcome}>
-          <div style={{ background:'#fff', borderRadius:24, padding:'28px 22px 24px', width:'100%', maxWidth:380, boxShadow:'0 24px 64px rgba(0,0,0,0.22)', animation:'clubPop .28s ease-out both', position:'relative' }}
+          <style>{`@keyframes lumiContPop{from{opacity:0;transform:scale(0.88) translateY(20px)}60%{transform:scale(1.02) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}`}</style>
+          <div style={{ background:'#fff', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:400, boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'lumiContPop .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
             onClick={e => e.stopPropagation()}>
+            {/* Orange top strip */}
+            <div style={{ height:4, background:'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
             {/* X close */}
-            <button onClick={dismissWelcome} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            <button onClick={dismissWelcome} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            {/* Icon */}
-            <div style={{ width:56, height:56, borderRadius:18, background: isSolo ? 'linear-gradient(135deg,#4C1D95,#7C3AED)' : 'linear-gradient(135deg,#92400E,#D97706)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:16 }}>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-            </div>
-            <div style={{ fontFamily:"'Sora',sans-serif", fontSize:18, fontWeight:800, color:'#111', marginBottom:4 }}>Trip Contacts</div>
-            <div style={{ fontSize:12.5, color:'#9ca3af', marginBottom:20, lineHeight:1.5 }}>Keep your journey safe &amp; connected</div>
-            {[
-              [isSolo ? '#EDE9FE' : '#FEF3C7', isSolo ? '#6D28D9' : '#B45309', 'Guardian', 'A trusted person reachable in an emergency.'],
-              [isSolo ? '#FEE2E2' : '#FEE2E2', '#DC2626', 'Emergency', 'Doctor, hospital, police or local helpline.'],
-              [isSolo ? '#E0F2FE' : '#E0F2FE', '#0369A1', 'On-Trip', 'Driver, hotel, guide — anyone en-route.'],
-            ].map(([bg, color, title, desc]) => (
-              <div key={title} style={{ display:'flex', gap:12, alignItems:'flex-start', marginBottom:14 }}>
-                <div style={{ width:34, height:34, borderRadius:10, background:bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                  <div style={{ width:8, height:8, borderRadius:'50%', background:color }} />
+            {/* Side-by-side: Lumi + text */}
+            <div style={{ display:'flex', alignItems:'center', padding:'1.25rem 1.25rem 1rem', gap:14 }}>
+              <div style={{ width:92, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <img src={lumi12Img} alt="Lumi" style={{ width:86, height:116, objectFit:'contain', display:'block' }} />
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
+                  <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
+                  <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
                 </div>
-                <div style={{ paddingTop:2 }}>
-                  <div style={{ fontFamily:"'Sora',sans-serif", fontSize:13, fontWeight:700, color:'#111', marginBottom:1 }}>{title}</div>
-                  <div style={{ fontSize:12, color:'#6b6b68', lineHeight:1.5 }}>{desc}</div>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>
+                  Your safety net, one tap away
+                </div>
+                <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:10 }}>
+                  Before you wander too far — save the people who matter. Your driver, that local guide, the nearest hospital. You hope you never need them. But they're here.
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {[
+                    'Guardian: someone back home who can always help',
+                    'Emergency: doctor, hospital, police, helpline',
+                    'On-Trip: driver, hotel, guide — anyone en-route',
+                  ].map((f, i) => (
+                    <div key={i} style={{ display:'flex', gap:6, alignItems:'flex-start' }}>
+                      <div style={{ width:15, height:15, borderRadius:4, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
+                        <svg width="8" height="8" viewBox="0 0 12 10" fill="none"><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                      <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.5 }}>{f}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
-            <button
-              onClick={dismissWelcome}
-              style={{ marginTop:6, width:'100%', padding:'13px', borderRadius:14, border:'none', background: isSolo ? 'linear-gradient(135deg,#4C1D95,#7C3AED)' : 'linear-gradient(135deg,#92400E,#D97706)', color:'#fff', fontFamily:"'Sora',sans-serif", fontSize:14, fontWeight:700, cursor:'pointer', boxShadow: isSolo ? '0 6px 20px rgba(109,40,217,0.3)' : '0 6px 20px rgba(180,83,9,0.3)' }}
-            >
-              Got it
-            </button>
+            </div>
+            {/* CTA */}
+            <div style={{ padding:'0 1.25rem 1.25rem' }}>
+              <button onClick={dismissWelcome} style={{ width:'100%', padding:'13px', fontSize:14, fontWeight:700, borderRadius:14, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', color:'#fff', boxShadow:'0 4px 16px rgba(255,106,0,0.3)' }}>
+                Got it, staying safe 🛡️
+              </button>
+            </div>
           </div>
         </div>
       )}

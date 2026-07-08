@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import lumi8Img from '../../assets/lumi8.png';
+import lumi14Img from '../../assets/lumi14.png';
 import lumiMood1 from '../../assets/lumi_mood1.png';
 import lumiMood2 from '../../assets/lumi_mood2.png';
 import lumiMood3 from '../../assets/lumi_mood3.png';
@@ -21,6 +22,14 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [section, setSection] = useState('expenses');
   const [saving, setSaving] = useState(false);
   const [chartReady, setChartReady] = useState(false);
+  const SOLO_WELCOME_KEY = `travelbae_solo_welcome_${trip.id}`;
+  const [showWelcome, setShowWelcome] = useState(() => {
+    try { return !localStorage.getItem(`travelbae_solo_welcome_${trip.id}`); } catch { return false; }
+  });
+  const dismissWelcome = () => {
+    try { localStorage.setItem(SOLO_WELCOME_KEY, '1'); } catch {}
+    setShowWelcome(false);
+  };
   const todayStr = new Date().toISOString().split('T')[0];
   const getNow = () => {
     const now = new Date();
@@ -392,7 +401,59 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         @keyframes heroPulse { 0%,100%{opacity:0.07;transform:scale(1)} 50%{opacity:0.14;transform:scale(1.1)} }
         @keyframes heroShimmer { 0%{transform:translateX(-120%) skewX(-18deg)} 100%{transform:translateX(220%) skewX(-18deg)} }
         @keyframes heroNumIn { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
+        @keyframes lumiSoloPop{from{opacity:0;transform:scale(0.88) translateY(20px)}60%{transform:scale(1.02) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
       `}</style>
+
+      {/* ── Lumi intro popup (first-time) ── */}
+      {showWelcome && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(28,20,16,0.55)', backdropFilter:'blur(6px)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.25rem' }}
+          onClick={dismissWelcome}>
+          <div style={{ background:'#fff', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:400, boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'lumiSoloPop .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ height:4, background:'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
+            <button onClick={dismissWelcome} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div style={{ display:'flex', alignItems:'center', padding:'1.25rem 1.25rem 1rem', gap:14 }}>
+              <div style={{ width:92, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <img src={lumi14Img} alt="Lumi" style={{ width:86, height:116, objectFit:'contain', display:'block' }} />
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
+                  <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
+                  <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
+                </div>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>
+                  Your solo wallet, tracked.
+                </div>
+                <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:10 }}>
+                  No one to split with — but also no one judging your third coffee. Log every spend, set a budget, and see exactly where the money went. I won't tell.
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {[
+                    'Log every expense with category and note',
+                    'Set a trip budget and watch the tracker',
+                    'Visual insights: donut chart, daily breakdown',
+                  ].map((f, i) => (
+                    <div key={i} style={{ display:'flex', gap:6, alignItems:'flex-start' }}>
+                      <div style={{ width:15, height:15, borderRadius:4, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
+                        <svg width="8" height="8" viewBox="0 0 12 10" fill="none"><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                      <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.5 }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div style={{ padding:'0 1.25rem 1.25rem' }}>
+              <button onClick={dismissWelcome} style={{ width:'100%', padding:'13px', fontSize:14, fontWeight:700, borderRadius:14, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', color:'#fff', boxShadow:'0 4px 16px rgba(255,106,0,0.3)' }}>
+                Track my spend 🧾
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{ background: 'linear-gradient(135deg,#7A2800,#FF6A00 48%,#FF8C3A)', borderRadius: 20, padding: '1.25rem 1.5rem', marginBottom: '1.25rem', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 40px rgba(255,106,0,0.36)', borderTop: '0.5px solid rgba(255,255,255,0.28)' }}>
         {/* shimmer sweep */}
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>

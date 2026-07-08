@@ -4,6 +4,7 @@ import { supabase } from '../../supabase';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 import bglessLogo from '../../assets/bgless_club.png';
+import lumiMood3 from '../../assets/lumi_mood3.png';
 
 const VIBE_OPTIONS = [
   { value: 'any', label: 'Any vibe' },
@@ -479,6 +480,16 @@ function ClubPage({ trip, onTripRefresh }) {
     if (!termsChecked) return;
     try { localStorage.setItem(CLUB_TERMS_KEY, '1'); } catch {}
     setShowClubTerms(false);
+  };
+
+  // ── Club Lumi intro ──
+  const CLUB_INTRO_KEY = `travelbae_club_intro_${trip.id}`;
+  const [showClubIntro, setShowClubIntro] = useState(() => {
+    try { return !localStorage.getItem(`travelbae_club_intro_${trip.id}`); } catch { return false; }
+  });
+  const dismissClubIntro = () => {
+    try { localStorage.setItem(CLUB_INTRO_KEY, '1'); } catch {}
+    setShowClubIntro(false);
   };
 
   // ── Location (Nominatim search + optional GPS reverse-geocode) ──
@@ -1282,8 +1293,57 @@ function ClubPage({ trip, onTripRefresh }) {
         }
       `}</style>
 
+      {/* ── Lumi intro popup (first-time, shows before T&C) ── */}
+      {showClubIntro && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(28,20,16,0.55)', backdropFilter:'blur(6px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.25rem', animation:'clubFadeIn .22s ease both' }}>
+          <div style={{ background:'#fff', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:400, boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'clubSheetIn .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ height:4, background:'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
+            <button onClick={dismissClubIntro} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+            <div style={{ display:'flex', alignItems:'center', padding:'1.25rem 1.25rem 1rem', gap:14 }}>
+              <div style={{ width:92, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <img src={lumiMood3} alt="Lumi" style={{ width:86, height:116, objectFit:'contain', display:'block' }} />
+              </div>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
+                  <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
+                  <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
+                </div>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>
+                  Find your travel tribe
+                </div>
+                <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:10 }}>
+                  Looking to travel with people you actually like? Club lets you discover groups heading to your destination, check out their vibe, and send a join request. Travel tribe, acquired.
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {[
+                    'Discover trip groups matching your travel vibe',
+                    'See member count, destination & travel style',
+                    'Send a join request and chat before you go',
+                  ].map((f, i) => (
+                    <div key={i} style={{ display:'flex', gap:6, alignItems:'flex-start' }}>
+                      <div style={{ width:15, height:15, borderRadius:4, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, marginTop:1 }}>
+                        <svg width="8" height="8" viewBox="0 0 12 10" fill="none"><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      </div>
+                      <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.5 }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div style={{ padding:'0 1.25rem 1.25rem' }}>
+              <button onClick={dismissClubIntro} style={{ width:'100%', padding:'13px', fontSize:14, fontWeight:700, borderRadius:14, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', color:'#fff', boxShadow:'0 4px 16px rgba(255,106,0,0.3)' }}>
+                Find my people 🌍
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── T&C First-time gate ── */}
-      {showClubTerms && (
+      {showClubTerms && !showClubIntro && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(12,18,14,0.72)', backdropFilter: 'blur(7px)', zIndex: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem', animation: 'clubFadeIn .2s ease both' }}>
           <div style={{ background: '#fff', borderRadius: 24, overflow: 'hidden', width: '100%', maxWidth: 380, boxShadow: '0 28px 80px rgba(12,18,14,0.32)', animation: 'clubSheetIn .35s cubic-bezier(0.34,1.3,0.64,1) both' }}>
             {/* accent bar */}
