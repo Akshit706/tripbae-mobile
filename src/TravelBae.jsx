@@ -251,7 +251,7 @@ function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
   root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #f8f7f2 34%, #f3f2ed 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased', position: 'relative', overflowX: 'hidden' },
-  topBar: { background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 1, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
+  topBar: { background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 300, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
   logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, letterSpacing: '-0.45px', color: '#0D2B2E' },
   tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
@@ -285,12 +285,18 @@ export default function App() {
   const [otpResendCountdown, setOtpResendCountdown] = useState(0);
   const [trips, setTrips] = useState([]);
   const [tripsLoading, setTripsLoading] = useState(false);
-  const [activeTrip, setActiveTrip] = useState(null);
+  const [activeTrip, setActiveTrip] = useState(() => {
+    if (!localStorage.getItem('travelbae_token')) return null;
+    return sessionStorage.getItem('tb_active_trip') || null;
+  });
   const [activeTripData, setActiveTripData] = useState(null);
   const [myNickname, setMyNickname] = useState(null);
   const [tripLoading, setTripLoading] = useState(false);
   const [newTripModal, setNewTripModal] = useState(null);
-  const [tab, setTab] = useState('main');
+  const [tab, setTab] = useState(() => {
+    if (!localStorage.getItem('travelbae_token')) return 'main';
+    return sessionStorage.getItem('tb_active_tab') || 'main';
+  });
   const [profileOpen, setProfileOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [homeTab, setHomeTab] = useState('trips');
@@ -350,6 +356,16 @@ export default function App() {
     try { localStorage.setItem('travelbae_profile', JSON.stringify(next)); } catch { /* ignore */ }
   };
 
+  // Persist active trip + tab across refreshes
+  useEffect(() => {
+    if (activeTrip) sessionStorage.setItem('tb_active_trip', activeTrip);
+    else sessionStorage.removeItem('tb_active_trip');
+  }, [activeTrip]);
+
+  useEffect(() => {
+    sessionStorage.setItem('tb_active_tab', tab);
+  }, [tab]);
+
   useEffect(() => {
     if (!authToken) return;
     setTripsLoading(true);
@@ -366,6 +382,12 @@ export default function App() {
           };
         });
         setTrips(merged);
+        // Validate restored trip ID still exists
+        const savedTripId = sessionStorage.getItem('tb_active_trip');
+        if (savedTripId && !merged.find(t => t.id === savedTripId)) {
+          setActiveTrip(null);
+          sessionStorage.removeItem('tb_active_trip');
+        }
       })
       .catch(() => setTrips([]))
       .finally(() => setTripsLoading(false));
@@ -502,6 +524,8 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('travelbae_token');
     localStorage.removeItem(AI_CACHE_KEY);
+    sessionStorage.removeItem('tb_active_trip');
+    sessionStorage.removeItem('tb_active_tab');
     setAuthToken(null);
     setTrips([]);
     setActiveTrip(null);
@@ -519,6 +543,8 @@ export default function App() {
       localStorage.removeItem('travelbae_profile');
       localStorage.removeItem('travelbae_prefs');
       localStorage.removeItem(AI_CACHE_KEY);
+      sessionStorage.removeItem('tb_active_trip');
+      sessionStorage.removeItem('tb_active_tab');
       setAuthToken(null);
       setTrips([]);
       setActiveTrip(null);

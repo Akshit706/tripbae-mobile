@@ -159,7 +159,7 @@ code {
 .tb-topbar-glass {
   position: relative;
   top: auto;
-  z-index: 1;
+  z-index: var(--tb-z-topbar);
   padding-top: 0;
 }
 
