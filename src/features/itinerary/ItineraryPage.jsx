@@ -6,6 +6,7 @@ import { PlacePhoto, PlacePhotosStrip, PlacePhotoCarousel } from '../media/Place
 import RecommendationsPage from './RecommendationsPage';
 import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime } from '../../api';
 import lumi15Img from '../../assets/lumi15.png';
+import ExperienceDiscovery from './ExperienceDiscovery';
 
 /* ── Premium design tokens ─────────────────────────────────── */
 const D = {
@@ -798,7 +799,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     ? Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000))
     : 1;
 
-  const [step, setStep] = useState(trip._cachedItin ? 'result' : 'loading');
+  const [step, setStep] = useState(trip._cachedItin ? 'result' : 'discover');
   const [itin, setItin] = useState(trip._cachedItin?.itinerary || null);
   const [sources, setSources] = useState(trip._cachedItin?.sources || []);
   const [localTasteData, setLocalTasteData] = useState(trip._cachedTaste || null);
@@ -845,13 +846,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     // Generate what's missing
     if (!hasGenerated.current) {
       hasGenerated.current = true;
-      if (!trip._cachedItin) runGenerateItinerary();
-      // Always fetch local taste — backend uses Supabase shared cache (instant if cached)
+      // Itinerary generation is triggered by ExperienceDiscovery (onComplete/onSkip)
       runGenerateLocalTaste();
     }
   }, [trip._cachedItin, trip._cachedTaste]);
 
-  const runGenerateItinerary = async () => {
+  const runGenerateItinerary = async (selectedExperiences) => {
     setStep('loading');
     try {
       const { generateItinerary } = await import('../../api');
@@ -866,6 +866,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         firstActivitySlot: firstActivitySlot(),
         arrival: form.arrival,
         travelNotes: form.travelNotes || '',
+        ...(selectedExperiences && selectedExperiences.length > 0 ? { selectedExperiences } : {}),
       });
       setItin(result.itinerary);
       setSources(result.sources || []);
@@ -909,6 +910,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
   const handleRedo = () => {
     onCacheUpdate?.({ _cachedItin: null });
+    setStep('discover');
   };
 
   const SlotBadge = ({ slot, label }) => (
@@ -1098,6 +1100,15 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
       {iTab === 'planner' && (
         <div>
+          {/* ── Experience Discovery (swipe flow, shown before first generation) ── */}
+          {step === 'discover' && (
+            <ExperienceDiscovery
+              trip={trip}
+              onComplete={(selectedExps) => runGenerateItinerary(selectedExps)}
+              onSkip={() => runGenerateItinerary()}
+            />
+          )}
+
           {step === 'loading' && (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
@@ -1106,8 +1117,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               </div>
               <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 7, textAlign: 'left' }}>
                 {[
-                  { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>, text: 'Scanning TripAdvisor, Lonely Planet & travel blogs' },
-                  { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, text: 'Ranking attractions by ratings & reviews' },
+                  { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>, text: 'Organizing your selected experiences' },
+                  { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, text: 'Optimizing for travel time & energy flow' },
                   { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, text: `Scheduling from your ${SLOT_LABELS[firstActivitySlot()]} slot` },
                 ].map((item, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: D.secondary, animation: `statCountUp 0.4s ease ${i * 0.15}s both` }}>
@@ -1121,8 +1132,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           {step === 'error' && (
             <div style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
               <div style={{ fontSize: 40, marginBottom: 12 }}>😕</div>
-              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Couldn't generate itinerary</div>
-              <button style={{ ...S.btn, ...accentStyle, padding: '10px 24px' }} onClick={runGenerateItinerary}>Try Again</button>
+              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Couldn't generate itinerary</div>
+              <div style={{ fontSize: 12.5, color: '#8A7E76', marginBottom: 20 }}>Something went wrong. Try again or pick experiences differently.</div>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button style={{ ...S.btn, ...accentStyle, padding: '10px 24px' }} onClick={() => runGenerateItinerary()}>Try Again</button>
+                <button style={{ ...S.btn, padding: '10px 24px', background: '#F4F2EE', color: '#5C504A', border: 'none', borderRadius: 12 }} onClick={() => setStep('discover')}>Pick Experiences</button>
+              </div>
             </div>
           )}
 

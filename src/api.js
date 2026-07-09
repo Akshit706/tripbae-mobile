@@ -102,9 +102,13 @@ function dedupedFetch(key, fetcher) {
 }
 
 export const generateItinerary = (data) => {
-  const key = `itin:${data.destination}:${data.days}:${data.budget}:${data.people}:${(data.interests || []).join(',')}:${data.arrivalSlot}:${data.departureSlot}`;
+  const expKey = (data.selectedExperiences || []).length;
+  const key = `itin:${data.destination}:${data.days}:${data.budget}:${data.people}:${(data.interests || []).join(',')}:${data.arrivalSlot}:${data.departureSlot}:sel${expKey}`;
   return dedupedFetch(key, () => apiFetch('/ai/itinerary', { method: 'POST', body: data }));
 };
+
+export const fetchExperiences = (data) =>
+  apiFetch('/ai/experiences', { method: 'POST', body: data });
 
 export const generateLocalTaste = (data) => {
   const key = `taste:${data.destination}`;

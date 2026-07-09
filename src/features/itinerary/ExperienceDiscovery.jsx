@@ -1,0 +1,548 @@
+import { useState, useRef, useEffect } from 'react';
+import { PlacePhoto } from '../media/PlaceMedia';
+import lumi17Img from '../../assets/lumi17.png';
+import lumi15Img from '../../assets/lumi15.png';
+import lumi5Img from '../../assets/lumi5_bgless.png';
+
+/* ── Design tokens (matches ItineraryPage) ───────────────── */
+const D = {
+  bg:        '#FAF8F4',
+  surface:   '#FFFFFF',
+  espresso:  '#1C1410',
+  gold:      '#C9913A',
+  goldTint:  '#FDF3E3',
+  muted:     '#8A7E76',
+  secondary: '#5C504A',
+  border:    'rgba(28,20,16,0.08)',
+  divider:   'rgba(28,20,16,0.06)',
+  cardShadow:'0 2px 8px rgba(28,20,16,0.06)',
+};
+
+const CAT = {
+  'Attractions':       { bg: '#EEF2FF', color: '#4F46E5', emoji: '🏛️' },
+  'Food':              { bg: '#FEF3C7', color: '#D97706', emoji: '🍽️' },
+  'Cafes':             { bg: '#FDF2F8', color: '#DB2777', emoji: '☕' },
+  'Hidden Gems':       { bg: '#ECFDF5', color: '#059669', emoji: '💎' },
+  'Adventure':         { bg: '#FFF7ED', color: '#EA580C', emoji: '🎯' },
+  'Shopping':          { bg: '#FFF1F2', color: '#BE123C', emoji: '🛍️' },
+  'Nightlife':         { bg: '#F5F3FF', color: '#7C3AED', emoji: '🌙' },
+  'Culture':           { bg: '#FFFBEB', color: '#B45309', emoji: '🎭' },
+  'Viewpoints':        { bg: '#EFF6FF', color: '#2563EB', emoji: '🌅' },
+  'Local Experiences': { bg: '#F7FEE7', color: '#4D7C0F', emoji: '🌿' },
+  'Party':             { bg: '#FDF4FF', color: '#9333EA', emoji: '🎉' },
+};
+const ALL_CATS = Object.keys(CAT);
+function catCfg(c) { return CAT[c] || { bg: '#F4F2EE', color: '#8A7E76', emoji: '📍' }; }
+
+function parseDurationHours(dur) {
+  if (!dur) return 1.5;
+  const m = String(dur).match(/(\d+(?:\.\d+)?)\s*[-–to]\s*(\d+(?:\.\d+)?)/);
+  if (m) return (parseFloat(m[1]) + parseFloat(m[2])) / 2;
+  const s = String(dur).match(/(\d+(?:\.\d+)?)/);
+  return s ? Math.max(0.5, parseFloat(s[1])) : 1.5;
+}
+
+/* ── CSS injection ───────────────────────────────────────── */
+if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles')) {
+  const el = document.createElement('style');
+  el.id = 'exp-disc-styles';
+  el.textContent = `
+    @keyframes edFlyRight { to { transform: translateX(130vw) rotate(26deg); opacity: 0; } }
+    @keyframes edFlyLeft  { to { transform: translateX(-130vw) rotate(-26deg); opacity: 0; } }
+    @keyframes edFadeUp   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes edLumiFloat{ 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+    @keyframes edPulseDot { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
+    @keyframes edBtnGlow  { 0%,100% { box-shadow: 0 4px 18px rgba(34,197,94,0.26); } 50% { box-shadow: 0 6px 30px rgba(34,197,94,0.52); } }
+    @keyframes edStampL   { 0% { transform: scale(0.4) rotate(-10deg); opacity: 0; } 60% { transform: scale(1.15) rotate(-10deg); } 100% { transform: scale(1) rotate(-10deg); opacity: 1; } }
+    @keyframes edStampR   { 0% { transform: scale(0.4) rotate(10deg); opacity: 0; } 60% { transform: scale(1.15) rotate(10deg); } 100% { transform: scale(1) rotate(10deg); opacity: 1; } }
+    @keyframes edCardIn   { from { opacity: 0; transform: translateY(22px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes edConfirmIn{ from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    .ed-like-btn,.ed-pass-btn { transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease !important; }
+    .ed-like-btn:active { transform: scale(0.88) !important; }
+    .ed-pass-btn:active { transform: scale(0.88) !important; }
+    .ed-cat-pill { transition: all 0.15s ease; }
+    .ed-cat-pill:hover { transform: scale(1.05); }
+    .ed-cat-scroll::-webkit-scrollbar { display: none; }
+  `;
+  document.head.appendChild(el);
+}
+
+/* ══════════════════════════════════════════
+   SWIPE CARD
+══════════════════════════════════════════ */
+function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex, onPointerDown }) {
+  const cfg = catCfg(exp.category);
+  const likeOpacity = isTop && isDragging ? Math.max(0, Math.min(1, dragX / 65)) : 0;
+  const passOpacity = isTop && isDragging ? Math.max(0, Math.min(1, -dragX / 65)) : 0;
+  const rotation    = isTop ? dragX * 0.055 : 0;
+  const stackScale  = 1 - stackIndex * 0.044;
+  const stackY      = stackIndex * 13;
+  const zIdx        = 10 - stackIndex;
+
+  let flyAnim;
+  if (isTop && swipeOut === 'right') flyAnim = 'edFlyRight 0.38s cubic-bezier(0.2,0.7,0.2,1) forwards';
+  if (isTop && swipeOut === 'left')  flyAnim = 'edFlyLeft  0.38s cubic-bezier(0.2,0.7,0.2,1) forwards';
+
+  const transform = isTop && !swipeOut
+    ? `translateX(${dragX}px) translateY(${dragY * 0.2}px) rotate(${rotation}deg)`
+    : !isTop
+    ? `scale(${stackScale}) translateY(${stackY}px)`
+    : undefined;
+
+  return (
+    <div
+      onPointerDown={isTop && !swipeOut ? onPointerDown : undefined}
+      style={{
+        position: 'absolute', width: '100%', height: '100%',
+        borderRadius: 24, overflow: 'hidden', background: D.surface,
+        boxShadow: isTop
+          ? `0 ${8 + Math.abs(dragX) * 0.05}px ${30 + Math.abs(dragX) * 0.12}px rgba(28,20,16,0.18)`
+          : '0 3px 14px rgba(28,20,16,0.09)',
+        transform, zIndex: zIdx,
+        transition: isDragging || swipeOut
+          ? 'none'
+          : 'transform 0.38s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.22s ease',
+        animation: flyAnim,
+        cursor: isTop ? (isDragging ? 'grabbing' : 'grab') : 'default',
+        userSelect: 'none', WebkitUserSelect: 'none',
+        touchAction: 'none', willChange: 'transform',
+      }}
+    >
+      {/* ── Photo 62% ── */}
+      <div style={{ position: 'relative', height: '62%', overflow: 'hidden', background: '#EDE8E2' }}>
+        <PlacePhoto
+          query={exp.imageQuery || `${exp.name} ${exp.category} travel`}
+          style={{ height: '100%', borderRadius: 0 }}
+          delay={stackIndex * 220}
+        />
+        {/* gradient */}
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.04) 0%,transparent 28%,rgba(0,0,0,0.72) 100%)', pointerEvents:'none' }} />
+
+        {/* category badge */}
+        <div style={{ position:'absolute', top:14, left:14, display:'inline-flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.94)', backdropFilter:'blur(10px)', borderRadius:999, padding:'4px 10px 4px 8px', boxShadow:'0 2px 8px rgba(0,0,0,0.12)' }}>
+          <span style={{ fontSize:13 }}>{cfg.emoji}</span>
+          <span style={{ fontSize:10.5, fontWeight:700, color:cfg.color, fontFamily:"'DM Sans',sans-serif", textTransform:'uppercase', letterSpacing:0.7 }}>{exp.category}</span>
+        </div>
+
+        {/* LIKE stamp */}
+        <div style={{ position:'absolute', top:52, right:18, opacity:likeOpacity, transform:'rotate(-12deg)', border:'3px solid #22C55E', borderRadius:8, padding:'4px 12px', color:'#22C55E', fontSize:17, fontWeight:900, letterSpacing:1.5, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(4px)', pointerEvents:'none', fontFamily:"'Sora',sans-serif", animation: likeOpacity > 0.85 ? 'edStampL 0.22s both' : undefined }}>
+          LIKE ♥
+        </div>
+
+        {/* PASS stamp */}
+        <div style={{ position:'absolute', top:52, left:18, opacity:passOpacity, transform:'rotate(12deg)', border:'3px solid #EF4444', borderRadius:8, padding:'4px 12px', color:'#EF4444', fontSize:17, fontWeight:900, letterSpacing:1.5, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(4px)', pointerEvents:'none', fontFamily:"'Sora',sans-serif", animation: passOpacity > 0.85 ? 'edStampR 0.22s both' : undefined }}>
+          PASS ✗
+        </div>
+
+        {/* name + vibe overlay */}
+        <div style={{ position:'absolute', bottom:12, left:14, right:14, pointerEvents:'none' }}>
+          <div style={{ fontSize:19, fontWeight:800, color:'#fff', lineHeight:1.2, textShadow:'0 2px 8px rgba(0,0,0,0.6)', fontFamily:"'Sora',sans-serif", letterSpacing:-0.2 }}>{exp.name}</div>
+          {exp.vibe && (
+            <span style={{ marginTop:4, display:'inline-block', fontSize:9.5, fontWeight:700, color:'rgba(255,255,255,0.9)', background:'rgba(255,255,255,0.14)', borderRadius:999, padding:'2px 8px', backdropFilter:'blur(4px)', textTransform:'uppercase', letterSpacing:0.8 }}>{exp.vibe}</span>
+          )}
+        </div>
+      </div>
+
+      {/* ── Content 38% ── */}
+      <div style={{ padding:'12px 14px 13px', height:'38%', display:'flex', flexDirection:'column', justifyContent:'space-between', overflow:'hidden' }}>
+        <p style={{ fontSize:12.5, color:D.secondary, lineHeight:1.62, margin:0, display:'-webkit-box', WebkitLineClamp:3, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
+          {exp.description}
+        </p>
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:4 }}>
+          {exp.duration && (
+            <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:11, fontWeight:600, color:D.muted, background:'#F4F2EE', borderRadius:999, padding:'3px 9px' }}>
+              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              {exp.duration}
+            </span>
+          )}
+          {exp.bestTime && (
+            <span style={{ fontSize:11, fontWeight:600, color:'#0F6E56', background:'#ECFDF5', borderRadius:999, padding:'3px 9px' }}>🕐 {exp.bestTime}</span>
+          )}
+          {exp.cost && exp.cost !== 'null' && exp.cost !== 'N/A' && (
+            <span style={{ fontSize:11, fontWeight:700, color:D.gold, background:D.goldTint, borderRadius:999, padding:'3px 9px' }}>{exp.cost}</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════
+   MAIN COMPONENT
+══════════════════════════════════════════ */
+export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
+  const [phase, setPhase] = useState('loading'); // loading | swipe | confirm
+  const [experiences, setExperiences] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [likedIds, setLikedIds] = useState(new Set());
+  const [activeFilter, setActiveFilter] = useState(null);
+  const [swipeOut, setSwipeOut] = useState(null); // 'left'|'right'|null
+  const [dragX, setDragX] = useState(0);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+
+  const pointerStart = useRef(null);
+  const lastDragXRef = useRef(0);
+
+  const destination = trip.destination || '';
+  const days = (trip.arrival && trip.departure)
+    ? Math.max(1, Math.round((new Date(trip.departure) - new Date(trip.arrival)) / 86400000))
+    : 1;
+  const tripActiveHours = days * 10; // ~10 usable hours/day
+
+  /* ── Fetch experiences ─────────────────────────────── */
+  useEffect(() => {
+    let cancelled = false;
+    import('../../api').then(({ fetchExperiences }) =>
+      fetchExperiences({ destination, days, budget: trip.budget })
+    ).then(data => {
+      if (cancelled) return;
+      const exps = (data.experiences || []).map((e, i) => ({ ...e, id: e.id || `exp-${i}` }));
+      setExperiences(exps);
+      setPhase('swipe');
+    }).catch(() => {
+      if (!cancelled) onSkip?.();
+    });
+    return () => { cancelled = true; };
+  }, []);
+
+  /* ── Derived ────────────────────────────────────────── */
+  const filteredExp = activeFilter ? experiences.filter(e => e.category === activeFilter) : experiences;
+  const total = filteredExp.length;
+  const remaining = Math.max(0, total - currentIndex);
+  const likedExps = experiences.filter(e => likedIds.has(e.id));
+  const selectedHours = likedExps.reduce((s, e) => s + parseDurationHours(e.duration), 0);
+  const availableCats = ALL_CATS.filter(c => experiences.some(e => e.category === c));
+
+  /* ── Swipe action ───────────────────────────────────── */
+  const doSwipe = (dir) => {
+    if (swipeOut || currentIndex >= total) return;
+    const exp = filteredExp[currentIndex];
+    if (!exp) return;
+    setSwipeOut(dir);
+    setTimeout(() => {
+      if (dir === 'right') setLikedIds(prev => new Set([...prev, exp.id]));
+      setCurrentIndex(prev => prev + 1);
+      setSwipeOut(null);
+      setDragX(0);
+      setDragY(0);
+      lastDragXRef.current = 0;
+    }, 400);
+  };
+
+  /* ── Pointer handlers ───────────────────────────────── */
+  const handlePointerDown = (e) => {
+    if (swipeOut) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    pointerStart.current = { x: e.clientX, y: e.clientY };
+    setIsDragging(true);
+  };
+
+  const handlePointerMove = (e) => {
+    if (!isDragging || !pointerStart.current) return;
+    const dx = e.clientX - pointerStart.current.x;
+    const dy = e.clientY - pointerStart.current.y;
+    lastDragXRef.current = dx;
+    setDragX(dx);
+    setDragY(dy);
+  };
+
+  const handlePointerUp = () => {
+    if (!isDragging) return;
+    const dx = lastDragXRef.current;
+    setIsDragging(false);
+    pointerStart.current = null;
+    lastDragXRef.current = 0;
+    if (dx > 80) doSwipe('right');
+    else if (dx < -80) doSwipe('left');
+    else { setDragX(0); setDragY(0); }
+  };
+
+  /* ── Auto-advance to confirm ────────────────────────── */
+  useEffect(() => {
+    if (phase === 'swipe' && total > 0 && currentIndex >= total) {
+      const t = setTimeout(() => setPhase('confirm'), 360);
+      return () => clearTimeout(t);
+    }
+  }, [currentIndex, total, phase]);
+
+  /* ── Build visible card stack ──────────────────────── */
+  const visibleCards = [];
+  for (let i = 0; i < 3; i++) {
+    const idx = currentIndex + i;
+    if (idx < total) visibleCards.push({ exp: filteredExp[idx], stackIndex: i });
+  }
+
+  /* ════════════════════════════════════════════
+     PHASE: LOADING
+  ════════════════════════════════════════════ */
+  if (phase === 'loading') {
+    return (
+      <div style={{ background: D.bg, padding: '2rem 1rem', textAlign: 'center' }}>
+        {/* Lumi floating */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
+          <img src={lumi17Img} alt="Lumi" style={{ width: 88, height: 'auto', animation: 'edLumiFloat 2.6s ease-in-out infinite' }} />
+        </div>
+
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: D.muted, marginBottom: 4, letterSpacing: 0.3 }}>
+          Lumi is curating experiences for
+        </div>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: D.gold, marginBottom: 22, letterSpacing: -0.4 }}>
+          {destination}
+        </div>
+
+        {/* Step indicators */}
+        {[
+          '🔍 Scanning top travel guides & blogs',
+          '✨ Curating experiences across 11 categories',
+          '🎯 Food, gems, adventures, nightlife & more',
+        ].map((s, i) => (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, background: D.surface, borderRadius: 12, padding: '10px 14px', marginBottom: 8, border: `0.5px solid ${D.border}`, animation: `edFadeUp 0.5s ease ${i * 0.16}s both`, boxShadow: D.cardShadow }}>
+            <div style={{ width: 22, height: 22, borderRadius: 8, background: D.goldTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: D.gold, animation: `edPulseDot 1.4s ease-in-out ${i * 0.28}s infinite` }} />
+            </div>
+            <span style={{ fontSize: 12.5, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>{s}</span>
+          </div>
+        ))}
+
+        <button onClick={onSkip} style={{ marginTop: 20, fontSize: 12, color: D.muted, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', fontFamily: "'DM Sans',sans-serif" }}>
+          Skip — auto-generate itinerary instead
+        </button>
+      </div>
+    );
+  }
+
+  /* ════════════════════════════════════════════
+     PHASE: CONFIRM
+  ════════════════════════════════════════════ */
+  if (phase === 'confirm') {
+    const isOver = selectedHours > tripActiveHours * 1.1;
+    const hoursRatio = Math.min(1, selectedHours / tripActiveHours);
+    const byCategory = availableCats.reduce((acc, cat) => {
+      const items = likedExps.filter(e => e.category === cat);
+      if (items.length) acc[cat] = items;
+      return acc;
+    }, {});
+
+    return (
+      <div style={{ background: D.bg, paddingBottom: '2rem', animation: 'edConfirmIn 0.38s ease both' }}>
+
+        {/* Hero banner */}
+        <div style={{ background: 'linear-gradient(135deg,#1C1410 0%,#7C4A1C 55%,#C9913A 100%)', borderRadius: 20, padding: '1.4rem', marginBottom: '1.1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 24px rgba(28,20,16,0.2)' }}>
+          <img src={lumi15Img} alt="" style={{ position: 'absolute', bottom: 0, right: 0, height: 106, width: 'auto', objectFit: 'contain', opacity: 0.95 }} />
+          <div style={{ position: 'relative', zIndex: 1, maxWidth: '60%' }}>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 5, fontFamily: "'DM Sans',sans-serif" }}>YOUR PICKS</div>
+            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 6 }}>
+              {likedExps.length} experience{likedExps.length !== 1 ? 's' : ''} ✦
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.68)', lineHeight: 1.5 }}>
+              ~{Math.round(selectedHours)}h of activities · {days} day{days > 1 ? 's' : ''} trip
+            </div>
+          </div>
+        </div>
+
+        {/* Time gauge */}
+        <div style={{ background: D.surface, borderRadius: 16, padding: '1rem 1.1rem', marginBottom: '1rem', border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7, alignItems: 'center' }}>
+            <span style={{ fontSize: 12.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>Activity time usage</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: isOver ? '#EF4444' : '#22C55E' }}>{Math.round(selectedHours)}h / {tripActiveHours}h</span>
+          </div>
+          <div style={{ height: 8, borderRadius: 999, background: '#EDE8E2', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${Math.min(100, hoursRatio * 100)}%`, borderRadius: 999, background: isOver ? 'linear-gradient(90deg,#F59E0B,#EF4444)' : 'linear-gradient(90deg,#34D399,#22C55E)', transition: 'width 0.7s cubic-bezier(0.2,0.7,0.2,1)' }} />
+          </div>
+          {isOver && (
+            <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 10, background: '#FFF8F4', border: '1px solid rgba(201,145,58,0.22)', fontSize: 12, color: '#7A4F00', lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif" }}>
+              <strong style={{ color: D.gold }}>✦ Lumi says:</strong> You've selected more experiences than comfortably fit your trip. No worries — I'll optimize and prioritize the best ones while keeping your schedule enjoyable!
+            </div>
+          )}
+        </div>
+
+        {/* Selected by category */}
+        {Object.keys(byCategory).length > 0 ? (
+          <div style={{ background: D.surface, borderRadius: 16, padding: '1rem 1.1rem', marginBottom: '1rem', border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
+            <div style={{ fontSize: 13, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 12 }}>Selected experiences</div>
+            {Object.entries(byCategory).map(([cat, items]) => {
+              const cfg = catCfg(cat);
+              return (
+                <div key={cat} style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
+                    <span style={{ fontSize: 13 }}>{cfg.emoji}</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>{cat}</span>
+                    <span style={{ fontSize: 10, color: D.muted, background: '#F4F2EE', borderRadius: 999, padding: '1px 6px' }}>{items.length}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', paddingLeft: 20 }}>
+                    {items.map(e => (
+                      <span key={e.id} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}22`, fontFamily: "'DM Sans',sans-serif" }}>
+                        {e.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '2rem 1rem', color: D.muted, fontSize: 13, background: D.surface, borderRadius: 16, marginBottom: '1rem', border: `0.5px solid ${D.border}` }}>
+            No experiences selected yet.
+            <div style={{ marginTop: 8 }}>
+              <button onClick={() => { setCurrentIndex(0); setLikedIds(new Set()); setPhase('swipe'); }} style={{ fontSize: 12, color: D.gold, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline' }}>
+                Go back and swipe
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* CTA */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          <button
+            onClick={() => onComplete(likedExps)}
+            style={{ width: '100%', padding: '14px', fontSize: 15, fontWeight: 700, borderRadius: 16, border: 'none', cursor: 'pointer', fontFamily: "'Sora',sans-serif", background: 'linear-gradient(135deg,#C9913A,#A8731E)', color: '#fff', boxShadow: '0 4px 20px rgba(201,145,58,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+            Build My Itinerary ✦
+          </button>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button onClick={() => { setCurrentIndex(0); setLikedIds(new Set()); setPhase('swipe'); }} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>↩ Swipe Again</button>
+            <button onClick={onSkip} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Auto-generate</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ════════════════════════════════════════════
+     PHASE: SWIPE
+  ════════════════════════════════════════════ */
+  const allSwiped = total > 0 && currentIndex >= total;
+
+  return (
+    <div
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
+      style={{ background: D.bg, userSelect: 'none', WebkitUserSelect: 'none' }}
+    >
+      {/* ── Lumi intro header ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: D.surface, borderRadius: 14, padding: '10px 13px', marginBottom: 12, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
+        <img src={lumi5Img} alt="" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: '50%', flexShrink: 0 }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif" }}>Swipe to pick your experiences</div>
+          <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>Right = Interested · Left = Skip · Like 5+ to unlock the itinerary</div>
+        </div>
+      </div>
+
+      {/* ── Counter + stats row ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
+        {/* Remaining counter */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: D.surface, border: `0.5px solid ${D.border}`, borderRadius: 999, padding: '5px 12px', boxShadow: D.cardShadow }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>
+            {remaining > 0 ? <><span style={{ color: D.gold }}>{remaining}</span> left</> : 'All done!'}
+          </span>
+        </div>
+        {/* Likes + hours */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: D.surface, border: `0.5px solid ${D.border}`, borderRadius: 999, padding: '5px 12px', boxShadow: D.cardShadow }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="#EF4444" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: likedIds.size > 0 ? 1 : 0.3 }}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <span style={{ fontSize: 12.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>{likedIds.size}</span>
+          <span style={{ fontSize: 10.5, color: D.muted }}>·</span>
+          <span style={{ fontSize: 11.5, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>~{Math.round(selectedHours)}h</span>
+        </div>
+      </div>
+
+      {/* ── Overall progress bar ── */}
+      <div style={{ height: 3, borderRadius: 999, background: '#EDE8E2', marginBottom: 11, overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${total > 0 ? (currentIndex / total) * 100 : 0}%`, background: `linear-gradient(90deg,${D.gold},#A8731E)`, borderRadius: 999, transition: 'width 0.3s ease' }} />
+      </div>
+
+      {/* ── Category filter pills ── */}
+      <div className="ed-cat-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 13, scrollbarWidth: 'none' }}>
+        <button onClick={() => { setActiveFilter(null); setCurrentIndex(0); }} style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 999, border: `1.5px solid ${!activeFilter ? D.gold : D.border}`, background: !activeFilter ? D.goldTint : D.surface, color: !activeFilter ? D.gold : D.muted, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.15s' }}>All</button>
+        {availableCats.map(cat => {
+          const cfg = catCfg(cat);
+          const active = activeFilter === cat;
+          return (
+            <button key={cat} className="ed-cat-pill"
+              onClick={() => { setActiveFilter(active ? null : cat); setCurrentIndex(0); }}
+              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, border: `1.5px solid ${active ? cfg.color : D.border}`, background: active ? cfg.bg : D.surface, color: active ? cfg.color : D.muted, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}
+            >
+              <span style={{ fontSize: 12 }}>{cfg.emoji}</span>
+              <span>{cat}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ── Card stack ── */}
+      {allSwiped ? (
+        <div style={{ height: 430, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: D.surface, borderRadius: 24, boxShadow: '0 4px 22px rgba(28,20,16,0.10)', border: `0.5px solid ${D.border}`, textAlign: 'center', padding: '2rem', animation: 'edFadeUp 0.4s ease both' }}>
+          <img src={lumi5Img} alt="" style={{ height: 84, width: 'auto', marginBottom: 14, animation: 'edLumiFloat 2.5s ease-in-out infinite' }} />
+          <div style={{ fontSize: 17, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>All swiped! 🎉</div>
+          <div style={{ fontSize: 12.5, color: D.muted, marginBottom: 22 }}>{likedIds.size} liked · ~{Math.round(selectedHours)}h of activities</div>
+          <button onClick={() => setPhase('confirm')} style={{ padding: '11px 26px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif", boxShadow: '0 4px 16px rgba(201,145,58,0.28)' }}>
+            See my picks →
+          </button>
+        </div>
+      ) : (
+        <div style={{ position: 'relative', height: 450, margin: '0 auto', maxWidth: 420 }}>
+          {/* Render back-to-front */}
+          {[...visibleCards].reverse().map(({ exp, stackIndex }) => (
+            <SwipeCard
+              key={`${exp.id}-${stackIndex}`}
+              exp={exp}
+              dragX={stackIndex === 0 ? dragX : 0}
+              dragY={stackIndex === 0 ? dragY : 0}
+              isDragging={stackIndex === 0 && isDragging}
+              swipeOut={stackIndex === 0 ? swipeOut : null}
+              isTop={stackIndex === 0}
+              stackIndex={stackIndex}
+              onPointerDown={handlePointerDown}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* ── Action buttons ── */}
+      {!allSwiped && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 18 }}>
+          {/* Pass */}
+          <button
+            className="ed-pass-btn"
+            onClick={() => doSwipe('left')}
+            disabled={!!swipeOut}
+            style={{ width: 60, height: 60, borderRadius: '50%', border: '2px solid rgba(239,68,68,0.22)', background: '#FFF5F5', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(239,68,68,0.10)', opacity: swipeOut ? 0.4 : 1 }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+
+          {/* Center: destination hint */}
+          <div style={{ textAlign: 'center', flex: 1 }}>
+            <div style={{ fontSize: 12, color: D.gold, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>{destination}</div>
+            <div style={{ fontSize: 10, color: D.muted, marginTop: 2 }}>swipe to explore</div>
+          </div>
+
+          {/* Like */}
+          <button
+            className="ed-like-btn"
+            onClick={() => doSwipe('right')}
+            disabled={!!swipeOut}
+            style={{ width: 60, height: 60, borderRadius: '50%', border: '2px solid rgba(34,197,94,0.3)', background: '#F0FDF4', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'edBtnGlow 2.5s ease-in-out infinite', boxShadow: '0 4px 16px rgba(34,197,94,0.18)', opacity: swipeOut ? 0.4 : 1 }}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="#22C55E" stroke="#22C55E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+        </div>
+      )}
+
+      {/* ── Early-done CTA (shown after 5+ likes) ── */}
+      {!allSwiped && likedIds.size >= 5 && (
+        <div style={{ marginTop: 14, textAlign: 'center' }}>
+          <button
+            onClick={() => setPhase('confirm')}
+            style={{ fontSize: 13, fontWeight: 700, padding: '10px 24px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif", boxShadow: '0 4px 14px rgba(201,145,58,0.26)', animation: 'edFadeUp 0.3s ease both' }}
+          >
+            Done — build my itinerary ({likedIds.size} picks) →
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
