@@ -1527,7 +1527,7 @@ export default function App() {
             }}>
               {tabs.filter(t => t.id !== 'club').map(t => {
                 const isActive = tab === t.id;
-                const activeColor = isSolo ? '#FF6A00' : '#0F6E56';
+                const activeColor = '#FF6A00';
                 return (
                   <button
                     key={t.id}
@@ -1543,7 +1543,7 @@ export default function App() {
                       cursor: 'pointer',
                       gap: 2,
                       borderRadius: 44,
-                      background: isActive ? (isSolo ? 'rgba(255,106,0,0.10)' : 'rgba(15,110,86,0.10)') : 'transparent',
+                      background: isActive ? 'rgba(255,106,0,0.10)' : 'transparent',
                       transition: 'background .18s',
                       height: '100%',
                     }}
@@ -1578,15 +1578,16 @@ export default function App() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: 8,
-                background: 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 50%,#FF416C 100%)',
+                background: tab === 'club'
+                  ? 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 50%,#FF416C 100%)'
+                  : 'linear-gradient(135deg,#6920D4 0%,#A81A96 50%,#D93560 100%)',
                 borderRadius: '22px 0 0 22px',
                 padding: '0 22px 0 16px',
                 minWidth: 118,
                 boxShadow: tab === 'club'
                   ? '-4px 0 28px rgba(123,47,247,0.6), inset 0 0 0 2px rgba(255,255,255,0.28)'
                   : '-3px 0 14px rgba(123,47,247,0.28)',
-                opacity: tab === 'club' ? 1 : 0.78,
-                transition: 'opacity .2s, box-shadow .2s',
+                transition: 'box-shadow .2s',
               }}>
                 <img
                   src={bglessClubLogo}
