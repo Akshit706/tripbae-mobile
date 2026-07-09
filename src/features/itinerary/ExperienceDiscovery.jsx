@@ -197,18 +197,10 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   const [experiences, setExperiences] = useState([]);
 
   // Initialise from saved progress so swipes survive tab-switches / phone sleep
-  const [swipedIds, setSwipedIds] = useState(() => {
-    const saved = loadProgress(trip.id);
-    return new Set(saved?.swipedIds || []);
-  });
-  const [likedIds, setLikedIds] = useState(() => {
-    const saved = loadProgress(trip.id);
-    return new Set(saved?.likedIds || []);
-  });
-  const [activeFilter, setActiveFilter] = useState(() => {
-    const saved = loadProgress(trip.id);
-    return saved?.activeFilter || null;
-  });
+  const _savedProg = loadProgress(trip.id);
+  const [swipedIds, setSwipedIds] = useState(() => new Set(_savedProg?.swipedIds || []));
+  const [likedIds,  setLikedIds]  = useState(() => new Set(_savedProg?.likedIds  || []));
+  const [activeFilter, setActiveFilter] = useState(() => _savedProg?.activeFilter || null);
   const [swipeOut, setSwipeOut] = useState(null); // 'left'|'right'|null
   const [dragX, setDragX] = useState(0);
   const [dragY, setDragY] = useState(0);
@@ -317,6 +309,16 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     setDragX(0);
     setDragY(0);
   };
+
+  /* ── Wrapped handlers: clear storage on complete / skip ── */
+  const handleComplete = (selectedExps) => { clearProgress(trip.id); onComplete(selectedExps); };
+  const handleSkip     = ()              => { clearProgress(trip.id); onSkip(); };
+
+  /* ── Persist progress to localStorage on every swipe ──── */
+  useEffect(() => {
+    if (experiences.length === 0) return;
+    saveProgress(trip.id, swipedIds, likedIds, activeFilter);
+  }, [swipedIds, likedIds, activeFilter, experiences.length]);
 
   /* ── Auto-advance: next category or confirm ────────── */
   useEffect(() => {
