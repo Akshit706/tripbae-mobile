@@ -1445,67 +1445,39 @@ function ClubPage({ trip, onTripRefresh }) {
         </div>
       </div>
 
-      {/* ── Tab switch bar (district-style) ── */}
-      <div style={{ display: 'flex', alignItems: 'stretch', gap: 8, padding: '0 1rem 0.9rem', overflowX: 'auto', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }}>
-        {/* Dark pill — tabs */}
-        <div style={{ display: 'flex', alignItems: 'center', background: '#1C1C1E', borderRadius: 56, padding: '5px 6px', gap: 2, flexShrink: 0 }}>
-          {[
-            { id: 'discover', label: 'Discover' },
-            { id: 'profile', label: 'Profile' },
-            { id: 'requests', label: 'Requests', count: hub.incomingRequests.length },
-            { id: 'chats', label: 'Chats', count: hub.chats?.length || 0, unread: hasUnreadChats },
-          ].map(({ id: tabId, label, count, unread }) => (
-            <button
-              key={tabId}
-              onClick={() => { setClubView(tabId); if (tabId === 'chats') setSelectedChatId(null); }}
-              style={{
-                position: 'relative',
-                padding: '8px 14px',
-                fontSize: 12,
-                fontWeight: clubView === tabId ? 700 : 500,
-                fontFamily: "'DM Sans',sans-serif",
-                borderRadius: 48,
-                border: 'none',
-                cursor: 'pointer',
-                transition: 'background .2s, color .2s',
-                background: clubView === tabId ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : 'transparent',
-                color: clubView === tabId ? '#fff' : 'rgba(255,255,255,0.55)',
-                boxShadow: clubView === tabId ? '0 2px 10px rgba(29,158,117,0.35)' : 'none',
-                whiteSpace: 'nowrap',
-              }}
-            >
+      {/* ── Underline tabs ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', borderBottom: '1.5px solid rgba(15,23,42,0.1)', marginBottom: '0.75rem', marginTop: 0 }}>
+        {[
+          { id: 'discover', label: 'Discover' },
+          { id: 'profile', label: 'Profile' },
+          { id: 'requests', label: 'Requests', count: hub.incomingRequests.length },
+          { id: 'chats', label: 'Chats', count: hub.chats?.length || 0, unread: hasUnreadChats },
+        ].map(({ id: tabId, label, count, unread }) => (
+          <button
+            key={tabId}
+            onClick={() => { setClubView(tabId); if (tabId === 'chats') setSelectedChatId(null); }}
+            style={{
+              ...S.navTab,
+              ...(clubView === tabId ? S.navTabActive : {}),
+              position: 'relative',
+              padding: '9px 2px 10px',
+              fontSize: 11,
+              flexDirection: 'column',
+              gap: 1,
+              borderRadius: 0,
+            }}
+          >
+            <span style={{ fontWeight: clubView === tabId ? 700 : 500, fontSize: 11 }}>
               {label}{count ? ` (${count})` : ''}
-              {unread && (
-                <span style={{ position: 'absolute', top: 7, right: 10, width: 6, height: 6, borderRadius: '50%', background: '#FFB020', border: '1.5px solid #1C1C1E' }} />
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Club branded section — district ↗ style */}
-        <div style={{
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 6,
-          background: 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 55%,#FF416C 100%)',
-          borderRadius: 56,
-          padding: '6px 18px 6px 14px',
-          boxShadow: '0 4px 18px rgba(123,47,247,0.38)',
-          cursor: 'default',
-          minWidth: 0,
-        }}>
-          <img
-            src={bglessLogo}
-            alt="TripBae Club"
-            style={{ height: 28, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', flexShrink: 0 }}
-          />
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.9)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-            <line x1="7" y1="17" x2="17" y2="7"/>
-            <polyline points="7 7 17 7 17 17"/>
-          </svg>
-        </div>
+            </span>
+            {unread && (
+              <span style={{ position: 'absolute', top: 9, right: '26%', width: 6, height: 6, borderRadius: '50%', background: '#FFB020' }} />
+            )}
+            {clubView === tabId && (
+              <span style={{ position: 'absolute', bottom: 0, left: '12%', right: '12%', height: 2.5, borderRadius: '99px 99px 0 0', background: '#111827' }} />
+            )}
+          </button>
+        ))}
       </div>
 
       {clubView === 'profile' && (

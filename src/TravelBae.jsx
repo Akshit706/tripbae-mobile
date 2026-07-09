@@ -1,6 +1,7 @@
 ﻿import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { supabase } from './supabase';
 import bglessLogo from './assets/bgless.png';
+import bglessClubLogo from './assets/bgless_club.png';
 import {
   aiChat,
   getTrips,
@@ -1517,6 +1518,40 @@ export default function App() {
             {tabs.map((t) => {
               const isActive = tab === t.id;
               const activeColor = isSolo ? '#FF6A00' : '#0F6E56';
+              if (t.id === 'club') {
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => handleTabChange(t.id)}
+                    style={{
+                      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                      padding:'6px 4px 6px', border:'none', background:'transparent', cursor:'pointer',
+                      position:'relative', gap:0,
+                    }}
+                  >
+                    <div style={{
+                      display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+                      background: isActive
+                        ? 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 55%,#FF416C 100%)'
+                        : 'linear-gradient(135deg,rgba(123,47,247,0.18) 0%,rgba(192,31,171,0.18) 55%,rgba(255,65,108,0.18) 100%)',
+                      borderRadius: 40,
+                      padding: '5px 11px 5px 9px',
+                      boxShadow: isActive ? '0 3px 14px rgba(123,47,247,0.40)' : 'none',
+                      transition: 'background .2s, box-shadow .2s',
+                    }}>
+                      <img
+                        src={bglessClubLogo}
+                        alt="Club"
+                        style={{ height:22, width:'auto', objectFit:'contain', filter: isActive ? 'brightness(0) invert(1)' : 'none', opacity: isActive ? 1 : 0.55, transition:'filter .2s,opacity .2s' }}
+                      />
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={isActive ? 'rgba(255,255,255,0.9)' : 'rgba(123,47,247,0.6)'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="7" y1="17" x2="17" y2="7"/>
+                        <polyline points="7 7 17 7 17 17"/>
+                      </svg>
+                    </div>
+                  </button>
+                );
+              }
               return (
                 <button
                   key={t.id}
