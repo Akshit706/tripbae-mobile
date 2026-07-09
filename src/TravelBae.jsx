@@ -1507,81 +1507,97 @@ export default function App() {
       {activeTrip && (
         <div style={{
           position:'fixed', bottom:0, left:0, right:0, zIndex:100,
-          background:'rgba(255,255,255,0.92)', backdropFilter:'blur(16px)',
-          borderTop:'1px solid rgba(0,0,0,0.07)',
-          paddingBottom:'env(safe-area-inset-bottom, 12px)',
+          background:'rgba(255,255,255,0.96)', backdropFilter:'blur(20px)',
+          borderTop:'1px solid rgba(0,0,0,0.06)',
+          paddingBottom:'env(safe-area-inset-bottom,12px)',
         }}>
+          <div style={{ display:'flex', alignItems:'center', height:66, padding:'0 0 0 10px', gap:8, overflow:'hidden' }}>
+
+            {/* ── Dark capsule pill: all non-club tabs ── */}
             <div style={{
-            display:'flex',
-            alignItems:'stretch',
-            height: 58,
-            overflow: 'hidden',
-          }}>
-            {tabs.map((t) => {
-              const isActive = tab === t.id;
-              const activeColor = isSolo ? '#FF6A00' : '#0F6E56';
-              if (t.id === 'club') {
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              background: '#1C1C1E',
+              borderRadius: 50,
+              height: 52,
+              padding: '3px 4px',
+              gap: 0,
+            }}>
+              {tabs.filter(t => t.id !== 'club').map(t => {
+                const isActive = tab === t.id;
                 return (
                   <button
                     key={t.id}
                     onClick={() => handleTabChange(t.id)}
                     style={{
-                      flex: '0 0 auto',
-                      alignSelf: 'stretch',
+                      flex: 1,
                       display: 'flex',
-                      alignItems: 'stretch',
-                      padding: '5px 0 5px 6px',
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      marginRight: -2,
-                    }}
-                  >
-                    <div style={{
-                      display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 8,
-                      background: 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 50%,#FF416C 100%)',
-                      borderRadius: '20px 0 0 20px',
-                      padding: '0 20px 0 16px',
-                      minWidth: 108,
-                      boxShadow: '-4px 0 24px rgba(123,47,247,0.35)',
-                      opacity: isActive ? 1 : 0.82,
-                      transition: 'opacity .2s',
-                    }}>
-                      <img
-                        src={bglessClubLogo}
-                        alt="Club"
-                        style={{ height: 30, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', flexShrink: 0 }}
-                      />
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                        <line x1="7" y1="17" x2="17" y2="7"/>
-                        <polyline points="7 7 17 7 17 17"/>
-                      </svg>
-                    </div>
+                      padding: '6px 4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      gap: 2,
+                      borderRadius: 44,
+                      background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                      transition: 'background .18s',
+                      height: '100%',
+                    }}
+                  >
+                    <span style={{ display:'flex', alignItems:'center', justifyContent:'center', opacity: isActive ? 1 : 0.42 }}>
+                      {TAB_ICONS[t.iconKey]?.('#fff')}
+                    </span>
+                    <span style={{ fontSize: 9.5, fontWeight: isActive ? 700 : 400, color: isActive ? '#fff' : 'rgba(255,255,255,0.45)', fontFamily:"'DM Sans',sans-serif", letterSpacing: 0.1, whiteSpace:'nowrap' }}>
+                      {t.label}
+                    </span>
                   </button>
                 );
-              }
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => handleTabChange(t.id)}
-                  style={{
-                    flex: 1,
-                    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-                    padding:'10px 4px 8px', border:'none', background:'transparent', cursor:'pointer',
-                    position:'relative', gap:2,
-                  }}
-                >
-                  <span style={{ display:'flex', alignItems:'center', justifyContent:'center', opacity: isActive ? 1 : 0.45 }}>{TAB_ICONS[t.iconKey]?.(isActive ? activeColor : '#6b6b68')}</span>
-                  <span style={{ fontSize:9.5, fontWeight: isActive ? 700 : 400, color: isActive ? activeColor : '#8d8c87', fontFamily:"'DM Sans',sans-serif", letterSpacing:0.1 }}>{t.label}</span>
-                  {isActive && (
-                    <span style={{ width:4,height:4,borderRadius:'50%',background:activeColor,marginTop:1 }} />
-                  )}
-                </button>
-              );
-            })}
+              })}
+            </div>
+
+            {/* ── Club pill: always gradient, right side cut by overflow:hidden ── */}
+            <button
+              onClick={() => handleTabChange('club')}
+              style={{
+                flex: '0 0 auto',
+                alignSelf: 'stretch',
+                display: 'flex',
+                alignItems: 'stretch',
+                padding: '7px 0 7px 0',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                background: 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 50%,#FF416C 100%)',
+                borderRadius: '22px 0 0 22px',
+                padding: '0 22px 0 16px',
+                minWidth: 118,
+                boxShadow: tab === 'club'
+                  ? '-4px 0 28px rgba(123,47,247,0.6), inset 0 0 0 2px rgba(255,255,255,0.28)'
+                  : '-3px 0 14px rgba(123,47,247,0.28)',
+                opacity: tab === 'club' ? 1 : 0.78,
+                transition: 'opacity .2s, box-shadow .2s',
+              }}>
+                <img
+                  src={bglessClubLogo}
+                  alt="Club"
+                  style={{ height: 36, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', flexShrink: 0 }}
+                />
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <line x1="7" y1="17" x2="17" y2="7"/>
+                  <polyline points="7 7 17 7 17 17"/>
+                </svg>
+              </div>
+            </button>
+
           </div>
         </div>
       )}
