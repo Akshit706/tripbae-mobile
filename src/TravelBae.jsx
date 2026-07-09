@@ -1543,7 +1543,7 @@ export default function App() {
                       cursor: 'pointer',
                       gap: 2,
                       borderRadius: 44,
-                      background: isActive ? 'rgba(255,106,0,0.10)' : 'transparent',
+                      background: 'transparent',
                       transition: 'background .18s',
                       height: '100%',
                     }}
@@ -1583,7 +1583,7 @@ export default function App() {
                   : 'linear-gradient(135deg,#6920D4 0%,#A81A96 50%,#D93560 100%)',
                 borderRadius: '22px 0 0 22px',
                 padding: '0 22px 0 16px',
-                minWidth: 118,
+                minWidth: 96,
                 boxShadow: tab === 'club'
                   ? '-4px 0 28px rgba(123,47,247,0.6), inset 0 0 0 2px rgba(255,255,255,0.28)'
                   : '-3px 0 14px rgba(123,47,247,0.28)',
