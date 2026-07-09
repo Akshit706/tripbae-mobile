@@ -6,6 +6,7 @@ import { PlacePhoto, PlacePhotosStrip, PlacePhotoCarousel } from '../media/Place
 import RecommendationsPage from './RecommendationsPage';
 import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime } from '../../api';
 import lumi15Img from '../../assets/lumi15.png';
+import lumi17Img from '../../assets/lumi17.png';
 import ExperienceDiscovery from './ExperienceDiscovery';
 
 /* ── Premium design tokens ─────────────────────────────────── */
@@ -782,7 +783,7 @@ function formatTripDate(arrivalStr, dayIndex) {
 
 function ItineraryPage({ trip, onCacheUpdate }) {
   const isSolo = trip.isSolo;
-  const [iTab, setITab] = useState('planner');
+  const [iTab, setITab] = useState(trip._cachedItin ? 'itinerary' : 'planner');
 
   const [form] = useState({
     dest: trip.destination || '',
@@ -871,6 +872,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       setItin(result.itinerary);
       setSources(result.sources || []);
       setStep('result');
+      setITab('itinerary'); // auto-switch to Itinerary tab
       // ── Save back to parent trips state so it persists across tab switches ──
       onCacheUpdate?.({ _cachedItin: result });
     } catch {
@@ -920,9 +922,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   );
 
   const ITABS = [
-    { id: 'planner', label: 'Day Planner' },
-    { id: 'taste',   label: 'Local Life' },
-    { id: 'nearby',  label: 'Nearby' },
+    { id: 'planner',   label: 'Day Planner' },
+    { id: 'itinerary', label: 'Itinerary' },
+    { id: 'nearby',    label: 'Nearby' },
   ];
   const [lightboxUrl,        setLightboxUrl]        = useState(null);
   const [nearbyData,         setNearbyData]         = useState(null);
@@ -1079,9 +1081,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1.5px solid rgba(28,20,16,0.1)', marginBottom: '1rem' }}>
         {ITABS.map(t => {
           const tabIcons = {
-            planner: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-            taste:   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><line x1="7" y1="2" x2="7" y2="22"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3v7"/></svg>,
-            nearby:  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+            planner:   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
+            itinerary: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+            nearby:    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
           };
           return (
             <button key={t.id} onClick={() => setITab(t.id)}
@@ -1098,49 +1100,92 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         })}
       </div>
 
+      {/* ── TAB: DAY PLANNER (experience swipe flow) ── */}
       {iTab === 'planner' && (
         <div>
-          {/* ── Experience Discovery (swipe flow, shown before first generation) ── */}
-          {step === 'discover' && (
-            <ExperienceDiscovery
-              trip={trip}
-              onComplete={(selectedExps) => runGenerateItinerary(selectedExps)}
-              onSkip={() => runGenerateItinerary()}
-            />
+          {step === 'result' && itin ? (
+            /* Itinerary exists — show redo card */
+            <div style={{ animation: 'edFadeUp 0.35s ease both' }}>
+              <div style={{ background: 'linear-gradient(135deg,#1C1410 0%,#7C4A1C 55%,#C9913A 100%)', borderRadius: 20, padding: '1.4rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 24px rgba(28,20,16,0.2)' }}>
+                <img src={lumi15Img} alt="" style={{ position: 'absolute', bottom: 0, right: 0, height: 108, width: 'auto', objectFit: 'contain', opacity: 0.9 }} />
+                <div style={{ position: 'relative', zIndex: 1, maxWidth: '62%' }}>
+                  <div style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 5, fontFamily: "'DM Sans',sans-serif" }}>ITINERARY READY</div>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 5 }}>{days} day{days>1?'s':''} in {form.dest} ✶</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 12 }}>{(itin.days||[]).reduce((a,d)=>a+(d.activities||[]).length,0)} activities planned</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => setITab('itinerary')} style={{ flex: 1, padding: '10px', fontSize: 13, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.95)', color: '#A8731E', fontFamily: "'DM Sans',sans-serif" }}>View Itinerary →</button>
+                    <button onClick={handleRedo} style={{ padding: '10px 14px', fontSize: 12, fontWeight: 600, borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.32)', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.88)', fontFamily: "'DM Sans',sans-serif" }}>Re-pick</button>
+                  </div>
+                </div>
+              </div>
+              <div style={{ background: D.surface, borderRadius: 16, padding: '1rem 1.1rem', border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow, textAlign: 'center' }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 4 }}>Want different experiences?</div>
+                <div style={{ fontSize: 12, color: D.muted, marginBottom: 12, lineHeight: 1.55 }}>Swipe again to pick new experiences and rebuild your itinerary from scratch</div>
+                <button onClick={handleRedo} style={{ width: '100%', padding: '11px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif" }}>✶ Discover new experiences</button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {step === 'discover' && (
+                <ExperienceDiscovery
+                  trip={trip}
+                  onComplete={(selectedExps) => runGenerateItinerary(selectedExps)}
+                  onSkip={() => runGenerateItinerary()}
+                />
+              )}
+              {step === 'loading' && (
+                <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
+                  <div style={isSolo ? S.soloSpinner : S.spinner} />
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 10, color: D.espresso }}>Building your itinerary…</div>
+                  <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 7, textAlign: 'left' }}>
+                    {[
+                      { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>, text: 'Organizing your selected experiences' },
+                      { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, text: 'Optimizing for travel time & energy flow' },
+                      { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, text: `Scheduling from your ${SLOT_LABELS[firstActivitySlot()]} slot` },
+                    ].map((item, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: D.secondary, animation: `statCountUp 0.4s ease ${i * 0.15}s both` }}>
+                        {item.icon} {item.text}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {step === 'error' && (
+                <div style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>😕</div>
+                  <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Couldn't generate itinerary</div>
+                  <div style={{ fontSize: 12.5, color: '#8A7E76', marginBottom: 20 }}>Something went wrong. Try again or pick differently.</div>
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <button style={{ ...S.btn, ...accentStyle, padding: '10px 24px' }} onClick={() => runGenerateItinerary()}>Try Again</button>
+                    <button style={{ ...S.btn, padding: '10px 24px', background: '#F4F2EE', color: '#5C504A', border: 'none', borderRadius: 12 }} onClick={() => setStep('discover')}>Pick Experiences</button>
+                  </div>
+                </div>
+              )}
+            </>
           )}
+        </div>
+      )}
 
+      {/* ── TAB: ITINERARY (day-by-day schedule) ── */}
+      {iTab === 'itinerary' && (
+        <div>
           {step === 'loading' && (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 10, color: D.espresso }}>
-                Building your itinerary…
-              </div>
-              <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 7, textAlign: 'left' }}>
-                {[
-                  { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>, text: 'Organizing your selected experiences' },
-                  { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>, text: 'Optimizing for travel time & energy flow' },
-                  { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>, text: `Scheduling from your ${SLOT_LABELS[firstActivitySlot()]} slot` },
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, color: D.secondary, animation: `statCountUp 0.4s ease ${i * 0.15}s both` }}>
-                    {item.icon} {item.text}
-                  </div>
-                ))}
-              </div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8, color: D.espresso }}>Lumi is building your itinerary…</div>
+              <div style={{ fontSize: 12.5, color: D.muted }}>Crafting your perfect {days}-day {form.dest} plan.</div>
             </div>
           )}
-
-          {step === 'error' && (
-            <div style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
-              <div style={{ fontSize: 40, marginBottom: 12 }}>😕</div>
-              <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Couldn't generate itinerary</div>
-              <div style={{ fontSize: 12.5, color: '#8A7E76', marginBottom: 20 }}>Something went wrong. Try again or pick experiences differently.</div>
-              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button style={{ ...S.btn, ...accentStyle, padding: '10px 24px' }} onClick={() => runGenerateItinerary()}>Try Again</button>
-                <button style={{ ...S.btn, padding: '10px 24px', background: '#F4F2EE', color: '#5C504A', border: 'none', borderRadius: 12 }} onClick={() => setStep('discover')}>Pick Experiences</button>
-              </div>
+          {!itin && step !== 'loading' && (
+            <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
+              <img src={lumi17Img} alt="" style={{ width: 78, height: 'auto', marginBottom: 14, animation: 'edLumiFloat 2.5s ease-in-out infinite' }} />
+              <div style={{ fontSize: 15, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 6 }}>No itinerary yet</div>
+              <div style={{ fontSize: 12.5, color: D.muted, marginBottom: 20, lineHeight: 1.6 }}>Go to Day Planner, swipe your favourite experiences,<br/>and Lumi will build your {days}-day schedule here.</div>
+              <button onClick={() => setITab('planner')} style={{ padding: '11px 26px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif" }}>
+                Start Day Planner →
+              </button>
             </div>
           )}
-
           {step === 'result' && itin && (
             <div style={{ background: D.bg, paddingBottom: '2.5rem' }}>
 
@@ -1839,16 +1884,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
             </div>
           )}
         </div>
-      )}
-
-      {iTab === 'taste' && (
-        <LocalTastePage
-          destination={form.dest}
-          isSolo={isSolo}
-          autoData={localTasteData}
-          autoStep={localTasteStep}
-          onRetry={runGenerateLocalTaste}
-        />
       )}
 
       {iTab === 'nearby' && (

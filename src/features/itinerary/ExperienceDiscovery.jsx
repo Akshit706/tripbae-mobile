@@ -171,7 +171,7 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
    MAIN COMPONENT
 ══════════════════════════════════════════ */
 export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
-  const [phase, setPhase] = useState('loading'); // loading | swipe | confirm
+  const [phase, setPhase] = useState('loading'); // loading | swipe | confirm | error
   const [experiences, setExperiences] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [likedIds, setLikedIds] = useState(new Set());
@@ -201,7 +201,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       setExperiences(exps);
       setPhase('swipe');
     }).catch(() => {
-      if (!cancelled) onSkip?.();
+      if (!cancelled) setPhase('error');
     });
     return () => { cancelled = true; };
   }, []);
@@ -271,6 +271,30 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   for (let i = 0; i < 3; i++) {
     const idx = currentIndex + i;
     if (idx < total) visibleCards.push({ exp: filteredExp[idx], stackIndex: i });
+  }
+
+  /* ════════════════════════════════════════════
+     PHASE: ERROR
+  ════════════════════════════════════════════ */
+  if (phase === 'error') {
+    return (
+      <div style={{ background: D.bg, padding: '3rem 1rem', textAlign: 'center' }}>
+        <div style={{ fontSize: 40, marginBottom: 14 }}>😕</div>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: D.espresso, marginBottom: 6 }}>Couldn't load experiences</div>
+        <div style={{ fontSize: 12.5, color: D.muted, marginBottom: 22, lineHeight: 1.6 }}>The backend might still be waking up.<br/>Try again in a moment, or skip to auto-generate.</div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button
+            onClick={() => { setPhase('loading'); import('../../api').then(({ fetchExperiences }) => fetchExperiences({ destination, days, budget: trip.budget })).then(data => { setExperiences((data.experiences||[]).map((e,i)=>({...e,id:e.id||`exp-${i}`}))); setPhase('swipe'); }).catch(() => setPhase('error')); }}
+            style={{ padding: '11px 22px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif" }}
+          >
+            Try Again
+          </button>
+          <button onClick={onSkip} style={{ padding: '11px 22px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>
+            Skip — auto-generate
+          </button>
+        </div>
+      </div>
+    );
   }
 
   /* ════════════════════════════════════════════
