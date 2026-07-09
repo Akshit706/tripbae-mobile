@@ -174,7 +174,7 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
 export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   const [phase, setPhase] = useState('loading'); // loading | swipe | confirm | error
   const [experiences, setExperiences] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [swipedIds, setSwipedIds] = useState(new Set()); // all swiped (liked + passed) — no repeats
   const [likedIds, setLikedIds] = useState(new Set());
   const [activeFilter, setActiveFilter] = useState(null);
   const [swipeOut, setSwipeOut] = useState(null); // 'left'|'right'|null
@@ -208,22 +208,22 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   }, []);
 
   /* ── Derived ────────────────────────────────────────── */
-  const filteredExp = activeFilter ? experiences.filter(e => e.category === activeFilter) : experiences;
-  const total = filteredExp.length;
-  const remaining = Math.max(0, total - currentIndex);
+  const allUnswiped = experiences.filter(e => !swipedIds.has(e.id));
+  const filteredExp = activeFilter ? allUnswiped.filter(e => e.category === activeFilter) : allUnswiped;
+  const total = filteredExp.length; // remaining unswiped in current view
   const likedExps = experiences.filter(e => likedIds.has(e.id));
   const selectedHours = likedExps.reduce((s, e) => s + parseDurationHours(e.duration), 0);
   const availableCats = ALL_CATS.filter(c => experiences.some(e => e.category === c));
 
   /* ── Swipe action ───────────────────────────────────── */
   const doSwipe = (dir) => {
-    if (swipeOut || currentIndex >= total) return;
-    const exp = filteredExp[currentIndex];
+    if (swipeOut || total === 0) return;
+    const exp = filteredExp[0]; // top card is always filteredExp[0]
     if (!exp) return;
     setSwipeOut(dir);
     setTimeout(() => {
+      setSwipedIds(prev => new Set([...prev, exp.id])); // mark swiped — won't show in any filter again
       if (dir === 'right') setLikedIds(prev => new Set([...prev, exp.id]));
-      setCurrentIndex(prev => prev + 1);
       setSwipeOut(null);
       setDragX(0);
       setDragY(0);
@@ -286,20 +286,41 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     setDragY(0);
   };
 
-  /* ── Auto-advance to confirm ────────────────────────── */
+  /* ── Auto-advance: next category or confirm ────────── */
   useEffect(() => {
-    if (phase === 'swipe' && total > 0 && currentIndex >= total) {
-      const t = setTimeout(() => setPhase('confirm'), 360);
-      return () => clearTimeout(t);
+    if (phase !== 'swipe' || experiences.length === 0 || swipeOut) return;
+    if (total > 0) return; // still cards available
+
+    if (activeFilter !== null) {
+      // Find next category in ALL_CATS order that has unswiped cards
+      const catIdx = availableCats.indexOf(activeFilter);
+      let nextCat = null;
+      for (let i = catIdx + 1; i < availableCats.length; i++) {
+        if (experiences.some(e => e.category === availableCats[i] && !swipedIds.has(e.id))) {
+          nextCat = availableCats[i]; break;
+        }
+      }
+      if (!nextCat) {
+        // Wrap around from beginning of list
+        for (let i = 0; i < catIdx; i++) {
+          if (experiences.some(e => e.category === availableCats[i] && !swipedIds.has(e.id))) {
+            nextCat = availableCats[i]; break;
+          }
+        }
+      }
+      const timer = setTimeout(() => {
+        setActiveFilter(nextCat || null); // null = switch to "All" (which will show all-done or remaining)
+      }, 450);
+      return () => clearTimeout(timer);
+    } else {
+      // "All" filter exhausted — go to confirm
+      const timer = setTimeout(() => setPhase('confirm'), 360);
+      return () => clearTimeout(timer);
     }
-  }, [currentIndex, total, phase]);
+  }, [total, phase, activeFilter, swipeOut, experiences.length]);
 
   /* ── Build visible card stack ──────────────────────── */
-  const visibleCards = [];
-  for (let i = 0; i < 3; i++) {
-    const idx = currentIndex + i;
-    if (idx < total) visibleCards.push({ exp: filteredExp[idx], stackIndex: i });
-  }
+  const visibleCards = filteredExp.slice(0, 3).map((exp, stackIndex) => ({ exp, stackIndex }));
 
   /* ════════════════════════════════════════════
      PHASE: ERROR
@@ -437,7 +458,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           <div style={{ textAlign: 'center', padding: '2rem 1rem', color: D.muted, fontSize: 13, background: D.surface, borderRadius: 16, marginBottom: '1rem', border: `0.5px solid ${D.border}` }}>
             No experiences selected yet.
             <div style={{ marginTop: 8 }}>
-              <button onClick={() => { setCurrentIndex(0); setLikedIds(new Set()); setPhase('swipe'); }} style={{ fontSize: 12, color: D.gold, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline' }}>
+              <button onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('swipe'); }} style={{ fontSize: 12, color: D.gold, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline' }}>
                 Go back and swipe
               </button>
             </div>
@@ -454,7 +475,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
             Build My Itinerary ✦
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => { setCurrentIndex(0); setLikedIds(new Set()); setPhase('swipe'); }} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>↩ Swipe Again</button>
+            <button onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('swipe'); }} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>↩ Swipe Again</button>
             <button onClick={onSkip} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Auto-generate</button>
           </div>
         </div>
@@ -465,7 +486,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   /* ════════════════════════════════════════════
      PHASE: SWIPE
   ════════════════════════════════════════════ */
-  const allSwiped = total > 0 && currentIndex >= total;
+  const allSwiped = experiences.length > 0 && allUnswiped.length === 0 && activeFilter === null;
 
   return (
     <div
@@ -475,12 +496,19 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       style={{ background: D.bg, userSelect: 'none', WebkitUserSelect: 'none' }}
     >
       {/* ── Lumi intro header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: D.surface, borderRadius: 14, padding: '10px 13px', marginBottom: 12, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
-        <img src={lumi5Img} alt="" style={{ width: 36, height: 36, objectFit: 'contain', borderRadius: '50%', flexShrink: 0 }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: D.surface, borderRadius: 14, padding: '10px 13px', marginBottom: 12, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
+        <img src={lumi5Img} alt="" style={{ width: 32, height: 32, objectFit: 'contain', borderRadius: '50%', flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif" }}>Swipe to pick your experiences</div>
-          <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>Right = Interested · Left = Skip · Like 5+ to unlock the itinerary</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif" }}>Swipe to pick your experiences</div>
+          <div style={{ fontSize: 10.5, color: D.muted, marginTop: 1 }}>Right = Like · Left = Skip · Like 5+ to build</div>
         </div>
+        <button
+          onClick={onSkip}
+          style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', fontSize: 11.5, fontWeight: 700, borderRadius: 10, border: `1.5px solid ${D.border}`, background: D.goldTint, color: D.gold, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}
+        >
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          By Lumi
+        </button>
       </div>
 
       {/* ── Counter + stats row ── */}
@@ -489,7 +517,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: D.surface, border: `0.5px solid ${D.border}`, borderRadius: 999, padding: '5px 12px', boxShadow: D.cardShadow }}>
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
           <span style={{ fontSize: 12.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>
-            {remaining > 0 ? <><span style={{ color: D.gold }}>{remaining}</span> left</> : 'All done!'}
+            {total > 0 ? <><span style={{ color: D.gold }}>{total}</span> left</> : 'All done!'}
           </span>
         </div>
         {/* Likes + hours */}
@@ -503,22 +531,24 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
 
       {/* ── Overall progress bar ── */}
       <div style={{ height: 3, borderRadius: 999, background: '#EDE8E2', marginBottom: 11, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${total > 0 ? (currentIndex / total) * 100 : 0}%`, background: `linear-gradient(90deg,${D.gold},#A8731E)`, borderRadius: 999, transition: 'width 0.3s ease' }} />
+        <div style={{ height: '100%', width: `${experiences.length > 0 ? (swipedIds.size / experiences.length) * 100 : 0}%`, background: `linear-gradient(90deg,${D.gold},#A8731E)`, borderRadius: 999, transition: 'width 0.3s ease' }} />
       </div>
 
       {/* ── Category filter pills ── */}
       <div className="ed-cat-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 13, scrollbarWidth: 'none' }}>
-        <button onClick={() => { setActiveFilter(null); setCurrentIndex(0); }} style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 999, border: `1.5px solid ${!activeFilter ? D.gold : D.border}`, background: !activeFilter ? D.goldTint : D.surface, color: !activeFilter ? D.gold : D.muted, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.15s' }}>All</button>
+        <button onClick={() => setActiveFilter(null)} style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 999, border: `1.5px solid ${!activeFilter ? D.gold : D.border}`, background: !activeFilter ? D.goldTint : D.surface, color: !activeFilter ? D.gold : D.muted, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.15s' }}>All</button>
         {availableCats.map(cat => {
           const cfg = catCfg(cat);
           const active = activeFilter === cat;
+          const hasUnswiped = experiences.some(e => e.category === cat && !swipedIds.has(e.id));
           return (
             <button key={cat} className="ed-cat-pill"
-              onClick={() => { setActiveFilter(active ? null : cat); setCurrentIndex(0); }}
-              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, border: `1.5px solid ${active ? cfg.color : D.border}`, background: active ? cfg.bg : D.surface, color: active ? cfg.color : D.muted, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}
+              onClick={() => setActiveFilter(active ? null : cat)}
+              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, border: `1.5px solid ${active ? cfg.color : D.border}`, background: active ? cfg.bg : D.surface, color: active ? cfg.color : (hasUnswiped ? D.muted : '#C8C4BE'), cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", opacity: hasUnswiped ? 1 : 0.55 }}
             >
               <span style={{ fontSize: 12 }}>{cfg.emoji}</span>
               <span>{cat}</span>
+              {!hasUnswiped && <span style={{ fontSize: 9, marginLeft: 1 }}>✓</span>}
             </button>
           );
         })}
@@ -539,7 +569,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           {/* Render back-to-front */}
           {[...visibleCards].reverse().map(({ exp, stackIndex }) => (
             <SwipeCard
-              key={`${exp.id}-${stackIndex}`}
+              key={exp.id}
               exp={exp}
               dragX={stackIndex === 0 ? dragX : 0}
               dragY={stackIndex === 0 ? dragY : 0}
