@@ -1511,9 +1511,10 @@ export default function App() {
           borderTop:'1px solid rgba(0,0,0,0.07)',
           paddingBottom:'env(safe-area-inset-bottom, 12px)',
         }}>
-          <div style={{
-            display:'grid',
-            gridTemplateColumns:`repeat(${tabs.length}, 1fr)`,
+            <div style={{
+            display:'flex',
+            alignItems:'stretch',
+            height: 58,
           }}>
             {tabs.map((t) => {
               const isActive = tab === t.id;
@@ -1524,27 +1525,37 @@ export default function App() {
                     key={t.id}
                     onClick={() => handleTabChange(t.id)}
                     style={{
-                      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-                      padding:'6px 4px 6px', border:'none', background:'transparent', cursor:'pointer',
-                      position:'relative', gap:0,
+                      flex: '0 0 auto',
+                      alignSelf: 'stretch',
+                      display: 'flex',
+                      alignItems: 'stretch',
+                      padding: '5px 8px 5px 4px',
+                      border: 'none',
+                      background: 'transparent',
+                      cursor: 'pointer',
                     }}
                   >
                     <div style={{
-                      display:'flex', alignItems:'center', justifyContent:'center', gap:5,
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 7,
                       background: isActive
                         ? 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 55%,#FF416C 100%)'
-                        : 'linear-gradient(135deg,rgba(123,47,247,0.18) 0%,rgba(192,31,171,0.18) 55%,rgba(255,65,108,0.18) 100%)',
-                      borderRadius: 40,
-                      padding: '5px 11px 5px 9px',
-                      boxShadow: isActive ? '0 3px 14px rgba(123,47,247,0.40)' : 'none',
+                        : 'linear-gradient(135deg,rgba(123,47,247,0.13) 0%,rgba(192,31,171,0.13) 55%,rgba(255,65,108,0.13) 100%)',
+                      borderRadius: 20,
+                      padding: '0 18px',
+                      minWidth: 96,
+                      boxShadow: isActive ? '0 4px 18px rgba(123,47,247,0.42)' : 'none',
                       transition: 'background .2s, box-shadow .2s',
                     }}>
                       <img
                         src={bglessClubLogo}
                         alt="Club"
-                        style={{ height:22, width:'auto', objectFit:'contain', filter: isActive ? 'brightness(0) invert(1)' : 'none', opacity: isActive ? 1 : 0.55, transition:'filter .2s,opacity .2s' }}
+                        style={{ height: 30, width: 'auto', objectFit: 'contain', filter: isActive ? 'brightness(0) invert(1)' : 'saturate(0.4) opacity(0.55)', transition: 'filter .2s' }}
                       />
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={isActive ? 'rgba(255,255,255,0.9)' : 'rgba(123,47,247,0.6)'} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isActive ? 'rgba(255,255,255,0.88)' : 'rgba(123,47,247,0.5)'} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="7" y1="17" x2="17" y2="7"/>
                         <polyline points="7 7 17 7 17 17"/>
                       </svg>
@@ -1557,6 +1568,7 @@ export default function App() {
                   key={t.id}
                   onClick={() => handleTabChange(t.id)}
                   style={{
+                    flex: 1,
                     display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
                     padding:'10px 4px 8px', border:'none', background:'transparent', cursor:'pointer',
                     position:'relative', gap:2,
