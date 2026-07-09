@@ -1515,6 +1515,7 @@ export default function App() {
             display:'flex',
             alignItems:'stretch',
             height: 58,
+            overflow: 'hidden',
           }}>
             {tabs.map((t) => {
               const isActive = tab === t.id;
@@ -1529,33 +1530,32 @@ export default function App() {
                       alignSelf: 'stretch',
                       display: 'flex',
                       alignItems: 'stretch',
-                      padding: '5px 8px 5px 4px',
+                      padding: '5px 0 5px 6px',
                       border: 'none',
                       background: 'transparent',
                       cursor: 'pointer',
+                      marginRight: -2,
                     }}
                   >
                     <div style={{
-                      flex: 1,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      gap: 7,
-                      background: isActive
-                        ? 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 55%,#FF416C 100%)'
-                        : 'linear-gradient(135deg,rgba(123,47,247,0.13) 0%,rgba(192,31,171,0.13) 55%,rgba(255,65,108,0.13) 100%)',
-                      borderRadius: 20,
-                      padding: '0 18px',
-                      minWidth: 96,
-                      boxShadow: isActive ? '0 4px 18px rgba(123,47,247,0.42)' : 'none',
-                      transition: 'background .2s, box-shadow .2s',
+                      gap: 8,
+                      background: 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 50%,#FF416C 100%)',
+                      borderRadius: '20px 0 0 20px',
+                      padding: '0 20px 0 16px',
+                      minWidth: 108,
+                      boxShadow: '-4px 0 24px rgba(123,47,247,0.35)',
+                      opacity: isActive ? 1 : 0.82,
+                      transition: 'opacity .2s',
                     }}>
                       <img
                         src={bglessClubLogo}
                         alt="Club"
-                        style={{ height: 30, width: 'auto', objectFit: 'contain', filter: isActive ? 'brightness(0) invert(1)' : 'saturate(0.4) opacity(0.55)', transition: 'filter .2s' }}
+                        style={{ height: 30, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', flexShrink: 0 }}
                       />
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={isActive ? 'rgba(255,255,255,0.88)' : 'rgba(123,47,247,0.5)'} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                         <line x1="7" y1="17" x2="17" y2="7"/>
                         <polyline points="7 7 17 7 17 17"/>
                       </svg>
