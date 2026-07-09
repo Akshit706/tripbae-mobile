@@ -1507,25 +1507,27 @@ export default function App() {
       {activeTrip && (
         <div style={{
           position:'fixed', bottom:0, left:0, right:0, zIndex:100,
-          background:'rgba(255,255,255,0.96)', backdropFilter:'blur(20px)',
-          borderTop:'1px solid rgba(0,0,0,0.06)',
+          background:'transparent',
           paddingBottom:'env(safe-area-inset-bottom,12px)',
         }}>
           <div style={{ display:'flex', alignItems:'center', height:66, padding:'0 0 0 10px', gap:8, overflow:'hidden' }}>
 
-            {/* ── Dark capsule pill: all non-club tabs ── */}
+            {/* ── White capsule pill: all non-club tabs ── */}
             <div style={{
               flex: 1,
               display: 'flex',
               alignItems: 'center',
-              background: '#1C1C1E',
+              background: 'rgba(255,255,255,0.96)',
+              backdropFilter: 'blur(18px)',
               borderRadius: 50,
               height: 52,
               padding: '3px 4px',
               gap: 0,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
             }}>
               {tabs.filter(t => t.id !== 'club').map(t => {
                 const isActive = tab === t.id;
+                const activeColor = isSolo ? '#FF6A00' : '#0F6E56';
                 return (
                   <button
                     key={t.id}
@@ -1541,15 +1543,15 @@ export default function App() {
                       cursor: 'pointer',
                       gap: 2,
                       borderRadius: 44,
-                      background: isActive ? 'rgba(255,255,255,0.12)' : 'transparent',
+                      background: isActive ? (isSolo ? 'rgba(255,106,0,0.10)' : 'rgba(15,110,86,0.10)') : 'transparent',
                       transition: 'background .18s',
                       height: '100%',
                     }}
                   >
-                    <span style={{ display:'flex', alignItems:'center', justifyContent:'center', opacity: isActive ? 1 : 0.42 }}>
-                      {TAB_ICONS[t.iconKey]?.('#fff')}
+                    <span style={{ display:'flex', alignItems:'center', justifyContent:'center', opacity: isActive ? 1 : 0.38 }}>
+                      {TAB_ICONS[t.iconKey]?.(isActive ? activeColor : '#6b6b68')}
                     </span>
-                    <span style={{ fontSize: 9.5, fontWeight: isActive ? 700 : 400, color: isActive ? '#fff' : 'rgba(255,255,255,0.45)', fontFamily:"'DM Sans',sans-serif", letterSpacing: 0.1, whiteSpace:'nowrap' }}>
+                    <span style={{ fontSize: 9.5, fontWeight: isActive ? 700 : 400, color: isActive ? activeColor : '#8d8c87', fontFamily:"'DM Sans',sans-serif", letterSpacing: 0.1, whiteSpace:'nowrap' }}>
                       {t.label}
                     </span>
                   </button>
