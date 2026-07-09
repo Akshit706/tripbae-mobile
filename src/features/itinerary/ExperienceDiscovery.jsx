@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { PlacePhoto } from '../media/PlaceMedia';
+import { PlacePhotoCarousel } from '../media/PlaceMedia';
 import lumi17Img from '../../assets/lumi17.png';
 import lumi15Img from '../../assets/lumi15.png';
 import lumi5Img from '../../assets/lumi5_bgless.png';
@@ -105,15 +105,16 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
         animation: flyAnim,
         cursor: isTop ? (isDragging ? 'grabbing' : 'grab') : 'default',
         userSelect: 'none', WebkitUserSelect: 'none',
-        touchAction: 'none', willChange: 'transform',
+        touchAction: 'pan-y', willChange: 'transform',
       }}
     >
       {/* ── Photo 62% ── */}
       <div style={{ position: 'relative', height: '62%', overflow: 'hidden', background: '#EDE8E2' }}>
-        <PlacePhoto
+        <PlacePhotoCarousel
           query={exp.imageQuery || `${exp.name} ${exp.category} travel`}
-          style={{ height: '100%', borderRadius: 0 }}
+          style={{ height: '100%', borderRadius: 0, pointerEvents: 'none' }}
           delay={stackIndex * 220}
+          limit={3}
         />
         {/* gradient */}
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.04) 0%,transparent 28%,rgba(0,0,0,0.72) 100%)', pointerEvents:'none' }} />
@@ -233,22 +234,41 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   /* ── Pointer handlers ───────────────────────────────── */
   const handlePointerDown = (e) => {
     if (swipeOut) return;
-    e.currentTarget.setPointerCapture(e.pointerId);
-    pointerStart.current = { x: e.clientX, y: e.clientY };
-    setIsDragging(true);
+    // Store start position but don't capture yet — wait to confirm horizontal direction
+    pointerStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId, locked: false };
   };
 
   const handlePointerMove = (e) => {
-    if (!isDragging || !pointerStart.current) return;
+    if (!pointerStart.current || e.pointerId !== pointerStart.current.id) return;
     const dx = e.clientX - pointerStart.current.x;
     const dy = e.clientY - pointerStart.current.y;
+
+    if (!pointerStart.current.locked) {
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      if (absX < 6 && absY < 6) return; // not enough movement yet
+      if (absY > absX) {
+        // Vertical scroll intent — abandon swipe gesture
+        pointerStart.current = null;
+        setIsDragging(false);
+        return;
+      }
+      // Horizontal swipe confirmed — capture pointer on this container
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      pointerStart.current = { ...pointerStart.current, locked: true };
+      setIsDragging(true);
+    }
+
     lastDragXRef.current = dx;
     setDragX(dx);
     setDragY(dy);
   };
 
   const handlePointerUp = () => {
-    if (!isDragging) return;
+    if (!isDragging) {
+      pointerStart.current = null;
+      return;
+    }
     const dx = lastDragXRef.current;
     setIsDragging(false);
     pointerStart.current = null;
@@ -256,6 +276,14 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     if (dx > 80) doSwipe('right');
     else if (dx < -80) doSwipe('left');
     else { setDragX(0); setDragY(0); }
+  };
+
+  const handlePointerCancel = () => {
+    setIsDragging(false);
+    pointerStart.current = null;
+    lastDragXRef.current = 0;
+    setDragX(0);
+    setDragY(0);
   };
 
   /* ── Auto-advance to confirm ────────────────────────── */
@@ -443,7 +471,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     <div
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       style={{ background: D.bg, userSelect: 'none', WebkitUserSelect: 'none' }}
     >
       {/* ── Lumi intro header ── */}

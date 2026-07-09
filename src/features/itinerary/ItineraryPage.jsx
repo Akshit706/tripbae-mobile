@@ -783,7 +783,7 @@ function formatTripDate(arrivalStr, dayIndex) {
 
 function ItineraryPage({ trip, onCacheUpdate }) {
   const isSolo = trip.isSolo;
-  const [iTab, setITab] = useState(trip._cachedItin ? 'itinerary' : 'planner');
+  const [iTab, setITab] = useState('planner'); // always start on Day Planner
 
   const [form] = useState({
     dest: trip.destination || '',
