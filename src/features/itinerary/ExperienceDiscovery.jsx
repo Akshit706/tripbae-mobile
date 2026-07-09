@@ -42,6 +42,27 @@ function parseDurationHours(dur) {
   return s ? Math.max(0.5, parseFloat(s[1])) : 1.5;
 }
 
+/* ── Progress persistence helpers ───────────────────────── */
+function _progKey(tripId) { return `ed_swipe_${tripId}`; }
+function loadProgress(tripId) {
+  try {
+    const raw = localStorage.getItem(_progKey(tripId));
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+function saveProgress(tripId, swipedIds, likedIds, activeFilter) {
+  try {
+    localStorage.setItem(_progKey(tripId), JSON.stringify({
+      swipedIds: [...swipedIds],
+      likedIds:  [...likedIds],
+      activeFilter,
+    }));
+  } catch { /* ignore quota errors */ }
+}
+function clearProgress(tripId) {
+  try { localStorage.removeItem(_progKey(tripId)); } catch { /* ignore */ }
+}
+
 /* ── CSS injection ───────────────────────────────────────── */
 if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles')) {
   const el = document.createElement('style');
@@ -174,9 +195,20 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
 export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   const [phase, setPhase] = useState('loading'); // loading | swipe | confirm | error
   const [experiences, setExperiences] = useState([]);
-  const [swipedIds, setSwipedIds] = useState(new Set()); // all swiped (liked + passed) — no repeats
-  const [likedIds, setLikedIds] = useState(new Set());
-  const [activeFilter, setActiveFilter] = useState(null);
+
+  // Initialise from saved progress so swipes survive tab-switches / phone sleep
+  const [swipedIds, setSwipedIds] = useState(() => {
+    const saved = loadProgress(trip.id);
+    return new Set(saved?.swipedIds || []);
+  });
+  const [likedIds, setLikedIds] = useState(() => {
+    const saved = loadProgress(trip.id);
+    return new Set(saved?.likedIds || []);
+  });
+  const [activeFilter, setActiveFilter] = useState(() => {
+    const saved = loadProgress(trip.id);
+    return saved?.activeFilter || null;
+  });
   const [swipeOut, setSwipeOut] = useState(null); // 'left'|'right'|null
   const [dragX, setDragX] = useState(0);
   const [dragY, setDragY] = useState(0);
@@ -333,12 +365,13 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
         <div style={{ fontSize: 12.5, color: D.muted, marginBottom: 22, lineHeight: 1.6 }}>The backend might still be waking up.<br/>Try again in a moment, or skip to auto-generate.</div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button
-            onClick={() => { setPhase('loading'); import('../../api').then(({ fetchExperiences }) => fetchExperiences({ destination, days, budget: trip.budget })).then(data => { setExperiences((data.experiences||[]).map((e,i)=>({...e,id:e.id||`exp-${i}`}))); setPhase('swipe'); }).catch(() => setPhase('error')); }}
+            onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('loading'); clearProgress(trip.id);
+            import('../../api').then(({ fetchExperiences }) => fetchExperiences({ destination, days, budget: trip.budget })).then(data => { setExperiences((data.experiences||[]).map((e,i)=>({...e,id:e.id||`exp-${i}`}))); setPhase('swipe'); }).catch(() => setPhase('error')); }}
             style={{ padding: '11px 22px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif" }}
           >
             Try Again
           </button>
-          <button onClick={onSkip} style={{ padding: '11px 22px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>
+          <button onClick={handleSkip} style={{ padding: '11px 22px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>
             Skip — auto-generate
           </button>
         </div>
@@ -458,7 +491,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           <div style={{ textAlign: 'center', padding: '2rem 1rem', color: D.muted, fontSize: 13, background: D.surface, borderRadius: 16, marginBottom: '1rem', border: `0.5px solid ${D.border}` }}>
             No experiences selected yet.
             <div style={{ marginTop: 8 }}>
-              <button onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('swipe'); }} style={{ fontSize: 12, color: D.gold, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline' }}>
+              <button onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('swipe'); clearProgress(trip.id); }} style={{ fontSize: 12, color: D.gold, background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline' }}>
                 Go back and swipe
               </button>
             </div>
@@ -468,15 +501,15 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
         {/* CTA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
           <button
-            onClick={() => onComplete(likedExps)}
+            onClick={() => handleComplete(likedExps)}
             style={{ width: '100%', padding: '14px', fontSize: 15, fontWeight: 700, borderRadius: 16, border: 'none', cursor: 'pointer', fontFamily: "'Sora',sans-serif", background: 'linear-gradient(135deg,#C9913A,#A8731E)', color: '#fff', boxShadow: '0 4px 20px rgba(201,145,58,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             Build My Itinerary ✦
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('swipe'); }} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>↩ Swipe Again</button>
-            <button onClick={onSkip} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Auto-generate</button>
+            <button onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('swipe'); clearProgress(trip.id); }} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>↩ Swipe Again</button>
+            <button onClick={handleSkip} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Auto-generate</button>
           </div>
         </div>
       </div>
@@ -503,7 +536,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           <div style={{ fontSize: 10.5, color: D.muted, marginTop: 1 }}>Right = Like · Left = Skip · Like 5+ to build</div>
         </div>
         <button
-          onClick={onSkip}
+          onClick={handleSkip}
           style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', fontSize: 11.5, fontWeight: 700, borderRadius: 10, border: `1.5px solid ${D.border}`, background: D.goldTint, color: D.gold, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}
         >
           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
