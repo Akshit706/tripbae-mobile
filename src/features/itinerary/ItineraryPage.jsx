@@ -1102,7 +1102,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
 
       {/* ── Underline tab switcher (Club-style) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: `1.5px solid ${D.border}`, marginBottom: '1rem', position: 'relative', zIndex: 200, background: '#fff' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: `1.5px solid ${D.border}`, marginBottom: '1rem', position: 'relative', zIndex: 200, background: 'transparent' }}>
         {ITABS.map(t => {
           const isActive = iTab === t.id;
           const tabIcons = {
@@ -1118,7 +1118,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 {t.label}
               </span>
               {isActive && (
-                <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: isSolo ? '#7F77DD' : D.gold }} />
+                <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: isSolo ? '#7F77DD' : '#FF6A00' }} />
               )}
             </button>
           );
@@ -1285,7 +1285,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           )}
           {!itin && step !== 'loading' && (
             <div style={{ padding: '2rem 1.25rem', textAlign: 'center', animation: 'edFadeUp 0.35s ease both' }}>
-              <img src={lumi4Img} alt="" style={{ width: 84, height: 'auto', marginBottom: 14, animation: 'edLumiFloat 2.5s ease-in-out infinite' }} />
+              <img src={lumi4Img} alt="" style={{ width: 84, height: 'auto', marginBottom: 14 }} />
               <div style={{ fontSize: 13, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 6 }}>No itinerary yet</div>
               <div style={{ fontSize: 12, color: D.muted, lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif", maxWidth: 260, margin: '0 auto' }}>
                 Head to <strong style={{ color: '#FF6A00' }}>Day Planner</strong> to swipe experiences and build your itinerary.

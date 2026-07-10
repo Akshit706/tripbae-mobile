@@ -632,19 +632,16 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     return (
       <div style={{ background: D.bg, paddingBottom: '2rem', animation: 'edConfirmIn 0.38s ease both' }}>
 
-        {/* Hero banner — white with orange border */}
-        <div style={{ background: '#fff', borderRadius: 16, padding: '0.85rem 1.1rem', marginBottom: '1rem', border: '1.5px solid rgba(255,106,0,0.28)', boxShadow: '0 2px 14px rgba(255,106,0,0.07)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <img src={lumi20Img} alt="" style={{ height: 64, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 9.5, fontWeight: 700, color: '#FF6A00', letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", marginBottom: 4 }}>Your Picks</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-                <span style={{ fontSize: 22, fontWeight: 800, color: '#FF6A00', fontFamily: "'Sora',sans-serif", letterSpacing: -0.3, lineHeight: 1 }}>{likedExps.length}</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>experience{likedExps.length !== 1 ? 's' : ''}</span>
-                <div style={{ width: 1, height: 15, background: D.border, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>{Math.round(selectedHours)}h planned</span>
-              </div>
-            </div>
+        {/* Hero banner — single-line white card */}
+        <div style={{ background: '#fff', borderRadius: 16, padding: '0.7rem 1rem', marginBottom: '1rem', border: '1.5px solid rgba(255,106,0,0.25)', boxShadow: '0 2px 12px rgba(255,106,0,0.07)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'nowrap' }}>
+            <img src={lumi20Img} alt="" style={{ height: 52, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+            <span style={{ fontSize: 9.5, fontWeight: 700, color: '#FF6A00', letterSpacing: 1.4, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>Your Picks</span>
+            <div style={{ width: 1, height: 16, background: D.border, flexShrink: 0 }} />
+            <span style={{ fontSize: 20, fontWeight: 800, color: '#FF6A00', fontFamily: "'Sora',sans-serif", letterSpacing: -0.3, lineHeight: 1, flexShrink: 0 }}>{likedExps.length}</span>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>exp.</span>
+            <div style={{ width: 1, height: 16, background: D.border, flexShrink: 0 }} />
+            <span style={{ fontSize: 12, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{Math.round(selectedHours)}h planned</span>
           </div>
         </div>
 
