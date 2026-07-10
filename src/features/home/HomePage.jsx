@@ -140,7 +140,8 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
   useEffect(() => {
     if (!trip.destination) return;
     let cancelled = false;
-    fetchPlacePhotos(trip.destination)
+    // Use explicit travel photography query for HD destination cover photos
+    fetchPlacePhotos(`${trip.destination} travel photography`)
       .then(data => {
         if (cancelled) return;
         const urls = (data.urls || []).slice(0, 5);
