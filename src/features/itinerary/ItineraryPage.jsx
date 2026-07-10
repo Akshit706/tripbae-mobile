@@ -1101,7 +1101,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
 
       {/* ── Underline tab switcher (Club-style) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1.5px solid rgba(255,106,0,0.15)', marginBottom: '1rem', position: 'relative', zIndex: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1.5px solid rgba(255,106,0,0.15)', marginBottom: '1rem', position: 'relative', zIndex: 200, background: 'white' }}>
         {ITABS.map(t => {
           const isActive = iTab === t.id;
           const tabIcons = {

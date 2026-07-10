@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, createPortal } from 'react';
 import { PlacePhotoCarousel } from '../media/PlaceMedia';
 import lumi8Img from '../../assets/lumi8.png';
 import lumi11Img from '../../assets/lumi11.png';
@@ -631,39 +631,16 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     return (
       <div style={{ background: D.bg, paddingBottom: '2rem', animation: 'edConfirmIn 0.38s ease both' }}>
 
-        {/* Hero banner — animated with integrated gauge */}
-        <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF7A28 45%,#FF8C3B 100%)', borderRadius: 18, padding: '0.85rem 1.1rem', marginBottom: '1.1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 6px 24px rgba(255,106,0,0.35)' }}>
-          {/* shimmer sweep */}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.1) 50%,transparent 65%)', animation: 'ctaShimmer 3.5s ease-in-out infinite 1.2s', pointerEvents: 'none' }} />
-          {/* soft radial glow */}
-          <div style={{ position: 'absolute', top: -20, right: -10, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.09)', pointerEvents: 'none' }} />
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, position: 'relative', zIndex: 1 }}>
-            {/* Lumi on left */}
-            <img src={lumi20Img} alt="" style={{ height: 68, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
-            {/* Content on right */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.18)', borderRadius: 999, padding: '2px 8px', marginBottom: 5 }}>
-                <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#fff', animation: 'edPulseDot 1.6s ease-in-out infinite' }} />
-                <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: 1.2, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>Your Picks</span>
-              </div>
-              <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.15, marginBottom: 9, letterSpacing: -0.3 }}>
-                {likedExps.length} <span style={{ fontSize: 13, fontWeight: 600, opacity: 0.82 }}>experience{likedExps.length !== 1 ? 's' : ''}</span>
-              </div>
-              {/* Integrated time gauge */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, alignItems: 'center' }}>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans',sans-serif" }}>Activity coverage</span>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', fontFamily: "'DM Sans',sans-serif" }}>{Math.round(selectedHours)}h / {tripActiveHours}h</span>
-                </div>
-                <div style={{ height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${Math.min(100, hoursRatio * 100)}%`, borderRadius: 999, background: isOver ? 'rgba(255,220,170,0.95)' : 'rgba(255,255,255,0.9)', transition: 'width 0.8s cubic-bezier(0.2,0.7,0.2,1)', boxShadow: '0 0 6px rgba(255,255,255,0.4)' }} />
-                </div>
-                {isOver && (
-                  <div style={{ marginTop: 5, fontSize: 10, color: 'rgba(255,255,255,0.88)', lineHeight: 1.5, fontFamily: "'DM Sans',sans-serif" }}>
-                    ✦ Over capacity — Lumi will optimise for you!
-                  </div>
-                )}
-              </div>
+        {/* Hero banner — compact */}
+        <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF7A28 45%,#FF8C3B 100%)', borderRadius: 16, padding: '0.6rem 1rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 18px rgba(255,106,0,0.3)' }}>
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.08) 50%,transparent 65%)', animation: 'ctaShimmer 3.5s ease-in-out infinite 1.2s', pointerEvents: 'none' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 1 }}>
+            <img src={lumi20Img} alt="" style={{ height: 48, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.72)', letterSpacing: 1.3, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>Your Picks</span>
+              <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
+              <span style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", letterSpacing: -0.3, lineHeight: 1 }}>{likedExps.length}</span>
+              <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.84)', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>experience{likedExps.length !== 1 ? 's' : ''}</span>
             </div>
           </div>
         </div>
@@ -676,22 +653,22 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
               const cfg = catCfg(cat);
               const isOpen = expandedCats.has(cat);
               return (
-                <div key={cat} style={{ marginBottom: 6, borderRadius: 12, border: `1px solid ${isOpen ? 'rgba(255,106,0,0.22)' : D.border}`, overflow: 'hidden', transition: 'border-color 0.2s ease' }}>
+                <div key={cat} style={{ marginBottom: 6, borderRadius: 12, border: `1px solid ${isOpen ? 'rgba(28,20,16,0.15)' : D.border}`, overflow: 'hidden', transition: 'border-color 0.2s ease' }}>
                   <button
                     onClick={() => toggleCat(cat)}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: isOpen ? '#FFF3EB' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s ease' }}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: isOpen ? '#F8F7F5' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s ease' }}
                   >
-                    {renderCatIcon(cat, 13, isOpen ? '#FF6A00' : D.muted)}
+                    {renderCatIcon(cat, 13, isOpen ? D.espresso : D.muted)}
                     <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flex: 1 }}>{cat}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#FF6A00', background: '#FFF3EB', borderRadius: 999, padding: '2px 7px', border: '1px solid rgba(255,106,0,0.2)' }}>{items.length}</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, color: D.secondary, background: '#F0EFEC', borderRadius: 999, padding: '2px 7px', border: '1px solid rgba(28,20,16,0.1)' }}>{items.length}</span>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}><polyline points="6 9 12 15 18 9"/></svg>
                   </button>
                   {isOpen && (
                     <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', padding: '6px 12px 10px' }}>
                       {items.map(e => (
-                        <button key={e.id} onClick={() => setReviewExp(e)} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px 3px 10px', borderRadius: 999, background: '#FFF3EB', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.18)', fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <button key={e.id} onClick={() => setReviewExp(e)} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: '#F4F2EE', color: D.espresso, border: '1px solid rgba(28,20,16,0.09)', fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {e.name}
-                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         </button>
                       ))}
                     </div>
@@ -721,7 +698,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           <button
             onClick={() => likedExps.length >= 5 && handleComplete(likedExps)}
             disabled={likedExps.length < 5}
-            style={{ width: '100%', padding: '14px', fontSize: 15, fontWeight: 700, borderRadius: 16, border: 'none', cursor: likedExps.length >= 5 ? 'pointer' : 'not-allowed', fontFamily: "'Sora',sans-serif", background: likedExps.length >= 5 ? 'linear-gradient(135deg,#C9913A,#A8731E)' : '#E8E4DF', color: likedExps.length >= 5 ? '#fff' : D.muted, boxShadow: likedExps.length >= 5 ? '0 4px 20px rgba(201,145,58,0.32)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s ease', opacity: likedExps.length >= 5 ? 1 : 0.65 }}
+            style={{ width: '100%', padding: '14px', fontSize: 15, fontWeight: 700, borderRadius: 16, border: 'none', cursor: likedExps.length >= 5 ? 'pointer' : 'not-allowed', fontFamily: "'Sora',sans-serif", background: likedExps.length >= 5 ? 'linear-gradient(135deg,#FF6A00,#FF8C3B)' : '#E8E4DF', color: likedExps.length >= 5 ? '#fff' : D.muted, boxShadow: likedExps.length >= 5 ? '0 4px 20px rgba(255,106,0,0.32)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s ease', opacity: likedExps.length >= 5 ? 1 : 0.65 }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             Build My Itinerary ✦
@@ -751,10 +728,10 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           )}
         </div>
 
-        {/* ── Experience Review Modal ── */}
-        {reviewExp && (
+        {/* ── Experience Review Modal — portalled to body so fixed covers full viewport ── */}
+        {reviewExp && typeof document !== 'undefined' && createPortal(
           <div
-            style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(20,14,10,0.78)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, background: 'rgba(20,14,10,0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}
             onClick={() => setReviewExp(null)}
           >
             <div
@@ -817,7 +794,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
               </div>
             </div>
           </div>
-        )}
+        , document.body)}
       </div>
     );
   }
