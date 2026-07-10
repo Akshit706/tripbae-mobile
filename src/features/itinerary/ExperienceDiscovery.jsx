@@ -788,26 +788,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
         style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 12px 12px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', marginBottom: 0, textAlign: 'left' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" style={{ flexShrink: 0 }}>
-            <ellipse cx="14" cy="13" rx="6" ry="7.5" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.26)" strokeWidth="1"/>
-            <ellipse cx="38" cy="13" rx="6" ry="7.5" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.26)" strokeWidth="1"/>
-            <ellipse cx="14" cy="13" rx="3.2" ry="4.2" fill="rgba(255,170,120,0.28)"/>
-            <ellipse cx="38" cy="13" rx="3.2" ry="4.2" fill="rgba(255,170,120,0.28)"/>
-            <circle cx="26" cy="29" r="20" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.34)" strokeWidth="1.5"/>
-            <ellipse cx="19.5" cy="26" rx="3.3" ry="3.3" fill="white"/>
-            <ellipse cx="32.5" cy="26" rx="3.3" ry="3.3" fill="white"/>
-            <circle cx="20.4" cy="26.6" r="1.8" fill="#1a0e08"/>
-            <circle cx="33.4" cy="26.6" r="1.8" fill="#1a0e08"/>
-            <circle cx="21.2" cy="25.7" r="0.7" fill="white"/>
-            <circle cx="34.2" cy="25.7" r="0.7" fill="white"/>
-            <ellipse cx="26" cy="31.5" rx="1.6" ry="1" fill="rgba(255,255,255,0.62)"/>
-            <path d="M19 35.5 Q26 40.5 33 35.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
-            <ellipse cx="14" cy="31" rx="3.8" ry="2.4" fill="rgba(255,140,100,0.22)"/>
-            <ellipse cx="38" cy="31" rx="3.8" ry="2.4" fill="rgba(255,140,100,0.22)"/>
-            <path d="M44 5L44.9 8.2L48.1 9.1L44.9 10L44 13.2L43.1 10L39.9 9.1L43.1 8.2Z" fill="rgba(255,255,255,0.88)"/>
-            <circle cx="7" cy="9" r="1.3" fill="rgba(255,255,255,0.62)"/>
-            <circle cx="46" cy="18" r="0.9" fill="rgba(255,255,255,0.5)"/>
-          </svg>
+          <img src={lumi8Img} alt="Lumi" style={{ width: 56, height: 56, objectFit: 'contain', flexShrink: 0 }} />
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 }}>Don't want to swipe?</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.15 }}>Create with Lumi</div>
