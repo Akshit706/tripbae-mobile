@@ -892,7 +892,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
 
       {/* ── Action buttons ── */}
       {!allSwiped && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, padding: '0 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2, padding: '0 4px' }}>
           {/* Skip */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <button
@@ -912,7 +912,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
             disabled={likedIds.size === 0}
             style={{ fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 12, border: `1.5px solid ${likedIds.size > 0 ? 'rgba(255,106,0,0.3)' : D.border}`, cursor: likedIds.size > 0 ? 'pointer' : 'default', background: likedIds.size > 0 ? '#FFF8F4' : D.surface, color: likedIds.size > 0 ? '#FF6A00' : D.muted, fontFamily: "'DM Sans',sans-serif", boxShadow: likedIds.size > 0 ? '0 2px 10px rgba(255,106,0,0.1)' : 'none', whiteSpace: 'nowrap', opacity: likedIds.size === 0 ? 0.4 : 1, transition: 'all 0.2s ease', animation: likedIds.size > 0 ? 'edFadeUp 0.3s ease both' : undefined }}
           >
-            {likedIds.size > 0 ? `Build itinerary · ${likedIds.size} ✦` : 'Build itinerary'}
+            {likedIds.size > 0 ? `Build with ${likedIds.size} activit${likedIds.size === 1 ? 'y' : 'ies'}` : 'Build itinerary'}
           </button>
 
           {/* Like */}
