@@ -50,12 +50,14 @@ function loadProgress(tripId) {
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
-function saveProgress(tripId, swipedIds, likedIds, activeFilter) {
+function saveProgress(tripId, swipedIds, likedIds, activeFilter, experiences, phase) {
   try {
     localStorage.setItem(_progKey(tripId), JSON.stringify({
       swipedIds: [...swipedIds],
       likedIds:  [...likedIds],
       activeFilter,
+      experiences: experiences || [],
+      phase: phase || 'swipe',
     }));
   } catch { /* ignore quota errors */ }
 }
@@ -78,6 +80,7 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
     @keyframes edStampR   { 0% { transform: scale(0.4) rotate(10deg); opacity: 0; } 60% { transform: scale(1.15) rotate(10deg); } 100% { transform: scale(1) rotate(10deg); opacity: 1; } }
     @keyframes edCardIn   { from { opacity: 0; transform: translateY(22px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes edConfirmIn{ from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes edSheetIn  { from { transform: translateY(100%); } to { transform: translateY(0); } }
     .ed-like-btn,.ed-pass-btn { transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease !important; }
     .ed-like-btn:active { transform: scale(0.88) !important; }
     .ed-pass-btn:active { transform: scale(0.88) !important; }
@@ -91,7 +94,7 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
 /* ══════════════════════════════════════════
    SWIPE CARD
 ══════════════════════════════════════════ */
-function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex, onPointerDown }) {
+function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex, onPointerDown, destination }) {
   const cfg = catCfg(exp.category);
   const likeOpacity = isTop && isDragging ? Math.max(0, Math.min(1, dragX / 65)) : 0;
   const passOpacity = isTop && isDragging ? Math.max(0, Math.min(1, -dragX / 65)) : 0;
@@ -132,8 +135,8 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
       {/* ── Photo 62% ── */}
       <div style={{ position: 'relative', height: '62%', overflow: 'hidden', background: '#EDE8E2' }}>
         <PlacePhotoCarousel
-          query={exp.imageQuery || `${exp.name} ${exp.category} travel`}
-          style={{ height: '100%', borderRadius: 0, pointerEvents: 'none' }}
+          query={exp.imageQuery || `${exp.name} ${destination || exp.category} photo`}
+          style={{ height: '100%', borderRadius: 0 }}
           delay={stackIndex * 220}
           limit={3}
         />
@@ -193,11 +196,13 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
    MAIN COMPONENT
 ══════════════════════════════════════════ */
 export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
-  const [phase, setPhase] = useState('loading'); // loading | swipe | confirm | error
-  const [experiences, setExperiences] = useState([]);
-
-  // Initialise from saved progress so swipes survive tab-switches / phone sleep
+  // Initialise from saved progress so swipes + experience cards survive tab-switches / phone sleep
   const _savedProg = loadProgress(trip.id);
+  const _hasCachedExps = (_savedProg?.experiences?.length || 0) > 0;
+
+  const [phase, setPhase] = useState(() => _hasCachedExps ? (_savedProg?.phase || 'swipe') : 'loading');
+  const [experiences, setExperiences] = useState(() => _savedProg?.experiences || []);
+
   const [swipedIds, setSwipedIds] = useState(() => new Set(_savedProg?.swipedIds || []));
   const [likedIds,  setLikedIds]  = useState(() => new Set(_savedProg?.likedIds  || []));
   const [activeFilter, setActiveFilter] = useState(() => _savedProg?.activeFilter || null);
@@ -205,6 +210,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   const [dragX, setDragX] = useState(0);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [reviewExp, setReviewExp] = useState(null); // experience card being reviewed in confirm sheet
 
   const pointerStart = useRef(null);
   const lastDragXRef = useRef(0);
@@ -215,8 +221,9 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     : 1;
   const tripActiveHours = days * 10; // ~10 usable hours/day
 
-  /* ── Fetch experiences ─────────────────────────────── */
+  /* ── Fetch experiences (skipped if already loaded from localStorage cache) ── */
   useEffect(() => {
+    if (experiences.length > 0) return; // already restored from cache — skip API call
     let cancelled = false;
     import('../../api').then(({ fetchExperiences }) =>
       fetchExperiences({ destination, days, budget: trip.budget })
@@ -313,12 +320,16 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   /* ── Wrapped handlers: clear storage on complete / skip ── */
   const handleComplete = (selectedExps) => { clearProgress(trip.id); onComplete(selectedExps); };
   const handleSkip     = ()              => { clearProgress(trip.id); onSkip(); };
+  const removeFromPicks = (expId) => {
+    setLikedIds(prev => { const next = new Set(prev); next.delete(expId); return next; });
+    setReviewExp(null);
+  };
 
-  /* ── Persist progress to localStorage on every swipe ──── */
+  /* ── Persist progress (including experience cards + phase) to localStorage ── */
   useEffect(() => {
     if (experiences.length === 0) return;
-    saveProgress(trip.id, swipedIds, likedIds, activeFilter);
-  }, [swipedIds, likedIds, activeFilter, experiences.length]);
+    saveProgress(trip.id, swipedIds, likedIds, activeFilter, experiences, phase);
+  }, [swipedIds, likedIds, activeFilter, experiences.length, phase]);
 
   /* ── Auto-advance: next category or confirm ────────── */
   useEffect(() => {
@@ -480,9 +491,10 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
                   </div>
                   <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', paddingLeft: 20 }}>
                     {items.map(e => (
-                      <span key={e.id} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}22`, fontFamily: "'DM Sans',sans-serif" }}>
+                      <button key={e.id} onClick={() => setReviewExp(e)} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px 3px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}22`, fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                         {e.name}
-                      </span>
+                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -510,10 +522,67 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
             Build My Itinerary ✦
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('swipe'); clearProgress(trip.id); }} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>↩ Swipe Again</button>
-            <button onClick={handleSkip} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Auto-generate</button>
+            <button onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('swipe'); clearProgress(trip.id); }} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>↩ Swipe from start</button>
+            <button onClick={handleSkip} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>✦ Create by Lumi</button>
           </div>
         </div>
+
+        {/* ── Experience Review Sheet ── */}
+        {reviewExp && (
+          <div
+            style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+            onClick={() => setReviewExp(null)}
+          >
+            <div
+              style={{ width: '100%', maxWidth: 480, background: D.surface, borderRadius: '20px 20px 0 0', overflow: 'hidden', animation: 'edSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{ position: 'relative', height: 220 }}>
+                <PlacePhotoCarousel
+                  query={reviewExp.imageQuery || `${reviewExp.name} ${destination} photo`}
+                  style={{ height: 220, borderRadius: 0 }}
+                  limit={3}
+                />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.72) 100%)', pointerEvents: 'none' }} />
+                {(() => { const cfg = catCfg(reviewExp.category); return (
+                  <div style={{ position: 'absolute', top: 14, left: 14, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '4px 10px 4px 8px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                    <span style={{ fontSize: 13 }}>{cfg.emoji}</span>
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: cfg.color, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.7 }}>{reviewExp.category}</span>
+                  </div>
+                ); })()}
+                <div style={{ position: 'absolute', bottom: 14, left: 14, right: 50, pointerEvents: 'none' }}>
+                  <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.6)', fontFamily: "'Sora',sans-serif" }}>{reviewExp.name}</div>
+                  {reviewExp.vibe && <span style={{ marginTop: 4, display: 'inline-block', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.15)', borderRadius: 999, padding: '2px 8px', backdropFilter: 'blur(4px)', textTransform: 'uppercase', letterSpacing: 0.8 }}>{reviewExp.vibe}</span>}
+                </div>
+                <button onClick={() => setReviewExp(null)} style={{ position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.45)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', zIndex: 2, padding: 0 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
+              </div>
+              <div style={{ padding: '14px 16px 24px' }}>
+                <p style={{ fontSize: 13, color: D.secondary, lineHeight: 1.65, margin: '0 0 12px' }}>{reviewExp.description}</p>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+                  {reviewExp.duration && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11.5, fontWeight: 600, color: D.muted, background: '#F4F2EE', borderRadius: 999, padding: '4px 10px' }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                      {reviewExp.duration}
+                    </span>
+                  )}
+                  {reviewExp.bestTime && <span style={{ fontSize: 11.5, fontWeight: 600, color: '#0F6E56', background: '#ECFDF5', borderRadius: 999, padding: '4px 10px' }}>🕐 {reviewExp.bestTime}</span>}
+                  {reviewExp.cost && reviewExp.cost !== 'null' && reviewExp.cost !== 'N/A' && <span style={{ fontSize: 11.5, fontWeight: 700, color: D.gold, background: D.goldTint, borderRadius: 999, padding: '4px 10px' }}>{reviewExp.cost}</span>}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <button onClick={() => removeFromPicks(reviewExp.id)} style={{ flex: 1, padding: '12px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: '1.5px solid #FEE2E2', background: '#FFF5F5', color: '#EF4444', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    Remove
+                  </button>
+                  <button onClick={() => setReviewExp(null)} style={{ flex: 1, padding: '12px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: 'none', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
+                    Keep it ✓
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -613,6 +682,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
               isTop={stackIndex === 0}
               stackIndex={stackIndex}
               onPointerDown={handlePointerDown}
+              destination={destination}
             />
           ))}
         </div>

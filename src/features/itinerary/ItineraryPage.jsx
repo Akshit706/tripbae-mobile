@@ -783,7 +783,14 @@ function formatTripDate(arrivalStr, dayIndex) {
 
 function ItineraryPage({ trip, onCacheUpdate }) {
   const isSolo = trip.isSolo;
-  const [iTab, setITab] = useState('planner'); // always start on Day Planner
+  const [iTab, setITab] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`tb_itab_${trip.id}`);
+      if (saved === 'itinerary' && trip._cachedItin) return 'itinerary';
+      if (saved === 'nearby') return 'nearby';
+    } catch { /* ignore */ }
+    return 'planner';
+  });
 
   const [form] = useState({
     dest: trip.destination || '',
@@ -831,6 +838,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     const idx = SLOT_ORDER.indexOf(form.arrivalSlot);
     return SLOT_ORDER[Math.min(idx + 1, SLOT_ORDER.length - 1)];
   };
+
+  // Persist iTab per trip so the user returns to the same tab (e.g. 'itinerary')
+  useEffect(() => {
+    try { localStorage.setItem(`tb_itab_${trip.id}`, iTab); } catch { /* ignore */ }
+  }, [iTab, trip.id]);
 
   useEffect(() => {
     // If we already have cached data from the trip prop, show it immediately

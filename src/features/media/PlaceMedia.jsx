@@ -251,6 +251,7 @@ function PlacePhotoCarousel({ query, style, delay = 0, limit = 3, alt = '', onIm
       {canSlide && (
         <>
           <button
+            onPointerDown={e => e.stopPropagation()}
             onClick={e => {
               e.preventDefault();
               e.stopPropagation();
@@ -267,6 +268,7 @@ function PlacePhotoCarousel({ query, style, delay = 0, limit = 3, alt = '', onIm
             <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
           <button
+            onPointerDown={e => e.stopPropagation()}
             onClick={e => {
               e.preventDefault();
               e.stopPropagation();
