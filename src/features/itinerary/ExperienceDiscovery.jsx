@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { PlacePhotoCarousel } from '../media/PlaceMedia';
-import lumi17Img from '../../assets/lumi17.png';
+import lumi11Img from '../../assets/lumi11.png';
 import lumi15Img from '../../assets/lumi15.png';
 import lumi5Img from '../../assets/lumi5_bgless.png';
 
@@ -114,7 +114,7 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
     <div
       onPointerDown={isTop && !swipeOut ? onPointerDown : undefined}
       style={{
-        position: 'absolute', width: '100%', height: '100%',
+        position: 'absolute', width: '100%',
         borderRadius: 24, overflow: 'hidden', background: D.surface,
         boxShadow: isTop
           ? `0 ${8 + Math.abs(dragX) * 0.05}px ${30 + Math.abs(dragX) * 0.12}px rgba(28,20,16,0.18)`
@@ -133,8 +133,8 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
         touchAction: 'pan-y', willChange: 'transform',
       }}
     >
-      {/* ── Photo 62% ── */}
-      <div style={{ position: 'relative', height: '62%', overflow: 'hidden', background: '#EDE8E2' }}>
+      {/* ── Photo 220px ── */}
+      <div style={{ position: 'relative', height: 220, overflow: 'hidden', background: '#EDE8E2' }}>
         <PlacePhotoCarousel
           query={exp.imageQuery || `${exp.name} ${destination || exp.category} photo`}
           style={{ height: '100%', borderRadius: 0 }}
@@ -169,8 +169,8 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
         </div>
       </div>
 
-      {/* ── Content 38% ── */}
-      <div style={{ padding:'12px 14px 13px', height:'38%', display:'flex', flexDirection:'column', justifyContent:'space-between', overflow:'hidden' }}>
+      {/* ── Content auto-height ── */}
+      <div style={{ padding:'12px 14px 13px', display:'flex', flexDirection:'column', gap: 8, overflow:'hidden' }}>
         <p style={{ fontSize:12.5, color:D.secondary, lineHeight:1.62, margin:0, display:'-webkit-box', WebkitLineClamp:3, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
           {exp.description}
         </p>
@@ -623,23 +623,16 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       onPointerCancel={handlePointerCancel}
       style={{ background: D.bg, userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      {/* ── Lumi intro card (refer8 style) ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 16, padding: '12px 14px', marginBottom: 10, border: '1px solid rgba(255,106,0,0.15)', boxShadow: '0 2px 14px rgba(255,106,0,0.08)' }}>
-        <img src={lumi17Img} alt="Lumi" style={{ width: 56, height: 56, objectFit: 'contain', flexShrink: 0, animation: 'edLumiFloat 2.6s ease-in-out infinite' }} />
+      {/* ── Lumi intro card ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 16, padding: '10px 14px', marginBottom: 10, border: '1px solid rgba(255,106,0,0.15)', boxShadow: '0 2px 14px rgba(255,106,0,0.08)' }}>
+        <img src={lumi11Img} alt="Lumi" style={{ width: 62, height: 62, objectFit: 'contain', flexShrink: 0 }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 14, fontWeight: 800, color: '#1C1410', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 3 }}>Hi! I'm Lumi ✨</div>
-          <div style={{ fontSize: 11, color: '#8A7E76', fontFamily: "'DM Sans',sans-serif", lineHeight: 1.45 }}>Swipe what excites you — I'll craft your perfect itinerary.</div>
+          <div style={{ fontSize: 13, color: '#5C504A', fontFamily: "'DM Sans',sans-serif", lineHeight: 1.5 }}>Swipe what excites you — I'll craft your perfect itinerary.</div>
         </div>
-        <button
-          onClick={handleSkip}
-          style={{ flexShrink: 0, padding: '8px 13px', fontSize: 11.5, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', color: '#fff', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(255,106,0,0.28)' }}
-        >
-          ✶ Create with Lumi
-        </button>
       </div>
 
       {/* ── Explored / Saved / Planned stats bar ── */}
-      <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', marginBottom: 11, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
+      <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', marginBottom: 10, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           {/* Explored */}
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -670,6 +663,22 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           </div>
         </div>
       </div>
+
+      {/* ── Create with Lumi — full-width CTA ── */}
+      <button
+        onClick={handleSkip}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', boxShadow: '0 4px 16px rgba(255,106,0,0.3)', marginBottom: 12, textAlign: 'left' }}
+      >
+        <div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", display: 'flex', alignItems: 'center', gap: 7 }}>
+            <span>✨</span> Create with Lumi
+          </div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.82)', fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>Let Lumi build your complete itinerary in seconds.</div>
+        </div>
+        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </button>
 
       {/* ── Category filter pills ── */}
       <div className="ed-cat-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 13, scrollbarWidth: 'none' }}>
@@ -702,7 +711,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           </button>
         </div>
       ) : (
-        <div style={{ position: 'relative', height: 450, margin: '0 auto', maxWidth: 420 }}>
+        <div style={{ position: 'relative', minHeight: 340, margin: '0 auto', maxWidth: 420 }}>
           {/* Render back-to-front */}
           {[...visibleCards].reverse().map(({ exp, stackIndex }) => (
             <SwipeCard
