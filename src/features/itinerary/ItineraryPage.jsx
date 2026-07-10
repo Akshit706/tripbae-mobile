@@ -27,6 +27,24 @@ const EXP_CAT = {
 };
 function expCatCfg(c) { return EXP_CAT[c] || { bg: '#F4F2EE', color: '#8A7E76', emoji: '📍' }; }
 
+function renderExpCatIcon(category, size = 13, color = 'currentColor') {
+  const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round', style: { display: 'block', flexShrink: 0 } };
+  switch (category) {
+    case 'Attractions': return <svg {...p}><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/></svg>;
+    case 'Food': return <svg {...p}><path d="M3 2v7c0 1.1.9 2 2 2a2 2 0 0 0 2-2V2"/><line x1="5" y1="12" x2="5" y2="22"/><path d="M15 2v20M15 2a5 5 0 0 1 5 5v2a5 5 0 0 1-5 5"/></svg>;
+    case 'Cafes': return <svg {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/></svg>;
+    case 'Hidden Gems': return <svg {...p}><path d="M6 3h12l4 6-10 13L2 9z"/><line x1="2" y1="9" x2="22" y2="9"/></svg>;
+    case 'Adventure': return <svg {...p}><path d="M3 17l6-11 4 7 3-4 5 8H3z"/></svg>;
+    case 'Shopping': return <svg {...p}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>;
+    case 'Nightlife': return <svg {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
+    case 'Culture': return <svg {...p}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
+    case 'Viewpoints': return <svg {...p}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
+    case 'Local Experiences': return <svg {...p}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>;
+    case 'Party': return <svg {...p} fill={color} stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+    default: return <svg {...p}><circle cx="12" cy="12" r="8"/></svg>;
+  }
+}
+
 /* ── Selected-experiences localStorage (survives refresh, per trip) ── */
 function _selExpsKey(id) { return `tb_sel_exps_${id}`; }
 function loadSelExps(id) {
@@ -842,6 +860,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [sheetExps, setSheetExps] = useState([]);
   const [modifyExps, setModifyExps] = useState(null);
   const [plannerExpandedCats, setPlannerExpandedCats] = useState(new Set());
+  const [plannerReviewExp, setPlannerReviewExp] = useState(null);
+  const [collapsedDays, setCollapsedDays] = useState(new Set());
   const [localTasteData, setLocalTasteData] = useState(trip._cachedTaste || null);
   const [localTasteStep, setLocalTasteStep] = useState(trip._cachedTaste ? 'result' : 'loading');
   const hasGenerated = useRef(false);
@@ -1113,6 +1133,66 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     <div>
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
 
+      {/* ── Experience preview modal (selected-experiences panel, view-only) ── */}
+      {plannerReviewExp && (
+        <div
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, background: 'rgba(10,7,5,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}
+          onClick={() => setPlannerReviewExp(null)}
+        >
+          <div
+            style={{ width: '100%', maxWidth: 420, background: D.surface, borderRadius: 24, overflow: 'hidden', boxShadow: '0 8px 40px rgba(28,20,16,0.22)', animation: 'cardIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both', maxHeight: 'calc(100vh - 2.5rem)', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div style={{ position: 'relative', height: 256, overflow: 'hidden', background: '#EDE8E2' }}>
+              <PlacePhotoCarousel
+                query={plannerReviewExp.imageQuery || `${plannerReviewExp.name} ${form.dest} high resolution travel photography`}
+                style={{ height: '100%', borderRadius: 0 }}
+                limit={3}
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,rgba(0,0,0,0.04) 0%,transparent 30%,rgba(0,0,0,0.76) 100%)', pointerEvents: 'none' }} />
+              {(() => { const cfg = expCatCfg(plannerReviewExp.category); return (
+                <div style={{ position: 'absolute', top: 14, left: 14, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '4px 10px 4px 7px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                  {renderExpCatIcon(plannerReviewExp.category, 13, cfg.color)}
+                  <span style={{ fontSize: 10.5, fontWeight: 700, color: cfg.color, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.7 }}>{plannerReviewExp.category}</span>
+                </div>
+              ); })()}
+              {plannerReviewExp.tier === 1 && (
+                <div style={{ position: 'absolute', top: 14, right: 44, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'linear-gradient(135deg,#FF6B35,#E8390E)', borderRadius: 999, padding: '4px 9px 4px 7px', boxShadow: '0 2px 10px rgba(232,57,14,0.45)' }}>
+                  <span style={{ fontSize: 10 }}>🔥</span>
+                  <span style={{ fontSize: 9.5, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", textTransform: 'uppercase', letterSpacing: 1 }}>MUST DO</span>
+                </div>
+              )}
+              <div style={{ position: 'absolute', bottom: 12, left: 14, right: 50, pointerEvents: 'none' }}>
+                <div style={{ fontSize: 19, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.6)', fontFamily: "'Sora',sans-serif", letterSpacing: -0.2 }}>{plannerReviewExp.name}</div>
+                {plannerReviewExp.vibe && <span style={{ marginTop: 4, display: 'inline-block', fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.14)', borderRadius: 999, padding: '2px 8px', backdropFilter: 'blur(4px)', textTransform: 'uppercase', letterSpacing: 0.8 }}>{plannerReviewExp.vibe}</span>}
+              </div>
+              <button onClick={() => setPlannerReviewExp(null)} style={{ position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.45)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', zIndex: 2, padding: 0 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+            </div>
+            <div style={{ padding: '13px 15px 17px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <p style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, margin: 0, fontFamily: "'DM Sans',sans-serif", display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {plannerReviewExp.description}
+              </p>
+              <div style={{ height: '1px', background: 'linear-gradient(90deg,rgba(255,106,0,0.15),transparent)', margin: '0 -1px' }} />
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', alignItems: 'center', overflow: 'hidden' }}>
+                {plannerReviewExp.duration && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#5C504A', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.07)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {plannerReviewExp.duration}
+                  </span>
+                )}
+                {plannerReviewExp.bestTime && <span style={{ fontSize: 11, fontWeight: 600, color: '#5C504A', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.07)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>🕐 {plannerReviewExp.bestTime}</span>}
+                {plannerReviewExp.cost && plannerReviewExp.cost !== 'null' && plannerReviewExp.cost !== 'N/A' && <span style={{ fontSize: 11, fontWeight: 700, color: '#1C1410', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.1)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>{plannerReviewExp.cost}</span>}
+              </div>
+              <button onClick={() => setPlannerReviewExp(null)} style={{ width: '100%', padding: '12px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: 'none', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Underline tab switcher (Club-style) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: `1.5px solid ${D.border}`, marginBottom: '1rem', position: 'relative', zIndex: 200, background: 'transparent' }}>
         {ITABS.map(t => {
@@ -1187,7 +1267,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                             onClick={() => setPlannerExpandedCats(prev => { const next = new Set(prev); next.has(cat) ? next.delete(cat) : next.add(cat); return next; })}
                             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: isOpen ? '#F8F7F5' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s ease' }}
                           >
-                            <span style={{ fontSize: 14, flexShrink: 0 }}>{cfg.emoji}</span>
+                            {renderExpCatIcon(cat, 13, isOpen ? D.espresso : D.muted)}
                             <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flex: 1 }}>{cat}</span>
                             <span style={{ fontSize: 10, fontWeight: 600, color: D.secondary, background: '#F0EFEC', borderRadius: 999, padding: '2px 7px', border: '1px solid rgba(28,20,16,0.1)', flexShrink: 0 }}>{items.length}</span>
                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}><polyline points="6 9 12 15 18 9"/></svg>
@@ -1195,9 +1275,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                           {isOpen && (
                             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', padding: '6px 12px 10px' }}>
                               {items.map(e => (
-                                <span key={e.id} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}22`, fontFamily: "'DM Sans',sans-serif", display: 'inline-flex', alignItems: 'center' }}>
+                                <button key={e.id} onClick={() => setPlannerReviewExp(e)} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: '#F4F2EE', color: D.espresso, border: '1px solid rgba(28,20,16,0.09)', fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                                   {e.name}
-                                </span>
+                                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                </button>
                               ))}
                             </div>
                           )}
@@ -1523,10 +1604,14 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                               </div>
                             )}
                           </div>
-                          {/* Day N badge — RIGHT side */}
-                          <div style={{ width: 52, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isSolo ? 'linear-gradient(160deg,#7F77DD,#534AB7)' : `linear-gradient(160deg,${D.gold},#A8731E)`, flexShrink: 0 }}>
+                          {/* Day N badge — RIGHT side (also toggles collapse) */}
+                          <div
+                            onClick={() => setCollapsedDays(prev => { const next = new Set(prev); next.has(d.day) ? next.delete(d.day) : next.add(d.day); return next; })}
+                            style={{ width: 52, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isSolo ? 'linear-gradient(160deg,#7F77DD,#534AB7)' : `linear-gradient(160deg,${D.gold},#A8731E)`, flexShrink: 0, cursor: 'pointer', userSelect: 'none', gap: 2 }}
+                          >
                             <span style={{ fontSize: 8, fontWeight: 700, color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: .5, lineHeight: 1 }}>Day</span>
                             <span style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.1, fontFamily: "'Sora',sans-serif" }}>{d.day}</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: collapsedDays.has(d.day) ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.22s ease', marginTop: 2 }}><polyline points="6 9 12 15 18 9"/></svg>
                           </div>
                         </div>
                         {/* Integrated tips inside card */}
@@ -1558,7 +1643,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                       </div>
 
                       {/* Activities */}
-                      {(d.activities || []).map((a, i) => {
+                      {!collapsedDays.has(d.day) && (d.activities || []).map((a, i) => {
                         const showPhoto  = a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel';
                         const currentDelay = showPhoto ? photoIndex++ * 600 : 0;
                         const isLast   = i === d.activities.length - 1;
@@ -1825,7 +1910,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                       })}
 
                       {/* ── Day closing ── */}
-                      {(() => {
+                      {!collapsedDays.has(d.day) && (() => {
                         const acts = d.activities || [];
                         const lastAct = acts[acts.length - 1];
                         const isLastDay = dayIndex === (itin.days.length - 1);
