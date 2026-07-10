@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, createPortal } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import lumi4Img from '../../assets/Lumi4_bgless.png';
 import { PlacePhotoCarousel } from '../media/PlaceMedia';
 import lumi8Img from '../../assets/lumi8.png';
 import lumi11Img from '../../assets/lumi11.png';
@@ -631,16 +632,18 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     return (
       <div style={{ background: D.bg, paddingBottom: '2rem', animation: 'edConfirmIn 0.38s ease both' }}>
 
-        {/* Hero banner — compact */}
-        <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF7A28 45%,#FF8C3B 100%)', borderRadius: 16, padding: '0.6rem 1rem', marginBottom: '1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 18px rgba(255,106,0,0.3)' }}>
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.08) 50%,transparent 65%)', animation: 'ctaShimmer 3.5s ease-in-out infinite 1.2s', pointerEvents: 'none' }} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 1 }}>
-            <img src={lumi20Img} alt="" style={{ height: 48, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.72)', letterSpacing: 1.3, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>Your Picks</span>
-              <div style={{ width: 1, height: 14, background: 'rgba(255,255,255,0.3)', flexShrink: 0 }} />
-              <span style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", letterSpacing: -0.3, lineHeight: 1 }}>{likedExps.length}</span>
-              <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.84)', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>experience{likedExps.length !== 1 ? 's' : ''}</span>
+        {/* Hero banner — white with orange border */}
+        <div style={{ background: '#fff', borderRadius: 16, padding: '0.85rem 1.1rem', marginBottom: '1rem', border: '1.5px solid rgba(255,106,0,0.28)', boxShadow: '0 2px 14px rgba(255,106,0,0.07)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <img src={lumi20Img} alt="" style={{ height: 64, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 9.5, fontWeight: 700, color: '#FF6A00', letterSpacing: 1.5, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", marginBottom: 4 }}>Your Picks</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                <span style={{ fontSize: 22, fontWeight: 800, color: '#FF6A00', fontFamily: "'Sora',sans-serif", letterSpacing: -0.3, lineHeight: 1 }}>{likedExps.length}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>experience{likedExps.length !== 1 ? 's' : ''}</span>
+                <div style={{ width: 1, height: 15, background: D.border, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>{Math.round(selectedHours)}h planned</span>
+              </div>
             </div>
           </div>
         </div>
@@ -728,10 +731,10 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           )}
         </div>
 
-        {/* ── Experience Review Modal — portalled to body so fixed covers full viewport ── */}
-        {reviewExp && typeof document !== 'undefined' && createPortal(
+        {/* ── Experience Review Modal ── */}
+        {reviewExp && (
           <div
-            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, background: 'rgba(20,14,10,0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}
+            style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, background: 'rgba(10,7,5,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}
             onClick={() => setReviewExp(null)}
           >
             <div
@@ -794,7 +797,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
               </div>
             </div>
           </div>
-        , document.body)}
+        )}
       </div>
     );
   }

@@ -7,6 +7,7 @@ import RecommendationsPage from './RecommendationsPage';
 import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime } from '../../api';
 import lumi15Img from '../../assets/lumi15.png';
 import lumi17Img from '../../assets/lumi17.png';
+import lumi4Img from '../../assets/Lumi4_bgless.png';
 import lumi19Img from '../../assets/lumi19.png';
 import ExperienceDiscovery from './ExperienceDiscovery';
 
@@ -1101,7 +1102,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
 
       {/* ── Underline tab switcher (Club-style) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1.5px solid rgba(255,106,0,0.15)', marginBottom: '1rem', position: 'relative', zIndex: 200, background: 'white' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: `1.5px solid ${D.border}`, marginBottom: '1rem', position: 'relative', zIndex: 200, background: '#fff' }}>
         {ITABS.map(t => {
           const isActive = iTab === t.id;
           const tabIcons = {
@@ -1111,13 +1112,13 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           };
           return (
             <button key={t.id} onClick={() => setITab(t.id)}
-              style={{ ...S.navTab, position: 'relative', padding: '9px 2px 10px', fontSize: 12, borderRadius: 0, color: isActive ? '#FF6A00' : '#98A2B3', fontWeight: isActive ? 700 : 500, background: 'transparent', zIndex: 10, pointerEvents: 'auto' }}>
+              style={{ ...S.navTab, ...(isActive ? S.navTabActive : {}), position: 'relative', padding: '9px 2px 10px', fontSize: 12, borderRadius: 0, touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: isActive ? 700 : 500, fontSize: 12 }}>
                 {tabIcons[t.id]}
                 {t.label}
               </span>
               {isActive && (
-                <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: isSolo ? '#7F77DD' : '#FF6A00' }} />
+                <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: isSolo ? '#7F77DD' : D.gold }} />
               )}
             </button>
           );
@@ -1284,7 +1285,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           )}
           {!itin && step !== 'loading' && (
             <div style={{ padding: '2rem 1.25rem', textAlign: 'center', animation: 'edFadeUp 0.35s ease both' }}>
-              <img src={lumi17Img} alt="" style={{ width: 68, height: 'auto', marginBottom: 16, animation: 'edLumiFloat 2.5s ease-in-out infinite' }} />
+              <img src={lumi4Img} alt="" style={{ width: 84, height: 'auto', marginBottom: 14, animation: 'edLumiFloat 2.5s ease-in-out infinite' }} />
               <div style={{ fontSize: 13, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 6 }}>No itinerary yet</div>
               <div style={{ fontSize: 12, color: D.muted, lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif", maxWidth: 260, margin: '0 auto' }}>
                 Head to <strong style={{ color: '#FF6A00' }}>Day Planner</strong> to swipe experiences and build your itinerary.
