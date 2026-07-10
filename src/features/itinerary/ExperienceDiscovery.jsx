@@ -85,6 +85,7 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
     @keyframes edSheetIn  { from { transform: translateY(100%); } to { transform: translateY(0); } }
     @keyframes edIntroIn  { from { opacity:0; transform:scale(0.97) translateY(12px); } to { opacity:1; transform:scale(1) translateY(0); } }
     @keyframes edSlideNext{ from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
+    @keyframes lumiExplorePop { 0% { opacity:0; transform:scale(0.88) translateY(22px); } 65% { transform:scale(1.02) translateY(-2px); } 100% { opacity:1; transform:scale(1) translateY(0); } }
     .ed-like-btn,.ed-pass-btn { transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease !important; }
     .ed-like-btn:active { transform: scale(0.88) !important; }
     .ed-pass-btn:active { transform: scale(0.88) !important; }
@@ -181,23 +182,26 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
         </div>
       </div>
 
-      {/* ── Content auto-height ── */}
-      <div style={{ padding:'12px 14px 13px', display:'flex', flexDirection:'column', gap: 8, overflow:'hidden' }}>
-        <p style={{ fontSize:12.5, color:D.secondary, lineHeight:1.62, margin:0, display:'-webkit-box', WebkitLineClamp:3, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
+      {/* ── Content ── */}
+      <div style={{ padding:'13px 15px 17px', display:'flex', flexDirection:'column', gap:9 }}>
+        <p style={{ fontSize:12.5, color:'#5C504A', lineHeight:1.65, margin:0, fontFamily:"'DM Sans',sans-serif", display:'-webkit-box', WebkitLineClamp:3, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
           {exp.description}
         </p>
-        <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:4 }}>
+        {/* thin accent divider */}
+        <div style={{ height:'1px', background:'linear-gradient(90deg,rgba(255,106,0,0.15),transparent)', margin:'0 -1px' }} />
+        {/* premium tags row */}
+        <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
           {exp.duration && (
-            <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:11, fontWeight:600, color:D.muted, background:'#F4F2EE', borderRadius:999, padding:'3px 9px' }}>
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:700, color:'#FF6A00', background:'#FFF3EB', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(255,106,0,0.2)', fontFamily:"'DM Sans',sans-serif" }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               {exp.duration}
             </span>
           )}
           {exp.bestTime && (
-            <span style={{ fontSize:11, fontWeight:600, color:'#0F6E56', background:'#ECFDF5', borderRadius:999, padding:'3px 9px' }}>🕐 {exp.bestTime}</span>
+            <span style={{ fontSize:11, fontWeight:700, color:'#0F6E56', background:'#ECFDF5', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(15,110,86,0.18)', fontFamily:"'DM Sans',sans-serif" }}>🕐 {exp.bestTime}</span>
           )}
           {exp.cost && exp.cost !== 'null' && exp.cost !== 'N/A' && (
-            <span style={{ fontSize:11, fontWeight:700, color:D.gold, background:D.goldTint, borderRadius:999, padding:'3px 9px' }}>{exp.cost}</span>
+            <span style={{ fontSize:11, fontWeight:800, color:'#fff', background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', borderRadius:999, padding:'4px 10px', boxShadow:'0 2px 8px rgba(255,106,0,0.28)', fontFamily:"'DM Sans',sans-serif" }}>{exp.cost}</span>
           )}
         </div>
       </div>
@@ -654,17 +658,18 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       {/* ── Create with Lumi — full-width CTA (top) ── */}
       <button
         onClick={handleSkip}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', boxShadow: '0 4px 16px rgba(255,106,0,0.3)', marginBottom: 10, textAlign: 'left' }}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 12px 12px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', boxShadow: '0 4px 16px rgba(255,106,0,0.3)', marginBottom: 10, textAlign: 'left' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src={lumi8Img} alt="Lumi" style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0 }} />
+          <img src={lumi8Img} alt="Lumi" style={{ width: 56, height: 56, objectFit: 'contain', flexShrink: 0 }} />
           <div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 }}>Don't want to swipe?</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.15 }}>Create with Lumi</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.82)', fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>Let Lumi build your complete itinerary in seconds.</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', fontFamily: "'DM Sans',sans-serif", marginTop: 3 }}>Instantly build your full itinerary — no swiping needed.</div>
           </div>
         </div>
-        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 6 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
       </button>
 
@@ -787,7 +792,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
         <div style={{ marginTop: 14, textAlign: 'center' }}>
           <button
             onClick={() => setPhase('confirm')}
-            style={{ fontSize: 13, fontWeight: 700, padding: '10px 24px', borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif", boxShadow: '0 4px 14px rgba(201,145,58,0.26)', animation: 'edFadeUp 0.3s ease both' }}
+            style={{ fontSize: 13, fontWeight: 700, padding: '10px 24px', borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', color: '#fff', fontFamily: "'Sora',sans-serif", boxShadow: '0 4px 14px rgba(255,106,0,0.28)', animation: 'edFadeUp 0.3s ease both' }}
           >
             Done — build my itinerary ({likedIds.size} picks) →
           </button>
@@ -798,99 +803,102 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
            ONE-TIME INTRO OVERLAY (3 windows)
       ══════════════════════════════════════════ */}
       {showIntro && (
-        <div style={{ position:'fixed', inset:0, zIndex:2000, display:'flex', flexDirection:'column', overflow:'hidden', animation:'edIntroIn 0.35s ease both' }}>
-          {/* orange-white gradient background */}
-          <div style={{ position:'absolute', inset:0, background:'linear-gradient(170deg,#FF6A00 0%,#FF8C3B 45%,#FFF5EE 100%)' }} />
-
-          {/* Skip button */}
-          <button
-            onClick={dismissIntro}
-            style={{ position:'absolute', top:20, right:18, zIndex:2, padding:'5px 14px', borderRadius:999, border:'1.5px solid rgba(255,255,255,0.55)', background:'rgba(255,255,255,0.18)', color:'#fff', fontSize:12, fontWeight:600, cursor:'pointer', backdropFilter:'blur(6px)', fontFamily:"'DM Sans',sans-serif" }}
+        <div
+          style={{ position:'fixed', inset:0, background:'rgba(28,20,16,0.55)', backdropFilter:'blur(6px)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.25rem' }}
+          onClick={dismissIntro}
+        >
+          <div
+            style={{ background:'#fff', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:400, boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'lumiExplorePop .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
+            onClick={e => e.stopPropagation()}
           >
-            Skip
-          </button>
+            {/* top orange bar */}
+            <div style={{ height:4, background:'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
 
-          {/* Slide content */}
-          <div style={{ flex:1, position:'relative', zIndex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'3.5rem 1.5rem 1rem', textAlign:'center', overflow:'hidden' }}>
-
-            {introStep === 0 && (
-              <div key="intro-s0" style={{ animation:'edSlideNext 0.35s ease both', display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
-                <img src={lumi15Img} alt="Lumi" style={{ width:130, height:'auto', objectFit:'contain', animation:'edLumiFloat 2.8s ease-in-out infinite', filter:'drop-shadow(0 8px 28px rgba(0,0,0,0.2))' }} />
-                <div style={{ fontSize:23, fontWeight:800, color:'#fff', fontFamily:"'Sora',sans-serif", lineHeight:1.2, letterSpacing:-0.5 }}>Meet Your Travel Curator</div>
-                <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.9)', fontFamily:"'DM Sans',sans-serif", lineHeight:1.65, maxWidth:300 }}>
-                  Your swipes shape your journey. Unlike a rigid AI scheduler, Lumi uses your picks to craft a{' '}
-                  <strong style={{ color:'#fff' }}>personalised, flexible itinerary</strong> — one you can modify anytime.
-                </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:8, width:'100%', maxWidth:300, marginTop:2 }}>
-                  {[
-                    { icon:'🎯', label:'Built around your tastes' },
-                    { icon:'✏️', label:'Fully modifiable after creation' },
-                    { icon:'🚫', label:'Not a one-size-fits-all AI plan' },
-                  ].map(({ icon, label }) => (
-                    <div key={label} style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(255,255,255,0.18)', borderRadius:12, padding:'9px 13px', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.22)', textAlign:'left' }}>
-                      <span style={{ fontSize:15 }}>{icon}</span>
-                      <span style={{ fontSize:13, color:'#fff', fontWeight:600, fontFamily:"'DM Sans',sans-serif" }}>{label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {introStep === 1 && (
-              <div key="intro-s1" style={{ animation:'edSlideNext 0.35s ease both', display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
-                <div style={{ fontSize:58, lineHeight:1 }}>🗺️</div>
-                <div style={{ fontSize:23, fontWeight:800, color:'#fff', fontFamily:"'Sora',sans-serif", lineHeight:1.2, letterSpacing:-0.5 }}>Your Itinerary = Your Picks</div>
-                <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.9)', fontFamily:"'DM Sans',sans-serif", lineHeight:1.65, maxWidth:300 }}>
-                  Every swipe right becomes part of your trip. Lumi weaves your selections across days — balancing experiences, meals, and free time,{' '}
-                  <strong style={{ color:'#fff' }}>perfectly tailored to you</strong>.
-                </div>
-                <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center', maxWidth:300 }}>
-                  {['🏛️ Attractions','🍽️ Food','💎 Hidden Gems','🎯 Adventure','🌙 Nightlife','🌿 Local Life'].map(t => (
-                    <span key={t} style={{ fontSize:12, fontWeight:600, padding:'5px 12px', borderRadius:999, background:'rgba(255,255,255,0.2)', color:'#fff', border:'1px solid rgba(255,255,255,0.28)', backdropFilter:'blur(4px)', fontFamily:"'DM Sans',sans-serif" }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {introStep === 2 && (
-              <div key="intro-s2" style={{ animation:'edSlideNext 0.35s ease both', display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
-                <div style={{ fontSize:58, lineHeight:1 }}>📍</div>
-                <div style={{ fontSize:23, fontWeight:800, color:'#fff', fontFamily:"'Sora',sans-serif", lineHeight:1.2, letterSpacing:-0.5 }}>Discover What's Nearby</div>
-                <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.9)', fontFamily:"'DM Sans',sans-serif", lineHeight:1.65, maxWidth:300 }}>
-                  Once your itinerary is built, explore a curated{' '}
-                  <strong style={{ color:'#fff' }}>Nearby section</strong> — local gems, hidden cafes, and must-try spots close to wherever you'll be.
-                </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:8, width:'100%', maxWidth:300, marginTop:2 }}>
-                  {[
-                    { icon:'🏪', label:'Local shops & cafes' },
-                    { icon:'🗺️', label:'Spots near your stay' },
-                    { icon:'💡', label:'Insider recommendations' },
-                  ].map(({ icon, label }) => (
-                    <div key={label} style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(255,255,255,0.18)', borderRadius:12, padding:'9px 13px', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.22)', textAlign:'left' }}>
-                      <span style={{ fontSize:15 }}>{icon}</span>
-                      <span style={{ fontSize:13, color:'#fff', fontWeight:600, fontFamily:"'DM Sans',sans-serif" }}>{label}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Bottom: dots + CTA */}
-          <div style={{ position:'relative', zIndex:1, padding:'0 1.5rem 2.8rem', display:'flex', flexDirection:'column', gap:14, alignItems:'center' }}>
-            {/* progress dots */}
-            <div style={{ display:'flex', gap:7, alignItems:'center' }}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{ height:7, borderRadius:999, background: i===introStep ? '#fff' : 'rgba(255,255,255,0.38)', width: i===introStep ? 22 : 7, transition:'all 0.25s cubic-bezier(0.2,0.7,0.2,1)' }} />
-              ))}
-            </div>
-            {/* CTA */}
-            <button
-              onClick={introStep < 2 ? () => setIntroStep(s => s + 1) : dismissIntro}
-              style={{ width:'100%', maxWidth:300, padding:'14px', fontSize:15, fontWeight:800, borderRadius:16, border:'2px solid rgba(255,255,255,0.55)', cursor:'pointer', background:'rgba(255,255,255,0.96)', color:'#FF6A00', fontFamily:"'Sora',sans-serif", boxShadow:'0 4px 24px rgba(0,0,0,0.14)', letterSpacing:-0.2 }}
-            >
-              {introStep < 2 ? 'Next →' : "Let's Create! 🎉"}
+            {/* X close */}
+            <button onClick={dismissIntro} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
+
+            {/* ── SLIDE 0 ── */}
+            {introStep === 0 && (
+              <div key="es0" style={{ animation:'edSlideNext 0.3s ease both' }}>
+                <div style={{ padding:'1.2rem 1.25rem 0.6rem' }}>
+                  <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
+                    <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
+                    <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
+                  </div>
+                  <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:6 }}>Your Personal Travel Curator</div>
+                  <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62 }}>Your swipes shape your trip. Unlike rigid AI, Lumi crafts a <strong style={{ color:'#1C1410' }}>personalised, flexible itinerary</strong> you can modify anytime.</div>
+                </div>
+                <div style={{ display:'flex', alignItems:'flex-end', padding:'0 1.25rem 0', gap:12 }}>
+                  <div style={{ width:88, flexShrink:0, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+                    <img src={lumi15Img} alt="Lumi" style={{ width:'auto', height:110, objectFit:'contain', display:'block' }} />
+                  </div>
+                  <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6, paddingBottom:'0.7rem', paddingTop:'0.25rem' }}>
+                    {['Built around your tastes', 'Fully modifiable after creation', 'Not a one-size-fits-all AI plan'].map((f, i) => (
+                      <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'7px 10px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.25)', background:'#FFF8F4' }}>
+                        <svg width="8" height="8" viewBox="0 0 12 10" fill="none" style={{ flexShrink:0 }}><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                        <span style={{ fontSize:11, color:'#1C1410', fontWeight:700, lineHeight:1.35, fontFamily:"'DM Sans',sans-serif" }}>{f}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ── SLIDE 1 ── */}
+            {introStep === 1 && (
+              <div key="es1" style={{ animation:'edSlideNext 0.3s ease both', padding:'1.25rem 1.25rem 0.5rem' }}>
+                <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
+                  <div style={{ width:52, height:52, borderRadius:16, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', border:'1.5px solid rgba(255,106,0,0.2)' }}>
+                    <span style={{ fontSize:26 }}>🗺️</span>
+                  </div>
+                </div>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:6 }}>Your Itinerary = Your Picks</div>
+                <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:12 }}>Every swipe right becomes part of your trip. Lumi balances experiences, meals, and free time — <strong style={{ color:'#1C1410' }}>perfectly tailored to you</strong>.</div>
+                <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
+                  {['🏛️ Attractions','🍽️ Food','💎 Hidden Gems','🎯 Adventure','🌙 Nightlife','🌿 Local Life'].map(t => (
+                    <span key={t} style={{ fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'#FFF3EB', color:'#FF6A00', border:'1.5px solid rgba(255,106,0,0.22)', fontFamily:"'DM Sans',sans-serif" }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── SLIDE 2 ── */}
+            {introStep === 2 && (
+              <div key="es2" style={{ animation:'edSlideNext 0.3s ease both', padding:'1.25rem 1.25rem 0.5rem' }}>
+                <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
+                  <div style={{ width:52, height:52, borderRadius:16, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', border:'1.5px solid rgba(255,106,0,0.2)' }}>
+                    <span style={{ fontSize:26 }}>📍</span>
+                  </div>
+                </div>
+                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:6 }}>Discover What's Nearby</div>
+                <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:12 }}>Once your itinerary is built, explore a curated <strong style={{ color:'#1C1410' }}>Nearby section</strong> — local gems, hidden cafes, and must-try spots right where you'll be.</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {['Local shops & cafes near your stay', 'Points of interest on your route', 'Insider picks from local knowledge'].map((f, i) => (
+                    <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'7px 10px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.25)', background:'#FFF8F4' }}>
+                      <svg width="8" height="8" viewBox="0 0 12 10" fill="none" style={{ flexShrink:0 }}><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      <span style={{ fontSize:11, color:'#1C1410', fontWeight:700, lineHeight:1.35, fontFamily:"'DM Sans',sans-serif" }}>{f}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* dots + CTA */}
+            <div style={{ padding:'0.75rem 1.25rem 1.25rem', display:'flex', flexDirection:'column', gap:10, alignItems:'center' }}>
+              <div style={{ display:'flex', gap:7, alignItems:'center' }}>
+                {[0,1,2].map(i => (
+                  <div key={i} style={{ height:6, borderRadius:999, background: i===introStep ? '#FF6A00' : '#FFD4B8', width: i===introStep ? 20 : 6, transition:'all 0.25s cubic-bezier(0.2,0.7,0.2,1)' }} />
+                ))}
+              </div>
+              <button
+                onClick={introStep < 2 ? () => setIntroStep(s => s + 1) : dismissIntro}
+                style={{ width:'100%', padding:'13px', fontSize:14, fontWeight:700, borderRadius:14, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', color:'#fff', boxShadow:'0 4px 16px rgba(255,106,0,0.3)' }}
+              >
+                {introStep < 2 ? 'Next →' : "Let's Explore! 🎉"}
+              </button>
+            </div>
           </div>
         </div>
       )}
