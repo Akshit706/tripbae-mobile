@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
@@ -1101,8 +1101,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
 
       {/* ── Underline tab switcher (Club-style) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1.5px solid rgba(28,20,16,0.1)', marginBottom: '1rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: '1.5px solid rgba(255,106,0,0.15)', marginBottom: '1rem', position: 'relative', zIndex: 10 }}>
         {ITABS.map(t => {
+          const isActive = iTab === t.id;
           const tabIcons = {
             planner:   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>,
             itinerary: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
@@ -1110,13 +1111,13 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           };
           return (
             <button key={t.id} onClick={() => setITab(t.id)}
-              style={{ ...S.navTab, ...(iTab === t.id ? S.navTabActive : {}), position: 'relative', padding: '9px 2px 10px', fontSize: 12, borderRadius: 0 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: iTab === t.id ? 700 : 500, fontSize: 12 }}>
+              style={{ ...S.navTab, position: 'relative', padding: '9px 2px 10px', fontSize: 12, borderRadius: 0, color: isActive ? '#FF6A00' : '#98A2B3', fontWeight: isActive ? 700 : 500, background: 'transparent', zIndex: 10, pointerEvents: 'auto' }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontWeight: isActive ? 700 : 500, fontSize: 12 }}>
                 {tabIcons[t.id]}
                 {t.label}
               </span>
-              {iTab === t.id && (
-                <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: isSolo ? '#7F77DD' : D.gold }} />
+              {isActive && (
+                <span style={{ position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 2.5, borderRadius: '99px 99px 0 0', background: isSolo ? '#7F77DD' : '#FF6A00' }} />
               )}
             </button>
           );
@@ -1282,41 +1283,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
             </div>
           )}
           {!itin && step !== 'loading' && (
-            <div style={{ padding: '2.5rem 1.25rem', textAlign: 'center', animation: 'edFadeUp 0.35s ease both' }}>
-              {/* Lumi speech bubble */}
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-                <div style={{ position: 'relative', maxWidth: 300 }}>
-                  {/* bubble */}
-                  <div style={{ background: '#fff', borderRadius: 18, padding: '14px 16px', boxShadow: '0 4px 18px rgba(28,20,16,0.10)', border: `1px solid ${D.border}`, position: 'relative', textAlign: 'left' }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>Hey! No itinerary yet ✨</div>
-                    <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif" }}>
-                      Go to <strong>Day Planner</strong> and swipe the experiences you’re excited about — I’ll build your perfect {days}-day schedule!<br/><br/>
-                      Or if you’re in a hurry, just let me create one for you automatically 🚀
-                    </div>
-                    {/* bubble tail */}
-                    <div style={{ position: 'absolute', bottom: -10, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '9px solid transparent', borderRight: '9px solid transparent', borderTop: `10px solid ${D.border}` }} />
-                    <div style={{ position: 'absolute', bottom: -9, left: '50%', transform: 'translateX(-50%)', width: 0, height: 0, borderLeft: '8px solid transparent', borderRight: '8px solid transparent', borderTop: '9px solid #fff' }} />
-                  </div>
-                </div>
-              </div>
-              {/* Lumi avatar */}
-              <img src={lumi17Img} alt="" style={{ width: 74, height: 'auto', marginBottom: 20, animation: 'edLumiFloat 2.5s ease-in-out infinite' }} />
-              {/* CTAs */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 320, margin: '0 auto' }}>
-                <button
-                  onClick={() => setITab('planner')}
-                  style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif", boxShadow: '0 4px 16px rgba(201,145,58,0.28)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                  Pick Experiences in Day Planner
-                </button>
-                <button
-                  onClick={() => { setITab('planner'); runGenerateItinerary(); }}
-                  style={{ width: '100%', padding: '12px', fontSize: 13.5, fontWeight: 700, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}
-                >
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                  Let Lumi Create for Me
-                </button>
+            <div style={{ padding: '2rem 1.25rem', textAlign: 'center', animation: 'edFadeUp 0.35s ease both' }}>
+              <img src={lumi17Img} alt="" style={{ width: 68, height: 'auto', marginBottom: 16, animation: 'edLumiFloat 2.5s ease-in-out infinite' }} />
+              <div style={{ fontSize: 13, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 6 }}>No itinerary yet</div>
+              <div style={{ fontSize: 12, color: D.muted, lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif", maxWidth: 260, margin: '0 auto' }}>
+                Head to <strong style={{ color: '#FF6A00' }}>Day Planner</strong> to swipe experiences and build your itinerary.
               </div>
             </div>
           )}

@@ -676,20 +676,20 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
               const cfg = catCfg(cat);
               const isOpen = expandedCats.has(cat);
               return (
-                <div key={cat} style={{ marginBottom: 6, borderRadius: 12, border: `1px solid ${isOpen ? cfg.color + '35' : D.border}`, overflow: 'hidden', transition: 'border-color 0.2s ease' }}>
+                <div key={cat} style={{ marginBottom: 6, borderRadius: 12, border: `1px solid ${isOpen ? 'rgba(255,106,0,0.22)' : D.border}`, overflow: 'hidden', transition: 'border-color 0.2s ease' }}>
                   <button
                     onClick={() => toggleCat(cat)}
-                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: isOpen ? cfg.bg : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s ease' }}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: isOpen ? '#FFF3EB' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s ease' }}
                   >
-                    {renderCatIcon(cat, 13, cfg.color)}
+                    {renderCatIcon(cat, 13, isOpen ? '#FF6A00' : D.muted)}
                     <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flex: 1 }}>{cat}</span>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color, background: cfg.bg, borderRadius: 999, padding: '2px 7px', border: `1px solid ${cfg.color}25` }}>{items.length}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#FF6A00', background: '#FFF3EB', borderRadius: 999, padding: '2px 7px', border: '1px solid rgba(255,106,0,0.2)' }}>{items.length}</span>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}><polyline points="6 9 12 15 18 9"/></svg>
                   </button>
                   {isOpen && (
                     <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', padding: '6px 12px 10px' }}>
                       {items.map(e => (
-                        <button key={e.id} onClick={() => setReviewExp(e)} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px 3px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}22`, fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                        <button key={e.id} onClick={() => setReviewExp(e)} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px 3px 10px', borderRadius: 999, background: '#FFF3EB', color: '#FF6A00', border: '1px solid rgba(255,106,0,0.18)', fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
                           {e.name}
                           <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                         </button>
