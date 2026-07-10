@@ -9,6 +9,7 @@ import lumi15Img from '../../assets/lumi15.png';
 import lumi17Img from '../../assets/lumi17.png';
 import lumi4Img from '../../assets/Lumi4_bgless.png';
 import lumi19Img from '../../assets/lumi19.png';
+import lumi21Img from '../../assets/lumi21.png';
 import ExperienceDiscovery from './ExperienceDiscovery';
 
 /* ── Category colours (for My Selections sheet) ───────────── */
@@ -831,6 +832,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [lastSelectedExps, setLastSelectedExps] = useState([]);
   const [showSelectionsSheet, setShowSelectionsSheet] = useState(false);
   const [sheetExps, setSheetExps] = useState([]);
+  const [modifyExps, setModifyExps] = useState(null);
+  const [plannerExpandedCats, setPlannerExpandedCats] = useState(new Set());
   const [localTasteData, setLocalTasteData] = useState(trip._cachedTaste || null);
   const [localTasteStep, setLocalTasteStep] = useState(trip._cachedTaste ? 'result' : 'loading');
   const hasGenerated = useRef(false);
@@ -1129,102 +1132,70 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       {iTab === 'planner' && (
         <div>
           {step === 'result' && itin ? (
-            /* Itinerary exists — show redo card */
+            /* ── Itinerary Ready — redesigned header + inline selections ── */
             <div style={{ animation: 'edFadeUp 0.35s ease both' }}>
-              <div style={{ background: 'linear-gradient(135deg,#1C1410 0%,#7C4A1C 55%,#C9913A 100%)', borderRadius: 20, padding: '1.4rem 1.4rem 1.4rem 1.4rem', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 24px rgba(28,20,16,0.2)' }}>
-                <img src={lumi19Img} alt="" style={{ position: 'absolute', bottom: 0, right: 0, height: 140, width: 'auto', objectFit: 'contain', opacity: 0.95 }} />
-                <div style={{ position: 'relative', zIndex: 1, maxWidth: '60%' }}>
-                  <div style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 5, fontFamily: "'DM Sans',sans-serif" }}>ITINERARY READY</div>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 5 }}>{days} day{days>1?'s':''} in {form.dest} ✶</div>
-                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 14 }}>{(itin.days||[]).reduce((a,d)=>a+(d.activities||[]).length,0)} activities planned</div>
-                  {/* Primary CTA */}
-                  <button
-                    onClick={() => setITab('itinerary')}
-                    style={{ width: '100%', padding: '10px', fontSize: 13, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer', background: 'rgba(255,255,255,0.95)', color: '#A8731E', fontFamily: "'DM Sans',sans-serif", marginBottom: 8 }}
-                  >View Itinerary →</button>
-                  {/* Secondary actions */}
+
+              {/* ── Orange header card with lumi21 ── */}
+              <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF8C3B 100%)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 6px 28px rgba(255,106,0,0.32)', marginBottom: '1rem', display: 'flex', alignItems: 'flex-end', minHeight: 120 }}>
+                {/* Lumi on the left */}
+                <img src={lumi21Img} alt="Lumi" style={{ height: 118, width: 'auto', objectFit: 'contain', flexShrink: 0, display: 'block' }} />
+                {/* Content right */}
+                <div style={{ flex: 1, padding: '1rem 1rem 1rem 0.5rem' }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.72)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 3, fontFamily: "'DM Sans',sans-serif" }}>ITINERARY READY</div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 2 }}>{days} day{days>1?'s':''} in {form.dest}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.82)', marginBottom: 10, fontFamily: "'DM Sans',sans-serif" }}>{(itin.days||[]).reduce((a,d)=>a+(d.activities||[]).length,0)} activities planned</div>
+                  {/* Two CTA buttons */}
                   <div style={{ display: 'flex', gap: 7 }}>
                     <button
-                      onClick={handleRedo}
-                      style={{ flex: 1, padding: '9px 8px', fontSize: 11.5, fontWeight: 600, borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.32)', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.88)', fontFamily: "'DM Sans',sans-serif" }}
-                    >Re-pick</button>
-                    {lastSelectedExps.length > 0 && (
-                      <button
-                        onClick={() => { setSheetExps([...lastSelectedExps]); setShowSelectionsSheet(true); }}
-                        style={{ flex: 1, padding: '9px 8px', fontSize: 11.5, fontWeight: 600, borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.32)', cursor: 'pointer', background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.88)', fontFamily: "'DM Sans',sans-serif" }}
-                      >My Selections</button>
-                    )}
+                      onClick={() => setITab('itinerary')}
+                      style={{ flex: 1, padding: '8px 10px', fontSize: 11.5, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer', background: '#fff', color: '#FF6A00', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 8px rgba(0,0,0,0.12)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    >Go to Itinerary →</button>
+                    <button
+                      onClick={() => { if (lastSelectedExps.length > 0) { setModifyExps(lastSelectedExps); setStep('discover'); } else { handleRedo(); } }}
+                      style={{ flex: 1, padding: '8px 10px', fontSize: 11.5, fontWeight: 600, borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.5)', cursor: 'pointer', background: 'rgba(255,255,255,0.15)', color: '#fff', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    >✎ Modify Experiences</button>
                   </div>
                 </div>
               </div>
 
-              {/* My Selections bottom sheet */}
-              {showSelectionsSheet && (() => {
-                const byCategory = Object.entries(
-                  sheetExps.reduce((acc, e) => { (acc[e.category] = acc[e.category] || []).push(e); return acc; }, {})
-                );
-                const totalHours = sheetExps.reduce((s, e) => {
-                  const m = String(e.duration || '').match(/(\d+(?:\.\d+)?)\s*[-\u2013to]\s*(\d+(?:\.\d+)?)/);
-                  return s + (m ? (parseFloat(m[1]) + parseFloat(m[2])) / 2 : parseFloat(String(e.duration || '1.5').match(/(\d+(?:\.\d+)?)/)?.[1] || '1.5'));
-                }, 0);
+              {/* ── View selected experiences (mirrors ExperienceDiscovery confirm page) ── */}
+              {lastSelectedExps.length > 0 && (() => {
+                const ALL_EXP_CATS = ['Attractions','Food','Cafes','Hidden Gems','Adventure','Shopping','Nightlife','Culture','Viewpoints','Local Experiences','Party'];
+                const byCategory = ALL_EXP_CATS.reduce((acc, cat) => {
+                  const items = lastSelectedExps.filter(e => e.category === cat);
+                  if (items.length) acc[cat] = items;
+                  return acc;
+                }, {});
+                if (Object.keys(byCategory).length === 0) return null;
                 return (
-                  <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.52)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
-                    onClick={e => { if (e.target === e.currentTarget) setShowSelectionsSheet(false); }}
-                  >
-                    <div style={{ width: '100%', maxWidth: 480, background: '#fff', borderRadius: '22px 22px 0 0', overflow: 'hidden', maxHeight: '82vh', display: 'flex', flexDirection: 'column', animation: 'edSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both' }}>
-                      {/* Sheet header */}
-                      <div style={{ padding: '14px 16px 12px', borderBottom: '0.5px solid rgba(28,20,16,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-                        <div>
-                          <div style={{ fontSize: 15, fontWeight: 800, color: '#1C1410', fontFamily: "'Sora',sans-serif" }}>My Selections</div>
-                          <div style={{ fontSize: 11.5, color: '#8A7E76', fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>{sheetExps.length} experience{sheetExps.length !== 1 ? 's' : ''} · ~{Math.round(totalHours)}h</div>
-                        </div>
-                        <button onClick={() => setShowSelectionsSheet(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: '#F3F4F6', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                        </button>
-                      </div>
-                      {/* Scrollable picks */}
-                      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
-                        {byCategory.length === 0 ? (
-                          <div style={{ textAlign: 'center', padding: '2rem', color: '#8A7E76', fontSize: 13 }}>No experiences selected.</div>
-                        ) : byCategory.map(([cat, items]) => {
-                          const cfg = expCatCfg(cat);
-                          return (
-                            <div key={cat} style={{ marginBottom: 14 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 7 }}>
-                                <span style={{ fontSize: 14 }}>{cfg.emoji}</span>
-                                <span style={{ fontSize: 12.5, fontWeight: 700, color: '#1C1410', fontFamily: "'DM Sans',sans-serif" }}>{cat}</span>
-                                <span style={{ fontSize: 10, color: '#8A7E76', background: '#F4F2EE', borderRadius: 999, padding: '1px 7px' }}>{items.length}</span>
-                              </div>
-                              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', paddingLeft: 21 }}>
-                                {items.map(e => (
-                                  <button
-                                    key={e.id}
-                                    onClick={() => setSheetExps(prev => prev.filter(x => x.id !== e.id))}
-                                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 11.5, fontWeight: 600, padding: '4px 9px', borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}22`, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}
-                                    title="Tap to remove"
-                                  >
-                                    {e.name}
-                                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.55 }}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                  </button>
-                                ))}
-                              </div>
+                  <div style={{ background: D.surface, borderRadius: 16, padding: '1rem 1.1rem', border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 10 }}>View selected experiences</div>
+                    {Object.entries(byCategory).map(([cat, items]) => {
+                      const cfg = expCatCfg(cat);
+                      const isOpen = plannerExpandedCats.has(cat);
+                      return (
+                        <div key={cat} style={{ marginBottom: 6, borderRadius: 12, border: `1px solid ${isOpen ? 'rgba(28,20,16,0.15)' : D.border}`, overflow: 'hidden', transition: 'border-color 0.2s ease' }}>
+                          <button
+                            onClick={() => setPlannerExpandedCats(prev => { const next = new Set(prev); next.has(cat) ? next.delete(cat) : next.add(cat); return next; })}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: isOpen ? '#F8F7F5' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s ease' }}
+                          >
+                            <span style={{ fontSize: 14, flexShrink: 0 }}>{cfg.emoji}</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flex: 1 }}>{cat}</span>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: D.secondary, background: '#F0EFEC', borderRadius: 999, padding: '2px 7px', border: '1px solid rgba(28,20,16,0.1)', flexShrink: 0 }}>{items.length}</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}><polyline points="6 9 12 15 18 9"/></svg>
+                          </button>
+                          {isOpen && (
+                            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', padding: '6px 12px 10px' }}>
+                              {items.map(e => (
+                                <span key={e.id} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}22`, fontFamily: "'DM Sans',sans-serif", display: 'inline-flex', alignItems: 'center' }}>
+                                  {e.name}
+                                </span>
+                              ))}
                             </div>
-                          );
-                        })}
-                      </div>
-                      {/* Footer actions */}
-                      <div style={{ padding: '12px 16px 28px', borderTop: '0.5px solid rgba(28,20,16,0.08)', display: 'flex', gap: 9, flexShrink: 0 }}>
-                        <button
-                          onClick={() => setShowSelectionsSheet(false)}
-                          style={{ flex: 1, padding: '12px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: '1.5px solid rgba(28,20,16,0.12)', cursor: 'pointer', background: '#fff', color: '#5C504A', fontFamily: "'DM Sans',sans-serif" }}
-                        >Cancel</button>
-                        <button
-                          onClick={() => { setShowSelectionsSheet(false); runGenerateItinerary(sheetExps); }}
-                          style={{ flex: 2, padding: '12px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', color: '#fff', fontFamily: "'Sora',sans-serif", boxShadow: '0 4px 14px rgba(255,106,0,0.28)' }}
-                        >✶ Rebuild Itinerary</button>
-                      </div>
-                    </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 );
               })()}
@@ -1235,8 +1206,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 <>
                   <ExperienceDiscovery
                     trip={trip}
-                    onComplete={(selectedExps) => runGenerateItinerary(selectedExps)}
-                    onSkip={() => runGenerateItinerary()}
+                    modifyExps={modifyExps}
+                    onComplete={(selectedExps) => { setModifyExps(null); runGenerateItinerary(selectedExps); }}
+                    onSkip={() => { setModifyExps(null); runGenerateItinerary(); }}
                   />
                 </>
               )}

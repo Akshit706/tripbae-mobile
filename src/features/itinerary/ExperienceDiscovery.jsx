@@ -251,16 +251,28 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
 /* ══════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════ */
-export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
-  // Initialise from saved progress so swipes + experience cards survive tab-switches / phone sleep
-  const _savedProg = loadProgress(trip.id);
+export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyExps }) {
+  // Initialise from saved progress (or modifyExps override when coming from the "Modify Experiences" action)
+  const _savedProg = modifyExps ? null : loadProgress(trip.id);
   const _hasCachedExps = (_savedProg?.experiences?.length || 0) > 0;
 
-  const [phase, setPhase] = useState(() => _hasCachedExps ? (_savedProg?.phase || 'swipe') : 'loading');
-  const [experiences, setExperiences] = useState(() => _savedProg?.experiences || []);
+  const [phase, setPhase] = useState(() => {
+    if (modifyExps) return 'confirm';
+    return _hasCachedExps ? (_savedProg?.phase || 'swipe') : 'loading';
+  });
+  const [experiences, setExperiences] = useState(() => {
+    if (modifyExps) return modifyExps;
+    return _savedProg?.experiences || [];
+  });
 
-  const [swipedIds, setSwipedIds] = useState(() => new Set(_savedProg?.swipedIds || []));
-  const [likedIds,  setLikedIds]  = useState(() => new Set(_savedProg?.likedIds  || []));
+  const [swipedIds, setSwipedIds] = useState(() => {
+    if (modifyExps) return new Set(modifyExps.map(e => e.id));
+    return new Set(_savedProg?.swipedIds || []);
+  });
+  const [likedIds,  setLikedIds]  = useState(() => {
+    if (modifyExps) return new Set(modifyExps.map(e => e.id));
+    return new Set(_savedProg?.likedIds  || []);
+  });
   const [activeFilter, setActiveFilter] = useState(() => _savedProg?.activeFilter || null);
   const [swipeOut, setSwipeOut] = useState(null); // 'left'|'right'|null
   const [dragX, setDragX] = useState(0);
@@ -641,7 +653,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
             <span style={{ fontSize: 20, fontWeight: 800, color: '#FF6A00', fontFamily: "'Sora',sans-serif", letterSpacing: -0.3, lineHeight: 1, flexShrink: 0 }}>{likedExps.length}</span>
             <span style={{ fontSize: 12.5, fontWeight: 600, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>Experiences</span>
             <div style={{ width: 1, height: 16, background: D.border, flexShrink: 0 }} />
-            <span style={{ fontSize: 20, fontWeight: 800, color: '#FF6A00', fontFamily: "'Sora',sans-serif", letterSpacing: -0.3, lineHeight: 1, flexShrink: 0 }}>{Math.round(selectedHours)}h Planned</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{Math.round(selectedHours)}h Planned</span>
           </div>
         </div>
 
