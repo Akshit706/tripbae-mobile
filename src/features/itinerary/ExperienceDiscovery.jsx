@@ -3,6 +3,7 @@ import { PlacePhotoCarousel } from '../media/PlaceMedia';
 import lumi8Img from '../../assets/lumi8.png';
 import lumi11Img from '../../assets/lumi11.png';
 import lumi15Img from '../../assets/lumi15.png';
+import lumi19Img from '../../assets/lumi19.png';
 import lumi17Img from '../../assets/lumi17.png';
 import lumi5Img from '../../assets/lumi5_bgless.png';
 
@@ -624,7 +625,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
 
         {/* Hero banner */}
         <div style={{ background: 'linear-gradient(135deg,#1C1410 0%,#7C4A1C 55%,#C9913A 100%)', borderRadius: 20, padding: '1.4rem', marginBottom: '1.1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 24px rgba(28,20,16,0.2)' }}>
-          <img src={lumi15Img} alt="" style={{ position: 'absolute', bottom: 0, right: 0, height: 106, width: 'auto', objectFit: 'contain', opacity: 0.95 }} />
+          <img src={lumi19Img} alt="" style={{ position: 'absolute', bottom: 0, right: 0, height: 106, width: 'auto', objectFit: 'contain', opacity: 0.95 }} />
           <div style={{ position: 'relative', zIndex: 1, maxWidth: '60%' }}>
             <div style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 5, fontFamily: "'DM Sans',sans-serif" }}>YOUR PICKS</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 6 }}>
@@ -703,23 +704,24 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           </div>
         </div>
 
-        {/* ── Experience Review Sheet ── */}
+        {/* ── Experience Review Modal ── */}
         {reviewExp && (
           <div
-            style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}
             onClick={() => setReviewExp(null)}
           >
             <div
-              style={{ width: '100%', maxWidth: 480, background: D.surface, borderRadius: '20px 20px 0 0', overflow: 'hidden', animation: 'edSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both' }}
+              style={{ width: '100%', maxWidth: 420, background: D.surface, borderRadius: 24, overflow: 'hidden', boxShadow: '0 8px 40px rgba(28,20,16,0.22)', animation: 'edCardIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both', maxHeight: 'calc(100vh - 2.5rem)', overflowY: 'auto' }}
               onClick={e => e.stopPropagation()}
             >
-              <div style={{ position: 'relative', height: 220 }}>
+              {/* Photo section — identical to SwipeCard */}
+              <div style={{ position: 'relative', height: 256, overflow: 'hidden', background: '#EDE8E2' }}>
                 <PlacePhotoCarousel
                   query={reviewExp.imageQuery || `${reviewExp.name} ${destination} high resolution travel photography`}
-                  style={{ height: 220, borderRadius: 0 }}
+                  style={{ height: '100%', borderRadius: 0 }}
                   limit={3}
                 />
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.72) 100%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,rgba(0,0,0,0.04) 0%,transparent 30%,rgba(0,0,0,0.76) 100%)', pointerEvents: 'none' }} />
                 {(() => { const cfg = catCfg(reviewExp.category); return (
                   <div style={{ position: 'absolute', top: 14, left: 14, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '4px 10px 4px 7px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
                     {renderCatIcon(reviewExp.category, 13, cfg.color)}
@@ -732,27 +734,31 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
                     <span style={{ fontSize: 9.5, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", textTransform: 'uppercase', letterSpacing: 1 }}>MUST DO</span>
                   </div>
                 )}
-                <div style={{ position: 'absolute', bottom: 14, left: 14, right: 50, pointerEvents: 'none' }}>
-                  <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.6)', fontFamily: "'Sora',sans-serif" }}>{reviewExp.name}</div>
-                  {reviewExp.vibe && <span style={{ marginTop: 4, display: 'inline-block', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.15)', borderRadius: 999, padding: '2px 8px', backdropFilter: 'blur(4px)', textTransform: 'uppercase', letterSpacing: 0.8 }}>{reviewExp.vibe}</span>}
+                <div style={{ position: 'absolute', bottom: 12, left: 14, right: 50, pointerEvents: 'none' }}>
+                  <div style={{ fontSize: 19, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.6)', fontFamily: "'Sora',sans-serif", letterSpacing: -0.2 }}>{reviewExp.name}</div>
+                  {reviewExp.vibe && <span style={{ marginTop: 4, display: 'inline-block', fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.14)', borderRadius: 999, padding: '2px 8px', backdropFilter: 'blur(4px)', textTransform: 'uppercase', letterSpacing: 0.8 }}>{reviewExp.vibe}</span>}
                 </div>
                 <button onClick={() => setReviewExp(null)} style={{ position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.45)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', zIndex: 2, padding: 0 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
               </div>
-              <div style={{ padding: '14px 16px 24px' }}>
-                <p style={{ fontSize: 13, color: D.secondary, lineHeight: 1.65, margin: '0 0 12px' }}>{reviewExp.description}</p>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 16 }}>
+              {/* Content section — identical to SwipeCard */}
+              <div style={{ padding: '13px 15px 17px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+                <p style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, margin: 0, fontFamily: "'DM Sans',sans-serif", display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {reviewExp.description}
+                </p>
+                <div style={{ height: '1px', background: 'linear-gradient(90deg,rgba(255,106,0,0.15),transparent)', margin: '0 -1px' }} />
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', alignItems: 'center', overflow: 'hidden' }}>
                   {reviewExp.duration && (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11.5, fontWeight: 600, color: D.muted, background: '#F4F2EE', borderRadius: 999, padding: '4px 10px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#5C504A', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.07)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>
                       <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                       {reviewExp.duration}
                     </span>
                   )}
-                  {reviewExp.bestTime && <span style={{ fontSize: 11.5, fontWeight: 600, color: '#0F6E56', background: '#ECFDF5', borderRadius: 999, padding: '4px 10px' }}>🕐 {reviewExp.bestTime}</span>}
-                  {reviewExp.cost && reviewExp.cost !== 'null' && reviewExp.cost !== 'N/A' && <span style={{ fontSize: 11.5, fontWeight: 700, color: D.gold, background: D.goldTint, borderRadius: 999, padding: '4px 10px' }}>{reviewExp.cost}</span>}
+                  {reviewExp.bestTime && <span style={{ fontSize: 11, fontWeight: 600, color: '#0F6E56', background: '#ECFDF5', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(15,110,86,0.15)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }}>🕐 {reviewExp.bestTime}</span>}
+                  {reviewExp.cost && reviewExp.cost !== 'null' && reviewExp.cost !== 'N/A' && <span style={{ fontSize: 11, fontWeight: 700, color: '#1C1410', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.1)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>{reviewExp.cost}</span>}
                 </div>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
                   <button onClick={() => removeFromPicks(reviewExp.id)} style={{ flex: 1, padding: '12px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: '1.5px solid #FEE2E2', background: '#FFF5F5', color: '#EF4444', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                     Remove
@@ -912,7 +918,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
             disabled={likedIds.size === 0}
             style={{ fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 12, border: `1.5px solid ${likedIds.size > 0 ? 'rgba(255,106,0,0.3)' : D.border}`, cursor: likedIds.size > 0 ? 'pointer' : 'default', background: likedIds.size > 0 ? '#FFF8F4' : D.surface, color: likedIds.size > 0 ? '#FF6A00' : D.muted, fontFamily: "'DM Sans',sans-serif", boxShadow: likedIds.size > 0 ? '0 2px 10px rgba(255,106,0,0.1)' : 'none', whiteSpace: 'nowrap', opacity: likedIds.size === 0 ? 0.4 : 1, transition: 'all 0.2s ease', animation: likedIds.size > 0 ? 'edFadeUp 0.3s ease both' : undefined }}
           >
-            {likedIds.size > 0 ? `Build with ${likedIds.size} activit${likedIds.size === 1 ? 'y' : 'ies'} →` : 'Build itinerary'}
+            {likedIds.size > 0 ? `Proceed with ${likedIds.size} activit${likedIds.size === 1 ? 'y' : 'ies'} →` : 'Build itinerary'}
           </button>
 
           {/* Like */}
