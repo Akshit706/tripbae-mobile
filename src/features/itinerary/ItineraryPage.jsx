@@ -967,7 +967,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [nearbyStep,         setNearbyStep]         = useState('loading');
   const [showPlannerScrollTop, setShowPlannerScrollTop] = useState(false);
   const [showTipsPopup,      setShowTipsPopup]      = useState(false);
-  const [showWelcomePopup,   setShowWelcomePopup]   = useState(false);
   const [clockNowMs,         setClockNowMs]         = useState(() => Date.now());
   const [destinationClock,   setDestinationClock]   = useState(null);
   const [liveHintPinnedKey,  setLiveHintPinnedKey]  = useState(null);
@@ -1063,18 +1062,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
     return () => clearTimeout(timer);
   }, [iTab, step, firstLiveActivity?.key]);
-
-  // Show welcome popup only once ever (persisted in localStorage per trip)
-  const WELCOME_SHOWN_KEY = `travelbae_welcome_seen_${trip.id}`;
-  const welcomeShownRef = useRef(false);
-  useEffect(() => {
-    if (step === 'result' && itin && !welcomeShownRef.current) {
-      welcomeShownRef.current = true;
-      try { if (localStorage.getItem(WELCOME_SHOWN_KEY)) return; } catch { /* ignore */ }
-      const t = setTimeout(() => setShowWelcomePopup(true), 600);
-      return () => clearTimeout(t);
-    }
-  }, [step, itin]);
 
   const DAY_CLOSING_MSGS = [
     { label: 'Rest & Recharge', note: 'Head back to your stay. Freshen up, put your feet up, and let the day settle in.' },
@@ -1336,71 +1323,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           {step === 'result' && itin && (
             <div style={{ background: D.bg, paddingBottom: '2.5rem' }}>
 
-              {/* ── Welcome popup (first-time) ── */}
-              {showWelcomePopup && (
-                <div
-                  style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.55)', backdropFilter: 'blur(6px)', zIndex: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem', animation: 'welcomeFadeIn 0.25s ease both' }}
-                  onClick={e => { if (e.target === e.currentTarget) { try { localStorage.setItem(WELCOME_SHOWN_KEY, '1'); } catch { /* ignore */ } setShowWelcomePopup(false); } }}
-                >
-                  <div style={{
-                    width: '100%', maxWidth: 400,
-                    background: '#fff',
-                    borderRadius: 24,
-                    overflow: 'hidden',
-                    boxShadow: '0 28px 80px rgba(0,0,0,0.28)',
-                    animation: 'welcomePopIn 0.45s cubic-bezier(0.34,1.3,0.64,1) both',
-                    position: 'relative',
-                  }}>
-                    {/* Orange top strip */}
-                    <div style={{ height: 4, background: 'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
-                    {/* X close */}
-                    <button onClick={() => { try { localStorage.setItem(WELCOME_SHOWN_KEY, '1'); } catch {} setShowWelcomePopup(false); }} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
-                    {/* Full-width: heading + description */}
-                    <div style={{ padding:'1.2rem 1.25rem 0.75rem' }}>
-                      <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
-                        <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
-                        <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
-                      </div>
-                      <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>
-                        Your {form.dest} plan is ready ✦
-                      </div>
-                      <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62 }}>
-                        Day by day, hour by hour — the must-sees, best eateries, and hidden gems, all laid out. Just follow this and {form.dest} is handled.
-                      </div>
-                    </div>
-                    {/* Side-by-side: bigger Lumi + bold feature boxes */}
-                    <div style={{ display:'flex', alignItems:'flex-end', padding:'0 1.25rem 0', gap:12 }}>
-                      <div style={{ width:100, flexShrink:0, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-                        <img src={lumi15Img} alt="Lumi" style={{ width:'auto', height:132, objectFit:'contain', display:'block' }} />
-                      </div>
-                      <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6, paddingBottom:'0.75rem', paddingTop:'0.25rem' }}>
-                        {[
-                          `${(itin?.days||[]).reduce((a,d)=>a+(d.activities||[]).length,0)} activities, ${days} day${days>1?'s':''}`,
-                          'Live local clock',
-                          'Local life guide',
-                        ].map((f, i) => (
-                          <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'8px 10px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4' }}>
-                            <svg width="8" height="8" viewBox="0 0 12 10" fill="none" style={{ flexShrink:0 }}><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                            <span style={{ fontSize:11.5, color:'#1C1410', lineHeight:1.4, fontWeight:700 }}>{f}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                    {/* CTA */}
-                    <div style={{ padding:'0 1.25rem 1.25rem' }}>
-                      <button
-                        onClick={() => { try { localStorage.setItem(WELCOME_SHOWN_KEY, '1'); } catch { /* ignore */ } setShowWelcomePopup(false); }}
-                        style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', color: '#fff', boxShadow: '0 4px 16px rgba(255,106,0,0.3)' }}
-                      >
-                        Let's explore 🗺️
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-
               {/* ── Hero ── */}
               <div
                 className="itin-hero-card"
@@ -1485,10 +1407,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                     </svg>
                   </button>
                 )}
-                {/* ⓘ Lumi info button — top-right of hero */}
-                <button onClick={() => setShowWelcomePopup(true)} title="About this planner" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'none', background:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:3, padding:0 }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                </button>
               </div>
 
               {/* ── Tips bottom-sheet popup ── */}
