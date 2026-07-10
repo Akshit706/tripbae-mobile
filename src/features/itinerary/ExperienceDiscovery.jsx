@@ -96,22 +96,19 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
 ══════════════════════════════════════════ */
 function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex, onPointerDown, destination }) {
   const cfg = catCfg(exp.category);
-  const likeOpacity = isTop && isDragging ? Math.max(0, Math.min(1, dragX / 65)) : 0;
-  const passOpacity = isTop && isDragging ? Math.max(0, Math.min(1, -dragX / 65)) : 0;
-  const rotation    = isTop ? dragX * 0.055 : 0;
+  // Stamps: visible during drag AND during the fly-out transition
+  const likeOpacity = isTop && (isDragging || swipeOut === 'right') ? Math.max(0, Math.min(1, dragX / 65)) : 0;
+  const passOpacity = isTop && (isDragging || swipeOut === 'left')  ? Math.max(0, Math.min(1, -dragX / 65)) : 0;
+  const rotation    = isTop ? Math.max(-34, Math.min(34, dragX * 0.055)) : 0;
   const stackScale  = 1 - stackIndex * 0.044;
   const stackY      = stackIndex * 13;
   const zIdx        = 10 - stackIndex;
 
-  let flyAnim;
-  if (isTop && swipeOut === 'right') flyAnim = 'edFlyRight 0.30s cubic-bezier(0.25,0.85,0.15,1) forwards';
-  if (isTop && swipeOut === 'left')  flyAnim = 'edFlyLeft  0.30s cubic-bezier(0.25,0.85,0.15,1) forwards';
-
-  const transform = isTop && !swipeOut
-    ? `translateX(${dragX}px) translateY(${dragY * 0.18}px) rotate(${rotation}deg) translateZ(0)`
-    : !isTop
+  // Always use dragX for the top card's transform — fly-out is driven by a state update,
+  // not a CSS keyframe, so the card continues from wherever the user released.
+  const transform = !isTop
     ? `scale(${stackScale}) translateY(${stackY}px) translateZ(0)`
-    : undefined;
+    : `translateX(${dragX}px) translateY(${swipeOut ? 0 : dragY * 0.18}px) rotate(${rotation}deg) translateZ(0)`;
 
   return (
     <div
@@ -123,10 +120,14 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
           ? `0 ${8 + Math.abs(dragX) * 0.05}px ${30 + Math.abs(dragX) * 0.12}px rgba(28,20,16,0.18)`
           : '0 3px 14px rgba(28,20,16,0.09)',
         transform, zIndex: zIdx,
-        transition: isDragging || swipeOut
+        // dragging: no transition (direct tracking)
+        // fly-out:  fast ease-in so it accelerates off screen from current position
+        // snap-back: spring ease for settling back to centre
+        transition: isDragging
           ? 'none'
-          : 'transform 0.42s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.22s ease',
-        animation: flyAnim,
+          : swipeOut
+          ? 'transform 0.30s cubic-bezier(0.4,0,1,1), box-shadow 0.20s ease'
+          : 'transform 0.44s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.22s ease',
         cursor: isTop ? (isDragging ? 'grabbing' : 'grab') : 'default',
         userSelect: 'none', WebkitUserSelect: 'none',
         touchAction: 'pan-y', willChange: 'transform',
@@ -248,13 +249,21 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   const availableCats = ALL_CATS.filter(c => experiences.some(e => e.category === c));
 
   /* ── Swipe action ───────────────────────────────────── */
-  const doSwipe = (dir) => {
+  const doSwipe = (dir, startX = 0) => {
     if (swipeOut || total === 0) return;
-    const exp = filteredExp[0]; // top card is always filteredExp[0]
+    const exp = filteredExp[0];
     if (!exp) return;
+    // Project the card off-screen continuing from its current drag position
+    const screenW = typeof window !== 'undefined' ? window.innerWidth : 420;
+    const flyX = dir === 'right'
+      ? Math.max(startX, screenW * 1.25)
+      : Math.min(startX, -screenW * 1.25);
     setSwipeOut(dir);
+    setDragX(flyX);   // transition (not keyframe) carries it off from startX → flyX
+    setDragY(0);
+    lastDragXRef.current = flyX;
     setTimeout(() => {
-      setSwipedIds(prev => new Set([...prev, exp.id])); // mark swiped — won't show in any filter again
+      setSwipedIds(prev => new Set([...prev, exp.id]));
       if (dir === 'right') setLikedIds(prev => new Set([...prev, exp.id]));
       setSwipeOut(null);
       setDragX(0);
@@ -312,15 +321,15 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       pointerStart.current = null;
       return;
     }
-    const dx = lastDragXRef.current;
-    const vx = pointerStart.current?.vx || 0; // px/ms
+    const dx = lastDragXRef.current; // sync ref — always current even if rAF hasn't flushed
+    const vx = pointerStart.current?.vx || 0;
     setIsDragging(false);
     pointerStart.current = null;
-    lastDragXRef.current = 0;
+    // Keep lastDragXRef intact so doSwipe can read the real position
     // Trigger on distance ≥ 55 OR flick (|vx| ≥ 0.35 px/ms with some displacement)
-    if      (dx >  55 || (vx >  0.35 && dx >  25)) doSwipe('right');
-    else if (dx < -55 || (vx < -0.35 && dx < -25)) doSwipe('left');
-    else { setDragX(0); setDragY(0); }
+    if      (dx >  55 || (vx >  0.35 && dx >  25)) { lastDragXRef.current = 0; doSwipe('right', dx); }
+    else if (dx < -55 || (vx < -0.35 && dx < -25)) { lastDragXRef.current = 0; doSwipe('left',  dx); }
+    else { lastDragXRef.current = 0; setDragX(0); setDragY(0); }
   };
 
   const handlePointerCancel = () => {

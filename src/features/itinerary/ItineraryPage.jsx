@@ -787,7 +787,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     try {
       const saved = localStorage.getItem(`tb_itab_${trip.id}`);
       if (saved === 'itinerary' && trip._cachedItin) return 'itinerary';
-      if (saved === 'nearby') return 'nearby';
+      // 'nearby' is not restored — Day Planner is always the entry point
     } catch { /* ignore */ }
     return 'planner';
   });
