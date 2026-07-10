@@ -892,32 +892,46 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
 
       {/* ── Action buttons ── */}
       {!allSwiped && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, marginTop: 18 }}>
-          {/* Pass */}
-          <button
-            className="ed-pass-btn"
-            onClick={() => doSwipe('left')}
-            disabled={!!swipeOut}
-            style={{ width: 60, height: 60, borderRadius: '50%', border: '2px solid rgba(239,68,68,0.22)', background: '#FFF5F5', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(239,68,68,0.10)', opacity: swipeOut ? 0.4 : 1 }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-
-          {/* Center: destination hint */}
-          <div style={{ textAlign: 'center', flex: 1 }}>
-            <div style={{ fontSize: 12, color: D.gold, fontWeight: 700, fontFamily: "'DM Sans',sans-serif" }}>{destination}</div>
-            <div style={{ fontSize: 10, color: D.muted, marginTop: 2 }}>swipe to explore</div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginTop: 16, gap: 10 }}>
+          {/* Swipe hint + dots */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+            <svg width="14" height="9" viewBox="0 0 14 9" fill="none"><path d="M1 8L7 2L13 8" stroke={D.muted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+              {filteredExp.slice(0, 5).map((_, i) => (
+                <div key={i} style={{ width: i === 0 ? 16 : 6, height: 6, borderRadius: 999, background: i === 0 ? D.espresso : 'rgba(28,20,16,0.15)', transition: 'all 0.2s ease' }} />
+              ))}
+            </div>
+            <div style={{ fontSize: 11, color: D.muted, fontFamily: "'DM Sans',sans-serif", letterSpacing: 0.2 }}>Swipe to explore more</div>
           </div>
 
-          {/* Like */}
-          <button
-            className="ed-like-btn"
-            onClick={() => doSwipe('right')}
-            disabled={!!swipeOut}
-            style={{ width: 60, height: 60, borderRadius: '50%', border: '2px solid rgba(34,197,94,0.3)', background: '#F0FDF4', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'edBtnGlow 2.5s ease-in-out infinite', boxShadow: '0 4px 16px rgba(34,197,94,0.18)', opacity: swipeOut ? 0.4 : 1 }}
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="#22C55E" stroke="#22C55E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          </button>
+          {/* Buttons row */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center', gap: 48 }}>
+            {/* Skip */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <button
+                className="ed-pass-btn"
+                onClick={() => doSwipe('left')}
+                disabled={!!swipeOut}
+                style={{ width: 64, height: 64, borderRadius: '50%', border: '1.5px solid rgba(28,20,16,0.12)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(28,20,16,0.09)', opacity: swipeOut ? 0.4 : 1 }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={D.espresso} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <span style={{ fontSize: 11, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Skip</span>
+            </div>
+
+            {/* Like */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+              <button
+                className="ed-like-btn"
+                onClick={() => doSwipe('right')}
+                disabled={!!swipeOut}
+                style={{ width: 64, height: 64, borderRadius: '50%', border: '1.5px solid rgba(28,20,16,0.12)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(28,20,16,0.09)', opacity: swipeOut ? 0.4 : 1 }}
+              >
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#F43F5E" stroke="#F43F5E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+              </button>
+              <span style={{ fontSize: 11, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Like</span>
+            </div>
+          </div>
         </div>
       )}
 
