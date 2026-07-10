@@ -435,7 +435,13 @@ function HotelPhotoSlideshow({ hotel, destination, stCfg }) {
    STAYS SECTION
 ════════════════════════════════════════ */
 function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount }) {
-  if (!hotels.length) return null;
+  if (!hotels.length) return (
+    <div style={{ textAlign:'center', padding:'2.5rem 1rem', background:D.surface, borderRadius:16, border:`0.5px solid ${D.border}`, boxShadow:D.shadow }}>
+      <div style={{ fontSize:32, marginBottom:10 }}>🏨</div>
+      <div style={{ fontSize:13, fontWeight:700, color:D.espresso, marginBottom:6, fontFamily:"'Sora',sans-serif" }}>No stays found</div>
+      <div style={{ fontSize:12, color:D.muted, lineHeight:1.6 }}>We couldn’t find accommodation data for this destination right now. Try refreshing or check back shortly.</div>
+    </div>
+  );
   const STAYS_ICON = <><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>;
 
   return (
@@ -515,7 +521,13 @@ function StaysSection({ hotels, destination, filtered, onOpenFilter, filterCount
    HOSPITALS SECTION
 ════════════════════════════════════════ */
 function HealthcareSection({ hospitals, shown, onOpenFilter, filterCount }) {
-  if (!hospitals.length) return null;
+  if (!hospitals.length) return (
+    <div style={{ textAlign:'center', padding:'2rem 1rem', background:D.surface, borderRadius:16, border:`0.5px solid ${D.border}`, boxShadow:D.shadow }}>
+      <div style={{ fontSize:32, marginBottom:10 }}>🏥</div>
+      <div style={{ fontSize:13, fontWeight:700, color:D.espresso, marginBottom:6, fontFamily:"'Sora',sans-serif" }}>No healthcare data found</div>
+      <div style={{ fontSize:12, color:D.muted, lineHeight:1.6 }}>We couldn’t locate nearby hospitals or clinics for this destination right now.</div>
+    </div>
+  );
   const HOSP_ICON = <><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></>;
 
   return (
@@ -595,7 +607,13 @@ function HealthcareSection({ hospitals, shown, onOpenFilter, filterCount }) {
    RENTALS SECTION
 ════════════════════════════════════════ */
 function RentalsSection({ rentals, shown, onOpenFilter, filterCount }) {
-  if (!rentals.length) return null;
+  if (!rentals.length) return (
+    <div style={{ textAlign:'center', padding:'2rem 1rem', background:D.surface, borderRadius:16, border:`0.5px solid ${D.border}`, boxShadow:D.shadow }}>
+      <div style={{ fontSize:32, marginBottom:10 }}>🚗</div>
+      <div style={{ fontSize:13, fontWeight:700, color:D.espresso, marginBottom:6, fontFamily:"'Sora',sans-serif" }}>No rental data found</div>
+      <div style={{ fontSize:12, color:D.muted, lineHeight:1.6 }}>We couldn’t find car, bike, or scooter rental services for this destination right now.</div>
+    </div>
+  );
   const RENTAL_ICON = <><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></>;
 
   return (
@@ -774,19 +792,19 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
           <div style={{ fontSize:12,color:'rgba(255,255,255,0.58)',lineHeight:1.6 }}>
             Stays · Healthcare · Rentals — all in one place
           </div>
-          {/* Stat buttons — full width, click to scroll to section */}
+          {/* Stat buttons — always visible, click to switch section */}
           <div style={{ display:'flex', gap:8, marginTop:14 }}>
             {[
               { n: hotels.length,    label:'stays',      key:'stays' },
               { n: hospitals.length, label:'healthcare', key:'healthcare' },
               { n: rentals.length,   label:'rentals',    key:'rentals' },
-            ].map(({ n, label, key }) => n > 0 && (
+            ].map(({ n, label, key }) => (
               <button
                 key={key}
                 onClick={() => switchTab(key)}
                 style={{ flex:1, background: activeTab === key ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.13)', border: activeTab === key ? '1.5px solid rgba(255,255,255,0.65)' : '0.5px solid rgba(255,255,255,0.22)', backdropFilter:'blur(6px)', borderRadius:999, padding:'5px 8px', display:'flex', gap:5, alignItems:'center', justifyContent:'center', cursor:'pointer', transition:'all 0.2s ease' }}
               >
-                <span style={{ fontSize:13, fontWeight:800, color:'#fff' }}>{n}</span>
+                <span style={{ fontSize:13, fontWeight:800, color:'#fff' }}>{n > 0 ? n : '—'}</span>
                 <span style={{ fontSize:11, color: activeTab === key ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.7)' }}>{label}</span>
               </button>
             ))}
