@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { PlacePhotoCarousel } from '../media/PlaceMedia';
 import lumi11Img from '../../assets/lumi11.png';
 import lumi15Img from '../../assets/lumi15.png';
+import lumi17Img from '../../assets/lumi17.png';
 import lumi5Img from '../../assets/lumi5_bgless.png';
 
 /* ── Design tokens (matches ItineraryPage) ───────────────── */
