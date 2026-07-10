@@ -70,8 +70,8 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
   const el = document.createElement('style');
   el.id = 'exp-disc-styles';
   el.textContent = `
-    @keyframes edFlyRight { to { transform: translateX(130vw) rotate(26deg); opacity: 0; } }
-    @keyframes edFlyLeft  { to { transform: translateX(-130vw) rotate(-26deg); opacity: 0; } }
+    @keyframes edFlyRight { to { transform: translateX(140vw) rotate(28deg); opacity: 0; } }
+    @keyframes edFlyLeft  { to { transform: translateX(-140vw) rotate(-28deg); opacity: 0; } }
     @keyframes edFadeUp   { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes edLumiFloat{ 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
     @keyframes edPulseDot { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.3); opacity: 0.7; } }
@@ -104,13 +104,13 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
   const zIdx        = 10 - stackIndex;
 
   let flyAnim;
-  if (isTop && swipeOut === 'right') flyAnim = 'edFlyRight 0.38s cubic-bezier(0.2,0.7,0.2,1) forwards';
-  if (isTop && swipeOut === 'left')  flyAnim = 'edFlyLeft  0.38s cubic-bezier(0.2,0.7,0.2,1) forwards';
+  if (isTop && swipeOut === 'right') flyAnim = 'edFlyRight 0.30s cubic-bezier(0.25,0.85,0.15,1) forwards';
+  if (isTop && swipeOut === 'left')  flyAnim = 'edFlyLeft  0.30s cubic-bezier(0.25,0.85,0.15,1) forwards';
 
   const transform = isTop && !swipeOut
-    ? `translateX(${dragX}px) translateY(${dragY * 0.2}px) rotate(${rotation}deg)`
+    ? `translateX(${dragX}px) translateY(${dragY * 0.18}px) rotate(${rotation}deg) translateZ(0)`
     : !isTop
-    ? `scale(${stackScale}) translateY(${stackY}px)`
+    ? `scale(${stackScale}) translateY(${stackY}px) translateZ(0)`
     : undefined;
 
   return (
@@ -125,7 +125,7 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
         transform, zIndex: zIdx,
         transition: isDragging || swipeOut
           ? 'none'
-          : 'transform 0.38s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.22s ease',
+          : 'transform 0.42s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.22s ease',
         animation: flyAnim,
         cursor: isTop ? (isDragging ? 'grabbing' : 'grab') : 'default',
         userSelect: 'none', WebkitUserSelect: 'none',
@@ -214,6 +214,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
 
   const pointerStart = useRef(null);
   const lastDragXRef = useRef(0);
+  const rafRef       = useRef(null);
 
   const destination = trip.destination || '';
   const days = (trip.arrival && trip.departure)
@@ -259,14 +260,13 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       setDragX(0);
       setDragY(0);
       lastDragXRef.current = 0;
-    }, 400);
+    }, 330);
   };
 
   /* ── Pointer handlers ───────────────────────────────── */
   const handlePointerDown = (e) => {
     if (swipeOut) return;
-    // Store start position but don't capture yet — wait to confirm horizontal direction
-    pointerStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId, locked: false };
+    pointerStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId, locked: false, lastX: e.clientX, lastT: Date.now(), vx: 0 };
   };
 
   const handlePointerMove = (e) => {
@@ -277,39 +277,54 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     if (!pointerStart.current.locked) {
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
-      if (absX < 6 && absY < 6) return; // not enough movement yet
+      if (absX < 4 && absY < 4) return;
       if (absY > absX) {
-        // Vertical scroll intent — abandon swipe gesture
         pointerStart.current = null;
         setIsDragging(false);
         return;
       }
-      // Horizontal swipe confirmed — capture pointer on this container
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
       pointerStart.current = { ...pointerStart.current, locked: true };
       setIsDragging(true);
     }
 
+    // Track instantaneous velocity (px/ms) for flick detection
+    const now = Date.now();
+    const dt = now - pointerStart.current.lastT;
+    const vx = dt > 0 ? (e.clientX - pointerStart.current.lastX) / dt : 0;
+    pointerStart.current = { ...pointerStart.current, lastX: e.clientX, lastT: now, vx };
+
     lastDragXRef.current = dx;
-    setDragX(dx);
-    setDragY(dy);
+
+    // Batch DOM updates to the next animation frame for silky rendering
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    const snapDx = dx, snapDy = dy;
+    rafRef.current = requestAnimationFrame(() => {
+      setDragX(snapDx);
+      setDragY(snapDy);
+      rafRef.current = null;
+    });
   };
 
   const handlePointerUp = () => {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     if (!isDragging) {
       pointerStart.current = null;
       return;
     }
     const dx = lastDragXRef.current;
+    const vx = pointerStart.current?.vx || 0; // px/ms
     setIsDragging(false);
     pointerStart.current = null;
     lastDragXRef.current = 0;
-    if (dx > 80) doSwipe('right');
-    else if (dx < -80) doSwipe('left');
+    // Trigger on distance ≥ 55 OR flick (|vx| ≥ 0.35 px/ms with some displacement)
+    if      (dx >  55 || (vx >  0.35 && dx >  25)) doSwipe('right');
+    else if (dx < -55 || (vx < -0.35 && dx < -25)) doSwipe('left');
     else { setDragX(0); setDragY(0); }
   };
 
   const handlePointerCancel = () => {
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
     setIsDragging(false);
     pointerStart.current = null;
     lastDragXRef.current = 0;

@@ -804,13 +804,6 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
           onOpenFilter={()=>openFilter('rentals')} filterCount={rentalFilterCount} />}
       </div>
 
-      {!data?.fromCache && (
-        <div style={{ display:'flex',gap:9,alignItems:'flex-start',background:D.surface,border:`0.5px solid ${D.border}`,borderLeft:`3px solid ${ac}`,borderRadius:12,padding:'11px 13px',fontSize:11.5,color:D.muted,lineHeight:1.6,marginTop:12 }}>
-          <span style={{ fontSize:16,flexShrink:0 }}>✅</span>
-          <span>Fresh data for {disp} saved to Supabase — every user loads this instantly.</span>
-        </div>
-      )}
-
       <FilterModal
         open={filterSection !== null} onClose={()=>setFilterSection(null)}
         section={filterSection}

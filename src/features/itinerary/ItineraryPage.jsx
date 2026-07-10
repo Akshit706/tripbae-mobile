@@ -1940,7 +1940,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         </div>
       )}
 
-      {iTab === 'nearby' && (
+      <div style={{ display: iTab === 'nearby' ? 'block' : 'none' }}>
         <RecommendationsPage
           destination={form.dest}
           isSolo={isSolo}
@@ -1953,7 +1953,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               .catch(() => setNearbyStep('error'));
           }}
         />
-      )}
+      </div>
     </div>
   );
 }
