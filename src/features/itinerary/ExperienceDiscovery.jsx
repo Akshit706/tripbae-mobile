@@ -632,37 +632,38 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       <div style={{ background: D.bg, paddingBottom: '2rem', animation: 'edConfirmIn 0.38s ease both' }}>
 
         {/* Hero banner — animated with integrated gauge */}
-        <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF7A28 45%,#FF8C3B 100%)', borderRadius: 22, padding: '1.3rem 1.4rem 1.25rem', marginBottom: '1.1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 8px 32px rgba(255,106,0,0.38)' }}>
+        <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF7A28 45%,#FF8C3B 100%)', borderRadius: 18, padding: '0.85rem 1.1rem', marginBottom: '1.1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 6px 24px rgba(255,106,0,0.35)' }}>
           {/* shimmer sweep */}
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.1) 50%,transparent 65%)', animation: 'ctaShimmer 3.5s ease-in-out infinite 1.2s', pointerEvents: 'none' }} />
-          {/* soft radial glow top-right */}
-          <div style={{ position: 'absolute', top: -30, right: -20, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', pointerEvents: 'none' }} />
-          <img src={lumi20Img} alt="" style={{ position: 'absolute', bottom: 0, right: 6, height: 90, width: 'auto', objectFit: 'contain', opacity: 0.97 }} />
-          <div style={{ position: 'relative', zIndex: 1, maxWidth: '64%' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.18)', borderRadius: 999, padding: '3px 10px', marginBottom: 9 }}>
-              <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff', animation: 'edPulseDot 1.6s ease-in-out infinite' }} />
-              <span style={{ fontSize: 9.5, fontWeight: 700, color: '#fff', letterSpacing: 1.4, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>Your Picks</span>
-            </div>
-            <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.15, marginBottom: 3, letterSpacing: -0.3 }}>
-              {likedExps.length} <span style={{ fontSize: 14, fontWeight: 600, opacity: 0.82 }}>experience{likedExps.length !== 1 ? 's' : ''}</span>
-            </div>
-            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.82)', lineHeight: 1.5, marginBottom: 12, fontFamily: "'DM Sans',sans-serif" }}>
-              ~{Math.round(selectedHours)}h · {days} day{days > 1 ? 's' : ''} trip
-            </div>
-            {/* Integrated time gauge */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 10.5, fontWeight: 600, color: 'rgba(255,255,255,0.78)', fontFamily: "'DM Sans',sans-serif" }}>Activity coverage</span>
-                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#fff', fontFamily: "'DM Sans',sans-serif" }}>{Math.round(selectedHours)}h / {tripActiveHours}h</span>
+          {/* soft radial glow */}
+          <div style={{ position: 'absolute', top: -20, right: -10, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.09)', pointerEvents: 'none' }} />
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 12, position: 'relative', zIndex: 1 }}>
+            {/* Lumi on left */}
+            <img src={lumi20Img} alt="" style={{ height: 68, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
+            {/* Content on right */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.18)', borderRadius: 999, padding: '2px 8px', marginBottom: 5 }}>
+                <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#fff', animation: 'edPulseDot 1.6s ease-in-out infinite' }} />
+                <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', letterSpacing: 1.2, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>Your Picks</span>
               </div>
-              <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', width: `${Math.min(100, hoursRatio * 100)}%`, borderRadius: 999, background: isOver ? 'rgba(255,220,170,0.95)' : 'rgba(255,255,255,0.9)', transition: 'width 0.8s cubic-bezier(0.2,0.7,0.2,1)', boxShadow: '0 0 8px rgba(255,255,255,0.45)' }} />
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.15, marginBottom: 9, letterSpacing: -0.3 }}>
+                {likedExps.length} <span style={{ fontSize: 13, fontWeight: 600, opacity: 0.82 }}>experience{likedExps.length !== 1 ? 's' : ''}</span>
               </div>
-              {isOver && (
-                <div style={{ marginTop: 7, fontSize: 10.5, color: 'rgba(255,255,255,0.88)', lineHeight: 1.55, fontFamily: "'DM Sans',sans-serif" }}>
-                  ✦ Over capacity — Lumi will optimise & prioritise for you!
+              {/* Integrated time gauge */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, alignItems: 'center' }}>
+                  <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans',sans-serif" }}>Activity coverage</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', fontFamily: "'DM Sans',sans-serif" }}>{Math.round(selectedHours)}h / {tripActiveHours}h</span>
                 </div>
-              )}
+                <div style={{ height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${Math.min(100, hoursRatio * 100)}%`, borderRadius: 999, background: isOver ? 'rgba(255,220,170,0.95)' : 'rgba(255,255,255,0.9)', transition: 'width 0.8s cubic-bezier(0.2,0.7,0.2,1)', boxShadow: '0 0 6px rgba(255,255,255,0.4)' }} />
+                </div>
+                {isOver && (
+                  <div style={{ marginTop: 5, fontSize: 10, color: 'rgba(255,255,255,0.88)', lineHeight: 1.5, fontFamily: "'DM Sans',sans-serif" }}>
+                    ✦ Over capacity — Lumi will optimise for you!
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
