@@ -829,7 +829,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [step, setStep] = useState(trip._cachedItin ? 'result' : 'discover');
   const [itin, setItin] = useState(trip._cachedItin?.itinerary || null);
   const [sources, setSources] = useState(trip._cachedItin?.sources || []);
-  const [lastSelectedExps, setLastSelectedExps] = useState([]);
+  const [lastSelectedExps, setLastSelectedExps] = useState(trip._cachedItin?.selectedExps || []);
   const [showSelectionsSheet, setShowSelectionsSheet] = useState(false);
   const [sheetExps, setSheetExps] = useState([]);
   const [modifyExps, setModifyExps] = useState(null);
@@ -914,7 +914,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       setStep('result');
       setITab('itinerary'); // auto-switch to Itinerary tab
       // ── Save back to parent trips state so it persists across tab switches ──
-      onCacheUpdate?.({ _cachedItin: result });
+      onCacheUpdate?.({ _cachedItin: { ...result, selectedExps: selectedExperiences || [] } });
     } catch {
       setStep('error');
     }
@@ -1137,23 +1137,23 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
               {/* ── Orange header card with lumi21 ── */}
               <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF8C3B 100%)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 6px 28px rgba(255,106,0,0.32)', marginBottom: '1rem', display: 'flex', alignItems: 'flex-end', minHeight: 120 }}>
-                {/* Lumi on the left */}
-                <img src={lumi21Img} alt="Lumi" style={{ height: 118, width: 'auto', objectFit: 'contain', flexShrink: 0, display: 'block' }} />
+                {/* Lumi on the left — fixed narrow width so content gets enough space */}
+                <img src={lumi21Img} alt="Lumi" style={{ width: 88, height: 'auto', maxHeight: 120, objectFit: 'contain', objectPosition: 'bottom', flexShrink: 0, display: 'block', alignSelf: 'flex-end' }} />
                 {/* Content right */}
-                <div style={{ flex: 1, padding: '1rem 1rem 1rem 0.5rem' }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.72)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 3, fontFamily: "'DM Sans',sans-serif" }}>ITINERARY READY</div>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 2 }}>{days} day{days>1?'s':''} in {form.dest}</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.82)', marginBottom: 10, fontFamily: "'DM Sans',sans-serif" }}>{(itin.days||[]).reduce((a,d)=>a+(d.activities||[]).length,0)} activities planned</div>
+                <div style={{ flex: 1, padding: '0.8rem 0.9rem 0.8rem 0.5rem', minWidth: 0 }}>
+                  <div style={{ fontSize: 8.5, fontWeight: 700, color: 'rgba(255,255,255,0.72)', textTransform: 'uppercase', letterSpacing: 1.6, marginBottom: 3, fontFamily: "'DM Sans',sans-serif" }}>ITINERARY READY</div>
+                  <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.25, marginBottom: 2 }}>{days} day{days>1?'s':''} in {form.dest}</div>
+                  <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.82)', marginBottom: 10, fontFamily: "'DM Sans',sans-serif" }}>{(itin.days||[]).reduce((a,d)=>a+(d.activities||[]).length,0)} activities planned</div>
                   {/* Two CTA buttons */}
-                  <div style={{ display: 'flex', gap: 7 }}>
+                  <div style={{ display: 'flex', gap: 6 }}>
                     <button
                       onClick={() => setITab('itinerary')}
-                      style={{ flex: 1, padding: '8px 10px', fontSize: 11.5, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer', background: '#fff', color: '#FF6A00', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 8px rgba(0,0,0,0.12)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      style={{ flex: 1, padding: '7px 6px', fontSize: 11, fontWeight: 700, borderRadius: 10, border: 'none', cursor: 'pointer', background: '#fff', color: '#FF6A00', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 8px rgba(0,0,0,0.12)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
                     >Go to Itinerary →</button>
                     <button
-                      onClick={() => { if (lastSelectedExps.length > 0) { setModifyExps(lastSelectedExps); setStep('discover'); } else { handleRedo(); } }}
-                      style={{ flex: 1, padding: '8px 10px', fontSize: 11.5, fontWeight: 600, borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.5)', cursor: 'pointer', background: 'rgba(255,255,255,0.15)', color: '#fff', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
-                    >✎ Modify Experiences</button>
+                      onClick={() => { setModifyExps(lastSelectedExps.length > 0 ? lastSelectedExps : null); setStep('discover'); }}
+                      style={{ flex: 1, padding: '7px 6px', fontSize: 11, fontWeight: 600, borderRadius: 10, border: '1.5px solid rgba(255,255,255,0.5)', cursor: 'pointer', background: 'rgba(255,255,255,0.15)', color: '#fff', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                    >Modify Experiences</button>
                   </div>
                 </div>
               </div>
@@ -1204,6 +1204,16 @@ function ItineraryPage({ trip, onCacheUpdate }) {
             <>
               {step === 'discover' && (
                 <>
+                  {/* Back button — only shown when in modify mode so user can cancel without rebuilding */}
+                  {modifyExps !== null && (
+                    <button
+                      onClick={() => { setModifyExps(null); setStep('result'); }}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginBottom: 10, padding: '6px 10px', borderRadius: 8, border: '1px solid rgba(28,20,16,0.1)', background: '#fff', color: '#5C504A', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                      Back to Planner
+                    </button>
+                  )}
                   <ExperienceDiscovery
                     trip={trip}
                     modifyExps={modifyExps}
@@ -1264,7 +1274,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               </div>
             </div>
           )}
-          {step === 'result' && itin && (
+          {itin && step !== 'loading' && (
             <div style={{ background: D.bg, paddingBottom: '2.5rem' }}>
 
               {/* ── Hero ── */}
