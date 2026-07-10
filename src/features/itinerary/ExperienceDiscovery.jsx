@@ -476,7 +476,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
   /* ── Build visible card stack ──────────────────────── */
   const visibleCards = filteredExp.slice(0, 3).map((exp, stackIndex) => ({ exp, stackIndex }));
 
-  /* ── Intro overlay (rendered over both loading + swipe phases, one time only) ── */
+  /* ── Intro overlay — shown as a standalone gate on first visit ── */
   const introOverlay = showIntro ? (
     <div
       style={{ position:'fixed', inset:0, background:'rgba(28,20,16,0.55)', backdropFilter:'blur(6px)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.25rem' }}
@@ -563,6 +563,15 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
     </div>
   ) : null;
 
+  /* ── First-time intro gate: show intro before any phase content ── */
+  if (showIntro) {
+    return (
+      <div style={{ background: D.bg, minHeight: 300 }}>
+        {introOverlay}
+      </div>
+    );
+  }
+
   /* ════════════════════════════════════════════
      PHASE: ERROR
   ════════════════════════════════════════════ */
@@ -593,7 +602,6 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
   ════════════════════════════════════════════ */
   if (phase === 'loading') {
     return (
-      <>
       <div style={{ background: D.bg, padding: '2rem 1rem', textAlign: 'center' }}>
         {/* Lumi floating */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
@@ -625,8 +633,6 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
           Skip — auto-generate itinerary instead
         </button>
       </div>
-      {introOverlay}
-      </>
     );
   }
 
@@ -973,107 +979,6 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
         </div>
       )}
 
-      {/* ── one-time intro overlay ── */}
-      {false && (
-        <div
-          style={{ position:'fixed', inset:0, background:'rgba(28,20,16,0.55)', backdropFilter:'blur(6px)', zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.25rem' }}
-          onClick={dismissIntro}
-        >
-          <div
-            style={{ background:'#fff', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:400, boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'lumiExplorePop .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* top orange bar */}
-            <div style={{ height:4, background:'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
-
-            {/* X close */}
-            <button onClick={dismissIntro} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-
-            {/* ── SLIDE 0 ── */}
-            {introStep === 0 && (
-              <div key="es0" style={{ animation:'edSlideNext 0.3s ease both' }}>
-                <div style={{ padding:'1.2rem 1.25rem 0.6rem' }}>
-                  <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
-                    <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
-                    <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
-                  </div>
-                  <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:6 }}>Your Personal Travel Curator</div>
-                  <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62 }}>Your swipes shape your trip. Unlike rigid AI, Lumi crafts a <strong style={{ color:'#1C1410' }}>personalised, flexible itinerary</strong> you can modify anytime.</div>
-                </div>
-                <div style={{ display:'flex', alignItems:'flex-end', padding:'0 1.25rem 0', gap:12 }}>
-                  <div style={{ width:88, flexShrink:0, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-                    <img src={lumi15Img} alt="Lumi" style={{ width:'auto', height:110, objectFit:'contain', display:'block' }} />
-                  </div>
-                  <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6, paddingBottom:'0.7rem', paddingTop:'0.25rem' }}>
-                    {['Built around your tastes', 'Fully modifiable after creation', 'Not a one-size-fits-all AI plan'].map((f, i) => (
-                      <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'7px 10px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.25)', background:'#FFF8F4' }}>
-                        <svg width="8" height="8" viewBox="0 0 12 10" fill="none" style={{ flexShrink:0 }}><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                        <span style={{ fontSize:11, color:'#1C1410', fontWeight:700, lineHeight:1.35, fontFamily:"'DM Sans',sans-serif" }}>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* ── SLIDE 1 ── */}
-            {introStep === 1 && (
-              <div key="es1" style={{ animation:'edSlideNext 0.3s ease both', padding:'1.25rem 1.25rem 0.5rem' }}>
-                <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
-                  <div style={{ width:52, height:52, borderRadius:16, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', border:'1.5px solid rgba(255,106,0,0.2)' }}>
-                    <span style={{ fontSize:26 }}>🗺️</span>
-                  </div>
-                </div>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:6 }}>Your Itinerary = Your Picks</div>
-                <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:12 }}>Every swipe right becomes part of your trip. Lumi balances experiences, meals, and free time — <strong style={{ color:'#1C1410' }}>perfectly tailored to you</strong>.</div>
-                <div style={{ display:'flex', gap:7, flexWrap:'wrap' }}>
-                  {['🏛️ Attractions','🍽️ Food','💎 Hidden Gems','🎯 Adventure','🌙 Nightlife','🌿 Local Life'].map(t => (
-                    <span key={t} style={{ fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:999, background:'#FFF3EB', color:'#FF6A00', border:'1.5px solid rgba(255,106,0,0.22)', fontFamily:"'DM Sans',sans-serif" }}>{t}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* ── SLIDE 2 ── */}
-            {introStep === 2 && (
-              <div key="es2" style={{ animation:'edSlideNext 0.3s ease both', padding:'1.25rem 1.25rem 0.5rem' }}>
-                <div style={{ display:'flex', justifyContent:'center', marginBottom:10 }}>
-                  <div style={{ width:52, height:52, borderRadius:16, background:'#FFF3EB', display:'flex', alignItems:'center', justifyContent:'center', border:'1.5px solid rgba(255,106,0,0.2)' }}>
-                    <span style={{ fontSize:26 }}>📍</span>
-                  </div>
-                </div>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:6 }}>Discover What's Nearby</div>
-                <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:12 }}>Once your itinerary is built, explore a curated <strong style={{ color:'#1C1410' }}>Nearby section</strong> — local gems, hidden cafes, and must-try spots right where you'll be.</div>
-                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                  {['Local shops & cafes near your stay', 'Points of interest on your route', 'Insider picks from local knowledge'].map((f, i) => (
-                    <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'7px 10px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.25)', background:'#FFF8F4' }}>
-                      <svg width="8" height="8" viewBox="0 0 12 10" fill="none" style={{ flexShrink:0 }}><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      <span style={{ fontSize:11, color:'#1C1410', fontWeight:700, lineHeight:1.35, fontFamily:"'DM Sans',sans-serif" }}>{f}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* dots + CTA */}
-            <div style={{ padding:'0.75rem 1.25rem 1.25rem', display:'flex', flexDirection:'column', gap:10, alignItems:'center' }}>
-              <div style={{ display:'flex', gap:7, alignItems:'center' }}>
-                {[0,1,2].map(i => (
-                  <div key={i} style={{ height:6, borderRadius:999, background: i===introStep ? '#FF6A00' : '#FFD4B8', width: i===introStep ? 20 : 6, transition:'all 0.25s cubic-bezier(0.2,0.7,0.2,1)' }} />
-                ))}
-              </div>
-              <button
-                onClick={introStep < 2 ? () => setIntroStep(s => s + 1) : dismissIntro}
-                style={{ width:'100%', padding:'13px', fontSize:14, fontWeight:700, borderRadius:14, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', color:'#fff', boxShadow:'0 4px 16px rgba(255,106,0,0.3)' }}
-              >
-                {introStep < 2 ? 'Next →' : "Let's Explore! 🎉"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
