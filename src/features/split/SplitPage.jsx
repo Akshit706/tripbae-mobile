@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
+import { getFxRate } from '../home/HomePage';
 import { addExpense, updateExpense, deleteExpense } from '../../api';
 import { CATS, normalizeMembers, tripDuration, tripStatusInfo } from '../shared/constants';
 import { S } from '../shared/styles';
@@ -31,6 +32,31 @@ function SplitPage({ trip, myNickname, myAvatar }) {
     try { localStorage.setItem(SPLIT_WELCOME_KEY, '1'); } catch {}
     setShowWelcome(false);
   };
+
+  // ── Multi-currency support ──
+  const SPLIT_CURRENCIES = [
+    { code: 'INR', symbol: '₹' }, { code: 'USD', symbol: '$' }, { code: 'EUR', symbol: '€' },
+    { code: 'GBP', symbol: '£' }, { code: 'JPY', symbol: '¥' }, { code: 'AED', symbol: 'د.إ' },
+    { code: 'AUD', symbol: 'A$' }, { code: 'CAD', symbol: 'C$' }, { code: 'CHF', symbol: 'Fr' },
+    { code: 'CNY', symbol: '¥' }, { code: 'HKD', symbol: 'HK$' }, { code: 'IDR', symbol: 'Rp' },
+    { code: 'KRW', symbol: '₩' }, { code: 'LKR', symbol: 'Rs' }, { code: 'MYR', symbol: 'RM' },
+    { code: 'NPR', symbol: 'रू' }, { code: 'NZD', symbol: 'NZ$' }, { code: 'PKR', symbol: '₨' },
+    { code: 'PHP', symbol: '₱' }, { code: 'SAR', symbol: '﷼' }, { code: 'SGD', symbol: 'S$' },
+    { code: 'THB', symbol: '฿' }, { code: 'TRY', symbol: '₺' }, { code: 'VND', symbol: '₫' },
+    { code: 'ZAR', symbol: 'R' },
+  ];
+  const SPEND_CURRENCY_KEY = `travelbae_split_spendcurrency_${trip.id}`;
+  const [spendCurrency, setSpendCurrency] = useState(() => {
+    try { return localStorage.getItem(SPEND_CURRENCY_KEY) || trip.destinationCurrency || trip.budgetCurrency || 'INR'; } catch { return 'INR'; }
+  });
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
+  const spendMeta = SPLIT_CURRENCIES.find(c => c.code === spendCurrency) || { code: 'INR', symbol: '₹' };
+  const spendSymbol = spendMeta.symbol;
+  const homeCurrencyCode = (() => { try { const r = localStorage.getItem('travelbae_prefs'); return r ? (JSON.parse(r).currency || 'INR') : 'INR'; } catch { return 'INR'; } })();
+  const homeMeta = SPLIT_CURRENCIES.find(c => c.code === homeCurrencyCode) || { code: 'INR', symbol: '₹' };
+  const [fxRate, setFxRate] = useState(null);
+  const [fxLoading, setFxLoading] = useState(false);
+
   const todayStr = new Date().toISOString().split('T')[0];
   const getNow = () => {
     const now = new Date();
@@ -105,6 +131,16 @@ function SplitPage({ trip, myNickname, myAvatar }) {
     return () => clearTimeout(t);
   }, [section, chartReady, expenses, budget]);
 
+  useEffect(() => {
+    if (section !== 'insights' || spendCurrency === homeCurrencyCode) { setFxRate(null); setFxLoading(false); return; }
+    let cancelled = false;
+    setFxLoading(true);
+    getFxRate(spendCurrency, homeCurrencyCode).then(r => {
+      if (!cancelled) { setFxRate(r); setFxLoading(false); }
+    }).catch(() => { if (!cancelled) setFxLoading(false); });
+    return () => { cancelled = true; };
+  }, [section, spendCurrency, homeCurrencyCode]);
+
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const days = tripDuration(trip.arrival, trip.departure);
   const tripStart = new Date(trip.arrival);
@@ -177,11 +213,13 @@ function SplitPage({ trip, myNickname, myAvatar }) {
   const pacePct = plannedDailyBudget ? Math.round((tsr / plannedDailyBudget) * 100) : null;
 
   const funInsightLines = [];
+  const fmt = n => `${spendSymbol}${Math.round(n).toLocaleString('en-IN')}`;
+  const fmtHome = n => `${homeMeta.symbol}${Math.round(n).toLocaleString('en-IN')}`;
   if (expenses.length === 0) {
     funInsightLines.push('No spends yet. Wallets are meditating and UPI is on standby.');
   } else {
     if (daysElapsed >= 2) {
-      funInsightLines.push(`Group TSR is ₹${Math.round(tsr).toLocaleString('en-IN')}/day over ${daysElapsed} day${daysElapsed > 1 ? 's' : ''}.`);
+      funInsightLines.push(`Group TSR is ${fmt(tsr)}/day over ${daysElapsed} day${daysElapsed > 1 ? 's' : ''}.`);
     }
     if (budget && budgetPct <= 60 && daysElapsed >= Math.max(2, Math.round(days * 0.4))) {
       funInsightLines.push('The crew is low-key saving money. This trip has strong middle-class superhero energy.');
@@ -193,16 +231,16 @@ function SplitPage({ trip, myNickname, myAvatar }) {
       funInsightLines.push(`${topPayer} has paid ${topPayerSharePct}% of the bill so far. Main character wallet behavior.`);
     }
     if (topGetsBack) {
-      funInsightLines.push(`${topGetsBack.name} is waiting for ₹${Math.round(topGetsBack.balance).toLocaleString('en-IN')} back. Finance villain origin story loading.`);
+      funInsightLines.push(`${topGetsBack.name} is waiting for ${fmt(topGetsBack.balance)} back. Finance villain origin story loading.`);
     }
     if (topOwes) {
-      funInsightLines.push(`${topOwes.name} currently owes ₹${Math.round(Math.abs(topOwes.balance)).toLocaleString('en-IN')}. Traveling on vibes and pending UPI requests.`);
+      funInsightLines.push(`${topOwes.name} currently owes ${fmt(Math.abs(topOwes.balance))}. Traveling on vibes and pending UPI requests.`);
     }
     if (settlements.length === 0) {
       funInsightLines.push('Plot twist: everyone is settled. This is rarer than finding a clean public washroom on a road trip.');
     }
     if (budget && projected > budget) {
-      funInsightLines.push(`At this pace, the trip may end around ₹${Math.round(projected).toLocaleString('en-IN')} (about ₹${Math.round(projected - budget).toLocaleString('en-IN')} over budget).`);
+      funInsightLines.push(`At this pace, the trip may end around ${fmt(projected)} (about ${fmt(projected - budget)} over budget).`);
     }
   }
   if (funInsightLines.length === 0) {
@@ -222,7 +260,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
         data: {
           datasets: [{ data: [Math.min(total, budget), Math.max(0, budget - total)], backgroundColor: [budgetPct > 85 ? '#D85B00' : '#FF6A00', '#FFF3EB'], borderWidth: 0, hoverOffset: 0 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '74%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataIndex === 0 ? ` Spent: ₹${Math.round(Math.min(total, budget)).toLocaleString('en-IN')}` : ` Left: ₹${Math.round(Math.max(0, budget - total)).toLocaleString('en-IN')}` } } } },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '74%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataIndex === 0 ? ` Spent: ${fmt(Math.min(total, budget))}` : ` Left: ${fmt(Math.max(0, budget - total))}` } } } },
         plugins: [{ id: 'center', afterDraw(chart) { const { ctx, chartArea: { width, height, left, top } } = chart; const cx = left + width / 2, cy = top + height / 2; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '600 17px system-ui'; ctx.fillStyle = '#1a1a18'; ctx.fillText(`${budgetPct}%`, cx, cy - 9); ctx.font = '12px system-ui'; ctx.fillStyle = textColor; ctx.fillText('used', cx, cy + 9); ctx.restore(); } }]
       });
     }
@@ -233,7 +271,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
       chartInstances.current.bar = new window.Chart(barRef.current, {
         type: 'bar',
         data: { labels: activeCats.map(c => c.label), datasets: [{ data: activeCats.map(c => catTotals[c.id]), backgroundColor: activeCats.map(c => BAR_COLORS[c.id] || '#888780'), borderRadius: 6, borderSkipped: false }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ₹${Math.round(ctx.raw).toLocaleString('en-IN')}` } } }, scales: { x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false }, border: { display: false } }, y: { ticks: { color: textColor, font: { size: 11 }, callback: v => `₹${v >= 1000 ? Math.round(v / 1000) + 'k' : v}` }, grid: { color: gridColor }, border: { display: false } } } }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.raw)}` } } }, scales: { x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false }, border: { display: false } }, y: { ticks: { color: textColor, font: { size: 11 }, callback: v => `${spendSymbol}${v >= 1000 ? Math.round(v / 1000) + 'k' : v}` }, grid: { color: gridColor }, border: { display: false } } } }
       });
     }
   }
@@ -357,7 +395,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
         <div style={{ background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .6, textTransform: 'uppercase', marginBottom: 12 }}>How much?</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>₹</span>
+            <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>{spendSymbol}</span>
             <input
               type="number" placeholder="0" value={form.amount}
               onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
@@ -497,7 +535,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                         <span style={{ flex: 1, fontWeight: sel ? 600 : 400 }}>{m}</span>
                         {form.amount && parseFloat(form.amount) > 0 && sel && (
                           <span style={{ fontSize: 12, color: '#6b6b68', marginRight: 8 }}>
-                            ₹{(parseFloat(form.amount) / form.splitWith.length).toFixed(0)}
+                            {spendSymbol}{(parseFloat(form.amount) / form.splitWith.length).toFixed(0)}
                           </span>
                         )}
                         <div style={{ width: 22, height: 22, borderRadius: 7, border: `2px solid ${sel ? '#FF6A00' : '#D3D1C7'}`, background: sel ? '#FF6A00' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, color: '#fff', flexShrink: 0 }}>
@@ -515,7 +553,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                     <div key={m} style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#fff', border: '0.5px solid #FFCBA4', borderRadius: 20, padding: '4px 10px 4px 5px', fontSize: 12 }}>
                       {memberCircle(m, 18, 7)}
                       <span style={{ color: '#444' }}>{m}</span>
-                      <span style={{ color: '#7A2800', fontWeight: 700 }}>₹{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : form.splitWith.length)).toFixed(0)}</span>
+                      <span style={{ color: '#7A2800', fontWeight: 700 }}>{spendSymbol}{(parseFloat(form.amount) / (form.splitMode === 'all' ? memberNames.length : form.splitWith.length)).toFixed(0)}</span>
                     </div>
                   ))}
                 </div>
@@ -538,6 +576,33 @@ function SplitPage({ trip, myNickname, myAvatar }) {
         @keyframes heroNumIn { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
         @keyframes lumiSplitPop{from{opacity:0;transform:scale(0.88) translateY(20px)}60%{transform:scale(1.02) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
       `}</style>
+
+      {/* ── Currency picker ── */}
+      {showCurrencyPicker && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(28,20,16,0.55)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => setShowCurrencyPicker(false)}>
+          <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', padding: '0.75rem 1.25rem 2.5rem', maxHeight: '75vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 40, height: 4, borderRadius: 99, background: '#D3D1C7', margin: '0 auto 1rem' }} />
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: '#1C1410', marginBottom: 3 }}>Spending currency</div>
+            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>All amounts in Split will show in this currency</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+              {SPLIT_CURRENCIES.map(c => {
+                const active = c.code === spendCurrency;
+                return (
+                  <button key={c.code}
+                    onClick={() => { setSpendCurrency(c.code); try { localStorage.setItem(SPEND_CURRENCY_KEY, c.code); } catch {} setShowCurrencyPicker(false); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', borderRadius: 12, border: `1.5px solid ${active ? '#FF6A00' : 'rgba(0,0,0,0.1)'}`, background: active ? '#FFF3EB' : '#fafafa', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", textAlign: 'left' }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: active ? '#FF6A00' : '#374151', minWidth: 24 }}>{c.symbol}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: active ? '#7A2800' : '#374151', flex: 1 }}>{c.code}</span>
+                    {active && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Lumi intro popup (first-time) ── */}
       {showWelcome && (
@@ -609,17 +674,19 @@ function SplitPage({ trip, myNickname, myAvatar }) {
         </button>
         <div style={{ display: 'flex', justifyContent: budget ? 'space-between' : 'center', alignItems: 'flex-start', marginBottom: 12, position: 'relative' }}>
           <div style={{ paddingLeft: budget ? 2 : 0, textAlign: budget ? 'left' : 'center' }}>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5 }}>Total Spent</div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4, fontWeight: 500 }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day · {expenses.length} entries</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 6 }}>Total Spent
+            <button onClick={() => setShowCurrencyPicker(true)} style={{ background: 'rgba(255,255,255,0.2)', border: '0.5px solid rgba(255,255,255,0.35)', borderRadius: 6, color: 'rgba(255,255,255,0.9)', fontSize: 9, fontWeight: 700, padding: '2px 6px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", letterSpacing: .5, lineHeight: 1.4 }}>{spendCurrency}</button>
+          </div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>{fmt(total)}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4, fontWeight: 500 }}>{fmt(tsr)}/day · {expenses.length} entries</div>
           </div>
           {budget && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5 }}>Budget Left</div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#FFD0B0', textShadow: '0 1px 8px rgba(0,0,0,0.15)', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) .1s both' }}>
-                {budgetLeft < 0 ? '-' : ''}₹{Math.abs(Math.round(budgetLeft)).toLocaleString('en-IN')}
+                {budgetLeft < 0 ? '-' : ''}{fmt(Math.abs(budgetLeft))}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of ₹{budget.toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of {fmt(budget)}</div>
             </div>
           )}
         </div>
@@ -651,7 +718,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
       </div>
       {showBudgetEdit && (
         <div style={{ ...S.card, border: '0.5px solid #FFCBA4', background: '#f9fffe', marginBottom: '0.75rem' }}>
-          <label style={S.label}>Total trip budget ₹</label>
+          <label style={S.label}>Total trip budget ({spendCurrency})</label>
           <input style={S.input} type="number" value={budgetInput} onChange={e => setBudgetInput(e.target.value)} placeholder="e.g. 50000" autoFocus />
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <button style={{ ...S.btn, background: 'linear-gradient(135deg,#FF6A00,#D85B00)', color: '#fff', border: '0.5px solid rgba(163,78,0,0.68)', boxShadow: '0 10px 22px rgba(163,78,0,0.24)', flex: 1, justifyContent: 'center', padding: '9px' }}
@@ -749,7 +816,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827' }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827' }}>{fmt(exp.amount)}</div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 5 }}>
                       <button onClick={() => handleEditExpense(exp)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1, fontFamily: "'DM Sans',sans-serif" }}>✎</button>
                       <button onClick={() => handleDelete(exp.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1, opacity: 0.75, fontFamily: "'DM Sans',sans-serif" }}>✕</button>
@@ -768,7 +835,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
           {/* stat strip */}
           <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
             {[
-              { label: 'Total spent', value: `₹${Math.round(total).toLocaleString('en-IN')}`, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> },
+              { label: 'Total spent', value: fmt(total), icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg> },
               { label: 'Members', value: memberNames.length, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> },
               { label: 'Trip days', value: days, icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
             ].map((s, i) => (
@@ -797,10 +864,10 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                   {memberCircle(m, 36, 12, { boxShadow: `0 2px 8px ${mcolor(m)}55` })}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: '#111827' }}>{m}</div>
-                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>paid <span style={{ color: '#374151', fontWeight: 600 }}>₹{Math.round(paid).toLocaleString('en-IN')}</span> · share <span style={{ color: '#374151', fontWeight: 600 }}>₹{Math.round(owes).toLocaleString('en-IN')}</span></div>
+                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 1 }}>paid <span style={{ color: '#374151', fontWeight: 600 }}>{fmt(paid)}</span> · share <span style={{ color: '#374151', fontWeight: 600 }}>{fmt(owes)}</span></div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: isPos ? '#FF6A00' : isNeg ? '#D85B00' : '#6b7280' }}>{isPos ? '+' : isNeg ? '−' : ''}₹{Math.abs(Math.round(net)).toLocaleString('en-IN')}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 800, color: isPos ? '#FF6A00' : isNeg ? '#D85B00' : '#6b7280' }}>{isPos ? '+' : isNeg ? '−' : ''}{fmt(Math.abs(net))}</div>
                     <div style={{ display: 'inline-block', marginTop: 3, fontSize: 10, fontWeight: 600, padding: '2px 7px', borderRadius: 20, background: isPos ? '#FFF3EB' : isNeg ? '#FFF8F4' : '#F3F4F6', color: isPos ? '#FF6A00' : isNeg ? '#D85B00' : '#6b7280' }}>
                       {isPos ? 'gets back' : isNeg ? 'owes' : 'settled ✓'}
                     </div>
@@ -840,7 +907,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                   </div>
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                     <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#FFE9D9)', border: '1px solid rgba(255,106,0,0.18)', borderRadius: 20, padding: '4px 12px', display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: '#FF6A00' }}>₹{Math.round(s.amt).toLocaleString('en-IN')}</span>
+                      <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: '#FF6A00' }}>{fmt(s.amt)}</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, width: '100%' }}>
                       <div style={{ flex: 1, height: 1.5, background: 'linear-gradient(90deg,rgba(255,106,0,0.15),rgba(255,106,0,0.5))' }} />
@@ -906,7 +973,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 800, color: accentColor }}>{isPos ? '+' : isNeg ? '−' : ''}₹{Math.abs(Math.round(b)).toLocaleString('en-IN')}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 800, color: accentColor }}>{isPos ? '+' : isNeg ? '−' : ''}{fmt(Math.abs(b))}</div>
                     <div style={{ marginTop: 4, display: 'inline-block', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, background: accentBg, color: accentColor, border: `1px solid ${accentColor}33` }}>
                       {isPos ? 'gets back' : isNeg ? 'owes' : 'settled ✓'}
                     </div>
@@ -925,8 +992,8 @@ function SplitPage({ trip, myNickname, myAvatar }) {
           {/* stat strip */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
             {[
-              { label: 'Daily rate', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB' },
-              { label: 'Projected', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, sub: budget && projected > budget ? `+₹${Math.round(overBy).toLocaleString('en-IN')} over` : 'on track', color: budget && projected > budget ? '#D85B00' : '#FF8C3A', bg: budget && projected > budget ? '#FFF8F4' : '#FFF3EB' },
+              { label: 'Daily rate', value: fmt(tsr), sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB' },
+              { label: 'Projected', value: fmt(projected), sub: budget && projected > budget ? `+${fmt(overBy)} over` : 'on track', color: budget && projected > budget ? '#D85B00' : '#FF8C3A', bg: budget && projected > budget ? '#FFF8F4' : '#FFF3EB' },
               { label: 'Days left', value: daysLeft, sub: `${daysElapsed}d elapsed`, color: '#6366f1', bg: '#EEF2FF' },
             ].map((s, idx) => (
               <div key={idx} style={{ background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '11px 10px', textAlign: 'center', animation: `soloFadeUp .3s ease-out ${idx * 55}ms both` }}>
@@ -936,6 +1003,30 @@ function SplitPage({ trip, myNickname, myAvatar }) {
               </div>
             ))}
           </div>
+
+          {/* Home currency equivalent */}
+          {spendCurrency !== homeCurrencyCode && (
+            <div style={{ background: '#fff', border: '1px solid rgba(29,158,117,0.22)', borderRadius: 16, padding: '12px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .35s ease-out 70ms both' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>In {homeCurrencyCode} (home)</div>
+                  {fxLoading ? (
+                    <div style={{ fontSize: 13, color: '#9ca3af' }}>Fetching rate…</div>
+                  ) : fxRate !== null ? (
+                    <>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: '#1D9E75' }}>{fmtHome(total * fxRate)}</div>
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>1 {spendCurrency} ≈ {homeMeta.symbol}{fxRate.toFixed(2)} {homeCurrencyCode}</div>
+                    </>
+                  ) : (
+                    <div style={{ fontSize: 12, color: '#9ca3af' }}>Rate unavailable</div>
+                  )}
+                </div>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EBF3EC', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#0F6E56', flexShrink: 0, fontFamily: "'Sora',sans-serif" }}>
+                  {homeMeta.symbol}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Lumi mood card */}
           <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#FFE9D9)', border: '1px solid rgba(255,106,0,0.18)', borderRadius: 20, marginBottom: 12, overflow: 'hidden', animation: 'soloFadeUp .38s ease-out 80ms both' }}>
@@ -958,7 +1049,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
               <div style={{ height: 7, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
                 <div style={{ height: '100%', width: `${Math.min(pacePct, 100)}%`, borderRadius: 99, transition: 'width .6s cubic-bezier(.2,.8,.2,1)', background: pacePct > 115 ? 'linear-gradient(90deg,#D85B00,#FF6A00)' : 'linear-gradient(90deg,#FF6A00,#FF8C3A)' }} />
               </div>
-              <div style={{ fontSize: 11, color: '#9ca3af' }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day actual · ₹{Math.round(plannedDailyBudget).toLocaleString('en-IN')}/day planned</div>
+              <div style={{ fontSize: 11, color: '#9ca3af' }}>{fmt(tsr)}/day actual · {fmt(plannedDailyBudget)}/day planned</div>
             </div>
           )}
 
@@ -968,8 +1059,8 @@ function SplitPage({ trip, myNickname, myAvatar }) {
               <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Budget health</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 {[
-                  { label: 'Trip budget', value: `₹${Math.round(budget).toLocaleString('en-IN')}`, color: '#374151' },
-                  { label: 'Projected end', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, color: projected > budget ? '#D85B00' : '#FF8C3A' },
+                  { label: 'Trip budget', value: fmt(budget), color: '#374151' },
+                  { label: 'Projected end', value: fmt(projected), color: projected > budget ? '#D85B00' : '#FF8C3A' },
                 ].map(s => (
                   <div key={s.label} style={{ background: '#F9F9F8', borderRadius: 12, padding: '9px 11px', border: '1px solid rgba(0,0,0,0.06)' }}>
                     <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, marginBottom: 3 }}>{s.label}</div>
@@ -987,7 +1078,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
                   <div style={{ padding: '9px 11px', background: projected > budget ? '#FFF8F4' : '#FFF3EB', border: `1px solid ${projected > budget ? '#FFCBA4' : '#FFD5A8'}`, borderRadius: 12, fontSize: 12, color: projected > budget ? '#D85B00' : '#FF6A00', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>{projected > budget ? <><path d="M10.3 3.3L2 19h20L13.7 3.3a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></> : <polyline points="20,6 9,17 4,12"/>}</svg>
-                    {projected > budget ? `Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `₹${Math.round(underBy).toLocaleString('en-IN')} under pace`}
+                    {projected > budget ? `Over by ${fmt(overBy)}` : `${fmt(underBy)} under pace`}
                   </div>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>
@@ -1016,7 +1107,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                       <div style={{ width: 30, height: 30, borderRadius: 9, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon id={c.id} size={16} /></div>
                       <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#374151' }}>{c.label}</span>
-                      <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: CAT_COLORS[c.id] || SPLIT_ACCENT }}>₹{Math.round(catTotals[c.id]).toLocaleString('en-IN')}</span>
+                      <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: CAT_COLORS[c.id] || SPLIT_ACCENT }}>{fmt(catTotals[c.id])}</span>
                       <span style={{ fontSize: 11, color: '#9ca3af', width: 28, textAlign: 'right' }}>{pct}%</span>
                     </div>
                     <div style={{ height: 5, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden' }}>
@@ -1048,7 +1139,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: '#111827' }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: '#111827' }}>{fmt(exp.amount)}</div>
                       <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1 }}>{pct}% of total</div>
                     </div>
                   </div>
@@ -1066,14 +1157,14 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
                     <span style={{ fontWeight: 600, color: '#111827' }}>{m}</span>
-                    <span style={{ color: '#6b7280', fontFamily: "'Sora',sans-serif", fontWeight: 600, fontSize: 12 }}>₹{Math.round(payTotal[m] || 0).toLocaleString('en-IN')}</span>
+                    <span style={{ color: '#6b7280', fontFamily: "'Sora',sans-serif", fontWeight: 600, fontSize: 12 }}>{fmt(payTotal[m] || 0)}</span>
                   </div>
                   <div style={{ height: 5, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden' }}>
                     <div style={{ height: '100%', width: `${Math.round((payTotal[m] || 0) / maxPay * 100)}%`, background: `linear-gradient(90deg,${mcolor(m)},${mcolor(m)}cc)`, borderRadius: 99, transition: 'width .5s cubic-bezier(.2,.8,.2,1)' }} />
                   </div>
                 </div>
                 <div style={{ fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20, flexShrink: 0, background: balances[m] >= 0.5 ? '#FFF3EB' : balances[m] <= -0.5 ? '#FFF8F4' : '#F3F4F6', color: balances[m] >= 0.5 ? '#FF6A00' : balances[m] <= -0.5 ? '#D85B00' : '#9ca3af', border: `1px solid ${balances[m] >= 0.5 ? '#FF6A0033' : balances[m] <= -0.5 ? '#D85B0033' : 'transparent'}` }}>
-                  {balances[m] >= 0.5 ? '+' : ''}₹{Math.abs(Math.round(balances[m])).toLocaleString('en-IN')}
+                  {balances[m] >= 0.5 ? '+' : ''}{fmt(Math.abs(balances[m]))}
                 </div>
               </div>
             ))}

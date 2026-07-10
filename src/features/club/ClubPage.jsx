@@ -485,17 +485,14 @@ function ClubPage({ trip, onTripRefresh }) {
       return (iSeen && !tAccepted) ? 1 : 0;
     } catch { return 0; }
   });
-  const [termsChecked, setTermsChecked] = useState(false);
+  const [termsChecked, setTermsChecked] = useState(() => {
+    try { return localStorage.getItem(CLUB_TERMS_KEY) === '1'; } catch { return false; }
+  });
   // clubInfoOnly: opened from ⓘ button — show intro only, never advance to T&C
   const [clubInfoOnly, setClubInfoOnly] = useState(false);
   const advanceClubGate = () => {
     if (clubInfoOnly) { setShowClubGate(false); setClubInfoOnly(false); return; }
-    try { localStorage.setItem(CLUB_INTRO_KEY, '1'); } catch {}
-    if (!localStorage.getItem(CLUB_TERMS_KEY)) {
-      setClubGateStep(1);
-    } else {
-      setShowClubGate(false);
-    }
+    setClubGateStep(1);
   };
   const dismissClubGate = () => {
     try { localStorage.setItem(CLUB_INTRO_KEY, '1'); } catch {}
@@ -503,7 +500,7 @@ function ClubPage({ trip, onTripRefresh }) {
   };
   const acceptClubTerms = () => {
     if (!termsChecked) return;
-    try { localStorage.setItem(CLUB_TERMS_KEY, '1'); } catch {}
+    try { localStorage.setItem(CLUB_TERMS_KEY, '1'); localStorage.setItem(CLUB_INTRO_KEY, '1'); } catch {}
     setShowClubGate(false); setClubInfoOnly(false);
   };
   const openClubInfo = () => { setClubGateStep(0); setClubInfoOnly(true); setShowClubGate(true); };

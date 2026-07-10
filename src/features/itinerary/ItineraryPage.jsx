@@ -1761,122 +1761,167 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                 )}
                               </div>
 
-                              {/* ── Activity card (thumbnail-left layout) ── */}
+                              {/* ── PHOTO-FIRST activity card ── */}
                               <div
                                 className={`itin-card-enter itin-act-enter itin-photo-card ${isActive ? 'itin-live-active-card' : ''}`}
-                                style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}`, borderLeft: `3px solid ${typeAccent}`, minWidth: 0, animationDelay: `${i * 60}ms` }}
+                                style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}`, borderLeft: showPhoto ? `0.5px solid ${D.border}` : `3px solid ${typeAccent}`, minWidth: 0, animationDelay: `${i * 60}ms` }}
                               >
-                                {/* Top row: thumbnail + content + done toggle */}
-                                <div style={{ display: 'flex', gap: 10, padding: '11px 10px 10px 12px', alignItems: 'flex-start' }}>
-                                  {/* Square thumbnail */}
+                                {/* Photo at top (non-hotel/transport only) */}
+                                {showPhoto && (
                                   <div
-                                    style={{ width: 66, height: 66, flexShrink: 0, borderRadius: 10, overflow: 'hidden', position: 'relative', background: D.neutral, cursor: showPhoto ? 'zoom-in' : 'default' }}
-                                    onClick={showPhoto ? (e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }) : undefined}
+                                    style={{ position: 'relative', height: 150, overflow: 'hidden', cursor: 'zoom-in', background: D.neutral }}
+                                    onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}
                                   >
-                                    {showPhoto ? (
-                                      <PlacePhotoCarousel
-                                        query={`${a.name} ${form.dest} photo`}
-                                        style={{ height: 66, borderRadius: 0 }}
-                                        delay={currentDelay}
-                                        limit={3}
-                                        alt={a.name}
-                                        onImageClick={(url) => setLightboxUrl(url)}
-                                      />
-                                    ) : (
-                                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `${typeAccent}18` }}>
-                                        <span style={{ fontSize: 26 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
-                                      </div>
+                                    <PlacePhotoCarousel
+                                      query={`${a.name} ${form.dest} photo`}
+                                      style={{ height: 150, borderRadius: 0 }}
+                                      delay={currentDelay}
+                                      limit={3}
+                                      alt={a.name}
+                                      onImageClick={(url) => setLightboxUrl(url)}
+                                    />
+                                    {/* gradient on photo */}
+                                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(28,20,16,0.62) 100%)', pointerEvents: 'none' }} />
+                                    {/* activity type badge top-left */}
+                                    <div className="itin-float" style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.92)', borderRadius: 10, padding: '3px 9px', display: 'flex', alignItems: 'center', gap: 4, backdropFilter: 'blur(4px)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
+                                      <span style={{ fontSize: 14 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
+                                      <span style={{ fontSize: 10, fontWeight: 700, color: D.espresso, textTransform: 'uppercase', letterSpacing: .5, fontFamily: "'DM Sans',sans-serif" }}>{a.type}</span>
+                                    </div>
+                                    {/* mustDo gold badge top-right */}
+                                    {a.mustDo && (
+                                      <div style={{ position: 'absolute', top: 10, right: 10, background: D.gold, borderRadius: 999, padding: '3px 9px', fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: .6, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 8px rgba(201,145,58,0.45)' }}>★ Must Do</div>
                                     )}
+                                    {/* name overlaid */}
+                                    <div style={{ position: 'absolute', bottom: 10, left: 12, right: 12, pointerEvents: 'none' }}>
+                                      <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 1px 6px rgba(0,0,0,0.5)', fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none' }}>{a.name}</div>
+                                    </div>
+                                    {/* done overlay */}
                                     {isDone && (
-                                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.42)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><polyline points="4,12 9,17 20,7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.48)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(1px)' }}>
+                                        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: '2px solid rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
+                                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                            <polyline points="4,12 9,17 20,7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                          </svg>
+                                        </div>
                                       </div>
                                     )}
                                   </div>
-                                  {/* Content */}
-                                  <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontSize: 14.5, fontWeight: 800, color: isDone ? D.muted : D.espresso, textDecoration: isDone ? 'line-through' : 'none', lineHeight: 1.25, fontFamily: "'Sora',sans-serif", marginBottom: (allTags.length || a.openingHours) ? 5 : 0 }}>{a.name}</div>
-                                    {allTags.length > 0 && (
-                                      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: a.openingHours ? 4 : 0 }}>
-                                        {allTags.map((tag, ti) => {
-                                          const ts = tagStyle(tag, tag === 'MUST DO');
-                                          return <span key={ti} style={{ fontSize: 10, fontWeight: 700, letterSpacing: .5, textTransform: 'uppercase', padding: '2px 8px', borderRadius: 999, background: ts.bg, color: ts.color }}>{tag}</span>;
-                                        })}
-                                      </div>
-                                    )}
-                                    {a.openingHours && (
-                                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                                )}
+
+                                {/* Card body */}
+                                <div style={{ padding: '11px 13px 12px' }}>
+                                  {/* Name row for hotel/transport (no photo) */}
+                                  {!showPhoto && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+                                      <span style={{ fontSize: 18 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
+                                      <span style={{ fontSize: 14, fontWeight: 700, color: isDone ? D.muted : D.espresso, textDecoration: isDone ? 'line-through' : 'none', fontFamily: "'Sora',sans-serif" }}>{a.name}</span>
+                                    </div>
+                                  )}
+
+                                  {/* Tags */}
+                                  {allTags.length > 0 && (
+                                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 7 }}>
+                                      {allTags.map((tag, ti) => {
+                                        const ts = tagStyle(tag, tag === 'MUST DO');
+                                        return <span key={ti} style={{ fontSize: 10, fontWeight: 700, letterSpacing: .7, textTransform: 'uppercase', padding: '2px 9px', borderRadius: 999, background: ts.bg, color: ts.color }}>{tag}</span>;
+                                      })}
+                                    </div>
+                                  )}
+
+                                  {/* Opening hours */}
+                                  {a.openingHours && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
+                                      <span style={{ fontSize: 11 }}>🕐</span>
+                                      <span style={{ fontSize: 11.5, color: D.muted }}>Open {a.openingHours}</span>
+                                      {a.hoursSource === 'verified'  && <span style={{ fontSize: 9, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 4, padding: '1px 5px' }}>✓ verified</span>}
+                                      {a.hoursSource === 'estimated' && <span style={{ fontSize: 9, fontStyle: 'italic', background: '#F4F3FF', color: '#7A6FCF', borderRadius: 4, padding: '1px 5px' }}>Estimated</span>}
+                                    </div>
+                                  )}
+
+                                  {/* Description */}
+                                  {(a.note || a.description) && (
+                                    <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, marginBottom: 7 }}>{a.note || a.description}</div>
+                                  )}
+
+                                  {/* Heads-up warning */}
+                                  {a.headsUp && (
+                                    <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', background: '#FFFBF0', border: '0.5px solid #FAC775', borderRadius: 8, padding: '7px 10px', marginBottom: 7 }}>
+                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                                      <span style={{ fontSize: 11, color: '#7A4F00', lineHeight: 1.5 }}>{a.headsUp}</span>
+                                    </div>
+                                  )}
+
+                                  {/* Meta row */}
+                                  {(a.duration || a.cost || a.area) && (
+                                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 9 }}>
+                                      {a.duration && (
                                         <span style={{ fontSize: 11, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                          {a.openingHours}
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                                          {a.duration}
                                         </span>
-                                        {a.hoursSource === 'verified'  && <span style={{ fontSize: 9, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 4, padding: '1px 5px' }}>✓ verified</span>}
-                                        {a.hoursSource === 'estimated' && <span style={{ fontSize: 9, fontStyle: 'italic', background: '#F4F3FF', color: '#7A6FCF', borderRadius: 4, padding: '1px 5px' }}>Estimated</span>}
-                                      </div>
-                                    )}
-                                  </div>
-                                  {/* Done toggle — inside card, top right */}
-                                  <button
-                                    onClick={() => toggleActivity(doneKey)}
-                                    style={{ flexShrink: 0, width: 26, height: 26, borderRadius: '50%', border: isDone ? 'none' : `1.5px solid ${D.border}`, background: isDone ? accentColor : D.surface, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: isDone ? `0 2px 8px ${accentColor}55` : 'none', transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)', marginTop: 1 }}
-                                  >
-                                    {isDone
-                                      ? <svg width="12" height="12" viewBox="0 0 13 13" fill="none"><polyline points="2.5,6.5 5.5,9.5 10.5,3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                      : <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke={D.border} strokeWidth="1.5"/></svg>
-                                    }
-                                  </button>
+                                      )}
+                                      {a.cost && (
+                                        <span style={{ fontSize: 11, color: D.gold, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                                          {a.cost}
+                                        </span>
+                                      )}
+                                      {a.area && (
+                                        <span style={{ fontSize: 11, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                          {a.area}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+
+                                  {/* Action pills */}
+                                  {a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel' && (
+                                    <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+                                      <a className="itin-action-pill"
+                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
+                                        target="_blank" rel="noreferrer"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#2563AB', background: D.blueTint, borderRadius: 999, padding: '6px 14px', textDecoration: 'none', fontWeight: 600, border: 'none', fontFamily: "'DM Sans',sans-serif" }}
+                                      >
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                        Maps
+                                      </a>
+                                      <a className="itin-action-pill"
+                                        href={`https://www.google.com/search?q=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
+                                        target="_blank" rel="noreferrer"
+                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: D.secondary, background: D.neutral, borderRadius: 999, padding: '6px 14px', textDecoration: 'none', fontWeight: 600, border: 'none', fontFamily: "'DM Sans',sans-serif" }}
+                                      >
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                        Know more
+                                      </a>
+                                    </div>
+                                  )}
                                 </div>
-                                {/* Description + headsUp */}
-                                {(a.note || a.description || a.headsUp) && (
-                                  <div style={{ padding: '0 12px 9px' }}>
-                                    {(a.note || a.description) && (
-                                      <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, marginBottom: a.headsUp ? 7 : 0 }}>{a.note || a.description}</div>
-                                    )}
-                                    {a.headsUp && (
-                                      <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', background: '#FFFBF0', border: '0.5px solid #FAC775', borderRadius: 8, padding: '7px 10px' }}>
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                        <span style={{ fontSize: 11, color: '#7A4F00', lineHeight: 1.5 }}>{a.headsUp}</span>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                                {/* Bottom bar: meta + action links */}
-                                {(a.duration || a.cost || a.area || (a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel')) && (
-                                  <div style={{ borderTop: `1px solid ${D.divider}`, padding: '7px 12px', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    {a.duration && (
-                                      <span style={{ fontSize: 11, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                        {a.duration}
-                                      </span>
-                                    )}
-                                    {a.cost && (
-                                      <span style={{ fontSize: 11, color: D.gold, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                        {a.cost}
-                                      </span>
-                                    )}
-                                    {a.area && (
-                                      <span style={{ fontSize: 11, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                        {a.area}
-                                      </span>
-                                    )}
-                                    {a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel' && (
-                                      <>
-                                        {(a.duration || a.cost || a.area) && <div style={{ width: 1, height: 12, background: D.divider, flexShrink: 0 }} />}
-                                        <a className="itin-action-pill" href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.name} ${form.dest}`)}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: '#2563AB', background: D.blueTint, borderRadius: 999, padding: '4px 11px', textDecoration: 'none', fontWeight: 600 }}>
-                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                          Maps
-                                        </a>
-                                        <a className="itin-action-pill" href={`https://www.google.com/search?q=${encodeURIComponent(`${a.name} ${form.dest}`)}`} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: D.secondary, background: D.neutral, borderRadius: 999, padding: '4px 11px', textDecoration: 'none', fontWeight: 600 }}>
-                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                          Know more
-                                        </a>
-                                      </>
-                                    )}
-                                  </div>
-                                )}
                               </div>
+
+                              {/* Done toggle */}
+                              <button
+                                onClick={() => toggleActivity(doneKey)}
+                                style={{
+                                  flexShrink: 0, alignSelf: 'flex-start', marginTop: 6, marginLeft: 6,
+                                  width: 28, height: 28, borderRadius: '50%',
+                                  border: isDone ? 'none' : `1.5px solid ${D.border}`,
+                                  background: isDone ? accentColor : D.surface,
+                                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  boxShadow: isDone ? `0 2px 8px ${accentColor}55` : 'none',
+                                  transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
+                                }}
+                              >
+                                {isDone ? (
+                                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+                                    <polyline points="2.5,6.5 5.5,9.5 10.5,3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                                  </svg>
+                                ) : (
+                                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                                    <circle cx="6" cy="6" r="5" stroke={D.border} strokeWidth="1.5"/>
+                                  </svg>
+                                )}
+                              </button>
                             </div>
 
                             {/* Transit chip */}
