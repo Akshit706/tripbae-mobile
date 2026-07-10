@@ -4,6 +4,7 @@ import lumi8Img from '../../assets/lumi8.png';
 import lumi11Img from '../../assets/lumi11.png';
 import lumi15Img from '../../assets/lumi15.png';
 import lumi19Img from '../../assets/lumi19.png';
+import lumi20Img from '../../assets/lumi20.png';
 import lumi17Img from '../../assets/lumi17.png';
 import lumi5Img from '../../assets/lumi5_bgless.png';
 
@@ -235,7 +236,7 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
             </span>
           )}
           {exp.bestTime && (
-            <span style={{ fontSize:11, fontWeight:600, color:'#0F6E56', background:'#ECFDF5', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(15,110,86,0.15)', fontFamily:"'DM Sans',sans-serif", flexShrink:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:120 }}>🕐 {exp.bestTime}</span>
+            <span style={{ fontSize:11, fontWeight:600, color:'#5C504A', background:'#F4F2EE', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(28,20,16,0.07)', fontFamily:"'DM Sans',sans-serif", flexShrink:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:120 }}>🕐 {exp.bestTime}</span>
           )}
           {exp.cost && exp.cost !== 'null' && exp.cost !== 'N/A' && (
             <span style={{ fontSize:11, fontWeight:700, color:'#1C1410', background:'#F4F2EE', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(28,20,16,0.1)', fontFamily:"'DM Sans',sans-serif", flexShrink:0, whiteSpace:'nowrap' }}>{exp.cost}</span>
@@ -630,34 +631,40 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     return (
       <div style={{ background: D.bg, paddingBottom: '2rem', animation: 'edConfirmIn 0.38s ease both' }}>
 
-        {/* Hero banner */}
-        <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF8434 55%,#FFA040 100%)', borderRadius: 20, padding: '1.2rem 1.4rem', marginBottom: '1.1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 24px rgba(255,106,0,0.28)' }}>
-          <img src={lumi19Img} alt="" style={{ position: 'absolute', bottom: 0, right: 8, height: 82, width: 'auto', objectFit: 'contain', opacity: 0.95 }} />
-          <div style={{ position: 'relative', zIndex: 1, maxWidth: '62%' }}>
-            <div style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.78)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 5, fontFamily: "'DM Sans',sans-serif" }}>YOUR PICKS</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 6 }}>
-              {likedExps.length} experience{likedExps.length !== 1 ? 's' : ''} ✦
+        {/* Hero banner — animated with integrated gauge */}
+        <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF7A28 45%,#FF8C3B 100%)', borderRadius: 22, padding: '1.3rem 1.4rem 1.25rem', marginBottom: '1.1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 8px 32px rgba(255,106,0,0.38)' }}>
+          {/* shimmer sweep */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(105deg,transparent 35%,rgba(255,255,255,0.1) 50%,transparent 65%)', animation: 'ctaShimmer 3.5s ease-in-out infinite 1.2s', pointerEvents: 'none' }} />
+          {/* soft radial glow top-right */}
+          <div style={{ position: 'absolute', top: -30, right: -20, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', pointerEvents: 'none' }} />
+          <img src={lumi20Img} alt="" style={{ position: 'absolute', bottom: 0, right: 6, height: 90, width: 'auto', objectFit: 'contain', opacity: 0.97 }} />
+          <div style={{ position: 'relative', zIndex: 1, maxWidth: '64%' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.18)', borderRadius: 999, padding: '3px 10px', marginBottom: 9 }}>
+              <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff', animation: 'edPulseDot 1.6s ease-in-out infinite' }} />
+              <span style={{ fontSize: 9.5, fontWeight: 700, color: '#fff', letterSpacing: 1.4, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>Your Picks</span>
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }}>
-              ~{Math.round(selectedHours)}h of activities · {days} day{days > 1 ? 's' : ''} trip
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.15, marginBottom: 3, letterSpacing: -0.3 }}>
+              {likedExps.length} <span style={{ fontSize: 14, fontWeight: 600, opacity: 0.82 }}>experience{likedExps.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.82)', lineHeight: 1.5, marginBottom: 12, fontFamily: "'DM Sans',sans-serif" }}>
+              ~{Math.round(selectedHours)}h · {days} day{days > 1 ? 's' : ''} trip
+            </div>
+            {/* Integrated time gauge */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: 'rgba(255,255,255,0.78)', fontFamily: "'DM Sans',sans-serif" }}>Activity coverage</span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#fff', fontFamily: "'DM Sans',sans-serif" }}>{Math.round(selectedHours)}h / {tripActiveHours}h</span>
+              </div>
+              <div style={{ height: 6, borderRadius: 999, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${Math.min(100, hoursRatio * 100)}%`, borderRadius: 999, background: isOver ? 'rgba(255,220,170,0.95)' : 'rgba(255,255,255,0.9)', transition: 'width 0.8s cubic-bezier(0.2,0.7,0.2,1)', boxShadow: '0 0 8px rgba(255,255,255,0.45)' }} />
+              </div>
+              {isOver && (
+                <div style={{ marginTop: 7, fontSize: 10.5, color: 'rgba(255,255,255,0.88)', lineHeight: 1.55, fontFamily: "'DM Sans',sans-serif" }}>
+                  ✦ Over capacity — Lumi will optimise & prioritise for you!
+                </div>
+              )}
             </div>
           </div>
-        </div>
-
-        {/* Time gauge */}
-        <div style={{ background: D.surface, borderRadius: 16, padding: '1rem 1.1rem', marginBottom: '1rem', border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7, alignItems: 'center' }}>
-            <span style={{ fontSize: 12.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>Activity time usage</span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: isOver ? '#EF4444' : '#22C55E' }}>{Math.round(selectedHours)}h / {tripActiveHours}h</span>
-          </div>
-          <div style={{ height: 8, borderRadius: 999, background: '#EDE8E2', overflow: 'hidden' }}>
-            <div style={{ height: '100%', width: `${Math.min(100, hoursRatio * 100)}%`, borderRadius: 999, background: isOver ? 'linear-gradient(90deg,#F59E0B,#EF4444)' : 'linear-gradient(90deg,#34D399,#22C55E)', transition: 'width 0.7s cubic-bezier(0.2,0.7,0.2,1)' }} />
-          </div>
-          {isOver && (
-            <div style={{ marginTop: 10, padding: '10px 12px', borderRadius: 10, background: '#FFF8F4', border: '1px solid rgba(201,145,58,0.22)', fontSize: 12, color: '#7A4F00', lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif" }}>
-              <strong style={{ color: D.gold }}>✦ Lumi says:</strong> You've selected more experiences than comfortably fit your trip. No worries — I'll optimize and prioritize the best ones while keeping your schedule enjoyable!
-            </div>
-          )}
         </div>
 
         {/* Selected by category — collapsible dropdowns */}
@@ -746,7 +753,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
         {/* ── Experience Review Modal ── */}
         {reviewExp && (
           <div
-            style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(2px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}
+            style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(20,14,10,0.78)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}
             onClick={() => setReviewExp(null)}
           >
             <div
@@ -794,7 +801,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
                       {reviewExp.duration}
                     </span>
                   )}
-                  {reviewExp.bestTime && <span style={{ fontSize: 11, fontWeight: 600, color: '#0F6E56', background: '#ECFDF5', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(15,110,86,0.15)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }}>🕐 {reviewExp.bestTime}</span>}
+                  {reviewExp.bestTime && <span style={{ fontSize: 11, fontWeight: 600, color: '#5C504A', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.07)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }}>🕐 {reviewExp.bestTime}</span>}
                   {reviewExp.cost && reviewExp.cost !== 'null' && reviewExp.cost !== 'N/A' && <span style={{ fontSize: 11, fontWeight: 700, color: '#1C1410', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.1)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>{reviewExp.cost}</span>}
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
