@@ -226,18 +226,18 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
         {/* thin accent divider */}
         <div style={{ height:'1px', background:'linear-gradient(90deg,rgba(255,106,0,0.15),transparent)', margin:'0 -1px' }} />
         {/* premium tags row */}
-        <div style={{ display:'flex', gap:6, flexWrap:'wrap', alignItems:'center' }}>
+        <div style={{ display:'flex', gap:6, flexWrap:'nowrap', alignItems:'center', overflow:'hidden' }}>
           {exp.duration && (
-            <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600, color:'#5C504A', background:'#F4F2EE', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(28,20,16,0.07)', fontFamily:"'DM Sans',sans-serif" }}>
+            <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11, fontWeight:600, color:'#5C504A', background:'#F4F2EE', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(28,20,16,0.07)', fontFamily:"'DM Sans',sans-serif", flexShrink:0, whiteSpace:'nowrap' }}>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
               {exp.duration}
             </span>
           )}
           {exp.bestTime && (
-            <span style={{ fontSize:11, fontWeight:600, color:'#0F6E56', background:'#ECFDF5', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(15,110,86,0.15)', fontFamily:"'DM Sans',sans-serif" }}>🕐 {exp.bestTime}</span>
+            <span style={{ fontSize:11, fontWeight:600, color:'#0F6E56', background:'#ECFDF5', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(15,110,86,0.15)', fontFamily:"'DM Sans',sans-serif", flexShrink:0, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:120 }}>🕐 {exp.bestTime}</span>
           )}
           {exp.cost && exp.cost !== 'null' && exp.cost !== 'N/A' && (
-            <span style={{ fontSize:11, fontWeight:700, color:'#1C1410', background:'#F4F2EE', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(28,20,16,0.1)', fontFamily:"'DM Sans',sans-serif" }}>{exp.cost}</span>
+            <span style={{ fontSize:11, fontWeight:700, color:'#1C1410', background:'#F4F2EE', borderRadius:999, padding:'4px 10px', border:'1px solid rgba(28,20,16,0.1)', fontFamily:"'DM Sans',sans-serif", flexShrink:0, whiteSpace:'nowrap' }}>{exp.cost}</span>
           )}
         </div>
       </div>
@@ -892,7 +892,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
 
       {/* ── Action buttons ── */}
       {!allSwiped && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: -8, padding: '0 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: -18, padding: '0 4px' }}>
           {/* Skip */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <button
@@ -912,7 +912,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
             disabled={likedIds.size === 0}
             style={{ fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 12, border: `1.5px solid ${likedIds.size > 0 ? 'rgba(255,106,0,0.3)' : D.border}`, cursor: likedIds.size > 0 ? 'pointer' : 'default', background: likedIds.size > 0 ? '#FFF8F4' : D.surface, color: likedIds.size > 0 ? '#FF6A00' : D.muted, fontFamily: "'DM Sans',sans-serif", boxShadow: likedIds.size > 0 ? '0 2px 10px rgba(255,106,0,0.1)' : 'none', whiteSpace: 'nowrap', opacity: likedIds.size === 0 ? 0.4 : 1, transition: 'all 0.2s ease', animation: likedIds.size > 0 ? 'edFadeUp 0.3s ease both' : undefined }}
           >
-            {likedIds.size > 0 ? `Build with ${likedIds.size} activit${likedIds.size === 1 ? 'y' : 'ies'}` : 'Build itinerary'}
+            {likedIds.size > 0 ? `Build with ${likedIds.size} activit${likedIds.size === 1 ? 'y' : 'ies'} →` : 'Build itinerary'}
           </button>
 
           {/* Like */}
