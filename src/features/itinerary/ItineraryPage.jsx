@@ -1140,17 +1140,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
             <>
               {step === 'discover' && (
                 <>
-                  {/* ── Create by Lumi banner (always visible in planner) ── */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: D.goldTint, borderRadius: 14, padding: '10px 14px', marginBottom: 12, border: `1px solid rgba(201,145,58,0.22)` }}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                    <div style={{ flex: 1, fontSize: 12, color: '#7A4F00', fontFamily: "'DM Sans',sans-serif" }}>Prefer to skip swiping? Lumi will auto-build your itinerary.</div>
-                    <button
-                      onClick={() => runGenerateItinerary()}
-                      style={{ flexShrink: 0, padding: '7px 13px', fontSize: 12, fontWeight: 700, borderRadius: 10, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}
-                    >
-                      Create by Lumi
-                    </button>
-                  </div>
                   <ExperienceDiscovery
                     trip={trip}
                     onComplete={(selectedExps) => runGenerateItinerary(selectedExps)}

@@ -623,43 +623,52 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       onPointerCancel={handlePointerCancel}
       style={{ background: D.bg, userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      {/* ── Lumi intro header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: D.surface, borderRadius: 14, padding: '10px 13px', marginBottom: 12, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
-        <img src={lumi5Img} alt="" style={{ width: 32, height: 32, objectFit: 'contain', borderRadius: '50%', flexShrink: 0 }} />
+      {/* ── Lumi intro card (refer8 style) ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 16, padding: '12px 14px', marginBottom: 10, border: '1px solid rgba(255,106,0,0.15)', boxShadow: '0 2px 14px rgba(255,106,0,0.08)' }}>
+        <img src={lumi17Img} alt="Lumi" style={{ width: 56, height: 56, objectFit: 'contain', flexShrink: 0, animation: 'edLumiFloat 2.6s ease-in-out infinite' }} />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif" }}>Swipe to pick your experiences</div>
-          <div style={{ fontSize: 10.5, color: D.muted, marginTop: 1 }}>Right = Like · Left = Skip · Like 5+ to build</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: '#1C1410', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 3 }}>Hi! I'm Lumi ✨</div>
+          <div style={{ fontSize: 11, color: '#8A7E76', fontFamily: "'DM Sans',sans-serif", lineHeight: 1.45 }}>Swipe what excites you — I'll craft your perfect itinerary.</div>
         </div>
         <button
           onClick={handleSkip}
-          style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '7px 11px', fontSize: 11.5, fontWeight: 700, borderRadius: 10, border: `1.5px solid ${D.border}`, background: D.goldTint, color: D.gold, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}
+          style={{ flexShrink: 0, padding: '8px 13px', fontSize: 11.5, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', color: '#fff', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', boxShadow: '0 3px 10px rgba(255,106,0,0.28)' }}
         >
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          By Lumi
+          ✶ Create with Lumi
         </button>
       </div>
 
-      {/* ── Counter + stats row ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
-        {/* Remaining counter */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: D.surface, border: `0.5px solid ${D.border}`, borderRadius: 999, padding: '5px 12px', boxShadow: D.cardShadow }}>
-          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>
-            {total > 0 ? <><span style={{ color: D.gold }}>{total}</span> left</> : 'All done!'}
-          </span>
+      {/* ── Explored / Saved / Planned stats bar ── */}
+      <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', marginBottom: 11, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          {/* Explored */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, color: D.muted, fontFamily: "'DM Sans',sans-serif", marginBottom: 5 }}>
+              <span style={{ fontWeight: 700, color: '#1C1410' }}>{swipedIds.size}</span> of {experiences.length} explored
+            </div>
+            <div style={{ height: 5, borderRadius: 999, background: '#FFF3EB', overflow: 'hidden' }}>
+              <div style={{ height: '100%', width: `${experiences.length > 0 ? (swipedIds.size / experiences.length) * 100 : 0}%`, background: 'linear-gradient(90deg,#FF6A00,#FF8C3B)', borderRadius: 999, transition: 'width 0.3s ease' }} />
+            </div>
+          </div>
+          <div style={{ width: 1, height: 34, background: 'rgba(28,20,16,0.08)', margin: '0 13px', flexShrink: 0 }} />
+          {/* Saved */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill={likedIds.size > 0 ? '#FF6A00' : 'none'} stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1C1410', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>{likedIds.size}</div>
+              <div style={{ fontSize: 10, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Saved</div>
+            </div>
+          </div>
+          <div style={{ width: 1, height: 34, background: 'rgba(28,20,16,0.08)', margin: '0 13px', flexShrink: 0 }} />
+          {/* Planned */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1C1410', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>{Math.round(selectedHours)}h</div>
+              <div style={{ fontSize: 10, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Planned</div>
+            </div>
+          </div>
         </div>
-        {/* Likes + hours */}
-        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: D.surface, border: `0.5px solid ${D.border}`, borderRadius: 999, padding: '5px 12px', boxShadow: D.cardShadow }}>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="#EF4444" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: likedIds.size > 0 ? 1 : 0.3 }}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-          <span style={{ fontSize: 12.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>{likedIds.size}</span>
-          <span style={{ fontSize: 10.5, color: D.muted }}>·</span>
-          <span style={{ fontSize: 11.5, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>~{Math.round(selectedHours)}h</span>
-        </div>
-      </div>
-
-      {/* ── Overall progress bar ── */}
-      <div style={{ height: 3, borderRadius: 999, background: '#EDE8E2', marginBottom: 11, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${experiences.length > 0 ? (swipedIds.size / experiences.length) * 100 : 0}%`, background: `linear-gradient(90deg,${D.gold},#A8731E)`, borderRadius: 999, transition: 'width 0.3s ease' }} />
       </div>
 
       {/* ── Category filter pills ── */}
