@@ -892,7 +892,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
 
       {/* ── Action buttons ── */}
       {!allSwiped && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 18, padding: '0 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, padding: '0 4px' }}>
           {/* Skip */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <button
