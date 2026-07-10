@@ -36,6 +36,36 @@ const CAT = {
 const ALL_CATS = Object.keys(CAT);
 function catCfg(c) { return CAT[c] || { bg: '#F4F2EE', color: '#8A7E76', emoji: '📍' }; }
 
+function renderCatIcon(category, size = 13, color = 'currentColor') {
+  const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round', style: { display: 'block', flexShrink: 0 } };
+  switch (category) {
+    case 'Attractions':
+      return <svg {...p}><path d="M3 21h18"/><path d="M5 21V8l7-4 7 4v13"/><path d="M9 21v-6h6v6"/></svg>;
+    case 'Food':
+      return <svg {...p}><path d="M3 2v7c0 1.1.9 2 2 2a2 2 0 0 0 2-2V2"/><line x1="5" y1="12" x2="5" y2="22"/><path d="M15 2v20M15 2a5 5 0 0 1 5 5v2a5 5 0 0 1-5 5"/></svg>;
+    case 'Cafes':
+      return <svg {...p}><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/></svg>;
+    case 'Hidden Gems':
+      return <svg {...p}><path d="M6 3h12l4 6-10 13L2 9z"/><line x1="2" y1="9" x2="22" y2="9"/></svg>;
+    case 'Adventure':
+      return <svg {...p}><path d="M3 17l6-11 4 7 3-4 5 8H3z"/></svg>;
+    case 'Shopping':
+      return <svg {...p}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>;
+    case 'Nightlife':
+      return <svg {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>;
+    case 'Culture':
+      return <svg {...p}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>;
+    case 'Viewpoints':
+      return <svg {...p}><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>;
+    case 'Local Experiences':
+      return <svg {...p}><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10z"/><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"/></svg>;
+    case 'Party':
+      return <svg {...p}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill={color} stroke="none"/></svg>;
+    default:
+      return <svg {...p}><circle cx="12" cy="12" r="8"/></svg>;
+  }
+}
+
 function parseDurationHours(dur) {
   if (!dur) return 1.5;
   const m = String(dur).match(/(\d+(?:\.\d+)?)\s*[-–to]\s*(\d+(?:\.\d+)?)/);
@@ -86,7 +116,7 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
     @keyframes edIntroIn  { from { opacity:0; transform:scale(0.97) translateY(12px); } to { opacity:1; transform:scale(1) translateY(0); } }
     @keyframes edSlideNext{ from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
     @keyframes lumiExplorePop { 0% { opacity:0; transform:scale(0.88) translateY(22px); } 65% { transform:scale(1.02) translateY(-2px); } 100% { opacity:1; transform:scale(1) translateY(0); } }
-    @keyframes ctaBtnGlow { 0%,100% { box-shadow:0 4px 16px rgba(255,106,0,0.32); } 50% { box-shadow:0 6px 30px rgba(255,106,0,0.58),0 0 0 3px rgba(255,106,0,0.07); } }
+    @keyframes ctaBtnGlow { 0%,100% { box-shadow:0 3px 10px rgba(255,106,0,0.22); } 50% { box-shadow:0 4px 18px rgba(255,106,0,0.4); } }
     @keyframes ctaShimmer { 0%{transform:translateX(-130%) skewX(-18deg)} 100%{transform:translateX(230%) skewX(-18deg)} }
     @keyframes ctaArrowNudge { 0%,100%{transform:translateX(0)} 60%{transform:translateX(4px)} }
     .ed-cta-lumi { animation: ctaBtnGlow 2.2s ease-in-out infinite !important; overflow:hidden !important; position:relative !important; }
@@ -156,8 +186,8 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
         <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.04) 0%,transparent 30%,rgba(0,0,0,0.76) 100%)', pointerEvents:'none' }} />
 
         {/* category badge */}
-        <div style={{ position:'absolute', top:14, left:14, display:'inline-flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.94)', backdropFilter:'blur(10px)', borderRadius:999, padding:'4px 10px 4px 8px', boxShadow:'0 2px 8px rgba(0,0,0,0.12)' }}>
-          <span style={{ fontSize:13 }}>{cfg.emoji}</span>
+        <div style={{ position:'absolute', top:14, left:14, display:'inline-flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.94)', backdropFilter:'blur(10px)', borderRadius:999, padding:'4px 10px 4px 7px', boxShadow:'0 2px 8px rgba(0,0,0,0.12)' }}>
+          {renderCatIcon(exp.category, 13, cfg.color)}
           <span style={{ fontSize:10.5, fontWeight:700, color:cfg.color, fontFamily:"'DM Sans',sans-serif", textTransform:'uppercase', letterSpacing:0.7 }}>{exp.category}</span>
         </div>
 
@@ -631,7 +661,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
               return (
                 <div key={cat} style={{ marginBottom: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
-                    <span style={{ fontSize: 13 }}>{cfg.emoji}</span>
+                    {renderCatIcon(cat, 14, cfg.color)}
                     <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>{cat}</span>
                     <span style={{ fontSize: 10, color: D.muted, background: '#F4F2EE', borderRadius: 999, padding: '1px 6px' }}>{items.length}</span>
                   </div>
@@ -691,8 +721,8 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
                 />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(0,0,0,0.72) 100%)', pointerEvents: 'none' }} />
                 {(() => { const cfg = catCfg(reviewExp.category); return (
-                  <div style={{ position: 'absolute', top: 14, left: 14, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '4px 10px 4px 8px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-                    <span style={{ fontSize: 13 }}>{cfg.emoji}</span>
+                  <div style={{ position: 'absolute', top: 14, left: 14, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '4px 10px 4px 7px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                    {renderCatIcon(reviewExp.category, 13, cfg.color)}
                     <span style={{ fontSize: 10.5, fontWeight: 700, color: cfg.color, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.7 }}>{reviewExp.category}</span>
                   </div>
                 ); })()}
@@ -755,10 +785,29 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       <button
         onClick={handleSkip}
         className="ed-cta-lumi"
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 12px 12px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', marginBottom: 10, textAlign: 'left' }}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 12px 12px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', marginBottom: 0, textAlign: 'left' }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src={lumi8Img} alt="Lumi" style={{ width: 56, height: 56, objectFit: 'contain', flexShrink: 0 }} />
+          <svg width="52" height="52" viewBox="0 0 52 52" fill="none" style={{ flexShrink: 0 }}>
+            <ellipse cx="14" cy="13" rx="6" ry="7.5" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.26)" strokeWidth="1"/>
+            <ellipse cx="38" cy="13" rx="6" ry="7.5" fill="rgba(255,255,255,0.18)" stroke="rgba(255,255,255,0.26)" strokeWidth="1"/>
+            <ellipse cx="14" cy="13" rx="3.2" ry="4.2" fill="rgba(255,170,120,0.28)"/>
+            <ellipse cx="38" cy="13" rx="3.2" ry="4.2" fill="rgba(255,170,120,0.28)"/>
+            <circle cx="26" cy="29" r="20" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.34)" strokeWidth="1.5"/>
+            <ellipse cx="19.5" cy="26" rx="3.3" ry="3.3" fill="white"/>
+            <ellipse cx="32.5" cy="26" rx="3.3" ry="3.3" fill="white"/>
+            <circle cx="20.4" cy="26.6" r="1.8" fill="#1a0e08"/>
+            <circle cx="33.4" cy="26.6" r="1.8" fill="#1a0e08"/>
+            <circle cx="21.2" cy="25.7" r="0.7" fill="white"/>
+            <circle cx="34.2" cy="25.7" r="0.7" fill="white"/>
+            <ellipse cx="26" cy="31.5" rx="1.6" ry="1" fill="rgba(255,255,255,0.62)"/>
+            <path d="M19 35.5 Q26 40.5 33 35.5" stroke="white" strokeWidth="1.8" strokeLinecap="round" fill="none"/>
+            <ellipse cx="14" cy="31" rx="3.8" ry="2.4" fill="rgba(255,140,100,0.22)"/>
+            <ellipse cx="38" cy="31" rx="3.8" ry="2.4" fill="rgba(255,140,100,0.22)"/>
+            <path d="M44 5L44.9 8.2L48.1 9.1L44.9 10L44 13.2L43.1 10L39.9 9.1L43.1 8.2Z" fill="rgba(255,255,255,0.88)"/>
+            <circle cx="7" cy="9" r="1.3" fill="rgba(255,255,255,0.62)"/>
+            <circle cx="46" cy="18" r="0.9" fill="rgba(255,255,255,0.5)"/>
+          </svg>
           <div>
             <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 }}>Don't want to swipe?</div>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.15 }}>Create with Lumi</div>
@@ -769,6 +818,13 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
         </div>
       </button>
+
+      {/* ── separator ── */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0 12px' }}>
+        <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.08)' }} />
+        <span style={{ fontSize: 10, color: D.muted, fontWeight: 600, fontFamily: "'DM Sans',sans-serif", letterSpacing: 0.6, whiteSpace: 'nowrap' }}>or explore &amp; swipe</span>
+        <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.08)' }} />
+      </div>
 
       {/* ── Explored / Saved / Planned stats bar ── */}
       <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', marginBottom: 10, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
@@ -815,7 +871,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
               onClick={() => setActiveFilter(active ? null : cat)}
               style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, border: `1.5px solid ${active ? cfg.color : D.border}`, background: active ? cfg.bg : D.surface, color: active ? cfg.color : (hasUnswiped ? D.muted : '#C8C4BE'), cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", opacity: hasUnswiped ? 1 : 0.55 }}
             >
-              <span style={{ fontSize: 12 }}>{cfg.emoji}</span>
+              {renderCatIcon(cat, 12, active ? cfg.color : (hasUnswiped ? D.muted : '#C8C4BE'))}
               <span>{cat}</span>
               {!hasUnswiped && <span style={{ fontSize: 9, marginLeft: 1 }}>✓</span>}
             </button>
@@ -834,7 +890,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           </button>
         </div>
       ) : (
-        <div style={{ position: 'relative', minHeight: 340, margin: '0 auto', maxWidth: 420 }}>
+        <div style={{ position: 'relative', minHeight: 450, margin: '0 auto', maxWidth: 420 }}>
           {/* Render back-to-front */}
           {[...visibleCards].reverse().map(({ exp, stackIndex }) => (
             <SwipeCard
