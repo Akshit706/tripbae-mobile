@@ -133,22 +133,30 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
         touchAction: 'pan-y', willChange: 'transform',
       }}
     >
-      {/* ── Photo 220px ── */}
-      <div style={{ position: 'relative', height: 220, overflow: 'hidden', background: '#EDE8E2' }}>
+      {/* ── Photo 256px ── */}
+      <div style={{ position: 'relative', height: 256, overflow: 'hidden', background: '#EDE8E2' }}>
         <PlacePhotoCarousel
-          query={exp.imageQuery || `${exp.name} ${destination || exp.category} photo`}
+          query={exp.imageQuery || `${exp.name} ${destination} high resolution travel photography`}
           style={{ height: '100%', borderRadius: 0 }}
           delay={stackIndex * 220}
           limit={3}
         />
         {/* gradient */}
-        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.04) 0%,transparent 28%,rgba(0,0,0,0.72) 100%)', pointerEvents:'none' }} />
+        <div style={{ position:'absolute', inset:0, background:'linear-gradient(to bottom,rgba(0,0,0,0.04) 0%,transparent 30%,rgba(0,0,0,0.76) 100%)', pointerEvents:'none' }} />
 
         {/* category badge */}
         <div style={{ position:'absolute', top:14, left:14, display:'inline-flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.94)', backdropFilter:'blur(10px)', borderRadius:999, padding:'4px 10px 4px 8px', boxShadow:'0 2px 8px rgba(0,0,0,0.12)' }}>
           <span style={{ fontSize:13 }}>{cfg.emoji}</span>
           <span style={{ fontSize:10.5, fontWeight:700, color:cfg.color, fontFamily:"'DM Sans',sans-serif", textTransform:'uppercase', letterSpacing:0.7 }}>{exp.category}</span>
         </div>
+
+        {/* tier-1 must-do badge */}
+        {exp.tier === 1 && (
+          <div style={{ position:'absolute', top:14, right:14, display:'inline-flex', alignItems:'center', gap:4, background:'linear-gradient(135deg,#FF6B35,#E8390E)', borderRadius:999, padding:'4px 9px 4px 7px', boxShadow:'0 2px 10px rgba(232,57,14,0.45)' }}>
+            <span style={{ fontSize:10 }}>🔥</span>
+            <span style={{ fontSize:9.5, fontWeight:800, color:'#fff', fontFamily:"'Sora',sans-serif", textTransform:'uppercase', letterSpacing:1 }}>MUST DO</span>
+          </div>
+        )}
 
         {/* LIKE stamp */}
         <div style={{ position:'absolute', top:52, right:18, opacity:likeOpacity, transform:'rotate(-12deg)', border:'3px solid #22C55E', borderRadius:8, padding:'4px 12px', color:'#22C55E', fontSize:17, fontWeight:900, letterSpacing:1.5, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(4px)', pointerEvents:'none', fontFamily:"'Sora',sans-serif", animation: likeOpacity > 0.85 ? 'edStampL 0.22s both' : undefined }}>
@@ -563,7 +571,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
             >
               <div style={{ position: 'relative', height: 220 }}>
                 <PlacePhotoCarousel
-                  query={reviewExp.imageQuery || `${reviewExp.name} ${destination} photo`}
+                  query={reviewExp.imageQuery || `${reviewExp.name} ${destination} high resolution travel photography`}
                   style={{ height: 220, borderRadius: 0 }}
                   limit={3}
                 />
@@ -574,6 +582,12 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
                     <span style={{ fontSize: 10.5, fontWeight: 700, color: cfg.color, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.7 }}>{reviewExp.category}</span>
                   </div>
                 ); })()}
+                {reviewExp.tier === 1 && (
+                  <div style={{ position: 'absolute', top: 14, right: 44, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'linear-gradient(135deg,#FF6B35,#E8390E)', borderRadius: 999, padding: '4px 9px 4px 7px', boxShadow: '0 2px 10px rgba(232,57,14,0.45)' }}>
+                    <span style={{ fontSize: 10 }}>🔥</span>
+                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", textTransform: 'uppercase', letterSpacing: 1 }}>MUST DO</span>
+                  </div>
+                )}
                 <div style={{ position: 'absolute', bottom: 14, left: 14, right: 50, pointerEvents: 'none' }}>
                   <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.6)', fontFamily: "'Sora',sans-serif" }}>{reviewExp.name}</div>
                   {reviewExp.vibe && <span style={{ marginTop: 4, display: 'inline-block', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.15)', borderRadius: 999, padding: '2px 8px', backdropFilter: 'blur(4px)', textTransform: 'uppercase', letterSpacing: 0.8 }}>{reviewExp.vibe}</span>}
