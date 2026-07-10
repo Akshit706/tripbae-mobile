@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { PlacePhotoCarousel } from '../media/PlaceMedia';
+import lumi8Img from '../../assets/lumi8.png';
 import lumi11Img from '../../assets/lumi11.png';
 import lumi15Img from '../../assets/lumi15.png';
 import lumi17Img from '../../assets/lumi17.png';
@@ -82,6 +83,8 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
     @keyframes edCardIn   { from { opacity: 0; transform: translateY(22px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes edConfirmIn{ from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes edSheetIn  { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    @keyframes edIntroIn  { from { opacity:0; transform:scale(0.97) translateY(12px); } to { opacity:1; transform:scale(1) translateY(0); } }
+    @keyframes edSlideNext{ from { opacity:0; transform:translateX(30px); } to { opacity:1; transform:translateX(0); } }
     .ed-like-btn,.ed-pass-btn { transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease !important; }
     .ed-like-btn:active { transform: scale(0.88) !important; }
     .ed-pass-btn:active { transform: scale(0.88) !important; }
@@ -221,6 +224,16 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [reviewExp, setReviewExp] = useState(null); // experience card being reviewed in confirm sheet
+
+  /* ── One-time intro overlay ── */
+  const [showIntro, setShowIntro] = useState(() => {
+    try { return !localStorage.getItem('ed_intro_seen'); } catch { return false; }
+  });
+  const [introStep, setIntroStep] = useState(0);
+  const dismissIntro = () => {
+    try { localStorage.setItem('ed_intro_seen', '1'); } catch {}
+    setShowIntro(false);
+  };
 
   const pointerStart = useRef(null);
   const lastDragXRef = useRef(0);
@@ -638,13 +651,22 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       onPointerCancel={handlePointerCancel}
       style={{ background: D.bg, userSelect: 'none', WebkitUserSelect: 'none' }}
     >
-      {/* ── Lumi intro card ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: '#fff', borderRadius: 16, padding: '10px 14px', marginBottom: 10, border: '1px solid rgba(255,106,0,0.15)', boxShadow: '0 2px 14px rgba(255,106,0,0.08)' }}>
-        <img src={lumi11Img} alt="Lumi" style={{ width: 62, height: 62, objectFit: 'contain', flexShrink: 0 }} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 13, color: '#5C504A', fontFamily: "'DM Sans',sans-serif", lineHeight: 1.5 }}>Swipe what excites you — I'll craft your perfect itinerary.</div>
+      {/* ── Create with Lumi — full-width CTA (top) ── */}
+      <button
+        onClick={handleSkip}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 14px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', boxShadow: '0 4px 16px rgba(255,106,0,0.3)', marginBottom: 10, textAlign: 'left' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <img src={lumi8Img} alt="Lumi" style={{ width: 44, height: 44, objectFit: 'contain', flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.15 }}>Create with Lumi</div>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.82)', fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>Let Lumi build your complete itinerary in seconds.</div>
+          </div>
         </div>
-      </div>
+        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </button>
 
       {/* ── Explored / Saved / Planned stats bar ── */}
       <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', marginBottom: 10, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
@@ -678,22 +700,6 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           </div>
         </div>
       </div>
-
-      {/* ── Create with Lumi — full-width CTA ── */}
-      <button
-        onClick={handleSkip}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 16px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', boxShadow: '0 4px 16px rgba(255,106,0,0.3)', marginBottom: 12, textAlign: 'left' }}
-      >
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", display: 'flex', alignItems: 'center', gap: 7 }}>
-            <span>✨</span> Create with Lumi
-          </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.82)', fontFamily: "'DM Sans',sans-serif", marginTop: 2 }}>Let Lumi build your complete itinerary in seconds.</div>
-        </div>
-        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </button>
 
       {/* ── Category filter pills ── */}
       <div className="ed-cat-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 13, scrollbarWidth: 'none' }}>
@@ -785,6 +791,107 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           >
             Done — build my itinerary ({likedIds.size} picks) →
           </button>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════════════
+           ONE-TIME INTRO OVERLAY (3 windows)
+      ══════════════════════════════════════════ */}
+      {showIntro && (
+        <div style={{ position:'fixed', inset:0, zIndex:2000, display:'flex', flexDirection:'column', overflow:'hidden', animation:'edIntroIn 0.35s ease both' }}>
+          {/* orange-white gradient background */}
+          <div style={{ position:'absolute', inset:0, background:'linear-gradient(170deg,#FF6A00 0%,#FF8C3B 45%,#FFF5EE 100%)' }} />
+
+          {/* Skip button */}
+          <button
+            onClick={dismissIntro}
+            style={{ position:'absolute', top:20, right:18, zIndex:2, padding:'5px 14px', borderRadius:999, border:'1.5px solid rgba(255,255,255,0.55)', background:'rgba(255,255,255,0.18)', color:'#fff', fontSize:12, fontWeight:600, cursor:'pointer', backdropFilter:'blur(6px)', fontFamily:"'DM Sans',sans-serif" }}
+          >
+            Skip
+          </button>
+
+          {/* Slide content */}
+          <div style={{ flex:1, position:'relative', zIndex:1, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'3.5rem 1.5rem 1rem', textAlign:'center', overflow:'hidden' }}>
+
+            {introStep === 0 && (
+              <div key="intro-s0" style={{ animation:'edSlideNext 0.35s ease both', display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
+                <img src={lumi15Img} alt="Lumi" style={{ width:130, height:'auto', objectFit:'contain', animation:'edLumiFloat 2.8s ease-in-out infinite', filter:'drop-shadow(0 8px 28px rgba(0,0,0,0.2))' }} />
+                <div style={{ fontSize:23, fontWeight:800, color:'#fff', fontFamily:"'Sora',sans-serif", lineHeight:1.2, letterSpacing:-0.5 }}>Meet Your Travel Curator</div>
+                <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.9)', fontFamily:"'DM Sans',sans-serif", lineHeight:1.65, maxWidth:300 }}>
+                  Your swipes shape your journey. Unlike a rigid AI scheduler, Lumi uses your picks to craft a{' '}
+                  <strong style={{ color:'#fff' }}>personalised, flexible itinerary</strong> — one you can modify anytime.
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:8, width:'100%', maxWidth:300, marginTop:2 }}>
+                  {[
+                    { icon:'🎯', label:'Built around your tastes' },
+                    { icon:'✏️', label:'Fully modifiable after creation' },
+                    { icon:'🚫', label:'Not a one-size-fits-all AI plan' },
+                  ].map(({ icon, label }) => (
+                    <div key={label} style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(255,255,255,0.18)', borderRadius:12, padding:'9px 13px', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.22)', textAlign:'left' }}>
+                      <span style={{ fontSize:15 }}>{icon}</span>
+                      <span style={{ fontSize:13, color:'#fff', fontWeight:600, fontFamily:"'DM Sans',sans-serif" }}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {introStep === 1 && (
+              <div key="intro-s1" style={{ animation:'edSlideNext 0.35s ease both', display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
+                <div style={{ fontSize:58, lineHeight:1 }}>🗺️</div>
+                <div style={{ fontSize:23, fontWeight:800, color:'#fff', fontFamily:"'Sora',sans-serif", lineHeight:1.2, letterSpacing:-0.5 }}>Your Itinerary = Your Picks</div>
+                <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.9)', fontFamily:"'DM Sans',sans-serif", lineHeight:1.65, maxWidth:300 }}>
+                  Every swipe right becomes part of your trip. Lumi weaves your selections across days — balancing experiences, meals, and free time,{' '}
+                  <strong style={{ color:'#fff' }}>perfectly tailored to you</strong>.
+                </div>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap', justifyContent:'center', maxWidth:300 }}>
+                  {['🏛️ Attractions','🍽️ Food','💎 Hidden Gems','🎯 Adventure','🌙 Nightlife','🌿 Local Life'].map(t => (
+                    <span key={t} style={{ fontSize:12, fontWeight:600, padding:'5px 12px', borderRadius:999, background:'rgba(255,255,255,0.2)', color:'#fff', border:'1px solid rgba(255,255,255,0.28)', backdropFilter:'blur(4px)', fontFamily:"'DM Sans',sans-serif" }}>{t}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {introStep === 2 && (
+              <div key="intro-s2" style={{ animation:'edSlideNext 0.35s ease both', display:'flex', flexDirection:'column', alignItems:'center', gap:16 }}>
+                <div style={{ fontSize:58, lineHeight:1 }}>📍</div>
+                <div style={{ fontSize:23, fontWeight:800, color:'#fff', fontFamily:"'Sora',sans-serif", lineHeight:1.2, letterSpacing:-0.5 }}>Discover What's Nearby</div>
+                <div style={{ fontSize:13.5, color:'rgba(255,255,255,0.9)', fontFamily:"'DM Sans',sans-serif", lineHeight:1.65, maxWidth:300 }}>
+                  Once your itinerary is built, explore a curated{' '}
+                  <strong style={{ color:'#fff' }}>Nearby section</strong> — local gems, hidden cafes, and must-try spots close to wherever you'll be.
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:8, width:'100%', maxWidth:300, marginTop:2 }}>
+                  {[
+                    { icon:'🏪', label:'Local shops & cafes' },
+                    { icon:'🗺️', label:'Spots near your stay' },
+                    { icon:'💡', label:'Insider recommendations' },
+                  ].map(({ icon, label }) => (
+                    <div key={label} style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(255,255,255,0.18)', borderRadius:12, padding:'9px 13px', backdropFilter:'blur(6px)', border:'1px solid rgba(255,255,255,0.22)', textAlign:'left' }}>
+                      <span style={{ fontSize:15 }}>{icon}</span>
+                      <span style={{ fontSize:13, color:'#fff', fontWeight:600, fontFamily:"'DM Sans',sans-serif" }}>{label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Bottom: dots + CTA */}
+          <div style={{ position:'relative', zIndex:1, padding:'0 1.5rem 2.8rem', display:'flex', flexDirection:'column', gap:14, alignItems:'center' }}>
+            {/* progress dots */}
+            <div style={{ display:'flex', gap:7, alignItems:'center' }}>
+              {[0,1,2].map(i => (
+                <div key={i} style={{ height:7, borderRadius:999, background: i===introStep ? '#fff' : 'rgba(255,255,255,0.38)', width: i===introStep ? 22 : 7, transition:'all 0.25s cubic-bezier(0.2,0.7,0.2,1)' }} />
+              ))}
+            </div>
+            {/* CTA */}
+            <button
+              onClick={introStep < 2 ? () => setIntroStep(s => s + 1) : dismissIntro}
+              style={{ width:'100%', maxWidth:300, padding:'14px', fontSize:15, fontWeight:800, borderRadius:16, border:'2px solid rgba(255,255,255,0.55)', cursor:'pointer', background:'rgba(255,255,255,0.96)', color:'#FF6A00', fontFamily:"'Sora',sans-serif", boxShadow:'0 4px 24px rgba(0,0,0,0.14)', letterSpacing:-0.2 }}
+            >
+              {introStep < 2 ? 'Next →' : "Let's Create! 🎉"}
+            </button>
+          </div>
         </div>
       )}
     </div>
