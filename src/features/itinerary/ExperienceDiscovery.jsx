@@ -639,9 +639,9 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
             <span style={{ fontSize: 9.5, fontWeight: 700, color: '#FF6A00', letterSpacing: 1.4, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>Your Picks</span>
             <div style={{ width: 1, height: 16, background: D.border, flexShrink: 0 }} />
             <span style={{ fontSize: 20, fontWeight: 800, color: '#FF6A00', fontFamily: "'Sora',sans-serif", letterSpacing: -0.3, lineHeight: 1, flexShrink: 0 }}>{likedExps.length}</span>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>exp.</span>
+            <span style={{ fontSize: 12.5, fontWeight: 600, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>Experiences</span>
             <div style={{ width: 1, height: 16, background: D.border, flexShrink: 0 }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{Math.round(selectedHours)}h planned</span>
+            <span style={{ fontSize: 12, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{Math.round(selectedHours)}h Plan</span>
           </div>
         </div>
 
