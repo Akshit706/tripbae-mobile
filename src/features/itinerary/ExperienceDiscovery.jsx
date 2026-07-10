@@ -265,6 +265,8 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [reviewExp, setReviewExp] = useState(null); // experience card being reviewed in confirm sheet
+  const [expandedCats, setExpandedCats] = useState(new Set());
+  const [showAllSwipedMsg, setShowAllSwipedMsg] = useState(false);
 
   /* ── One-time intro overlay ── */
   const [showIntro, setShowIntro] = useState(() => {
@@ -411,6 +413,11 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
     setLikedIds(prev => { const next = new Set(prev); next.delete(expId); return next; });
     setReviewExp(null);
   };
+  const toggleCat = (cat) => setExpandedCats(prev => {
+    const next = new Set(prev);
+    next.has(cat) ? next.delete(cat) : next.add(cat);
+    return next;
+  });
 
   /* ── Persist progress (including experience cards + phase) to localStorage ── */
   useEffect(() => {
@@ -624,14 +631,14 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
       <div style={{ background: D.bg, paddingBottom: '2rem', animation: 'edConfirmIn 0.38s ease both' }}>
 
         {/* Hero banner */}
-        <div style={{ background: 'linear-gradient(135deg,#1C1410 0%,#7C4A1C 55%,#C9913A 100%)', borderRadius: 20, padding: '1.4rem', marginBottom: '1.1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 24px rgba(28,20,16,0.2)' }}>
-          <img src={lumi19Img} alt="" style={{ position: 'absolute', bottom: 0, right: 0, height: 106, width: 'auto', objectFit: 'contain', opacity: 0.95 }} />
-          <div style={{ position: 'relative', zIndex: 1, maxWidth: '60%' }}>
-            <div style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 5, fontFamily: "'DM Sans',sans-serif" }}>YOUR PICKS</div>
+        <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF8434 55%,#FFA040 100%)', borderRadius: 20, padding: '1.2rem 1.4rem', marginBottom: '1.1rem', position: 'relative', overflow: 'hidden', boxShadow: '0 4px 24px rgba(255,106,0,0.28)' }}>
+          <img src={lumi19Img} alt="" style={{ position: 'absolute', bottom: 0, right: 8, height: 82, width: 'auto', objectFit: 'contain', opacity: 0.95 }} />
+          <div style={{ position: 'relative', zIndex: 1, maxWidth: '62%' }}>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.78)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 5, fontFamily: "'DM Sans',sans-serif" }}>YOUR PICKS</div>
             <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 6 }}>
               {likedExps.length} experience{likedExps.length !== 1 ? 's' : ''} ✦
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.68)', lineHeight: 1.5 }}>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.88)', lineHeight: 1.5 }}>
               ~{Math.round(selectedHours)}h of activities · {days} day{days > 1 ? 's' : ''} trip
             </div>
           </div>
@@ -653,27 +660,34 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
           )}
         </div>
 
-        {/* Selected by category */}
+        {/* Selected by category — collapsible dropdowns */}
         {Object.keys(byCategory).length > 0 ? (
           <div style={{ background: D.surface, borderRadius: 16, padding: '1rem 1.1rem', marginBottom: '1rem', border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
-            <div style={{ fontSize: 13, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 12 }}>Selected experiences</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 10 }}>Selected experiences</div>
             {Object.entries(byCategory).map(([cat, items]) => {
               const cfg = catCfg(cat);
+              const isOpen = expandedCats.has(cat);
               return (
-                <div key={cat} style={{ marginBottom: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5 }}>
-                    {renderCatIcon(cat, 14, cfg.color)}
-                    <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>{cat}</span>
-                    <span style={{ fontSize: 10, color: D.muted, background: '#F4F2EE', borderRadius: 999, padding: '1px 6px' }}>{items.length}</span>
-                  </div>
-                  <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', paddingLeft: 20 }}>
-                    {items.map(e => (
-                      <button key={e.id} onClick={() => setReviewExp(e)} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px 3px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}22`, fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                        {e.name}
-                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                      </button>
-                    ))}
-                  </div>
+                <div key={cat} style={{ marginBottom: 6, borderRadius: 12, border: `1px solid ${isOpen ? cfg.color + '35' : D.border}`, overflow: 'hidden', transition: 'border-color 0.2s ease' }}>
+                  <button
+                    onClick={() => toggleCat(cat)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: isOpen ? cfg.bg : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s ease' }}
+                  >
+                    {renderCatIcon(cat, 13, cfg.color)}
+                    <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flex: 1 }}>{cat}</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: cfg.color, background: cfg.bg, borderRadius: 999, padding: '2px 7px', border: `1px solid ${cfg.color}25` }}>{items.length}</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}><polyline points="6 9 12 15 18 9"/></svg>
+                  </button>
+                  {isOpen && (
+                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', padding: '6px 12px 10px' }}>
+                      {items.map(e => (
+                        <button key={e.id} onClick={() => setReviewExp(e)} style={{ fontSize: 11, fontWeight: 600, padding: '3px 8px 3px 10px', borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}22`, fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                          {e.name}
+                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -691,17 +705,42 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip }) {
 
         {/* CTA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {likedExps.length < 5 && (
+            <div style={{ padding: '9px 12px', borderRadius: 10, background: '#FFF8F4', border: '1px solid rgba(255,106,0,0.22)', fontSize: 11.5, color: '#CC5500', fontFamily: "'DM Sans',sans-serif", textAlign: 'center', lineHeight: 1.5 }}>
+              Select at least <strong>5 activities</strong> to build your itinerary{likedExps.length > 0 ? ` — ${5 - likedExps.length} more needed` : ''}
+            </div>
+          )}
           <button
-            onClick={() => handleComplete(likedExps)}
-            style={{ width: '100%', padding: '14px', fontSize: 15, fontWeight: 700, borderRadius: 16, border: 'none', cursor: 'pointer', fontFamily: "'Sora',sans-serif", background: 'linear-gradient(135deg,#C9913A,#A8731E)', color: '#fff', boxShadow: '0 4px 20px rgba(201,145,58,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+            onClick={() => likedExps.length >= 5 && handleComplete(likedExps)}
+            disabled={likedExps.length < 5}
+            style={{ width: '100%', padding: '14px', fontSize: 15, fontWeight: 700, borderRadius: 16, border: 'none', cursor: likedExps.length >= 5 ? 'pointer' : 'not-allowed', fontFamily: "'Sora',sans-serif", background: likedExps.length >= 5 ? 'linear-gradient(135deg,#C9913A,#A8731E)' : '#E8E4DF', color: likedExps.length >= 5 ? '#fff' : D.muted, boxShadow: likedExps.length >= 5 ? '0 4px 20px rgba(201,145,58,0.32)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s ease', opacity: likedExps.length >= 5 ? 1 : 0.65 }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
             Build My Itinerary ✦
           </button>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('swipe'); clearProgress(trip.id); }} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>↩ Swipe from start</button>
-            <button onClick={handleSkip} style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>✦ Create by Lumi</button>
+            <button
+              onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('swipe'); clearProgress(trip.id); }}
+              style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${D.border}`, cursor: 'pointer', background: D.surface, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}
+            >↩ Swipe from start</button>
+            <button
+              onClick={() => {
+                if (allUnswiped.length === 0) {
+                  setShowAllSwipedMsg(true);
+                  setTimeout(() => setShowAllSwipedMsg(false), 4000);
+                } else {
+                  setActiveFilter(null);
+                  setPhase('swipe');
+                }
+              }}
+              style={{ flex: 1, padding: '11px', fontSize: 13, fontWeight: 600, borderRadius: 14, border: `1.5px solid ${allUnswiped.length > 0 ? 'rgba(255,106,0,0.3)' : D.border}`, cursor: 'pointer', background: allUnswiped.length > 0 ? '#FFF8F4' : D.surface, color: allUnswiped.length > 0 ? '#FF6A00' : D.muted, fontFamily: "'DM Sans',sans-serif" }}
+            >{allUnswiped.length > 0 ? `↻ Leftovers (${allUnswiped.length})` : '↻ Swipe leftovers'}</button>
           </div>
+          {showAllSwipedMsg && (
+            <div style={{ padding: '10px 12px', borderRadius: 12, background: '#FFF8F4', border: '1px solid rgba(255,106,0,0.25)', fontSize: 12, color: '#CC5500', lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif", animation: 'edFadeUp 0.25s ease both' }}>
+              🎉 You've gone through all experiences! Use <strong>Swipe from start</strong> to not miss anything this time.
+            </div>
+          )}
         </div>
 
         {/* ── Experience Review Modal ── */}
