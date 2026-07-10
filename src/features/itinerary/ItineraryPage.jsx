@@ -9,7 +9,6 @@ import lumi15Img from '../../assets/lumi15.png';
 import lumi17Img from '../../assets/lumi17.png';
 import lumi4Img from '../../assets/Lumi4_bgless.png';
 import lumi19Img from '../../assets/lumi19.png';
-import lumi21Img from '../../assets/lumi21.png';
 import ExperienceDiscovery from './ExperienceDiscovery';
 
 /* ── Category colours (for My Selections sheet) ───────────── */
@@ -27,6 +26,15 @@ const EXP_CAT = {
   'Party':             { bg: '#FDF4FF', color: '#9333EA', emoji: '🎉' },
 };
 function expCatCfg(c) { return EXP_CAT[c] || { bg: '#F4F2EE', color: '#8A7E76', emoji: '📍' }; }
+
+/* ── Selected-experiences localStorage (survives refresh, per trip) ── */
+function _selExpsKey(id) { return `tb_sel_exps_${id}`; }
+function loadSelExps(id) {
+  try { return JSON.parse(localStorage.getItem(_selExpsKey(id)) || 'null') || []; } catch { return []; }
+}
+function saveSelExps(id, exps) {
+  try { localStorage.setItem(_selExpsKey(id), JSON.stringify(exps || [])); } catch {}
+}
 
 /* ── Premium design tokens ─────────────────────────────────── */
 const D = {
@@ -829,7 +837,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [step, setStep] = useState(trip._cachedItin ? 'result' : 'discover');
   const [itin, setItin] = useState(trip._cachedItin?.itinerary || null);
   const [sources, setSources] = useState(trip._cachedItin?.sources || []);
-  const [lastSelectedExps, setLastSelectedExps] = useState(trip._cachedItin?.selectedExps || []);
+  const [lastSelectedExps, setLastSelectedExps] = useState(() => loadSelExps(trip.id));
   const [showSelectionsSheet, setShowSelectionsSheet] = useState(false);
   const [sheetExps, setSheetExps] = useState([]);
   const [modifyExps, setModifyExps] = useState(null);
@@ -891,6 +899,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const runGenerateItinerary = async (selectedExperiences) => {
     if (selectedExperiences && selectedExperiences.length > 0) {
       setLastSelectedExps(selectedExperiences);
+      saveSelExps(trip.id, selectedExperiences);
       setSheetExps(selectedExperiences);
     }
     setStep('loading');
@@ -1135,24 +1144,23 @@ function ItineraryPage({ trip, onCacheUpdate }) {
             /* ── Itinerary Ready — redesigned header + inline selections ── */
             <div style={{ animation: 'edFadeUp 0.35s ease both' }}>
 
-              {/* ── Orange header card with lumi21 ── */}
-              <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#FF8C3B 100%)', borderRadius: 20, overflow: 'hidden', boxShadow: '0 6px 28px rgba(255,106,0,0.32)', marginBottom: '1rem', display: 'flex', alignItems: 'flex-end', minHeight: 120 }}>
-                {/* Lumi on the left — fixed narrow width so content gets enough space */}
-                <img src={lumi21Img} alt="Lumi" style={{ width: 88, height: 'auto', maxHeight: 120, objectFit: 'contain', objectPosition: 'bottom', flexShrink: 0, display: 'block', alignSelf: 'flex-end' }} />
-                {/* Content right */}
-                <div style={{ flex: 1, padding: '0.8rem 0.9rem 0.8rem 0.5rem', minWidth: 0 }}>
-                  <div style={{ fontSize: 8.5, fontWeight: 700, color: 'rgba(255,255,255,0.72)', textTransform: 'uppercase', letterSpacing: 1.6, marginBottom: 3, fontFamily: "'DM Sans',sans-serif" }}>ITINERARY READY</div>
-                  <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.25, marginBottom: 2 }}>{days} day{days>1?'s':''} in {form.dest}</div>
-                  <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.82)', marginBottom: 10, fontFamily: "'DM Sans',sans-serif" }}>{(itin.days||[]).reduce((a,d)=>a+(d.activities||[]).length,0)} activities planned</div>
-                  {/* Two CTA buttons */}
-                  <div style={{ display: 'flex', gap: 6 }}>
+              {/* ── Orange header card ── */}
+              <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#E8390E 100%)', borderRadius: 20, padding: '1.2rem 1.2rem 1rem', boxShadow: '0 6px 28px rgba(255,106,0,0.3)', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
+                {/* Subtle circle decorations */}
+                <div style={{ position: 'absolute', top: -28, right: -28, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', bottom: -18, left: 60, width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
+                <div style={{ position: 'relative' }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: 1.8, textTransform: 'uppercase', marginBottom: 4, fontFamily: "'DM Sans',sans-serif" }}>✦ Itinerary Ready</div>
+                  <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 3, fontFamily: "'Sora',sans-serif", letterSpacing: -0.3 }}>{days} day{days>1?'s':''} in {form.dest}</div>
+                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.78)', marginBottom: 14, fontFamily: "'DM Sans',sans-serif" }}>{(itin.days||[]).reduce((a,d)=>a+(d.activities||[]).length,0)} activities planned</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
                     <button
                       onClick={() => setITab('itinerary')}
-                      style={{ flex: 1, padding: '7px 6px', fontSize: 11, fontWeight: 700, borderRadius: 10, border: 'none', cursor: 'pointer', background: '#fff', color: '#FF6A00', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 8px rgba(0,0,0,0.12)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      style={{ flex: 1, padding: '10px', fontSize: 12.5, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer', background: '#fff', color: '#FF6A00', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 10px rgba(0,0,0,0.14)' }}
                     >Go to Itinerary →</button>
                     <button
                       onClick={() => { setModifyExps(lastSelectedExps.length > 0 ? lastSelectedExps : null); setStep('discover'); }}
-                      style={{ flex: 1, padding: '7px 6px', fontSize: 11, fontWeight: 600, borderRadius: 10, border: '1.5px solid rgba(255,255,255,0.5)', cursor: 'pointer', background: 'rgba(255,255,255,0.15)', color: '#fff', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      style={{ flex: 1, padding: '10px', fontSize: 12.5, fontWeight: 600, borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.5)', cursor: 'pointer', background: 'rgba(255,255,255,0.15)', color: '#fff', fontFamily: "'DM Sans',sans-serif" }}
                     >Modify Experiences</button>
                   </div>
                 </div>
