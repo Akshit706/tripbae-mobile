@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import lumi4Img from '../../assets/Lumi4_bgless.png';
 import { PlacePhotoCarousel } from '../media/PlaceMedia';
 import lumi8Img from '../../assets/lumi8.png';
@@ -741,7 +742,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
         </div>
 
         {/* ── Experience Review Modal ── */}
-        {reviewExp && (
+        {reviewExp && createPortal(
           <div
             style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, background: 'rgba(10,7,5,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}
             onClick={() => setReviewExp(null)}
@@ -795,18 +796,18 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
                   {reviewExp.cost && reviewExp.cost !== 'null' && reviewExp.cost !== 'N/A' && <span style={{ fontSize: 11, fontWeight: 700, color: '#1C1410', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.1)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>{reviewExp.cost}</span>}
                 </div>
                 <div style={{ display: 'flex', gap: 8, marginTop: 2 }}>
-                  <button onClick={() => removeFromPicks(reviewExp.id)} style={{ flex: 1, padding: '12px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: '1.5px solid #FEE2E2', background: '#FFF5F5', color: '#EF4444', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  <button onClick={() => removeFromPicks(reviewExp.id)} style={{ flex: 1, padding: '12px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: '1.5px solid rgba(28,20,16,0.12)', background: '#fff', color: '#1C1410', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                     Remove
                   </button>
-                  <button onClick={() => setReviewExp(null)} style={{ flex: 1, padding: '12px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: 'none', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif" }}>
+                  <button onClick={() => setReviewExp(null)} style={{ flex: 1, padding: '12px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: 'none', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', color: '#fff', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 4px 14px rgba(255,106,0,0.3)' }}>
                     Keep it ✓
                   </button>
                 </div>
               </div>
             </div>
           </div>
-        )}
+        , document.body)}
       </div>
     );
   }

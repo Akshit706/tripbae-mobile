@@ -1363,19 +1363,19 @@ function ClubPage({ trip, onTripRefresh }) {
             ) : (
               // ── Slide 2: T&C ──
               <>
-                <div style={{ height: 4, background: 'linear-gradient(90deg,#1D9E75,#0F6E56)' }} />
+                <div style={{ height: 4, background: 'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
                 <button onClick={dismissClubGate} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:10 }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                 </button>
                 <div style={{ padding: '1.5rem 1.5rem 1.25rem' }}>
                   {/* icon + slide dots row */}
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-                    <div style={{ width: 52, height: 52, borderRadius: 17, background: 'linear-gradient(135deg,#1D9E75,#0F6E56)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(29,158,117,0.28)' }}>
+                    <div style={{ width: 52, height: 52, borderRadius: 17, background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 6px 20px rgba(255,106,0,0.28)' }}>
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </div>
                     <div style={{ display:'flex', gap:5 }}>
                       <div style={{ width:5, height:5, borderRadius:3, background:'rgba(0,0,0,0.15)' }} />
-                      <div style={{ width:18, height:5, borderRadius:3, background:'#1D9E75' }} />
+                      <div style={{ width:18, height:5, borderRadius:3, background:'#FF6A00' }} />
                     </div>
                   </div>
                   <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, color: '#1C1410', marginBottom: 8, lineHeight: 1.2 }}>Welcome to Club</div>
@@ -1384,18 +1384,18 @@ function ClubPage({ trip, onTripRefresh }) {
                     <br /><br />
                     Any communication, meetup, or relationship that occurs through or outside the platform is solely between the participating individuals. <strong style={{ color: '#1C1410' }}>You are responsible for exercising appropriate caution and judgment</strong> when interacting with others. To the maximum extent permitted by law, we are not liable for any disputes, damages, or incidents arising from user interactions, whether online or offline.
                   </div>
-                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '12px 14px', borderRadius: 14, background: termsChecked ? '#EBF3EC' : '#F4F2EE', border: `1.5px solid ${termsChecked ? '#1D9E75' : 'rgba(28,20,16,0.1)'}`, marginBottom: 16, transition: 'all .18s' }}>
-                    <div onClick={() => setTermsChecked(v => !v)} style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${termsChecked ? '#1D9E75' : 'rgba(28,20,16,0.25)'}`, background: termsChecked ? '#1D9E75' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, transition: 'all .15s', cursor: 'pointer' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', padding: '12px 14px', borderRadius: 14, background: termsChecked ? '#FFF3EB' : '#F4F2EE', border: `1.5px solid ${termsChecked ? '#FF6A00' : 'rgba(28,20,16,0.1)'}`, marginBottom: 16, transition: 'all .18s' }}>
+                    <div onClick={() => setTermsChecked(v => !v)} style={{ width: 20, height: 20, borderRadius: 6, border: `2px solid ${termsChecked ? '#FF6A00' : 'rgba(28,20,16,0.25)'}`, background: termsChecked ? '#FF6A00' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1, transition: 'all .15s', cursor: 'pointer' }}>
                       {termsChecked && <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                     </div>
                     <span style={{ fontSize: 12.5, fontWeight: 600, color: '#1C1410', lineHeight: 1.6 }}>
-                      I understand that interactions with other Club members are at my own discretion and risk, and I agree to the <span style={{ color: '#0F6E56', textDecoration: 'underline' }}>Club Terms &amp; Safety Guidelines</span>.
+                      I understand that interactions with other Club members are at my own discretion and risk, and I agree to the <span style={{ color: '#FF6A00', textDecoration: 'underline' }}>Club Terms &amp; Safety Guidelines</span>.
                     </span>
                   </label>
                   <button
                     onClick={acceptClubTerms}
                     disabled={!termsChecked}
-                    style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: termsChecked ? 'pointer' : 'not-allowed', fontFamily: "'DM Sans',sans-serif", background: termsChecked ? 'linear-gradient(135deg,#1D9E75,#0F6E56)' : '#E0E0E0', color: termsChecked ? '#fff' : '#9E9E9E', boxShadow: termsChecked ? '0 4px 16px rgba(29,158,117,0.3)' : 'none', transition: 'all .2s' }}
+                    style={{ width: '100%', padding: '13px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: termsChecked ? 'pointer' : 'not-allowed', fontFamily: "'DM Sans',sans-serif", background: termsChecked ? 'linear-gradient(135deg,#FF6A00,#FF8C3B)' : '#E0E0E0', color: termsChecked ? '#fff' : '#9E9E9E', boxShadow: termsChecked ? '0 4px 16px rgba(255,106,0,0.3)' : 'none', transition: 'all .2s' }}
                   >
                     Find my people 🌍
                   </button>
