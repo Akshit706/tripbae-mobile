@@ -1630,31 +1630,31 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                       {isExpanded ? (
                         /* Expanded dark header */
-                        <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(28,20,16,0.12)' }}>
-                          <div onClick={toggleDay} style={{ background: 'linear-gradient(140deg,#FF5500,#FF8C3A)', padding: '10px 12px 0', cursor: 'pointer', userSelect: 'none' }}>
+                        <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 12px rgba(255,106,0,0.1)', border: '1.5px solid rgba(255,106,0,0.35)' }}>
+                          <div onClick={toggleDay} style={{ background: '#fff', padding: '10px 12px 0', cursor: 'pointer', userSelect: 'none' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                              <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.18)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <span style={{ fontSize: 7, fontWeight: 700, color: 'rgba(255,255,255,0.65)', lineHeight: 1, letterSpacing: 0.5 }}>DAY</span>
-                                <span style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>{d.day}</span>
+                              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FFF3E8', border: '1px solid rgba(255,106,0,0.2)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <span style={{ fontSize: 7, fontWeight: 700, color: '#FF8C3A', lineHeight: 1, letterSpacing: 0.5 }}>DAY</span>
+                                <span style={{ fontSize: 14, fontWeight: 800, color: '#FF6A00', lineHeight: 1.1 }}>{d.day}</span>
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 14.5, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
-                                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>
+                                <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1C1410', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
+                                <div style={{ fontSize: 10, color: '#9CA3AF', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>
                                   Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}
                                 </div>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-                                <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap' }}>{dayTotalCount} activities</span>
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="18 15 12 9 6 15"/></svg>
+                                <span style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', whiteSpace: 'nowrap' }}>{dayTotalCount} activities</span>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="18 15 12 9 6 15"/></svg>
                               </div>
                             </div>
                             <div style={{ margin: '9px 0 0' }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', fontFamily: "'DM Sans',sans-serif" }}>{dayDoneCount}/{dayTotalCount} completed</span>
-                                <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.55)', fontFamily: "'DM Sans',sans-serif" }}>{Math.round(donePct)}%</span>
+                                <span style={{ fontSize: 10, color: '#9CA3AF', fontFamily: "'DM Sans',sans-serif" }}>{dayDoneCount}/{dayTotalCount} completed</span>
+                                <span style={{ fontSize: 10, color: '#FF8C3A', fontFamily: "'DM Sans',sans-serif", fontWeight: 600 }}>{Math.round(donePct)}%</span>
                               </div>
-                              <div style={{ height: 3, background: 'rgba(255,255,255,0.25)', borderRadius: 99, marginBottom: 10 }}>
-                                <div style={{ height: '100%', width: `${donePct}%`, background: '#fff', borderRadius: 99, transition: 'width 0.5s ease', boxShadow: donePct > 0 ? '0 0 6px rgba(255,255,255,0.5)' : 'none' }} />
+                              <div style={{ height: 3, background: 'rgba(255,106,0,0.1)', borderRadius: 99, marginBottom: 10 }}>
+                                <div style={{ height: '100%', width: `${donePct}%`, background: '#FF6A00', borderRadius: 99, transition: 'width 0.5s ease', boxShadow: donePct > 0 ? '0 0 6px rgba(255,106,0,0.35)' : 'none' }} />
                               </div>
                             </div>
                           </div>
