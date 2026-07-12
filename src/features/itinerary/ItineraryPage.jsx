@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
@@ -11,21 +11,21 @@ import lumi4Img from '../../assets/Lumi4_bgless.png';
 import lumi19Img from '../../assets/lumi19.png';
 import ExperienceDiscovery from './ExperienceDiscovery';
 
-/* ── Category colours (for My Selections sheet) ───────────── */
+/* -- Category colours (for My Selections sheet) ------------- */
 const EXP_CAT = {
-  'Attractions':       { bg: '#EEF2FF', color: '#4F46E5', emoji: '🏛️' },
-  'Food':              { bg: '#FEF3C7', color: '#D97706', emoji: '🍽️' },
-  'Cafes':             { bg: '#FDF2F8', color: '#DB2777', emoji: '☕' },
-  'Hidden Gems':       { bg: '#ECFDF5', color: '#059669', emoji: '💎' },
-  'Adventure':         { bg: '#FFF7ED', color: '#EA580C', emoji: '🎯' },
-  'Shopping':          { bg: '#FFF1F2', color: '#BE123C', emoji: '🛍️' },
-  'Nightlife':         { bg: '#F5F3FF', color: '#7C3AED', emoji: '🌙' },
-  'Culture':           { bg: '#FFFBEB', color: '#B45309', emoji: '🎭' },
-  'Viewpoints':        { bg: '#EFF6FF', color: '#2563EB', emoji: '🌅' },
-  'Local Experiences': { bg: '#F7FEE7', color: '#4D7C0F', emoji: '🌿' },
-  'Party':             { bg: '#FDF4FF', color: '#9333EA', emoji: '🎉' },
+  'Attractions':       { bg: '#EEF2FF', color: '#4F46E5', emoji: '???' },
+  'Food':              { bg: '#FEF3C7', color: '#D97706', emoji: '???' },
+  'Cafes':             { bg: '#FDF2F8', color: '#DB2777', emoji: '?' },
+  'Hidden Gems':       { bg: '#ECFDF5', color: '#059669', emoji: '??' },
+  'Adventure':         { bg: '#FFF7ED', color: '#EA580C', emoji: '??' },
+  'Shopping':          { bg: '#FFF1F2', color: '#BE123C', emoji: '???' },
+  'Nightlife':         { bg: '#F5F3FF', color: '#7C3AED', emoji: '??' },
+  'Culture':           { bg: '#FFFBEB', color: '#B45309', emoji: '??' },
+  'Viewpoints':        { bg: '#EFF6FF', color: '#2563EB', emoji: '??' },
+  'Local Experiences': { bg: '#F7FEE7', color: '#4D7C0F', emoji: '??' },
+  'Party':             { bg: '#FDF4FF', color: '#9333EA', emoji: '??' },
 };
-function expCatCfg(c) { return EXP_CAT[c] || { bg: '#F4F2EE', color: '#8A7E76', emoji: '📍' }; }
+function expCatCfg(c) { return EXP_CAT[c] || { bg: '#F4F2EE', color: '#8A7E76', emoji: '??' }; }
 
 function renderExpCatIcon(category, size = 13, color = 'currentColor') {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round', style: { display: 'block', flexShrink: 0 } };
@@ -45,7 +45,7 @@ function renderExpCatIcon(category, size = 13, color = 'currentColor') {
   }
 }
 
-/* ── Selected-experiences localStorage (survives refresh, per trip) ── */
+/* -- Selected-experiences localStorage (survives refresh, per trip) -- */
 function _selExpsKey(id) { return `tb_sel_exps_${id}`; }
 function loadSelExps(id) {
   try { return JSON.parse(localStorage.getItem(_selExpsKey(id)) || 'null') || []; } catch { return []; }
@@ -54,19 +54,19 @@ function saveSelExps(id, exps) {
   try { localStorage.setItem(_selExpsKey(id), JSON.stringify(exps || [])); } catch {}
 }
 
-/* ── Itinerary-built marker: set whenever user triggers generation (swipe OR Lumi) ── */
+/* -- Itinerary-built marker: set whenever user triggers generation (swipe OR Lumi) -- */
 function _itinDoneKey(id) { return `tb_itin_done_${id}`; }
 function isItinDone(id)   { try { return !!localStorage.getItem(_itinDoneKey(id)); } catch { return false; } }
 function markItinDone(id) { try { localStorage.setItem(_itinDoneKey(id), '1'); } catch {} }
 function clearItinDone(id){ try { localStorage.removeItem(_itinDoneKey(id)); } catch {} }
 
-/* ── Day-Planner step persistence: survives refresh so user stays on the same page ── */
+/* -- Day-Planner step persistence: survives refresh so user stays on the same page -- */
 function _plannerStepKey(id) { return `tb_pstep_${id}`; }
 function loadPlannerStep(id) { try { return localStorage.getItem(_plannerStepKey(id)); } catch { return null; } }
 function savePlannerStep(id, s) { try { localStorage.setItem(_plannerStepKey(id), s); } catch {} }
 function clearPlannerStep(id)  { try { localStorage.removeItem(_plannerStepKey(id)); } catch {} }
 
-/* ── Premium design tokens ─────────────────────────────────── */
+/* -- Premium design tokens ----------------------------------- */
 const D = {
   bg:        '#FAF8F4',
   surface:   '#FFFFFF',
@@ -159,7 +159,7 @@ function getZonedNow(nowMs, timeZone) {
   }
 }
 
-/* ── CSS keyframe injection (pulse dot + card entry + shimmer) ── */
+/* -- CSS keyframe injection (pulse dot + card entry + shimmer) -- */
 if (typeof document !== 'undefined' && !document.getElementById('itinerary-styles')) {
   const el = document.createElement('style');
   el.id = 'itinerary-styles';
@@ -303,7 +303,7 @@ if (typeof document !== 'undefined' && !document.getElementById('itinerary-style
   document.head.appendChild(el);
 }
 
-/* ── Lightbox ─────────────────────────────────────────────── */
+/* -- Lightbox ----------------------------------------------- */
 function Lightbox({ url, onClose }) {
   if (!url) return null;
   return (
@@ -320,7 +320,7 @@ function Lightbox({ url, onClose }) {
       <button
         onClick={onClose}
         style={{ position: 'absolute', top: 16, right: 16, width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.3)', color: '#fff', fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}
-      >✕</button>
+      >?</button>
     </div>
   );
 }
@@ -381,7 +381,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
       setData(r);
       setStep('result');
     } catch {
-      setData({ headline: `${dest} — Local Flavours`, tagline: 'Curated picks', dishes: [], places: [], experiences: [], tip: '' });
+      setData({ headline: `${dest} � Local Flavours`, tagline: 'Curated picks', dishes: [], places: [], experiences: [], tip: '' });
       setStep('result');
     }
   };
@@ -397,9 +397,9 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     const half = r - full >= 0.3;
     const stars = [];
     for (let i = 0; i < 5; i++) {
-      if (i < full) stars.push('★');
-      else if (i === full && half) stars.push('½');
-      else stars.push('☆');
+      if (i < full) stars.push('?');
+      else if (i === full && half) stars.push('�');
+      else stars.push('?');
     }
     return (
       <span style={{ fontSize: 12, letterSpacing: 1 }}>
@@ -421,7 +421,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
 
   const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
 
-  /* ── Veg / Non-veg dot ── */
+  /* -- Veg / Non-veg dot -- */
   const VegDot = ({ item }) => {
     const str = ((item.tags || []).join(' ') + ' ' + (item.desc || '') + ' ' + (item.name || '')).toLowerCase();
     const isVeg    = /\bveg\b|vegetarian|paneer|sabzi|dal |aloo|gobi|palak|chole|rajma|dosa|idli|pongal|dhokla|poha|chaat|lassi/.test(str);
@@ -435,7 +435,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     );
   };
 
-  /* ── Premium item card ── */
+  /* -- Premium item card -- */
   const renderTasteCard = ({ item, secKey, index, photoSuffix, startIndex }) => {
     const key = `${secKey}-${index}`;
     const isDone = doneItems.has(key);
@@ -459,7 +459,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           animationDelay: `${index * 70}ms`,
         }}
       >
-        {/* Photo at top — full width, clickable */}
+        {/* Photo at top � full width, clickable */}
         <div
           style={{ position: 'relative', height: 160, cursor: 'zoom-in', overflow: 'hidden', background: D.neutral }}
           onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}
@@ -542,13 +542,13 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
               <span style={{ fontSize: 11, fontWeight: 700, color: D.gold, background: D.goldTint, borderRadius: 999, padding: '2px 8px' }}>{item.priceRange}</span>
             )}
             {item.bestTime && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#0F6E56', background: D.sageTint, borderRadius: 999, padding: '2px 8px' }}>🕐 {item.bestTime}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#0F6E56', background: D.sageTint, borderRadius: 999, padding: '2px 8px' }}>?? {item.bestTime}</span>
             )}
           </div>
 
           {/* Description with expand */}
           <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, marginBottom: 8 }}>
-            {isExpanded || !descLong ? item.desc : `${item.desc.slice(0, 130)}…`}
+            {isExpanded || !descLong ? item.desc : `${item.desc.slice(0, 130)}�`}
             {descLong && (
               <span
                 onClick={() => toggleExpand(key)}
@@ -585,13 +585,13 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     );
   };
 
-  /* ── Section block with editorial header ── */
+  /* -- Section block with editorial header -- */
   const renderSec = ({ icon, title, subtitle, items, secKey, startIndex = 0, photoSuffix = 'photo', accentBg, accentColor: ac, sectionRef, onFilter, filterCount: secFilterCount = 0 }) => {
     const doneCount = items.filter((_, i) => doneItems.has(`${secKey}-${i}`)).length;
     if (!items.length) return null;
     return (
       <div style={{ marginBottom: '1.9rem' }}>
-        {/* Section header — matches Nearby style */}
+        {/* Section header � matches Nearby style */}
         <div className="itin-sec-header" style={{
           display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14,
           background: D.surface, borderRadius: 16, padding: '12px 14px',
@@ -622,7 +622,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     );
   };
 
-  if (step === 'loading') return <Spinner text={`Discovering the local life of ${dest}…`} solo={isSolo} />;
+  if (step === 'loading') return <Spinner text={`Discovering the local life of ${dest}�`} solo={isSolo} />;
 
   const filterCount = filters.minRating > 0 ? 1 : 0;
   const TASTE_RATINGS = [{v:0,l:'Any'},{v:3,l:'3+'},{v:3.5,l:'3.5+'},{v:4,l:'4+'},{v:4.5,l:'4.5+'}];
@@ -631,14 +631,14 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     <div style={{ background: D.bg, paddingBottom: '1.5rem', position: 'relative' }}>
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
 
-      {/* ── Filter Modal ── */}
+      {/* -- Filter Modal -- */}
       {filterOpen && (
         <div style={{ position:'fixed',inset:0,background:'rgba(14,16,24,0.45)',zIndex:600,display:'flex',alignItems:'flex-end',justifyContent:'center' }}
           onClick={e => { if (e.target === e.currentTarget) setFilterOpen(false); }}>
           <div style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem 2rem',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',animation:'rSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both' }}>
             <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16 }}>
               <div style={{ fontFamily:"'Sora',sans-serif",fontSize:16,fontWeight:800 }}>Filter Local Life</div>
-              <button onClick={() => setFilterOpen(false)} style={{ width:30,height:30,borderRadius:'50%',border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'#6b6b68',padding:0 }}>✕</button>
+              <button onClick={() => setFilterOpen(false)} style={{ width:30,height:30,borderRadius:'50%',border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'#6b6b68',padding:0 }}>?</button>
             </div>
             <div style={{ background:'#FDFCFA',borderRadius:16,padding:'13px 14px',marginBottom:16,border:'1px solid rgba(28,20,16,0.07)' }}>
               <div style={{ fontSize:11,color:D.muted,marginBottom:6,fontWeight:600 }}>Min rating</div>
@@ -646,7 +646,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
                 {TASTE_RATINGS.map(f => (
                   <button key={f.v} onClick={() => setFilterDraft(p => ({...p,minRating:f.v}))}
                     style={{ fontSize:12,fontWeight:700,padding:'7px 14px',borderRadius:999,cursor:'pointer',fontFamily:"'DM Sans',sans-serif",border:`1.5px solid ${filterDraft.minRating===f.v?D.gold:'rgba(28,20,16,0.13)'}`,background:filterDraft.minRating===f.v?D.goldTint:'#FAFAF8',color:filterDraft.minRating===f.v?D.gold:'#7A7470' }}>
-                    {f.v===0?'Any':'★ '+f.l}
+                    {f.v===0?'Any':'? '+f.l}
                   </button>
                 ))}
               </div>
@@ -659,13 +659,13 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         </div>
       )}
 
-      {/* ── Hero banner ── */}
+      {/* -- Hero banner -- */}
       <div style={{
         position: 'relative', minHeight: 140, borderRadius: 16, overflow: 'hidden',
         background: 'linear-gradient(135deg, #2C1810 0%, #8B5E3C 50%, #C9913A 100%)',
         marginBottom: '1.25rem', boxShadow: '0 4px 20px rgba(28,20,16,0.18)',
       }}>
-        <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 130, opacity: 0.06, lineHeight: 1 }}>🍜</div>
+        <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 130, opacity: 0.06, lineHeight: 1 }}>??</div>
         <div style={{ position: 'relative', zIndex: 1, padding: '1.25rem 1.25rem 1rem' }}>
           <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: 1.8, marginBottom: 6, fontFamily: "'DM Sans',sans-serif" }}>
             LOCAL LIFE GUIDE
@@ -676,7 +676,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.58)', lineHeight: 1.6, marginBottom: 14 }}>
             The food. The streets. The moments.
           </div>
-          {/* Stat buttons — click to switch active tab */}
+          {/* Stat buttons � click to switch active tab */}
           <div style={{ display:'flex', gap:8, marginTop:14 }}>
             {[
               { n: (data.dishes||[]).length,      label:'dishes',      key:'dishes' },
@@ -694,7 +694,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         </div>
       </div>
 
-      {/* ── Active section (tab-switched with animation) ── */}
+      {/* -- Active section (tab-switched with animation) -- */}
       <div style={{ animation: `${tabDir === 'right' ? 'rSlideRight' : 'rSlideLeft'} 0.25s cubic-bezier(0.2,0.7,0.2,1) both` }}>
         {activeTab === 'dishes' && (
           renderSec({
@@ -743,10 +743,10 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         )}
       </div>
 
-      {/* ── Insider tip ── */}
+      {/* -- Insider tip -- */}
       {data.tip && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: D.surface, border: `0.5px solid ${D.border}`, borderLeft: `3px solid ${D.gold}`, borderRadius: 12, padding: '12px 14px', boxShadow: '0 2px 8px rgba(28,20,16,0.06)' }}>
-          <span style={{ fontSize: 20, flexShrink: 0 }}>💡</span>
+          <span style={{ fontSize: 20, flexShrink: 0 }}>??</span>
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, color: D.gold, textTransform: 'uppercase', letterSpacing: .8, marginBottom: 4, fontFamily: "'DM Sans',sans-serif" }}>Insider Tip</div>
             <div style={{ fontSize: 13, color: D.secondary, lineHeight: 1.65 }}>{data.tip}</div>
@@ -776,7 +776,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     </div>
   );
 
-  /* ── Idle / entry state ── */
+  /* -- Idle / entry state -- */
   return (
     <div style={{ background: D.bg }}>
       {/* Hero entry card */}
@@ -785,8 +785,8 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
         background: 'linear-gradient(135deg, #1C1410 0%, #8B5E3C 60%, #C9913A 100%)',
         padding: '2rem 1.5rem', textAlign: 'center', boxShadow: '0 4px 20px rgba(28,20,16,0.18)',
       }}>
-        <div style={{ position: 'absolute', top: -30, right: -30, fontSize: 150, opacity: 0.05, lineHeight: 1 }}>🍜</div>
-        <div style={{ fontSize: 44, marginBottom: 12 }}>🍽️</div>
+        <div style={{ position: 'absolute', top: -30, right: -30, fontSize: 150, opacity: 0.05, lineHeight: 1 }}>??</div>
+        <div style={{ fontSize: 44, marginBottom: 12 }}>???</div>
         <div style={{ fontSize: 20, fontWeight: 800, color: '#fff', marginBottom: 6, fontFamily: "'Sora',sans-serif", letterSpacing: -0.3 }}>Local Life Guide</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.68)', lineHeight: 1.65, maxWidth: 280, margin: '0 auto 0' }}>
           Dishes, places, and experiences that define this city.
@@ -808,7 +808,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
           onClick={generate}
           disabled={!dest.trim()}
         >
-          ✨ Discover local life
+          ? Discover local life
         </button>
       </div>
 
@@ -827,14 +827,14 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
   );
 }
 
-/* ═══════════════════════════════════════════════════════
+/* -------------------------------------------------------
    ITINERARY PAGE
-═══════════════════════════════════════════════════════ */
+------------------------------------------------------- */
 const SLOT_LABELS = {
-  night: '12AM–6AM',
-  morning: '6AM–12PM',
-  afternoon: '12PM–6PM',
-  evening: '6PM–12AM',
+  night: '12AM�6AM',
+  morning: '6AM�12PM',
+  afternoon: '12PM�6PM',
+  evening: '6PM�12AM',
 };
 
 const SLOT_ORDER = ['morning', 'afternoon', 'evening'];
@@ -858,7 +858,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       const saved = localStorage.getItem(`tb_itab_${trip.id}`);
       // Only restore 'itinerary' tab if user went through the swipe-selection flow
       if (saved === 'itinerary' && _hasSwipeItin) return 'itinerary';
-      // 'nearby' is not restored — Day Planner is always the entry point
+      // 'nearby' is not restored � Day Planner is always the entry point
     } catch { /* ignore */ }
     return 'planner';
   });
@@ -884,7 +884,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     if (saved === 'discover') return 'discover';
     // 'result' only valid when the user actually built an itinerary
     if (saved === 'result' && _hasSwipeItin) return 'result';
-    // No saved step — derive from whether itin was built
+    // No saved step � derive from whether itin was built
     return _hasSwipeItin ? 'result' : 'discover';
   });
   const [itin, setItin] = useState(_hasSwipeItin ? (trip._cachedItin?.itinerary || null) : null);
@@ -911,15 +911,15 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const headerBg = isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)';
 
   const TYPE_ICONS = {
-    attraction: '🏛️', food: '🍽️', experience: '✨',
-    transport: '🚗', hotel: '🏨', shopping: '🛍️',
+    attraction: '???', food: '???', experience: '?',
+    transport: '??', hotel: '??', shopping: '???',
   };
 
   const ENERGY_CONFIG = {
-    high:   { label: 'Active',   symbol: '▲▲', bg: '#FAECE7', color: '#993C1D' },
-    medium: { label: 'Moderate', symbol: '▲',  bg: '#E6F1FB', color: '#1A6BAD' },
-    low:    { label: 'Easy',     symbol: '–',  bg: '#E8F8EE', color: '#1A7A4A' },
-    rest:   { label: 'Rest',     symbol: '○',  bg: '#F4F3FF', color: '#534AB7' },
+    high:   { label: 'Active',   symbol: '??', bg: '#FAECE7', color: '#993C1D' },
+    medium: { label: 'Moderate', symbol: '?',  bg: '#E6F1FB', color: '#1A6BAD' },
+    low:    { label: 'Easy',     symbol: '�',  bg: '#E8F8EE', color: '#1A7A4A' },
+    rest:   { label: 'Rest',     symbol: '?',  bg: '#F4F3FF', color: '#534AB7' },
   };
 
   const firstActivitySlot = () => {
@@ -998,7 +998,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         days,
         budget: form.budget ? parseFloat(form.budget) : null,
         people: parseInt(form.people) || 1,
-        interests: ['🛕 Temples', '🍽️ Food', '🛍️ Shopping'],
+        interests: ['?? Temples', '??? Food', '??? Shopping'],
         arrivalSlot: form.arrivalSlot,
         departureSlot: form.departureSlot,
         firstActivitySlot: firstActivitySlot(),
@@ -1011,7 +1011,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       markItinDone(trip.id); // mark as user-triggered so Day Planner shows modify view on return
       setStep('result');
       setITab('itinerary'); // auto-switch to Itinerary tab
-      // ── Save back to parent trips state so it persists across tab switches ──
+      // -- Save back to parent trips state so it persists across tab switches --
       onCacheUpdate?.({ _cachedItin: { ...result, selectedExps: selectedExperiences || [] } });
     } catch {
       setStep('error');
@@ -1019,14 +1019,14 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   };
 
   const runGenerateLocalTaste = async () => {
-    // Don't flash spinner if we already have data — refresh silently
+    // Don't flash spinner if we already have data � refresh silently
     if (!localTasteData) setLocalTasteStep('loading');
     try {
       const r = await generateLocalTaste({ destination: form.dest });
       setLocalTasteData(r);
       setLocalTasteStep('result');
       // Local taste is now Supabase-cached on the backend (destination_taste table).
-      // No longer saving per-trip — Supabase is the single source of truth.
+      // No longer saving per-trip � Supabase is the single source of truth.
     } catch {
       if (!localTasteData) setLocalTasteStep('error');
     }
@@ -1075,7 +1075,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [destinationClock,   setDestinationClock]   = useState(null);
   const [liveHintPinnedKey,  setLiveHintPinnedKey]  = useState(null);
   const [liveHintHoverKey,   setLiveHintHoverKey]   = useState(null);
-  const [detailAct,           setDetailAct]           = useState(null);
 
   useEffect(() => {
     if (!liveHintPinnedKey) return;
@@ -1205,7 +1204,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     <div>
       <Lightbox url={lightboxUrl} onClose={() => setLightboxUrl(null)} />
 
-      {/* ── Experience preview modal (selected-experiences panel, view-only) ── */}
+      {/* -- Experience preview modal (selected-experiences panel, view-only) -- */}
       {plannerReviewExp && (
         <div
           style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, background: 'rgba(10,7,5,0.88)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem' }}
@@ -1222,15 +1221,25 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 limit={3}
               />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,rgba(0,0,0,0.04) 0%,transparent 30%,rgba(0,0,0,0.76) 100%)', pointerEvents: 'none' }} />
-              {(() => { const cfg = expCatCfg(plannerReviewExp.category); return (
-                <div style={{ position: 'absolute', top: 14, left: 14, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '4px 10px 4px 7px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
-                  {renderExpCatIcon(plannerReviewExp.category, 13, cfg.color)}
-                  <span style={{ fontSize: 10.5, fontWeight: 700, color: cfg.color, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.7 }}>{plannerReviewExp.category}</span>
-                </div>
-              ); })()}
+              {(() => {
+                if (plannerReviewExp._catColor) {
+                  return (
+                    <div style={{ position: 'absolute', top: 14, left: 14, display: 'inline-flex', alignItems: 'center', gap: 5, background: plannerReviewExp._catBg || '#FFF3E8', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '4px 10px 4px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                      <span style={{ fontSize: 10.5, fontWeight: 700, color: plannerReviewExp._catColor, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.7 }}>{plannerReviewExp.category}</span>
+                    </div>
+                  );
+                }
+                const cfg = expCatCfg(plannerReviewExp.category);
+                return (
+                  <div style={{ position: 'absolute', top: 14, left: 14, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '4px 10px 4px 7px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+                    {renderExpCatIcon(plannerReviewExp.category, 13, cfg.color)}
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: cfg.color, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.7 }}>{plannerReviewExp.category}</span>
+                  </div>
+                );
+              })()}
               {plannerReviewExp.tier === 1 && (
                 <div style={{ position: 'absolute', top: 14, right: 44, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'linear-gradient(135deg,#FF6B35,#E8390E)', borderRadius: 999, padding: '4px 9px 4px 7px', boxShadow: '0 2px 10px rgba(232,57,14,0.45)' }}>
-                  <span style={{ fontSize: 10 }}>🔥</span>
+                  <span style={{ fontSize: 10 }}>??</span>
                   <span style={{ fontSize: 9.5, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", textTransform: 'uppercase', letterSpacing: 1 }}>MUST DO</span>
                 </div>
               )}
@@ -1243,136 +1252,77 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               </button>
             </div>
             <div style={{ padding: '13px 15px 17px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {/* Time range row � shown for itinerary activities */}
+              {plannerReviewExp._time && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 10px', background: '#FFF3E8', borderRadius: 8, border: '0.5px solid rgba(255,106,0,0.18)' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>
+                    {plannerReviewExp._time}{plannerReviewExp._endTime ? ` � ${plannerReviewExp._endTime}` : ''}{plannerReviewExp.duration ? ` (${plannerReviewExp.duration})` : ''}
+                  </span>
+                  {plannerReviewExp._area && (
+                    <><span style={{ color: 'rgba(255,106,0,0.35)', fontSize: 12 }}>�</span>
+                    <span style={{ fontSize: 11.5, color: '#A0673A', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                      {plannerReviewExp._area}
+                    </span></>
+                  )}
+                </div>
+              )}
               <p style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, margin: 0, fontFamily: "'DM Sans',sans-serif", display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                 {plannerReviewExp.description}
               </p>
+              {/* Tips / heads-up row */}
+              {plannerReviewExp.bestTime && (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '8px 10px', background: '#FFFBF0', borderRadius: 8, border: '0.5px solid #FAC775' }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span style={{ fontSize: 12, color: '#7A4F00', lineHeight: 1.55 }}>{plannerReviewExp.bestTime}</span>
+                </div>
+              )}
               <div style={{ height: '1px', background: 'linear-gradient(90deg,rgba(255,106,0,0.15),transparent)', margin: '0 -1px' }} />
               <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', alignItems: 'center', overflow: 'hidden' }}>
-                {plannerReviewExp.duration && (
+                {plannerReviewExp.duration && !plannerReviewExp._time && (
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#5C504A', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.07)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>
                     <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     {plannerReviewExp.duration}
                   </span>
                 )}
-                {plannerReviewExp.bestTime && <span style={{ fontSize: 11, fontWeight: 600, color: '#5C504A', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.07)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>🕐 {plannerReviewExp.bestTime}</span>}
+                {!plannerReviewExp._time && plannerReviewExp.bestTime && <span style={{ fontSize: 11, fontWeight: 600, color: '#5C504A', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.07)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>?? {plannerReviewExp.bestTime}</span>}
                 {plannerReviewExp.cost && plannerReviewExp.cost !== 'null' && plannerReviewExp.cost !== 'N/A' && <span style={{ fontSize: 11, fontWeight: 700, color: '#1C1410', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.1)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>{plannerReviewExp.cost}</span>}
               </div>
+              {/* Action buttons (itinerary activities only) */}
+              {plannerReviewExp._doneKey && (
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${plannerReviewExp.name} ${form.dest}`)}`} target="_blank" rel="noreferrer"
+                    style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12, color: '#2563AB', background: D.blueTint, borderRadius: 10, padding: '9px 12px', textDecoration: 'none', fontWeight: 600, fontFamily: "'DM Sans',sans-serif" }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Maps
+                  </a>
+                  <a href={`https://www.google.com/search?q=${encodeURIComponent(`${plannerReviewExp.name} ${form.dest}`)}`} target="_blank" rel="noreferrer"
+                    style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12, color: D.secondary, background: D.neutral, borderRadius: 10, padding: '9px 12px', textDecoration: 'none', fontWeight: 600, fontFamily: "'DM Sans',sans-serif" }}>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    Know More
+                  </a>
+                </div>
+              )}
+              {/* Mark as Done (itinerary only) */}
+              {plannerReviewExp._doneKey && (
+                <button
+                  onClick={() => { toggleActivity(plannerReviewExp._doneKey); setPlannerReviewExp(null); }}
+                  style={{ width: '100%', padding: '13px', background: doneActivities.has(plannerReviewExp._doneKey) ? D.neutral : 'linear-gradient(135deg,#FF6A00,#E8390E)', color: doneActivities.has(plannerReviewExp._doneKey) ? D.muted : '#fff', borderRadius: 12, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: doneActivities.has(plannerReviewExp._doneKey) ? 'none' : '0 4px 14px rgba(255,106,0,0.32)', transition: 'all 0.2s ease', marginTop: 2 }}
+                >
+                  {doneActivities.has(plannerReviewExp._doneKey) ? (
+                    <><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5.5,10.5 12,3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>Marked as Done</>
+                  ) : (
+                    <>Mark as Done <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5.5,10.5 12,3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></>
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Activity Detail Bottom Sheet ── */}
-      {detailAct && (
-        <div
-          style={{ position: 'fixed', inset: 0, zIndex: 99990, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'rFadeIn 0.2s ease both' }}
-          onClick={e => { if (e.target === e.currentTarget) setDetailAct(null); }}
-        >
-          <div
-            style={{ width: '100%', maxWidth: 560, background: '#fff', borderRadius: '24px 24px 0 0', maxHeight: '92vh', display: 'flex', flexDirection: 'column', animation: 'detailSheetIn 0.32s cubic-bezier(0.2,0.7,0.2,1) both' }}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Drag handle */}
-            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, flexShrink: 0 }}>
-              <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(28,20,16,0.13)' }} />
-            </div>
-            {/* Header photo */}
-            <div style={{ height: 220, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-              <PlacePhotoCarousel
-                query={`${detailAct.name} ${form.dest} travel photography`}
-                style={{ height: '100%', borderRadius: 0 }}
-                limit={3}
-              />
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.78) 100%)', pointerEvents: 'none' }} />
-              <button
-                onClick={() => setDetailAct(null)}
-                style={{ position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', padding: 0, zIndex: 2 }}
-              >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-              </button>
-              {(() => {
-                const isRest = detailAct.energyLevel === 'rest';
-                const isHT = detailAct.type === 'hotel' || detailAct.type === 'stay';
-                const cl = isRest ? 'REST' : isHT ? 'STAY' : (detailAct.type || 'activity').toUpperCase();
-                const cc = isRest ? '#7F77DD' : isHT ? '#2563AB' : detailAct.type === 'food' ? '#D97706' : '#FF6A00';
-                const cb = isRest ? '#F4F3FF' : isHT ? '#E6F1FB' : detailAct.type === 'food' ? '#FEF3C7' : '#FFF3E8';
-                return <div style={{ position: 'absolute', top: 14, left: 14, background: cb, borderRadius: 999, padding: '4px 12px', fontSize: 10.5, fontWeight: 700, color: cc, letterSpacing: 0.5, textTransform: 'uppercase' }}>{cl}</div>;
-              })()}
-              {detailAct.mustDo && <div style={{ position: 'absolute', top: 14, right: 50, background: 'linear-gradient(135deg,#FF6A00,#E8390E)', borderRadius: 999, padding: '4px 9px', fontSize: 9.5, fontWeight: 800, color: '#fff', letterSpacing: 0.6, textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(255,106,0,0.4)' }}>Must Do</div>}
-              <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14, pointerEvents: 'none' }}>
-                <div style={{ fontSize: 19, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.5)', fontFamily: "'Sora',sans-serif" }}>{detailAct.name}</div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 3, fontFamily: "'DM Sans',sans-serif" }}>
-                  {detailAct.dateLabel}{detailAct.time ? ` • ${detailAct.time}${detailAct.endTime ? ` – ${detailAct.endTime}` : ''}` : ''}{detailAct.duration ? ` (${detailAct.duration})` : ''}
-                </div>
-              </div>
-            </div>
-            {/* Scrollable content */}
-            <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 8px' }}>
-              {/* Meta chips */}
-              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 13 }}>
-                {detailAct.cost && (
-                  <span style={{ fontSize: 12, fontWeight: 600, color: D.secondary, background: '#F4F2EE', borderRadius: 999, padding: '5px 11px', border: `0.5px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                    {detailAct.cost}
-                  </span>
-                )}
-                {detailAct.area && (
-                  <span style={{ fontSize: 12, fontWeight: 600, color: D.secondary, background: '#F4F2EE', borderRadius: 999, padding: '5px 11px', border: `0.5px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                    {detailAct.area}
-                  </span>
-                )}
-                {detailAct.openingHours && (
-                  <span style={{ fontSize: 12, fontWeight: 600, color: D.secondary, background: '#F4F2EE', borderRadius: 999, padding: '5px 11px', border: `0.5px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    {detailAct.openingHours}
-                  </span>
-                )}
-                {detailAct.hoursSource === 'verified' && (
-                  <span style={{ fontSize: 10.5, fontWeight: 700, background: '#FFF3E8', color: '#FF6A00', borderRadius: 999, padding: '5px 11px', border: '0.5px solid rgba(255,106,0,0.2)' }}>Verified</span>
-                )}
-              </div>
-              {(detailAct.note || detailAct.description) && (
-                <p style={{ fontSize: 13.5, color: D.secondary, lineHeight: 1.7, margin: '0 0 13px', fontFamily: "'DM Sans',sans-serif" }}>{detailAct.note || detailAct.description}</p>
-              )}
-              {detailAct.headsUp && (
-                <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', background: '#FFFBF0', border: '0.5px solid #FAC775', borderRadius: 10, padding: '9px 12px', marginBottom: 12 }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                  <span style={{ fontSize: 12.5, color: '#7A4F00', lineHeight: 1.6 }}>{detailAct.headsUp}</span>
-                </div>
-              )}
-              <div style={{ height: 1, background: 'linear-gradient(90deg,rgba(255,106,0,0.15),transparent)', marginBottom: 12 }} />
-              <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
-                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${detailAct.name} ${form.dest}`)}`} target="_blank" rel="noreferrer"
-                  style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12.5, color: '#2563AB', background: D.blueTint, borderRadius: 12, padding: '10px 14px', textDecoration: 'none', fontWeight: 600, fontFamily: "'DM Sans',sans-serif" }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  Maps
-                </a>
-                <a href={`https://www.google.com/search?q=${encodeURIComponent(`${detailAct.name} ${form.dest}`)}`} target="_blank" rel="noreferrer"
-                  style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12.5, color: D.secondary, background: D.neutral, borderRadius: 12, padding: '10px 14px', textDecoration: 'none', fontWeight: 600, fontFamily: "'DM Sans',sans-serif" }}>
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                  Know More
-                </a>
-              </div>
-            </div>
-            {/* Mark as Done */}
-            <div style={{ padding: '10px 16px 28px', borderTop: `1px solid ${D.divider}`, flexShrink: 0 }}>
-              <button
-                onClick={() => { toggleActivity(detailAct.doneKey); setDetailAct(null); }}
-                style={{ width: '100%', padding: '14px', background: doneActivities.has(detailAct.doneKey) ? D.neutral : 'linear-gradient(135deg,#FF6A00,#E8390E)', color: doneActivities.has(detailAct.doneKey) ? D.muted : '#fff', borderRadius: 14, border: 'none', cursor: 'pointer', fontSize: 14.5, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: doneActivities.has(detailAct.doneKey) ? 'none' : '0 4px 16px rgba(255,106,0,0.35)', transition: 'all 0.2s ease' }}
-              >
-                {doneActivities.has(detailAct.doneKey) ? (
-                  <><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5.5,10.5 12,3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>Marked as Done</>
-                ) : (
-                  <>Mark as Done <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5.5,10.5 12,3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Underline tab switcher (Club-style) ── */}
+      {/* -- Underline tab switcher (Club-style) -- */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', borderBottom: `1.5px solid ${D.border}`, marginBottom: '1rem', position: 'relative', zIndex: 200, background: 'transparent' }}>
         {ITABS.map(t => {
           const isActive = iTab === t.id;
@@ -1396,27 +1346,27 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         })}
       </div>
 
-      {/* ── TAB: DAY PLANNER (experience swipe flow) ── */}
+      {/* -- TAB: DAY PLANNER (experience swipe flow) -- */}
       {iTab === 'planner' && (
         <div>
           {step === 'result' && itin ? (
-            /* ── Itinerary Ready — redesigned header + inline selections ── */
+            /* -- Itinerary Ready � redesigned header + inline selections -- */
             <div style={{ animation: 'edFadeUp 0.35s ease both' }}>
 
-              {/* ── Orange header card ── */}
+              {/* -- Orange header card -- */}
               <div style={{ background: 'linear-gradient(135deg,#FF6A00 0%,#E8390E 100%)', borderRadius: 20, padding: '1.2rem 1.2rem 1rem', boxShadow: '0 6px 28px rgba(255,106,0,0.3)', marginBottom: '1rem', position: 'relative', overflow: 'hidden' }}>
                 {/* Subtle circle decorations */}
                 <div style={{ position: 'absolute', top: -28, right: -28, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
                 <div style={{ position: 'absolute', bottom: -18, left: 60, width: 70, height: 70, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
                 <div style={{ position: 'relative' }}>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: 1.8, textTransform: 'uppercase', marginBottom: 4, fontFamily: "'DM Sans',sans-serif" }}>✦ Itinerary Ready</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.7)', letterSpacing: 1.8, textTransform: 'uppercase', marginBottom: 4, fontFamily: "'DM Sans',sans-serif" }}>? Itinerary Ready</div>
                   <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 3, fontFamily: "'Sora',sans-serif", letterSpacing: -0.3 }}>{days} day{days>1?'s':''} in {form.dest}</div>
                   <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.78)', marginBottom: 14, fontFamily: "'DM Sans',sans-serif" }}>{(itin.days||[]).reduce((a,d)=>a+(d.activities||[]).length,0)} activities planned</div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <button
                       onClick={() => setITab('itinerary')}
                       style={{ flex: 1, padding: '10px', fontSize: 12.5, fontWeight: 700, borderRadius: 12, border: 'none', cursor: 'pointer', background: '#fff', color: '#FF6A00', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 10px rgba(0,0,0,0.14)' }}
-                    >Go to Itinerary →</button>
+                    >Go to Itinerary ?</button>
                     <button
                       onClick={() => { setModifyExps(lastSelectedExps.length > 0 ? lastSelectedExps : null); setStep('discover'); }}
                       style={{ flex: 1, padding: '10px', fontSize: 12.5, fontWeight: 600, borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.5)', cursor: 'pointer', background: 'rgba(255,255,255,0.15)', color: '#fff', fontFamily: "'DM Sans',sans-serif" }}
@@ -1425,7 +1375,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 </div>
               </div>
 
-              {/* ── View selected experiences (mirrors ExperienceDiscovery confirm page) ── */}
+              {/* -- View selected experiences (mirrors ExperienceDiscovery confirm page) -- */}
               {lastSelectedExps.length > 0 && (() => {
                 const ALL_EXP_CATS = ['Attractions','Food','Cafes','Hidden Gems','Adventure','Shopping','Nightlife','Culture','Viewpoints','Local Experiences','Party'];
                 const byCategory = ALL_EXP_CATS.reduce((acc, cat) => {
@@ -1472,7 +1422,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
             <>
               {step === 'discover' && (
                 <>
-                  {/* Back button — only shown when in modify mode so user can cancel without rebuilding */}
+                  {/* Back button � only shown when in modify mode so user can cancel without rebuilding */}
                   {modifyExps !== null && (
                     <button
                       onClick={() => { setModifyExps(null); setStep('result'); }}
@@ -1493,7 +1443,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               {step === 'loading' && (
                 <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
                   <div style={isSolo ? S.soloSpinner : S.spinner} />
-                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 10, color: D.espresso }}>Building your itinerary…</div>
+                  <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 10, color: D.espresso }}>Building your itinerary�</div>
                   <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 7, textAlign: 'left' }}>
                     {[
                       { icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={accentColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>, text: 'Organizing your selected experiences' },
@@ -1509,7 +1459,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               )}
               {step === 'error' && (
                 <div style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
-                  <div style={{ fontSize: 40, marginBottom: 12 }}>😕</div>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>??</div>
                   <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Couldn't generate itinerary</div>
                   <div style={{ fontSize: 12.5, color: '#8A7E76', marginBottom: 20 }}>Something went wrong. Try again or pick differently.</div>
                   <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -1523,13 +1473,13 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         </div>
       )}
 
-      {/* ── TAB: ITINERARY (day-by-day schedule) ── */}
+      {/* -- TAB: ITINERARY (day-by-day schedule) -- */}
       {iTab === 'itinerary' && (
         <div>
           {step === 'loading' && (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8, color: D.espresso }}>Lumi is building your itinerary…</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8, color: D.espresso }}>Lumi is building your itinerary�</div>
               <div style={{ fontSize: 12.5, color: D.muted }}>Crafting your perfect {days}-day {form.dest} plan.</div>
             </div>
           )}
@@ -1545,93 +1495,22 @@ function ItineraryPage({ trip, onCacheUpdate }) {
           {itin && step !== 'loading' && (
             <div style={{ background: D.bg, paddingBottom: '2.5rem' }}>
 
-              {/* ── Hero ── */}
-              <div
-                className="itin-hero-card"
-                style={{
-                  position: 'relative', minHeight: 140, borderRadius: 18, overflow: 'hidden',
-                  background: 'linear-gradient(135deg, #1C1410 0%, #4A2C10 50%, #C9913A 100%)',
-                  marginBottom: '1.25rem',
-                }}>
-                {/* Subtle grid texture overlay */}
-                <div style={{ position: 'absolute', inset: 0, backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '18px 18px', pointerEvents: 'none', zIndex: 0 }} />
-                <div style={{ position: 'absolute', top: -20, right: -20, fontSize: 130, opacity: 0.05, lineHeight: 1, zIndex: 0 }}>🗺️</div>
-                <div style={{ position: 'relative', zIndex: 1, padding: '1.25rem 1.25rem 1rem' }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.45)', textTransform: 'uppercase', letterSpacing: 2, marginBottom: 7, fontFamily: "'DM Sans',sans-serif" }}>
-                    Day-by-Day Planner
+              {/* Trip Plan compact header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, padding: '2px 2px 0' }}>
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.2 }}>Your Trip Plan</div>
+                  <div style={{ fontSize: 11.5, color: D.muted, marginTop: 2, fontFamily: "'DM Sans',sans-serif" }}>
+                    {(itin.days || []).reduce((acc, dd) => acc + (dd.activities || []).length, 0)} activities · {days} day{days > 1 ? 's' : ''}
                   </div>
-                  <div style={{ fontSize: 22, fontWeight: 800, color: '#fff', lineHeight: 1.2, letterSpacing: -0.4, marginBottom: 4, fontFamily: "'Sora',sans-serif" }}>
-                    {days} day{days > 1 ? 's' : ''} in <span style={{ color: '#F5D9A8' }}>{form.dest}</span>
-                  </div>
-                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.50)', lineHeight: 1.5, marginBottom: 16 }}>
-                    Every hour considered. Every detail placed.
-                  </div>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 12, background: 'rgba(255,255,255,0.14)', border: '1px solid rgba(255,255,255,0.28)', borderRadius: 999, padding: '4px 10px' }}>
-                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#F5D9A8', display: 'inline-block' }} />
-                    <span style={{ fontSize: 10.5, fontWeight: 700, color: 'rgba(255,255,255,0.92)', letterSpacing: 0.5, textTransform: 'uppercase' }}>Local time</span>
-                    <span style={{ width: 1, height: 11, background: 'rgba(255,255,255,0.22)' }} />
-                    <span style={{ fontSize: 11.5, color: '#fff', fontWeight: 700 }}>{nowTimeLabel}</span>
-                    {destinationClock?.timeZone && <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.64)' }}>{destinationClock.timeZone}</span>}
-                  </div>
-                  {/* Stats — plain text with dividers */}
-                  {(() => {
-                    const totalActs = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).length, 0);
-                    const mustSees  = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).filter(act => act.mustDo).length, 0);
-                    return (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'nowrap', paddingRight: itin.quickTips?.length > 0 ? '3rem' : 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{days}</span>
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>Days</span>
-                        </div>
-                        <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.55)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', fontFamily: "'Sora',sans-serif" }}>{totalActs}</span>
-                          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', whiteSpace: 'nowrap' }}>Activities</span>
-                        </div>
-                        {mustSees > 0 && (
-                          <>
-                            <div style={{ width: 1, height: 12, background: 'rgba(255,255,255,0.18)', flexShrink: 0 }} />
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#F5D9A8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                              <span style={{ fontSize: 12, fontWeight: 700, color: '#F5D9A8', fontFamily: "'Sora',sans-serif" }}>{mustSees}</span>
-                              <span style={{ fontSize: 11, color: 'rgba(245,217,168,0.55)', whiteSpace: 'nowrap' }}>Must-Sees</span>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    );
-                  })()}
                 </div>
-
-                {/* ── Glowing tips bulb — bottom-right of hero ── */}
                 {itin.quickTips?.length > 0 && (
-                  <button
-                    className="tips-bulb-btn"
-                    onClick={() => setShowTipsPopup(true)}
-                    title={`${itin.quickTips.length} trip tips`}
-                    style={{
-                      position: 'absolute', bottom: 12, right: 12, zIndex: 2,
-                      width: 38, height: 38, borderRadius: '50%',
-                      background: 'rgba(255,255,255,0.13)',
-                      backdropFilter: 'blur(8px)',
-                      border: '1.5px solid rgba(255,255,255,0.30)',
-                      cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      padding: 0,
-                    }}
-                  >
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#F5D9A8" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="9" y1="18" x2="15" y2="18"/>
-                      <line x1="10" y1="22" x2="14" y2="22"/>
-                      <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
-                    </svg>
+                  <button onClick={() => setShowTipsPopup(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 999, border: '1px solid rgba(255,106,0,0.25)', background: '#FFF3E8', cursor: 'pointer', fontSize: 11.5, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                    Trip Tips
                   </button>
                 )}
               </div>
-
-              {/* ── Tips bottom-sheet popup ── */}
+                {/* -- Tips bottom-sheet popup -- */}
               {showTipsPopup && itin.quickTips?.length > 0 && (
                 <div
                   style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.50)', zIndex: 700, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
@@ -1667,7 +1546,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                           <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>{itin.quickTips.length} insider tips for your journey</div>
                         </div>
                       </div>
-                      <button onClick={() => setShowTipsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>✕</button>
+                      <button onClick={() => setShowTipsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>?</button>
                     </div>
                     {/* Scrollable tips list */}
                     <div style={{ overflowY: 'auto', padding: '12px 16px' }}>
@@ -1694,18 +1573,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
 
 
-              {/* ── Day sections ─────────────────────────────────── */}
-              {firstLiveActivity && (
-                <div style={{ position: 'sticky', top: 72, zIndex: 40, pointerEvents: 'none', marginLeft: 56, marginBottom: 8 }}>
-                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.96)', border: `1px solid ${D.gold}`, borderRadius: 999, padding: '5px 11px', boxShadow: '0 8px 24px rgba(201,145,58,0.24)', backdropFilter: 'blur(8px)' }}>
-                    <span className="itin-now-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: D.gold, display: 'inline-block' }} />
-                    <span style={{ fontSize: 10, fontWeight: 800, color: D.gold, letterSpacing: 0.7, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>Now</span>
-                    <span style={{ width: 1, height: 12, background: 'rgba(201,145,58,0.32)' }} />
-                    <span style={{ fontSize: 11, fontWeight: 600, color: D.espresso, maxWidth: 190, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{nowTimeLabel} • {firstLiveActivity.time} • {firstLiveActivity.name}</span>
-                  </div>
-                </div>
-              )}
-
+              {/* -- Day sections ----------------------------------- */}
               {(() => {
                 let photoIndex = 0;
                 return (itin.days || []).map((d, dayIndex) => {
@@ -1730,102 +1598,30 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   };
 
                   return (
-                    <div key={d.day} ref={el => { if (el) dayHeaderRefs.current[d.day] = el; else delete dayHeaderRefs.current[d.day]; }} style={{ marginBottom: '1.75rem' }}>
+                    <div key={d.day} ref={el => { if (el) dayHeaderRefs.current[d.day] = el; else delete dayHeaderRefs.current[d.day]; }} style={{ marginBottom: '1rem' }}>
 
-                      {/* ── Day header ── */}                      <div className="day-header-card" style={{ background: D.surface, borderRadius: 18, marginBottom: 12, overflow: 'hidden', boxShadow: '0 2px 14px rgba(28,20,16,0.08)', border: `0.5px solid ${D.border}` }}>
-                        {/* Gradient accent bar at top */}
-                        <div style={{ height: 3, background: isSolo ? 'linear-gradient(90deg,#7F77DD,#534AB7)' : 'linear-gradient(90deg,#FF6A00,#E8390E,#FF8C3A)' }} />
-                        {/* Flex row: content left + Day N right */}
-                        <div style={{ display: 'flex', alignItems: 'stretch' }}>
-                          <div style={{ flex: 1, padding: '12px 13px 11px' }}>
-                            {/* Row 1: date + weather */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 7 }}>
-                              <span style={{ fontSize: 11, fontWeight: 600, color: D.muted, letterSpacing: 0.3, fontFamily: "'DM Sans',sans-serif", display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                {dateLabel}
-                              </span>
-                              {d.weather && (
-                                <span style={{ fontSize: 11, color: D.secondary, display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                                  <WeatherSvg high={d.weather.high} />
-                                  <span style={{ color: D.coral, fontWeight: 600 }}>{d.weather.high}°</span>
-                                  <span style={{ color: D.muted, opacity: 0.65 }}>/{d.weather.low}°</span>
-                                </span>
-                              )}
-                            </div>
-                            {/* Row 2: Theme — Sora 800 */}
-                            <div style={{ fontSize: 19, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: (isArrivalDay || isDepartureDay || d.estimatedCost || dayDoneCount > 0) ? 8 : 0 }}>
-                              {d.title || d.theme}
-                            </div>
-                            {/* Row 3: Badges */}
-                            {(isArrivalDay || isDepartureDay || dayDoneCount > 0 || dayTotalCount > 0) && (
-                              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', alignItems: 'center' }}>
-                                {isArrivalDay && (
-                                  <span style={{ fontSize: 10, fontWeight: 700, background: D.blueTint, color: '#2563AB', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21 4 19 2c-2-2-4-2-5.5-.5L10 5 1.8 6.2c-.6.1-.9.7-.5 1.2l5.7 5.7-1.8 4.8"/></svg>
-                                    Arrives
-                                  </span>
-                                )}
-                                {isDepartureDay && (
-                                  <span style={{ fontSize: 10, fontWeight: 700, background: D.coralTint, color: D.coral, borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
-                                    Departs
-                                  </span>
-                                )}
-                                {dayDoneCount > 0 && (
-                                  <span style={{ fontSize: 10, fontWeight: 600, background: '#FFF3E8', color: '#FF6A00', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                    <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
-                                    {dayDoneCount}/{dayTotalCount}
-                                  </span>
-                                )}
-                                {dayTotalCount > 0 && (
-                                  <span style={{ fontSize: 10, fontWeight: 700, background: hasActiveNow ? D.goldTint : D.neutral, color: hasActiveNow ? D.gold : D.muted, borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                                    <span className={hasActiveNow ? 'itin-now-dot' : ''} style={{ width: 6, height: 6, borderRadius: '50%', background: hasActiveNow ? D.gold : '#C7C1B8', display: 'inline-block' }} />
-                                    Live {Math.round(dayProgressPct)}%
-                                  </span>
-                                )}
-                              </div>
-                            )}
+                      {/* Compact day accordion header */}
+                      <div
+                        onClick={() => setCollapsedDays(prev => { const next = new Set(prev); next.has(d.day) ? next.delete(d.day) : next.add(d.day); return next; })}
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', background: !collapsedDays.has(d.day) ? (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#FF6A00,#E8390E)') : D.surface, borderRadius: 14, border: `0.5px solid ${!collapsedDays.has(d.day) ? 'transparent' : D.border}`, boxShadow: '0 1px 8px rgba(28,20,16,0.07)', cursor: 'pointer', userSelect: 'none', marginBottom: 8 }}
+                      >
+                        <div style={{ width: 34, height: 34, borderRadius: 10, background: !collapsedDays.has(d.day) ? 'rgba(255,255,255,0.18)' : '#FFF3E8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {d.weather ? <WeatherSvg high={d.weather.high} /> : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={!collapsedDays.has(d.day) ? 'rgba(255,255,255,0.85)' : '#FF6A00'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 10, fontWeight: 600, color: !collapsedDays.has(d.day) ? 'rgba(255,255,255,0.7)' : D.muted, fontFamily: "'DM Sans',sans-serif", marginBottom: 1, lineHeight: 1 }}>
+                            Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}
                           </div>
-                          {/* Day N badge — RIGHT side (also toggles collapse) */}
-                          <div
-                            onClick={() => setCollapsedDays(prev => { const next = new Set(prev); next.has(d.day) ? next.delete(d.day) : next.add(d.day); return next; })}
-                            style={{ width: 62, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isSolo ? 'linear-gradient(160deg,#7F77DD,#534AB7)' : 'linear-gradient(160deg,#FF6A00,#E8390E)', flexShrink: 0, cursor: 'pointer', userSelect: 'none', gap: 0 }}
-                          >
-                            <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 1.2 }}>DAY</span>
-                            <span style={{ fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1, fontFamily: "'Sora',sans-serif" }}>{d.day}</span>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: collapsedDays.has(d.day) ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform 0.22s ease', marginTop: 3 }}><polyline points="6 9 12 15 18 9"/></svg>
+                          <div style={{ fontSize: 13.5, fontWeight: 700, color: !collapsedDays.has(d.day) ? '#fff' : D.espresso, fontFamily: "'Sora',sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.25 }}>
+                            {d.title || d.theme}
                           </div>
                         </div>
-                        {/* Integrated tips inside card */}
-                        {(d.weather?.tip || d.proTip) && (
-                          <div style={{ borderTop: `1px solid ${D.divider}`, background: isSolo ? 'rgba(127,119,221,0.03)' : 'rgba(201,145,58,0.03)', padding: '10px 14px 11px', display: 'flex', flexDirection: 'column', gap: 9 }}>
-                            {d.weather?.tip && (
-                              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                <div style={{ width: 28, height: 28, borderRadius: '50%', background: isSolo ? 'rgba(83,74,183,0.12)' : 'rgba(15,110,86,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#534AB7' : '#0F6E56'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
-                                </div>
-                                <span style={{ fontSize: 12.5, fontWeight: 600, color: isSolo ? '#534AB7' : '#0F6E56', lineHeight: 1.55, paddingTop: 5 }}>{d.weather.tip}</span>
-                              </div>
-                            )}
-                            {d.proTip && (
-                              <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(201,145,58,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                                </div>
-                                <span style={{ fontSize: 12.5, color: '#5a3a0a', lineHeight: 1.55, paddingTop: 5 }}><strong style={{ color: D.gold, fontWeight: 700 }}>Local:</strong> {d.proTip}</span>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                        {/* Progress bar */}
-                        {dayTotalCount > 0 && (
-                          <div style={{ position: 'relative', height: 20 }}>
-                            <div style={{ position: 'absolute', left: 0, right: 0, top: 9, height: 2.5, background: D.neutral }} />
-                            <div className={hasActiveNow ? 'itin-live-bar' : ''} style={{ position: 'absolute', left: 0, top: 9, height: 2.5, width: `${dayProgressClamped}%`, background: isSolo ? '#7F77DD' : D.gold, transition: 'width 0.6s ease' }} />
-                            <div className={hasActiveNow ? 'itin-now-dot' : ''} style={{ position: 'absolute', top: 5.5, left: `calc(${dayProgressClamped}% - 4px)`, width: 8, height: 8, borderRadius: '50%', background: isSolo ? '#7F77DD' : D.gold, transition: 'left 0.6s ease' }}>
-                            </div>
-                          </div>
-                        )}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: !collapsedDays.has(d.day) ? 'rgba(255,255,255,0.88)' : D.muted, whiteSpace: 'nowrap' }}>
+                            {dayDoneCount > 0 ? `${dayDoneCount}/${dayTotalCount}` : dayTotalCount} activities
+                          </span>
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={!collapsedDays.has(d.day) ? 'rgba(255,255,255,0.7)' : D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: !collapsedDays.has(d.day) ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.22s ease', flexShrink: 0 }}><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
                       </div>
 
                       {/* Activities */}
@@ -1853,7 +1649,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                     {/* Time column */}
                                     <div style={{ width: 68, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: 1 }}>
                                       <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? '#FF6A00' : D.espresso, lineHeight: 1.1, fontFamily: "'DM Sans',sans-serif" }}>{a.time}</span>
-                                      {a.endTime && <span style={{ fontSize: 10, color: D.muted, lineHeight: 1.1 }}>– {a.endTime}</span>}
+                                      {a.endTime && <span style={{ fontSize: 10, color: D.muted, lineHeight: 1.1 }}>� {a.endTime}</span>}
                                     </div>
                                     {/* Orange dot + connector */}
                                     <div style={{ width: 16, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -1863,7 +1659,23 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                     {/* Tappable card */}
                                     <div
                                       className="act-card-compact"
-                                      onClick={() => setDetailAct({ ...a, doneKey, dateLabel })}
+                                      onClick={() => isTransport || isHotelType ? null : setPlannerReviewExp({
+                                        name: a.name,
+                                        category: catLabel,
+                                        _catColor: catColor,
+                                        _catBg: catBg,
+                                        description: a.note || a.description || '',
+                                        duration: a.duration,
+                                        bestTime: a.headsUp,
+                                        cost: a.cost,
+                                        vibe: null,
+                                        tier: a.mustDo ? 1 : 0,
+                                        imageQuery: `${a.name} ${form.dest} travel photography`,
+                                        _time: a.time,
+                                        _endTime: a.endTime,
+                                        _area: a.area,
+                                        _doneKey: doneKey,
+                                      })}
                                       style={{ flex: 1, background: isDone ? 'rgba(28,20,16,0.025)' : '#fff', borderRadius: 16, border: `0.5px solid ${isActive ? 'rgba(255,106,0,0.28)' : D.border}`, boxShadow: isActive ? '0 4px 14px rgba(255,106,0,0.1)' : '0 1px 5px rgba(28,20,16,0.05)', display: 'flex', overflow: 'hidden', minWidth: 0 }}
                                     >
                                       {!isTransport && !isHotelType && (
@@ -1878,7 +1690,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                       <div style={{ flex: 1, padding: isTransport || isHotelType ? '9px 10px' : '9px 10px 9px 0', minWidth: 0 }}>
                                         {isTransport || isHotelType ? (
                                           <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                                            <span style={{ fontSize: 16 }}>{a.icon || (isHotelType ? '🏨' : '🚗')}</span>
+                                            <span style={{ fontSize: 16 }}>{a.icon || (isHotelType ? '??' : '??')}</span>
                                             <span style={{ fontSize: 13, fontWeight: 700, color: D.espresso, lineHeight: 1.25, fontFamily: "'Sora',sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
                                           </div>
                                         ) : (
@@ -1891,7 +1703,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                         </div>
                                         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap', overflow: 'hidden' }}>
                                           {a.duration && <span style={{ fontSize: 10.5, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 2, whiteSpace: 'nowrap', flexShrink: 0 }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{a.duration}</span>}
-                                          {a.cost && <span style={{ fontSize: 10.5, color: D.muted, whiteSpace: 'nowrap', flexShrink: 0 }}>• {a.cost}</span>}
+                                          {a.cost && <span style={{ fontSize: 10.5, color: D.muted, whiteSpace: 'nowrap', flexShrink: 0 }}>� {a.cost}</span>}
                                           {a.area && <span style={{ fontSize: 10.5, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 2, minWidth: 0, overflow: 'hidden' }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.area}</span></span>}
                                         </div>
                                       </div>
@@ -1937,8 +1749,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                 <div style={{ margin: '4px 0 10px', background: '#FFF3E8', borderRadius: 12, padding: '9px 14px', border: '0.5px solid rgba(255,106,0,0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
                                   <div style={{ flex: 1 }}>
                                     <span style={{ fontSize: 12, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>{dayDoneCount}/{dayTotalCount} done</span>
-                                    {durLabel && <span style={{ fontSize: 11, color: D.muted, marginLeft: 7 }}>• {durLabel} total</span>}
-                                    {paidCount > 0 && <span style={{ fontSize: 11, color: D.muted, marginLeft: 7 }}>• {paidCount} paid</span>}
+                                    {durLabel && <span style={{ fontSize: 11, color: D.muted, marginLeft: 7 }}>� {durLabel} total</span>}
+                                    {paidCount > 0 && <span style={{ fontSize: 11, color: D.muted, marginLeft: 7 }}>� {paidCount} paid</span>}
                                   </div>
                                   <div style={{ width: 52, height: 4, borderRadius: 99, background: 'rgba(255,106,0,0.15)', flexShrink: 0 }}>
                                     <div style={{ height: '100%', width: `${dayTotalCount > 0 ? (dayDoneCount / dayTotalCount) * 100 : 0}%`, background: '#FF6A00', borderRadius: 99, transition: 'width 0.4s ease' }} />
@@ -1950,7 +1762,25 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         );
                       })()} {/* end activities */}
 
-                      {/* ── Day closing ── */}
+                      {/* Day tips */}
+                      {!collapsedDays.has(d.day) && (d.weather?.tip || d.proTip) && (
+                        <div style={{ marginBottom: 8 }}>
+                          {d.weather?.tip && (
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '7px 10px', background: '#FFF8F3', borderRadius: 10, marginBottom: 5, border: '0.5px solid rgba(255,106,0,0.1)' }}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                              <span style={{ fontSize: 11.5, color: D.secondary, lineHeight: 1.55 }}>{d.weather.tip}</span>
+                            </div>
+                          )}
+                          {d.proTip && (
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '7px 10px', background: '#FFF8F3', borderRadius: 10, border: '0.5px solid rgba(255,106,0,0.1)' }}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                              <span style={{ fontSize: 11.5, color: D.secondary, lineHeight: 1.55 }}><strong style={{ color: '#FF6A00' }}>Local:</strong> {d.proTip}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* -- Day closing -- */}
                       {!collapsedDays.has(d.day) && (() => {
                         const acts = d.activities || [];
                         const lastAct = acts[acts.length - 1];
@@ -1958,7 +1788,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         if (!acts.length || lastAct?.type === 'hotel' || lastAct?.type === 'stay') return null;
                         // Pick a unique closing message per day (rotate through the 30)
                         const closing = isLastDay
-                          ? { label: 'Journey Home', note: 'Safe travels! Pack up and head to the airport or station — your adventure ends here, until next time.' }
+                          ? { label: 'Journey Home', note: 'Safe travels! Pack up and head to the airport or station � your adventure ends here, until next time.' }
                           : DAY_CLOSING_MSGS[dayIndex % DAY_CLOSING_MSGS.length];
                         return (
                           <div className="day-closing-card" style={{ display: 'flex', gap: 0, marginTop: 6, marginBottom: 8 }}>
@@ -1997,22 +1827,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   );
                 });
               })()}
-
-              {/* ── Lumi tweak card ── */}
-              <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: 'linear-gradient(135deg,#FF6A00 0%,#E8390E 100%)', borderRadius: 20, padding: '1.1rem 1.2rem', marginBottom: '1.25rem', boxShadow: '0 6px 24px rgba(255,106,0,0.28)', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: -24, right: -24, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
-                <img src={lumi15Img} alt="Lumi" style={{ width: 68, height: 68, objectFit: 'contain', flexShrink: 0, position: 'relative' }} />
-                <div style={{ flex: 1, position: 'relative' }}>
-                  <div style={{ fontSize: 14.5, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", marginBottom: 3, lineHeight: 1.25 }}>Want me to tweak your plan?</div>
-                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.82)', marginBottom: 11, lineHeight: 1.5 }}>I can adjust based on your preferences.</div>
-                  <button
-                    onClick={() => { setModifyExps(null); setStep('discover'); setITab('planner'); }}
-                    style={{ padding: '7px 18px', borderRadius: 999, border: 'none', background: '#fff', color: '#FF6A00', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
-                  >
-                    Let's do it
-                  </button>
-                </div>
-              </div>
 
               {/* Scroll-to-top in Day Planner */}
               {showPlannerScrollTop && (
@@ -2072,8 +1886,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     </div>
   );
 }
-/* ═══════════════════════════════════════════════════════
+/* -------------------------------------------------------
    TRIP AI CHATBOT
-═══════════════════════════════════════════════════════ */
+------------------------------------------------------- */
 export default ItineraryPage;
 export { LocalTastePage };
