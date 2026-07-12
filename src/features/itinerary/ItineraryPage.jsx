@@ -8,6 +8,7 @@ import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime } f
 import lumi15Img from '../../assets/lumi15.png';
 import lumi17Img from '../../assets/lumi17.png';
 import lumi4Img from '../../assets/Lumi4_bgless.png';
+import lumi10Img from '../../assets/lumi10.png';
 import lumi19Img from '../../assets/lumi19.png';
 import ExperienceDiscovery from './ExperienceDiscovery';
 
@@ -250,6 +251,10 @@ if (typeof document !== 'undefined' && !document.getElementById('itinerary-style
     @keyframes fadeSlideIn {
       from { opacity:0; transform:translateY(6px); }
       to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes bulbGlow {
+      0%, 100% { box-shadow: 0 0 0 2px rgba(255,255,255,0.3); }
+      50% { box-shadow: 0 0 0 3px rgba(255,255,255,0.5), 0 0 18px rgba(255,255,255,0.28); }
     }
     @keyframes detailSheetIn {
       from { transform:translateY(100%); }
@@ -1506,30 +1511,38 @@ function ItineraryPage({ trip, onCacheUpdate }) {
             const livePct = Math.round((doneActivities.size / Math.max(1, totalActs)) * 100);
             const arrLabel = form.arrival ? formatTripDate(form.arrival, 0) : '';
             const depLabel = form.arrival ? formatTripDate(form.arrival, days - 1) : '';
+            const currentTripDay = (() => {
+              if (!form.arrival) return null;
+              const arr = new Date(form.arrival); arr.setHours(0,0,0,0);
+              const tod = new Date(); tod.setHours(0,0,0,0);
+              const idx = Math.round((tod - arr) / 86400000);
+              const dd = itin.days || [];
+              return (idx >= 0 && idx < dd.length) ? dd[idx].day : null;
+            })();
             return (
               <div>
                 {/* Trip header card */}
-                <div style={{ background: '#fff', borderRadius: 18, marginBottom: 12, overflow: 'hidden', boxShadow: '0 2px 14px rgba(28,20,16,0.07)', border: '1px solid #EBEBEB' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '13px 14px' }}>
-                    <div style={{ width: 76, height: 76, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#EDE8E2' }}>
-                      <PlacePhoto query={`${form.dest} travel photography`} style={{ width: '100%', height: 76, borderRadius: 0 }} />
+                <div style={{ background: 'linear-gradient(135deg,#FF5500,#FF8C3A)', borderRadius: 18, marginBottom: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(255,106,0,0.22)', position: 'relative', animation: 'fadeSlideIn 0.4s ease both' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 14px' }}>
+                    <div style={{ width: 56, height: 56, flexShrink: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                      <img src={lumi10Img} alt="Lumi" style={{ width: 56, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.2))' }} />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 16.5, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 2, lineHeight: 1.2 }}>
-                        {form.dest} Trip
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                        <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1, letterSpacing: -0.3 }}>Itinerary</span>
                       </div>
-                      <div style={{ fontSize: 12, color: D.muted, marginBottom: 7, fontFamily: "'DM Sans',sans-serif" }}>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans',sans-serif", marginBottom: 8 }}>
                         {arrLabel && depLabel ? `${arrLabel} \u2013 ${depLabel} \u00b7 ${days} Day${days > 1 ? 's' : ''}` : `${days} Day${days > 1 ? 's' : ''}`}
                       </div>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FFF3E8', borderRadius: 999, padding: '3px 10px', border: '1px solid rgba(255,106,0,0.18)' }}>
-                        <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF6A00', flexShrink: 0, animation: 'dotPulse 1.6s ease-in-out infinite', boxShadow: '0 0 0 2.5px rgba(255,106,0,0.22)' }} />
-                        <span style={{ fontSize: 11.5, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>Live {livePct}%</span>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.22)', borderRadius: 999, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.35)' }}>
+                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', flexShrink: 0, animation: 'dotPulse 1.6s ease-in-out infinite' }} />
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', fontFamily: "'DM Sans',sans-serif" }}>Live {livePct}%</span>
                       </div>
                     </div>
                     {itin.quickTips?.length > 0 && (
-                      <button onClick={() => setShowTipsPopup(true)} style={{ flexShrink: 0, display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 12px', borderRadius: 12, border: '1.5px solid #E0E0E0', background: '#fff', cursor: 'pointer' }}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
-                        <span style={{ fontSize: 10, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>Trip Tips</span>
+                      <button onClick={() => setShowTipsPopup(true)} style={{ flexShrink: 0, width: 42, height: 42, borderRadius: 12, border: 'none', background: 'rgba(255,255,255,0.22)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px rgba(255,255,255,0.3)', transition: 'all 0.2s ease', animation: 'bulbGlow 2.5s ease-in-out infinite' }}>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
                       </button>
                     )}
                   </div>
@@ -1622,24 +1635,25 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                   const paidActs = acts.filter(act => { const c = (act.cost || '').toLowerCase(); return c && c !== 'free' && c !== 'included'; });
                   const estSpend = paidActs.length === 0 ? 'Free' : (paidActs[0]?.cost || `${paidActs.length} paid`);
+                  const isCurrentDay = d.day === currentTripDay;
 
                   return (
-                    <div key={d.day} ref={el => { if (el) dayHeaderRefs.current[d.day] = el; else delete dayHeaderRefs.current[d.day]; }} style={{ marginBottom: 10 }}>
+                    <div key={d.day} ref={el => { if (el) dayHeaderRefs.current[d.day] = el; else delete dayHeaderRefs.current[d.day]; }} style={{ marginBottom: 10, borderRadius: 16, outline: isCurrentDay ? '2.5px solid #FF6A00' : 'none', outlineOffset: '2px', boxShadow: isCurrentDay ? '0 0 0 5px rgba(255,106,0,0.09), 0 4px 20px rgba(255,106,0,0.12)' : 'none', animation: `fadeSlideIn 0.35s ease ${dayIndex * 0.05}s both`, transition: 'box-shadow 0.3s ease' }}>
 
                       {isExpanded ? (
                         /* Expanded dark header */
                         <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(28,20,16,0.12)' }}>
-                          <div onClick={toggleDay} style={{ background: isSolo ? 'linear-gradient(140deg,#3A2D6E,#2A1F56)' : 'linear-gradient(140deg,#FF5500,#FF8C3A)', padding: '10px 12px 0', cursor: 'pointer', userSelect: 'none' }}>
+                          <div onClick={toggleDay} style={{ background: 'linear-gradient(140deg,#FF5500,#FF8C3A)', padding: '10px 12px 0', cursor: 'pointer', userSelect: 'none' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(255,255,255,0.18)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                 <span style={{ fontSize: 7, fontWeight: 700, color: 'rgba(255,255,255,0.65)', lineHeight: 1, letterSpacing: 0.5 }}>DAY</span>
                                 <span style={{ fontSize: 14, fontWeight: 800, color: '#fff', lineHeight: 1.1 }}>{d.day}</span>
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.6)', fontFamily: "'DM Sans',sans-serif", marginBottom: 1, lineHeight: 1 }}>
+                                <div style={{ fontSize: 14.5, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
+                                <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.6)', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>
                                   Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}
                                 </div>
-                                <div style={{ fontSize: 14.5, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                                 <span style={{ fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap' }}>{dayTotalCount} activities</span>
@@ -1689,11 +1703,15 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                       )}
                                       {/* Content */}
                                       <div style={{ flex: 1, padding: '8px 26px 8px 10px', minWidth: 0, cursor: isTransport || isHotelType ? 'default' : 'pointer' }} onClick={() => isTransport || isHotelType ? null : setPlannerReviewExp({ name: a.name, category: catLabel, _catColor: catColor, _catBg: catBg, description: a.note || a.description || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} travel photography`, _time: a.time, _endTime: a.endTime, _area: a.area, _doneKey: doneKey })}>
-                                        {(a.time || a.endTime) && (
+                                        {(a.time || a.endTime) ? (
                                           <div style={{ marginBottom: 3 }}>
                                             <span style={{ fontSize: 10.5, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>{a.time}{a.endTime ? ` \u2013 ${a.endTime}` : ''}</span>
                                           </div>
-                                        )}
+                                        ) : a.headsUp ? (
+                                          <div style={{ marginBottom: 3 }}>
+                                            <span style={{ fontSize: 9.5, color: '#7A5500', background: '#FEF9EC', borderRadius: 999, padding: '2px 7px', border: '1px solid #F3D97A', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: 3 }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#7A5500" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>{a.headsUp.length > 30 ? a.headsUp.slice(0, 30) + '\u2026' : a.headsUp}</span>
+                                          </div>
+                                        ) : null}
                                         {isTransport || isHotelType ? (
                                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={catColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -1821,10 +1839,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                             <span style={{ fontSize: 13, fontWeight: 800, color: '#FF6A00', lineHeight: 1.1 }}>{d.day}</span>
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 10.5, color: D.muted, fontFamily: "'DM Sans',sans-serif", marginBottom: 1, lineHeight: 1 }}>
+                            <div style={{ fontSize: 14, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
+                            <div style={{ fontSize: 10, color: D.muted, fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>
                               Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}
                             </div>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
                             <span style={{ fontSize: 11.5, color: D.muted, fontWeight: 500 }}>{dayDoneCount > 0 ? `${dayDoneCount}/${dayTotalCount}` : dayTotalCount} activities</span>
