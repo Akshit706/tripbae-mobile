@@ -54,6 +54,18 @@ function saveSelExps(id, exps) {
   try { localStorage.setItem(_selExpsKey(id), JSON.stringify(exps || [])); } catch {}
 }
 
+/* ── Itinerary-built marker: set whenever user triggers generation (swipe OR Lumi) ── */
+function _itinDoneKey(id) { return `tb_itin_done_${id}`; }
+function isItinDone(id)   { try { return !!localStorage.getItem(_itinDoneKey(id)); } catch { return false; } }
+function markItinDone(id) { try { localStorage.setItem(_itinDoneKey(id), '1'); } catch {} }
+function clearItinDone(id){ try { localStorage.removeItem(_itinDoneKey(id)); } catch {} }
+
+/* ── Day-Planner step persistence: survives refresh so user stays on the same page ── */
+function _plannerStepKey(id) { return `tb_pstep_${id}`; }
+function loadPlannerStep(id) { try { return localStorage.getItem(_plannerStepKey(id)); } catch { return null; } }
+function savePlannerStep(id, s) { try { localStorage.setItem(_plannerStepKey(id), s); } catch {} }
+function clearPlannerStep(id)  { try { localStorage.removeItem(_plannerStepKey(id)); } catch {} }
+
 /* ── Premium design tokens ─────────────────────────────────── */
 const D = {
   bg:        '#FAF8F4',
@@ -828,10 +840,14 @@ function formatTripDate(arrivalStr, dayIndex) {
 
 function ItineraryPage({ trip, onCacheUpdate }) {
   const isSolo = trip.isSolo;
+  // Whether the user explicitly built an itinerary (swipe flow OR "Create with Lumi")
+  const _hasSwipeItin = trip._cachedItin && isItinDone(trip.id);
+
   const [iTab, setITab] = useState(() => {
     try {
       const saved = localStorage.getItem(`tb_itab_${trip.id}`);
-      if (saved === 'itinerary' && trip._cachedItin) return 'itinerary';
+      // Only restore 'itinerary' tab if user went through the swipe-selection flow
+      if (saved === 'itinerary' && _hasSwipeItin) return 'itinerary';
       // 'nearby' is not restored — Day Planner is always the entry point
     } catch { /* ignore */ }
     return 'planner';
@@ -852,9 +868,17 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     ? Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000))
     : 1;
 
-  const [step, setStep] = useState(trip._cachedItin ? 'result' : 'discover');
-  const [itin, setItin] = useState(trip._cachedItin?.itinerary || null);
-  const [sources, setSources] = useState(trip._cachedItin?.sources || []);
+  const [step, setStep] = useState(() => {
+    const saved = loadPlannerStep(trip.id);
+    // 'discover' is always safe: covers first-time discovery and modification mode
+    if (saved === 'discover') return 'discover';
+    // 'result' only valid when the user actually built an itinerary
+    if (saved === 'result' && _hasSwipeItin) return 'result';
+    // No saved step — derive from whether itin was built
+    return _hasSwipeItin ? 'result' : 'discover';
+  });
+  const [itin, setItin] = useState(_hasSwipeItin ? (trip._cachedItin?.itinerary || null) : null);
+  const [sources, setSources] = useState(_hasSwipeItin ? (trip._cachedItin?.sources || []) : []);
   const [lastSelectedExps, setLastSelectedExps] = useState(() => loadSelExps(trip.id));
   const [showSelectionsSheet, setShowSelectionsSheet] = useState(false);
   const [sheetExps, setSheetExps] = useState([]);
@@ -898,6 +922,14 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     try { localStorage.setItem(`tb_itab_${trip.id}`, iTab); } catch { /* ignore */ }
   }, [iTab, trip.id]);
 
+  // Persist Day Planner step so refresh keeps user on the same page
+  // Only save stable states (discover / result); loading and error are transient
+  useEffect(() => {
+    if (step === 'discover' || step === 'result') {
+      savePlannerStep(trip.id, step);
+    }
+  }, [step, trip.id]);
+
   // On first itin load: collapse all days except today's, then scroll to it
   useEffect(() => {
     if (!itin || collapsedInitRef.current) return;
@@ -923,8 +955,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   }, [itin]);
 
   useEffect(() => {
-    // If we already have cached data from the trip prop, show it immediately
-    if (trip._cachedItin) {
+    // Only apply cached itin if user explicitly triggered itinerary generation
+    if (trip._cachedItin && isItinDone(trip.id)) {
       setItin(trip._cachedItin.itinerary);
       setSources(trip._cachedItin.sources || []);
       setStep('result');
@@ -966,6 +998,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       });
       setItin(result.itinerary);
       setSources(result.sources || []);
+      markItinDone(trip.id); // mark as user-triggered so Day Planner shows modify view on return
       setStep('result');
       setITab('itinerary'); // auto-switch to Itinerary tab
       // ── Save back to parent trips state so it persists across tab switches ──
@@ -1006,6 +1039,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   }, [form.dest]);
 
   const handleRedo = () => {
+    clearItinDone(trip.id);
+    clearPlannerStep(trip.id);
     onCacheUpdate?.({ _cachedItin: null });
     setStep('discover');
   };

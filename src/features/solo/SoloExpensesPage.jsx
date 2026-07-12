@@ -11,6 +11,20 @@ import { addExpense, updateExpense, deleteExpense } from '../../api';
 import { CATS, tripDuration } from '../shared/constants';
 import { S } from '../shared/styles';
 import { CatIcon } from '../shared/ui';
+import { getFxRate } from '../home/HomePage';
+
+const SOLO_CURRENCIES = [
+  { code: 'INR', symbol: '₹' }, { code: 'USD', symbol: '$' }, { code: 'EUR', symbol: '€' },
+  { code: 'GBP', symbol: '£' }, { code: 'JPY', symbol: '¥' }, { code: 'AED', symbol: 'د.إ' },
+  { code: 'AUD', symbol: 'A$' }, { code: 'CAD', symbol: 'C$' }, { code: 'CHF', symbol: 'Fr' },
+  { code: 'CNY', symbol: '¥' }, { code: 'HKD', symbol: 'HK$' }, { code: 'IDR', symbol: 'Rp' },
+  { code: 'KRW', symbol: '₩' }, { code: 'LKR', symbol: 'Rs' }, { code: 'MYR', symbol: 'RM' },
+  { code: 'NPR', symbol: 'रू' }, { code: 'NZD', symbol: 'NZ$' }, { code: 'PKR', symbol: '₨' },
+  { code: 'PHP', symbol: '₱' }, { code: 'SAR', symbol: '﷼' }, { code: 'SGD', symbol: 'S$' },
+  { code: 'THB', symbol: '฿' }, { code: 'TRY', symbol: '₺' }, { code: 'VND', symbol: '₫' },
+  { code: 'ZAR', symbol: 'R' },
+];
+
 function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [expenses, setExpenses] = useState(trip.expenses || []);
   const [budget, setBudget] = useState(trip.budget || null);
@@ -18,6 +32,12 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [editingExpenseId, setEditingExpenseId] = useState(null);
   const [showBudgetEdit, setShowBudgetEdit] = useState(false);
   const [editBudget, setEditBudget] = useState(String(budget || ''));
+  const [localBudgetCurrency, setLocalBudgetCurrency] = useState(trip.budgetCurrency || null);
+  const SOLO_SPEND_CURRENCY_KEY = `travelbae_solo_spendcurrency_${trip.id}`;
+  const [spendCurrency, setSpendCurrency] = useState(() => {
+    try { return localStorage.getItem(`travelbae_solo_spendcurrency_${trip.id}`) || trip.destinationCurrency || trip.budgetCurrency || 'INR'; } catch { return 'INR'; }
+  });
+  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const [filterCat, setFilterCat] = useState('all');
   const [section, setSection] = useState('expenses');
   const [saving, setSaving] = useState(false);
@@ -112,12 +132,18 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const plannedDailyBudget = budget ? budget / Math.max(1, days) : null;
   const pacePct = plannedDailyBudget ? Math.round((tsr / plannedDailyBudget) * 100) : null;
 
+  const spendMeta = SOLO_CURRENCIES.find(c => c.code === spendCurrency) || { code: 'INR', symbol: '₹' };
+  const spendSymbol = spendMeta.symbol;
+  const budgetCurrMeta = SOLO_CURRENCIES.find(c => c.code === (localBudgetCurrency || spendCurrency)) || spendMeta;
+  const fmt = n => `${spendSymbol}${Math.round(n).toLocaleString('en-IN')}`;
+  const fmtBudget = n => `${budgetCurrMeta.symbol}${Math.round(n).toLocaleString('en-IN')}`;
+
   const soloFunLines = [];
   if (expenses.length === 0) {
     soloFunLines.push('No expenses yet. Your wallet currently thinks this is a spiritual retreat.');
   } else {
     if (daysElapsed >= 2) {
-      soloFunLines.push(`Current TSR is ₹${Math.round(tsr).toLocaleString('en-IN')}/day across ${daysElapsed} day${daysElapsed > 1 ? 's' : ''}.`);
+      soloFunLines.push(`Current TSR is ${spendSymbol}${Math.round(tsr).toLocaleString('en-IN')}/day across ${daysElapsed} day${daysElapsed > 1 ? 's' : ''}.`);
     }
     if (budget && budgetPct <= 60 && uniqueSpendDays >= Math.max(2, Math.round(days * 0.4))) {
       soloFunLines.push('You are spending like a pro traveler, not a panic buyer at airport shops.');
@@ -133,7 +159,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       soloFunLines.push(`Biggest spend was ${top3[0].desc}. Iconic decision, no notes.`);
     }
     if (budget && projected > budget) {
-      soloFunLines.push(`If this pace continues, you may overshoot by ₹${Math.round(projected - budget).toLocaleString('en-IN')}.`);
+      soloFunLines.push(`If this pace continues, you may overshoot by ${fmtBudget(projected - budget)}.`);
     }
   }
   if (soloFunLines.length === 0) {
@@ -265,8 +291,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             tooltip: {
               callbacks: {
                 label: ctx => ctx.dataIndex === 0
-                  ? ` Spent: ₹${Math.round(Math.min(total, budget)).toLocaleString('en-IN')}`
-                  : ` Left: ₹${Math.round(Math.max(0, budget - total)).toLocaleString('en-IN')}`,
+                  ? ` Spent: ${fmtBudget(Math.min(total, budget))}`
+                  : ` Left: ${fmtBudget(Math.max(0, budget - total))}`,
               },
             },
           },
@@ -312,11 +338,11 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
-            tooltip: { callbacks: { label: ctx => ` ₹${Math.round(ctx.raw).toLocaleString('en-IN')}` } },
+            tooltip: { callbacks: { label: ctx => ` ${fmt(ctx.raw)}` } },
           },
           scales: {
             x: { ticks: { color: textColor, font: { size: 11 } }, grid: { display: false }, border: { display: false } },
-            y: { ticks: { color: textColor, font: { size: 11 }, callback: v => `₹${v >= 1000 ? Math.round(v / 1000) + 'k' : v}` }, grid: { color: gridColor }, border: { display: false } },
+            y: { ticks: { color: textColor, font: { size: 11 }, callback: v => `${spendSymbol}${v >= 1000 ? Math.round(v / 1000) + 'k' : v}` }, grid: { color: gridColor }, border: { display: false } },
           },
         },
       });
@@ -340,7 +366,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         <div style={{ background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .6, textTransform: 'uppercase', marginBottom: 12 }}>How much?</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-            <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>₹</span>
+            <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 28, fontWeight: 700, color: 'rgba(255,255,255,0.5)' }}>{spendSymbol}</span>
             <input
               type="number" placeholder="0" value={form.amount}
               onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
@@ -403,6 +429,33 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         @keyframes heroNumIn { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
         @keyframes lumiSoloPop{from{opacity:0;transform:scale(0.88) translateY(20px)}60%{transform:scale(1.02) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
       `}</style>
+
+      {/* ── Currency picker ── */}
+      {showCurrencyPicker && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(28,20,16,0.55)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end' }}
+          onClick={() => setShowCurrencyPicker(false)}>
+          <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', padding: '0.75rem 1.25rem 2.5rem', maxHeight: '75vh', overflowY: 'auto' }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ width: 40, height: 4, borderRadius: 99, background: '#D3D1C7', margin: '0 auto 1rem' }} />
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: '#1C1410', marginBottom: 3 }}>Spending currency</div>
+            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>All amounts in Expenses will show in this currency</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+              {SOLO_CURRENCIES.map(c => {
+                const active = c.code === spendCurrency;
+                return (
+                  <button key={c.code}
+                    onClick={() => { setSpendCurrency(c.code); try { localStorage.setItem(SOLO_SPEND_CURRENCY_KEY, c.code); } catch {} setShowCurrencyPicker(false); }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', borderRadius: 12, border: `1.5px solid ${active ? '#FF6A00' : 'rgba(0,0,0,0.1)'}`, background: active ? '#FFF3EB' : '#fafafa', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", textAlign: 'left' }}>
+                    <span style={{ fontSize: 16, fontWeight: 700, color: active ? '#FF6A00' : '#374151', minWidth: 24 }}>{c.symbol}</span>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: active ? '#7A2800' : '#374151', flex: 1 }}>{c.code}</span>
+                    {active && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Lumi intro popup (first-time) ── */}
       {showWelcome && (
@@ -471,17 +524,19 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         </button>
         <div style={{ display: 'flex', justifyContent: budget ? 'space-between' : 'center', alignItems: 'flex-start', marginBottom: 12, position: 'relative' }}>
           <div style={{ paddingLeft: budget ? 2 : 0, textAlign: budget ? 'left' : 'center' }}>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5 }}>Total Spent</div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>₹{Math.round(total).toLocaleString('en-IN')}</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4, fontWeight: 500 }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day · {expenses.length} entries</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 6 }}>Total Spent
+              <button onClick={() => setShowCurrencyPicker(true)} style={{ background: 'rgba(255,255,255,0.2)', border: '0.5px solid rgba(255,255,255,0.35)', borderRadius: 6, color: 'rgba(255,255,255,0.9)', fontSize: 9, fontWeight: 700, padding: '2px 6px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", letterSpacing: .5, lineHeight: 1.4 }}>{spendCurrency}</button>
+            </div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>{fmt(total)}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4, fontWeight: 500 }}>{fmt(tsr)}/day · {expenses.length} entries</div>
           </div>
           {budget && (
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5 }}>Budget Left</div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#FFD0B0', textShadow: '0 1px 8px rgba(0,0,0,0.15)', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) .1s both' }}>
-                {budgetLeft < 0 ? '-' : ''}₹{Math.abs(Math.round(budgetLeft)).toLocaleString('en-IN')}
+                {budgetLeft < 0 ? '-' : ''}{fmtBudget(Math.abs(budgetLeft))}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of ₹{budget.toLocaleString('en-IN')}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of {fmtBudget(budget)}</div>
             </div>
           )}
         </div>
@@ -513,7 +568,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       </div>
       {showBudgetEdit && (
         <div style={{ ...S.card, border: `0.5px solid ${SOLO_ACCENT_BORDER}`, background: '#f9fffe', marginBottom: '1rem' }}>
-          <label style={S.label}>Total trip budget ₹</label>
+          <label style={S.label}>Total trip budget ({spendCurrency})</label>
           <input style={S.input} type="number" value={editBudget} onChange={e => setEditBudget(e.target.value)} placeholder="e.g. 15000" autoFocus />
           <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
             <button
@@ -522,16 +577,30 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                 const v = parseFloat(editBudget);
                 if (!isNaN(v) && v > 0) {
                   setBudget(v);
+                  setLocalBudgetCurrency(spendCurrency);
                   try {
                     const { updateTrip } = await import('../../api');
-                    await updateTrip(trip.id, { budget: v });
-                    onTripUpdate?.({ budget: v });
+                    await updateTrip(trip.id, { budget: v, budgetCurrency: spendCurrency });
+                    onTripUpdate?.({ budget: v, budgetCurrency: spendCurrency });
                   } catch (_) {}
                 }
                 setShowBudgetEdit(false);
               }}>
               ✓ Save
             </button>
+            {budget && (
+              <button style={{ ...S.btn, color: '#993C1D', borderColor: '#F5C4B3' }}
+                onClick={async () => {
+                  setBudget(null);
+                  setLocalBudgetCurrency(null);
+                  try {
+                    const { updateTrip } = await import('../../api');
+                    await updateTrip(trip.id, { budget: null, budgetCurrency: null });
+                    onTripUpdate?.({ budget: null, budgetCurrency: null });
+                  } catch (_) {}
+                  setShowBudgetEdit(false);
+                }}>Remove</button>
+            )}
             <button style={S.btn} onClick={() => setShowBudgetEdit(false)}>✕</button>
           </div>
         </div>
@@ -587,7 +656,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827' }}>₹{exp.amount.toLocaleString('en-IN')}</div>
+                    <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827' }}>{fmt(exp.amount)}</div>
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 5 }}>
                       <button onClick={() => handleEdit(exp)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1, fontFamily: "'DM Sans',sans-serif" }}>✎</button>
                       <button onClick={() => handleDelete(exp.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1, opacity: 0.75, fontFamily: "'DM Sans',sans-serif" }}>✕</button>
@@ -606,9 +675,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           {/* stat strip */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
             {[
-              { label: 'Daily rate', value: `₹${Math.round(tsr).toLocaleString('en-IN')}`, sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB' },
-              { label: 'Projected', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, sub: budget && projected > budget ? `+₹${Math.round(overBy).toLocaleString('en-IN')} over` : 'on track', color: budget && projected > budget ? '#D85B00' : '#FF8C3A', bg: budget && projected > budget ? '#FFF8F4' : '#FFF3EB' },
-              { label: 'Top cat', value: topCatMeta?.label || '—', sub: `₹${Math.round(topCat?.[1] || 0).toLocaleString('en-IN')}`, color: '#6366f1', bg: '#EEF2FF' },
+              { label: 'Daily rate', value: fmt(tsr), sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB' },
+              { label: 'Projected', value: fmt(projected), sub: budget && projected > budget ? `+${fmtBudget(overBy)} over` : 'on track', color: budget && projected > budget ? '#D85B00' : '#FF8C3A', bg: budget && projected > budget ? '#FFF8F4' : '#FFF3EB' },
+              { label: 'Top cat', value: topCatMeta?.label || '—', sub: fmt(topCat?.[1] || 0), color: '#6366f1', bg: '#EEF2FF' },
             ].map((s, idx) => (
               <div key={idx} style={{ background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '11px 10px', textAlign: 'center', animation: `soloFadeUp .3s ease-out ${idx * 55}ms both` }}>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827', letterSpacing: '-0.3px', lineHeight: 1.1 }}>{s.value}</div>
@@ -639,7 +708,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
               <div style={{ height: 7, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
                 <div style={{ height: '100%', width: `${Math.min(pacePct, 100)}%`, borderRadius: 99, transition: 'width .6s cubic-bezier(.2,.8,.2,1)', background: pacePct > 115 ? 'linear-gradient(90deg,#D85B00,#FF6A00)' : 'linear-gradient(90deg,#FF6A00,#FF8C3A)' }} />
               </div>
-              <div style={{ fontSize: 11, color: '#9ca3af' }}>₹{Math.round(tsr).toLocaleString('en-IN')}/day actual · ₹{Math.round(plannedDailyBudget).toLocaleString('en-IN')}/day planned</div>
+              <div style={{ fontSize: 11, color: '#9ca3af' }}>{fmt(tsr)}/day actual · {fmtBudget(plannedDailyBudget)}/day planned</div>
             </div>
           )}
 
@@ -649,8 +718,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
               <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Budget health</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 {[
-                  { label: 'Trip budget', value: `₹${Math.round(budget).toLocaleString('en-IN')}`, color: '#374151' },
-                  { label: 'Projected end', value: `₹${Math.round(projected).toLocaleString('en-IN')}`, color: projected > budget ? '#D85B00' : '#FF8C3A' },
+                  { label: 'Trip budget', value: fmtBudget(budget), color: '#374151' },
+                  { label: 'Projected end', value: fmt(projected), color: projected > budget ? '#D85B00' : '#FF8C3A' },
                 ].map(s => (
                   <div key={s.label} style={{ background: '#F9F9F8', borderRadius: 12, padding: '9px 11px', border: '1px solid rgba(0,0,0,0.06)' }}>
                     <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, marginBottom: 3 }}>{s.label}</div>
@@ -668,7 +737,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 8 }}>
                   <div style={{ padding: '9px 11px', background: projected > budget ? '#FFF8F4' : '#FFF3EB', border: `1px solid ${projected > budget ? '#FFCBA4' : '#FFD5A8'}`, borderRadius: 12, fontSize: 12, color: projected > budget ? '#D85B00' : '#FF6A00', lineHeight: 1.4, display: 'flex', alignItems: 'center', gap: 6, fontWeight: 500 }}>
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>{projected > budget ? <><path d="M10.3 3.3L2 19h20L13.7 3.3a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></> : <polyline points="20,6 9,17 4,12"/>}</svg>
-                    {projected > budget ? `Over by ₹${Math.round(overBy).toLocaleString('en-IN')}` : `₹${Math.round(underBy).toLocaleString('en-IN')} under pace`}
+                    {projected > budget ? `Over by ${fmtBudget(overBy)}` : `${fmtBudget(underBy)} under pace`}
                   </div>
                   <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, color: '#9ca3af', marginBottom: 4 }}>
@@ -697,7 +766,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 5 }}>
                       <div style={{ width: 30, height: 30, borderRadius: 9, background: c.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><CatIcon id={c.id} size={16} /></div>
                       <span style={{ flex: 1, fontSize: 13, fontWeight: 500, color: '#374151' }}>{c.label}</span>
-                      <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: CAT_COLORS[c.id] || SOLO_ACCENT }}>₹{Math.round(catTotals[c.id]).toLocaleString('en-IN')}</span>
+                      <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: CAT_COLORS[c.id] || SOLO_ACCENT }}>{fmt(catTotals[c.id])}</span>
                       <span style={{ fontSize: 11, color: '#9ca3af', width: 28, textAlign: 'right' }}>{pct}%</span>
                     </div>
                     <div style={{ height: 5, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden' }}>
@@ -729,7 +798,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                       </div>
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: '#111827' }}>₹{Math.round(exp.amount).toLocaleString('en-IN')}</div>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 800, color: '#111827' }}>{fmt(exp.amount)}</div>
                       <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1 }}>{pct}% of total</div>
                     </div>
                   </div>

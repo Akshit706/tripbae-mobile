@@ -451,6 +451,7 @@ export default function App() {
   }, [activeTrip, trips]); // ← ADD trips as dependency
 
   const isSolo = activeTripData?.isSolo || false;
+  const isHome = !activeTrip && !activeTripData;
 
   // ── OTP countdown timer ──
   useEffect(() => {
@@ -564,46 +565,22 @@ export default function App() {
     } else {
       setNewTripModal(trip);
     }
-    // Kick off itinerary generation in background immediately
+    // Pre-fetch local taste in background so the Local Life tab loads instantly
     if (trip.destination) {
-      import('./api').then(async ({ generateItinerary, generateLocalTaste }) => {
-        const days = trip.arrival && trip.departure
-          ? Math.max(1, Math.round((new Date(trip.departure) - new Date(trip.arrival)) / 86400000))
-          : 1;
-        const SLOT_ORDER = ['morning', 'afternoon', 'evening'];
-        const arrivalIdx = SLOT_ORDER.indexOf(trip.arrivalSlot || 'morning');
-        const firstSlot = SLOT_ORDER[Math.min(arrivalIdx + 1, SLOT_ORDER.length - 1)];
+      import('./api').then(async ({ generateLocalTaste }) => {
         try {
-          const [itinResult, tasteResult] = await Promise.all([
-            generateItinerary({
-              destination: trip.destination,
-              days,
-              budget: trip.budget || null,
-              people: trip.people || 1,
-              interests: ['🛕 Temples', '🍽️ Food', '🛍️ Shopping'],
-              arrivalSlot: trip.arrivalSlot || 'morning',
-              departureSlot: trip.departureSlot || 'morning',
-              firstActivitySlot: firstSlot,
-              arrival: trip.arrival,
-            }),
-            generateLocalTaste({ destination: trip.destination }),
-          ]);
+          const tasteResult = await generateLocalTaste({ destination: trip.destination });
           setTrips(ts => ts.map(t => t.id === trip.id
-            ? { ...t, _cachedItin: itinResult, _cachedTaste: tasteResult }
+            ? { ...t, _cachedTaste: tasteResult }
             : t
           ));
           const cache = readAiCache();
-          cache[trip.id] = {
-            ...(cache[trip.id] || {}),
-            _cachedItin: itinResult,
-            _cachedTaste: tasteResult,
-          };
+          cache[trip.id] = { ...(cache[trip.id] || {}), _cachedTaste: tasteResult };
           writeAiCache(cache);
-          // Persist to DB so all group members see it without regenerating
-          saveAiCache(trip.id, { cachedItinerary: itinResult, cachedTaste: tasteResult })
-            .catch(e => console.warn('AI cache DB save failed:', e.message));
+          saveAiCache(trip.id, { cachedTaste: tasteResult })
+            .catch(e => console.warn('Taste cache DB save failed:', e.message));
         } catch (e) {
-          console.warn('Background itinerary generation failed:', e);
+          console.warn('Background taste generation failed:', e);
         }
       });
     }
@@ -1388,7 +1365,7 @@ export default function App() {
       {newTripModal && <ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
 
       {/* Top Bar */}
-      <div className="tb-topbar-glass" style={S.topBar}>
+      <div className={`tb-topbar-glass${isHome ? ' tb-topbar-home' : ''}`} style={isHome ? { ...S.topBar, background: 'transparent', backdropFilter: 'none', borderBottom: 'none', boxShadow: 'none' } : S.topBar}>
         {/* Profile button — always top-left */}
         <button
           onClick={() => setProfileOpen(true)}

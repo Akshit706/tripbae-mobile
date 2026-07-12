@@ -23,6 +23,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
   const [chartReady, setChartReady] = useState(false);
   const [showBudgetEdit, setShowBudgetEdit] = useState(false);
   const [localBudget, setLocalBudget] = useState(trip.budget || null);
+  const [localBudgetCurrency, setLocalBudgetCurrency] = useState(trip.budgetCurrency || null);
   const [budgetInput, setBudgetInput] = useState('');
   const SPLIT_WELCOME_KEY = `travelbae_split_welcome_${trip.id}`;
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -215,6 +216,8 @@ function SplitPage({ trip, myNickname, myAvatar }) {
   const funInsightLines = [];
   const fmt = n => `${spendSymbol}${Math.round(n).toLocaleString('en-IN')}`;
   const fmtHome = n => `${homeMeta.symbol}${Math.round(n).toLocaleString('en-IN')}`;
+  const budgetCurrMeta = SPLIT_CURRENCIES.find(c => c.code === (localBudgetCurrency || spendCurrency)) || spendMeta;
+  const fmtBudget = n => `${budgetCurrMeta.symbol}${Math.round(n).toLocaleString('en-IN')}`;
   if (expenses.length === 0) {
     funInsightLines.push('No spends yet. Wallets are meditating and UPI is on standby.');
   } else {
@@ -240,7 +243,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
       funInsightLines.push('Plot twist: everyone is settled. This is rarer than finding a clean public washroom on a road trip.');
     }
     if (budget && projected > budget) {
-      funInsightLines.push(`At this pace, the trip may end around ${fmt(projected)} (about ${fmt(projected - budget)} over budget).`);
+      funInsightLines.push(`At this pace, the trip may end around ${fmt(projected)} (about ${fmtBudget(projected - budget)} over budget).`);
     }
   }
   if (funInsightLines.length === 0) {
@@ -260,7 +263,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
         data: {
           datasets: [{ data: [Math.min(total, budget), Math.max(0, budget - total)], backgroundColor: [budgetPct > 85 ? '#D85B00' : '#FF6A00', '#FFF3EB'], borderWidth: 0, hoverOffset: 0 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '74%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataIndex === 0 ? ` Spent: ${fmt(Math.min(total, budget))}` : ` Left: ${fmt(Math.max(0, budget - total))}` } } } },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '74%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataIndex === 0 ? ` Spent: ${fmtBudget(Math.min(total, budget))}` : ` Left: ${fmtBudget(Math.max(0, budget - total))}` } } } },
         plugins: [{ id: 'center', afterDraw(chart) { const { ctx, chartArea: { width, height, left, top } } = chart; const cx = left + width / 2, cy = top + height / 2; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '600 17px system-ui'; ctx.fillStyle = '#1a1a18'; ctx.fillText(`${budgetPct}%`, cx, cy - 9); ctx.font = '12px system-ui'; ctx.fillStyle = textColor; ctx.fillText('used', cx, cy + 9); ctx.restore(); } }]
       });
     }
@@ -684,9 +687,9 @@ function SplitPage({ trip, myNickname, myAvatar }) {
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5 }}>Budget Left</div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#FFD0B0', textShadow: '0 1px 8px rgba(0,0,0,0.15)', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) .1s both' }}>
-                {budgetLeft < 0 ? '-' : ''}{fmt(Math.abs(budgetLeft))}
+                {budgetLeft < 0 ? '-' : ''}{fmtBudget(Math.abs(budgetLeft))}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of {fmt(budget)}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of {fmtBudget(budget)}</div>
             </div>
           )}
         </div>
@@ -726,7 +729,8 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                 const v = parseFloat(budgetInput);
                 if (!isNaN(v) && v > 0) {
                   setLocalBudget(v);
-                  try { const { updateTrip } = await import('../../api'); await updateTrip(trip.id, { budget: v }); } catch (_) {}
+                  setLocalBudgetCurrency(spendCurrency);
+                  try { const { updateTrip } = await import('../../api'); await updateTrip(trip.id, { budget: v, budgetCurrency: spendCurrency }); } catch (_) {}
                 }
                 setShowBudgetEdit(false);
               }}>✓ Save</button>
@@ -734,7 +738,8 @@ function SplitPage({ trip, myNickname, myAvatar }) {
               <button style={{ ...S.btn, color: '#993C1D', borderColor: '#F5C4B3' }}
                 onClick={async () => {
                   setLocalBudget(null);
-                  try { const { updateTrip } = await import('../../api'); await updateTrip(trip.id, { budget: null }); } catch (_) {}
+                  setLocalBudgetCurrency(null);
+                  try { const { updateTrip } = await import('../../api'); await updateTrip(trip.id, { budget: null, budgetCurrency: null }); } catch (_) {}
                   setShowBudgetEdit(false);
                 }}>Remove</button>
             )}
@@ -993,7 +998,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
             {[
               { label: 'Daily rate', value: fmt(tsr), sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB' },
-              { label: 'Projected', value: fmt(projected), sub: budget && projected > budget ? `+${fmt(overBy)} over` : 'on track', color: budget && projected > budget ? '#D85B00' : '#FF8C3A', bg: budget && projected > budget ? '#FFF8F4' : '#FFF3EB' },
+              { label: 'Projected', value: fmt(projected), sub: budget && projected > budget ? `+${fmtBudget(overBy)} over` : 'on track', color: budget && projected > budget ? '#D85B00' : '#FF8C3A', bg: budget && projected > budget ? '#FFF8F4' : '#FFF3EB' },
               { label: 'Days left', value: daysLeft, sub: `${daysElapsed}d elapsed`, color: '#6366f1', bg: '#EEF2FF' },
             ].map((s, idx) => (
               <div key={idx} style={{ background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '11px 10px', textAlign: 'center', animation: `soloFadeUp .3s ease-out ${idx * 55}ms both` }}>
@@ -1049,7 +1054,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
               <div style={{ height: 7, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
                 <div style={{ height: '100%', width: `${Math.min(pacePct, 100)}%`, borderRadius: 99, transition: 'width .6s cubic-bezier(.2,.8,.2,1)', background: pacePct > 115 ? 'linear-gradient(90deg,#D85B00,#FF6A00)' : 'linear-gradient(90deg,#FF6A00,#FF8C3A)' }} />
               </div>
-              <div style={{ fontSize: 11, color: '#9ca3af' }}>{fmt(tsr)}/day actual · {fmt(plannedDailyBudget)}/day planned</div>
+              <div style={{ fontSize: 11, color: '#9ca3af' }}>{fmt(tsr)}/day actual · {fmtBudget(plannedDailyBudget)}/day planned</div>
             </div>
           )}
 
@@ -1059,7 +1064,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
               <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Budget health</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 {[
-                  { label: 'Trip budget', value: fmt(budget), color: '#374151' },
+                  { label: 'Trip budget', value: fmtBudget(budget), color: '#374151' },
                   { label: 'Projected end', value: fmt(projected), color: projected > budget ? '#D85B00' : '#FF8C3A' },
                 ].map(s => (
                   <div key={s.label} style={{ background: '#F9F9F8', borderRadius: 12, padding: '9px 11px', border: '1px solid rgba(0,0,0,0.06)' }}>
