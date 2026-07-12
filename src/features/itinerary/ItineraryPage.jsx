@@ -1630,7 +1630,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{dayIcon}</div>
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.58)', fontFamily: "'DM Sans',sans-serif", marginBottom: 2, lineHeight: 1 }}>
-                                  Day {d.day} \u00b7 {dateLabel}{isArrivalDay ? ' \u00b7 Arrival' : isDepartureDay ? ' \u00b7 Departure' : ''}
+                                  Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}
                                 </div>
                                 <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
                               </div>
@@ -1676,17 +1676,17 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                       </div>
                                       {/* Photo */}
                                       {!isTransport && !isHotelType && (
-                                        <div style={{ width: 96, flexShrink: 0, overflow: 'hidden', background: '#EDE8E2', alignSelf: 'stretch', cursor: 'pointer' }} onClick={() => setPlannerReviewExp({ name: a.name, category: catLabel, _catColor: catColor, _catBg: catBg, description: a.note || a.description || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} travel photography`, _time: a.time, _endTime: a.endTime, _area: a.area, _doneKey: doneKey })}>
-                                          <PlacePhotoCarousel query={`${a.name} ${form.dest} photo`} style={{ height: '100%', minHeight: 90, borderRadius: 0 }} limit={1} />
+                                        <div style={{ width: 92, flexShrink: 0, overflow: 'hidden', background: '#EDE8E2', alignSelf: 'stretch', cursor: 'pointer' }} onClick={() => setPlannerReviewExp({ name: a.name, category: catLabel, _catColor: catColor, _catBg: catBg, description: a.note || a.description || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} travel photography`, _time: a.time, _endTime: a.endTime, _area: a.area, _doneKey: doneKey })}>
+                                          <PlacePhotoCarousel query={`${a.name} ${form.dest} photo`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 0 }} limit={1} />
                                         </div>
                                       )}
                                       {/* Content */}
                                       <div style={{ flex: 1, padding: '10px 10px', minWidth: 0, cursor: isTransport || isHotelType ? 'default' : 'pointer' }} onClick={() => isTransport || isHotelType ? null : setPlannerReviewExp({ name: a.name, category: catLabel, _catColor: catColor, _catBg: catBg, description: a.note || a.description || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} travel photography`, _time: a.time, _endTime: a.endTime, _area: a.area, _doneKey: doneKey })}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
                                           {(a.time || a.endTime) ? (
-                                            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>{a.time}{a.endTime ? ` \u2013 ${a.endTime}` : ''}</span>
+                                            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>{a.time}{a.endTime ? ` \u2013 ${a.endTime}` : ''}</span>
                                           ) : <span />}
-                                          <span style={{ color: '#CDCAC4', fontSize: 16, lineHeight: 1, letterSpacing: 1 }}>\u00b7\u00b7\u00b7</span>
+                                          <span style={{ color: '#CDCAC4', fontSize: 16, lineHeight: 1, letterSpacing: 1 }}>···</span>
                                         </div>
                                         {isTransport || isHotelType ? (
                                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
@@ -1701,9 +1701,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                         </div>
                                         <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'nowrap', overflow: 'hidden' }}>
                                           {a.duration && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: D.muted, whiteSpace: 'nowrap', flexShrink: 0 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{a.duration}</span>}
-                                          {a.duration && a.cost && <span style={{ color: '#DDDAD6', fontSize: 11 }}>\u00b7</span>}
+                                          {a.duration && a.cost && <span style={{ color: '#DDDAD6', fontSize: 11 }}>·</span>}
                                           {a.cost && <span style={{ fontSize: 11, color: D.muted, whiteSpace: 'nowrap', flexShrink: 0 }}>{a.cost}</span>}
-                                          {a.cost && a.area && <span style={{ color: '#DDDAD6', fontSize: 11 }}>\u00b7</span>}
+                                          {a.cost && a.area && <span style={{ color: '#DDDAD6', fontSize: 11 }}>·</span>}
                                           {a.area && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: D.muted, minWidth: 0, overflow: 'hidden' }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.area}</span></span>}
                                         </div>
                                       </div>
@@ -1799,7 +1799,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                           <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FFF3E8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, border: '1px solid rgba(255,106,0,0.1)' }}>{dayIcon}</div>
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontSize: 11.5, color: D.muted, fontFamily: "'DM Sans',sans-serif", marginBottom: 2, lineHeight: 1 }}>
-                              Day {d.day} \u00b7 {dateLabel}{isArrivalDay ? ' \u00b7 Arrival' : isDepartureDay ? ' \u00b7 Departure' : ''}
+                              Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}
                             </div>
                             <div style={{ fontSize: 15, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
                           </div>
