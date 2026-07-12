@@ -1538,8 +1538,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                 {/* Tips popup */}
                 {showTipsPopup && itin.quickTips?.length > 0 && (
-                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.50)', zIndex: 700, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => { if (e.target === e.currentTarget) setShowTipsPopup(false); }}>
-                    <div style={{ width: '100%', maxWidth: 560, background: '#FFFDF8', borderRadius: '22px 22px 0 0', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)', boxShadow: '0 -10px 60px rgba(0,0,0,0.22)', animation: 'tipsSheetIn 0.3s cubic-bezier(0.2,0.7,0.2,1) both', maxHeight: '70vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.50)', zIndex: 1200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => { if (e.target === e.currentTarget) setShowTipsPopup(false); }}>
+                    <div style={{ width: '100%', maxWidth: 560, background: '#FFFDF8', borderRadius: '22px 22px 0 0', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)', boxShadow: '0 -10px 60px rgba(0,0,0,0.22)', animation: 'tipsSheetIn 0.3s cubic-bezier(0.2,0.7,0.2,1) both', maxHeight: 'calc(70vh - 66px)', marginBottom: 66, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                       <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
                         <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(28,20,16,0.14)' }} />
                       </div>
