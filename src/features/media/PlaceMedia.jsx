@@ -8,6 +8,40 @@ const _photoInFlight = new Map();
 const _photoListCache = new Map();
 const _photoListInFlight = new Map();
 
+// ── localStorage persistence (survives page refreshes) ─────────────────────
+// Key format: tb_ph_{query}  →  { u: string[], e: expiryTimestamp }
+const _LS_PREFIX = 'tb_ph_';
+const _LS_TTL = 10 * 24 * 60 * 60 * 1000; // 10 days (ImageKit URLs are permanent)
+
+function _lsSave(query, urls) {
+  if (!urls?.length || !query) return;
+  try {
+    localStorage.setItem(_LS_PREFIX + query, JSON.stringify({ u: urls, e: Date.now() + _LS_TTL }));
+  } catch { /* localStorage full — ignore */ }
+}
+
+function _lsPreload() {
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k?.startsWith(_LS_PREFIX)) keys.push(k);
+    }
+    const now = Date.now();
+    for (const k of keys) {
+      try {
+        const raw = JSON.parse(localStorage.getItem(k));
+        if (!raw?.u?.length || now > raw.e) { localStorage.removeItem(k); continue; }
+        const q = k.slice(_LS_PREFIX.length);
+        _photoListCache.set(q, raw.u);
+        _photoCache.set(q, raw.u[0]);
+      } catch { /* corrupted entry */ }
+    }
+  } catch { /* no localStorage */ }
+}
+
+_lsPreload();
+
 function normalizePhotoUrl(url) {
   if (!url) return null;
   try {
@@ -37,8 +71,11 @@ async function fetchCached(query) {
   const { fetchPlacePhotos } = await import('../../api');
   const promise = fetchPlacePhotos(query)
     .then(data => {
-      const url = (uniquePhotos(data.urls || [])[0]) || null;
+      const urls = uniquePhotos(data.urls || []);
+      const url = urls[0] || null;
       _photoCache.set(query, url);
+      _photoListCache.set(query, urls);
+      if (urls.length > 0) _lsSave(query, urls);
       _photoInFlight.delete(query);
       return url;
     })
@@ -63,6 +100,7 @@ async function fetchCachedList(query, limit = 3) {
       const urls = uniquePhotos((data.urls || []).filter(Boolean));
       _photoListCache.set(query, urls);
       _photoCache.set(query, urls[0] || null);
+      if (urls.length > 0) _lsSave(query, urls);
       _photoListInFlight.delete(query);
       return urls;
     })

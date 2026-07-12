@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect } from 'react';
 import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
@@ -993,12 +993,16 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     setStep('loading');
     try {
       const { generateItinerary } = await import('../../api');
+      // Derive interests from selected categories so the AI knows what the user cares about
+      const interests = (selectedExperiences && selectedExperiences.length > 0)
+        ? [...new Set(selectedExperiences.map(e => e.category).filter(Boolean))]
+        : [];
       const result = await generateItinerary({
         destination: form.dest,
         days,
         budget: form.budget ? parseFloat(form.budget) : null,
         people: parseInt(form.people) || 1,
-        interests: ['?? Temples', '??? Food', '??? Shopping'],
+        interests,
         arrivalSlot: form.arrivalSlot,
         departureSlot: form.departureSlot,
         firstActivitySlot: firstActivitySlot(),
@@ -1074,6 +1078,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [clockNowMs,         setClockNowMs]         = useState(() => Date.now());
   const [destinationClock,   setDestinationClock]   = useState(null);
   const [liveHintPinnedKey,  setLiveHintPinnedKey]  = useState(null);
+  const [expandedTipsDay,    setExpandedTipsDay]    = useState(new Set());
   const [liveHintHoverKey,   setLiveHintHoverKey]   = useState(null);
 
   useEffect(() => {
@@ -1475,11 +1480,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
       {/* -- TAB: ITINERARY (day-by-day schedule) -- */}
       {iTab === 'itinerary' && (
-        <div>
+        <div style={{ paddingBottom: '2.5rem' }}>
           {step === 'loading' && (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8, color: D.espresso }}>Lumi is building your itinerary�</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8, color: D.espresso }}>Lumi is building your itinerary…</div>
               <div style={{ fontSize: 12.5, color: D.muted }}>Crafting your perfect {days}-day {form.dest} plan.</div>
             </div>
           )}
@@ -1492,380 +1497,324 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               </div>
             </div>
           )}
-          {itin && step !== 'loading' && (
-            <div style={{ background: D.bg, paddingBottom: '2.5rem' }}>
-
-              {/* Trip Plan compact header */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14, padding: '2px 2px 0' }}>
-                <div>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.2 }}>Your Trip Plan</div>
-                  <div style={{ fontSize: 11.5, color: D.muted, marginTop: 2, fontFamily: "'DM Sans',sans-serif" }}>
-                    {(itin.days || []).reduce((acc, dd) => acc + (dd.activities || []).length, 0)} activities · {days} day{days > 1 ? 's' : ''}
-                  </div>
-                </div>
-                {itin.quickTips?.length > 0 && (
-                  <button onClick={() => setShowTipsPopup(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 12px', borderRadius: 999, border: '1px solid rgba(255,106,0,0.25)', background: '#FFF3E8', cursor: 'pointer', fontSize: 11.5, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
-                    Trip Tips
-                  </button>
-                )}
-              </div>
-                {/* -- Tips bottom-sheet popup -- */}
-              {showTipsPopup && itin.quickTips?.length > 0 && (
-                <div
-                  style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.50)', zIndex: 700, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
-                  onClick={e => { if (e.target === e.currentTarget) setShowTipsPopup(false); }}
-                >
-                  <div style={{
-                    width: '100%', maxWidth: 560,
-                    background: '#FFFDF8',
-                    borderRadius: '22px 22px 0 0',
-                    paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
-                    boxShadow: '0 -10px 60px rgba(0,0,0,0.22)',
-                    animation: 'tipsSheetIn 0.3s cubic-bezier(0.2,0.7,0.2,1) both',
-                    maxHeight: '70vh',
-                    display: 'flex', flexDirection: 'column',
-                    overflow: 'hidden',
-                  }}>
-                    {/* Drag handle */}
-                    <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
-                      <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(28,20,16,0.14)' }} />
+          {itin && step !== 'loading' && (() => {
+            const totalActs = (itin.days || []).reduce((a, dd) => a + (dd.activities || []).length, 0);
+            const livePct = Math.round((doneActivities.size / Math.max(1, totalActs)) * 100);
+            const arrLabel = form.arrival ? formatTripDate(form.arrival, 0) : '';
+            const depLabel = form.arrival ? formatTripDate(form.arrival, days - 1) : '';
+            return (
+              <div>
+                {/* Trip header card */}
+                <div style={{ background: '#fff', borderRadius: 18, marginBottom: 12, overflow: 'hidden', boxShadow: '0 2px 14px rgba(28,20,16,0.07)', border: '1px solid #EBEBEB' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '13px 14px' }}>
+                    <div style={{ width: 76, height: 76, borderRadius: 12, overflow: 'hidden', flexShrink: 0, background: '#EDE8E2' }}>
+                      <PlacePhoto query={`${form.dest} travel photography`} style={{ width: '100%', height: 76, borderRadius: 0 }} />
                     </div>
-                    {/* Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px 13px', borderBottom: `1px solid ${D.divider}`, flexShrink: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div style={{ width: 36, height: 36, borderRadius: 12, background: D.goldTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="9" y1="18" x2="15" y2="18"/>
-                            <line x1="10" y1="22" x2="14" y2="22"/>
-                            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/>
-                          </svg>
-                        </div>
-                        <div>
-                          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: D.espresso }}>Trip Tips</div>
-                          <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>{itin.quickTips.length} insider tips for your journey</div>
-                        </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 16.5, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 2, lineHeight: 1.2 }}>
+                        {form.dest} Trip
                       </div>
-                      <button onClick={() => setShowTipsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>?</button>
+                      <div style={{ fontSize: 12, color: D.muted, marginBottom: 7, fontFamily: "'DM Sans',sans-serif" }}>
+                        {arrLabel && depLabel ? `${arrLabel} \u2013 ${depLabel} \u00b7 ${days} Day${days > 1 ? 's' : ''}` : `${days} Day${days > 1 ? 's' : ''}`}
+                      </div>
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: '#FFF3E8', borderRadius: 999, padding: '3px 10px', border: '1px solid rgba(255,106,0,0.18)' }}>
+                        <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#FF6A00', flexShrink: 0, animation: 'dotPulse 1.6s ease-in-out infinite', boxShadow: '0 0 0 2.5px rgba(255,106,0,0.22)' }} />
+                        <span style={{ fontSize: 11.5, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>Live {livePct}%</span>
+                      </div>
                     </div>
-                    {/* Scrollable tips list */}
-                    <div style={{ overflowY: 'auto', padding: '12px 16px' }}>
-                      {itin.quickTips.map((tip, i) => (
-                        <div key={i} style={{
-                          display: 'flex', gap: 11, alignItems: 'flex-start',
-                          padding: '11px 13px',
-                          background: D.surface,
-                          borderRadius: 14,
-                          marginBottom: 7,
-                          border: `0.5px solid ${D.border}`,
-                          boxShadow: '0 1px 4px rgba(28,20,16,0.04)',
-                        }}>
-                          <div style={{ width: 26, height: 26, borderRadius: 9, background: D.goldTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
-                          </div>
-                          <span style={{ fontSize: 13.5, color: D.secondary, lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif", flex: 1, paddingTop: 3 }}>{tip}</span>
-                        </div>
-                      ))}
-                    </div>
+                    {itin.quickTips?.length > 0 && (
+                      <button onClick={() => setShowTipsPopup(true)} style={{ flexShrink: 0, display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4, padding: '8px 12px', borderRadius: 12, border: '1.5px solid #E0E0E0', background: '#fff', cursor: 'pointer' }}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>Trip Tips</span>
+                      </button>
+                    )}
                   </div>
                 </div>
-              )}
 
+                {/* Tips popup */}
+                {showTipsPopup && itin.quickTips?.length > 0 && (
+                  <div style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.50)', zIndex: 700, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => { if (e.target === e.currentTarget) setShowTipsPopup(false); }}>
+                    <div style={{ width: '100%', maxWidth: 560, background: '#FFFDF8', borderRadius: '22px 22px 0 0', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)', boxShadow: '0 -10px 60px rgba(0,0,0,0.22)', animation: 'tipsSheetIn 0.3s cubic-bezier(0.2,0.7,0.2,1) both', maxHeight: '70vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
+                        <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(28,20,16,0.14)' }} />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px 13px', borderBottom: `1px solid ${D.divider}`, flexShrink: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div style={{ width: 36, height: 36, borderRadius: 12, background: D.goldTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                          </div>
+                          <div>
+                            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: D.espresso }}>Trip Tips</div>
+                            <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>{itin.quickTips.length} insider tips for your journey</div>
+                          </div>
+                        </div>
+                        <button onClick={() => setShowTipsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>\u2715</button>
+                      </div>
+                      <div style={{ overflowY: 'auto', padding: '12px 16px' }}>
+                        {itin.quickTips.map((tip, i) => (
+                          <div key={i} style={{ display: 'flex', gap: 11, alignItems: 'flex-start', padding: '11px 13px', background: D.surface, borderRadius: 14, marginBottom: 7, border: `0.5px solid ${D.border}`, boxShadow: '0 1px 4px rgba(28,20,16,0.04)' }}>
+                            <div style={{ width: 26, height: 26, borderRadius: 9, background: D.goldTint, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.gold} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                            </div>
+                            <span style={{ fontSize: 13.5, color: D.secondary, lineHeight: 1.65, fontFamily: "'DM Sans',sans-serif", flex: 1, paddingTop: 3 }}>{tip}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-
-              {/* -- Day sections ----------------------------------- */}
-              {(() => {
-                let photoIndex = 0;
-                return (itin.days || []).map((d, dayIndex) => {
+                {/* Day sections */}
+                {(itin.days || []).map((d, dayIndex) => {
                   const dateLabel = form.arrival ? formatTripDate(form.arrival, dayIndex) : `Day ${d.day}`;
                   const isArrivalDay   = dayIndex === 0;
                   const isDepartureDay = dayIndex === (itin.days.length - 1);
-                  const dayTotalCount  = (d.activities || []).length;
-                  const dayDoneCount   = (d.activities || []).filter((_, ai) => doneActivities.has(`day-${d.day}-act-${ai}`)).length;
-                  const timedProgress = (d.activities || []).reduce((sum, act) => {
-                    const p = getActivityTimeProgress(act.time, act.endTime, nowMinutes);
-                    return sum + (p === null ? 0 : p);
-                  }, 0);
-                  const timedPct = dayTotalCount > 0 ? (timedProgress / dayTotalCount) * 100 : 0;
+                  const acts = d.activities || [];
+                  const dayTotalCount = acts.length;
+                  const dayDoneCount  = acts.filter((_, ai) => doneActivities.has(`day-${d.day}-act-${ai}`)).length;
                   const donePct = dayTotalCount > 0 ? (dayDoneCount / dayTotalCount) * 100 : 0;
-                  const dayProgressPct = Math.max(donePct, timedPct);
-                  const dayProgressClamped = Math.max(0, Math.min(100, dayProgressPct));
-                  const hasActiveNow = (d.activities || []).some(act => getActivityLiveState(act.time, act.endTime, nowMinutes) === 'active');
-                  const WeatherSvg = ({ high }) => {
-                    if (high > 30) return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#E6A817" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>;
-                    if (high > 18) return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7B9EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>;
-                    return <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7B9EC4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="19" x2="8" y2="21"/><line x1="8" y1="13" x2="8" y2="15"/><line x1="16" y1="19" x2="16" y2="21"/><line x1="16" y1="13" x2="16" y2="15"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="12" y1="15" x2="12" y2="17"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/></svg>;
-                  };
+                  const isExpanded = !collapsedDays.has(d.day);
+
+                  const dayEmojiList = ['🌅','🏛','🌊','\u26F0','🌿','🏙','🛍','🍽','\u26F5','🌙','🏖','🗺'];
+                  const titleLower = (d.title || d.theme || '').toLowerCase();
+                  let dayIcon = d.icon || dayEmojiList[dayIndex % dayEmojiList.length];
+                  if (!d.icon) {
+                    if (isArrivalDay || titleLower.includes('arriv')) dayIcon = '\u2708\uFE0F';
+                    else if (isDepartureDay || titleLower.includes('depart') || titleLower.includes('journey home')) dayIcon = '🏠';
+                    else if (titleLower.includes('beach') || titleLower.includes('coast') || titleLower.includes('sea')) dayIcon = '🏖';
+                    else if (titleLower.includes('mountain') || titleLower.includes('trek') || titleLower.includes('hike')) dayIcon = '\u26F0';
+                    else if (titleLower.includes('food') || titleLower.includes('culinar') || titleLower.includes('gastro')) dayIcon = '🍽';
+                    else if (titleLower.includes('museum') || titleLower.includes('history') || titleLower.includes('heritage') || titleLower.includes('heart')) dayIcon = '🏛';
+                    else if (titleLower.includes('temple') || titleLower.includes('palace') || titleLower.includes('fort') || titleLower.includes('castle')) dayIcon = '🏰';
+                    else if (titleLower.includes('market') || titleLower.includes('shop') || titleLower.includes('bazaar')) dayIcon = '🛍';
+                    else if (titleLower.includes('island') || titleLower.includes('escape') || titleLower.includes('retreat')) dayIcon = '🏝';
+                    else if (titleLower.includes('city') || titleLower.includes('urban') || titleLower.includes('metro')) dayIcon = '🏙';
+                    else if (titleLower.includes('adventure') || titleLower.includes('outdoor') || titleLower.includes('wild')) dayIcon = '🌿';
+                    else if (titleLower.includes('boat') || titleLower.includes('cruise') || titleLower.includes('river')) dayIcon = '\u26F5';
+                    else if (titleLower.includes('night') || titleLower.includes('twilight') || titleLower.includes('sunset')) dayIcon = '🌅';
+                  }
+
+                  const toggleDay = () => setCollapsedDays(prev => { const next = new Set(prev); next.has(d.day) ? next.delete(d.day) : next.add(d.day); return next; });
+                  const toggleTips = () => setExpandedTipsDay(prev => { const next = new Set(prev); next.has(d.day) ? next.delete(d.day) : next.add(d.day); return next; });
+                  const tipsOpen = expandedTipsDay.has(d.day);
+                  const hasTips = !!(d.weather || d.proTip);
+
+                  const walkMins = acts.reduce((sum, act) => {
+                    if (!act.travelToNext) return sum;
+                    const lower = act.travelToNext.toLowerCase();
+                    if (!lower.includes('walk')) return sum;
+                    const m = act.travelToNext.match(/(\d+)\s*min/i);
+                    return sum + (m ? parseInt(m[1]) : 0);
+                  }, 0);
+
+                  const totalMins = acts.reduce((sum, act) => {
+                    const m = (act.duration || '').match(/(\d+(?:\.\d+)?)\s*(hr|hour|min)/i);
+                    if (!m) return sum;
+                    return sum + (m[2].toLowerCase().startsWith('h') ? parseFloat(m[1]) * 60 : parseFloat(m[1]));
+                  }, 0);
+                  const durHrs = Math.floor(totalMins / 60);
+                  const durMins = Math.round(totalMins % 60);
+                  const durLabel = durHrs > 0 ? `${durHrs}h${durMins > 0 ? ` ${durMins}m` : ''}` : (durMins > 0 ? `${durMins}m` : '\u2014');
+
+                  const paidActs = acts.filter(act => { const c = (act.cost || '').toLowerCase(); return c && c !== 'free' && c !== 'included'; });
+                  const estSpend = paidActs.length === 0 ? 'Free' : (paidActs[0]?.cost || `${paidActs.length} paid`);
 
                   return (
-                    <div key={d.day} ref={el => { if (el) dayHeaderRefs.current[d.day] = el; else delete dayHeaderRefs.current[d.day]; }} style={{ marginBottom: '1rem' }}>
+                    <div key={d.day} ref={el => { if (el) dayHeaderRefs.current[d.day] = el; else delete dayHeaderRefs.current[d.day]; }} style={{ marginBottom: 10 }}>
 
-                      {/* Compact day accordion header */}
-                      <div
-                        onClick={() => setCollapsedDays(prev => { const next = new Set(prev); next.has(d.day) ? next.delete(d.day) : next.add(d.day); return next; })}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', background: !collapsedDays.has(d.day) ? (isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#FF6A00,#E8390E)') : D.surface, borderRadius: 14, border: `0.5px solid ${!collapsedDays.has(d.day) ? 'transparent' : D.border}`, boxShadow: '0 1px 8px rgba(28,20,16,0.07)', cursor: 'pointer', userSelect: 'none', marginBottom: 8 }}
-                      >
-                        <div style={{ width: 34, height: 34, borderRadius: 10, background: !collapsedDays.has(d.day) ? 'rgba(255,255,255,0.18)' : '#FFF3E8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          {d.weather ? <WeatherSvg high={d.weather.high} /> : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={!collapsedDays.has(d.day) ? 'rgba(255,255,255,0.85)' : '#FF6A00'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={{ fontSize: 10, fontWeight: 600, color: !collapsedDays.has(d.day) ? 'rgba(255,255,255,0.7)' : D.muted, fontFamily: "'DM Sans',sans-serif", marginBottom: 1, lineHeight: 1 }}>
-                            Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}
+                      {isExpanded ? (
+                        /* Expanded dark header */
+                        <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(28,20,16,0.12)' }}>
+                          <div onClick={toggleDay} style={{ background: isSolo ? 'linear-gradient(140deg,#3A2D6E,#2A1F56)' : 'linear-gradient(140deg,#3D1800,#5C2800)', padding: '14px 14px 0', cursor: 'pointer', userSelect: 'none' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{dayIcon}</div>
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.58)', fontFamily: "'DM Sans',sans-serif", marginBottom: 2, lineHeight: 1 }}>
+                                  Day {d.day} \u00b7 {dateLabel}{isArrivalDay ? ' \u00b7 Arrival' : isDepartureDay ? ' \u00b7 Departure' : ''}
+                                </div>
+                                <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                                <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.7)', whiteSpace: 'nowrap' }}>{dayTotalCount} activities</span>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="18 15 12 9 6 15"/></svg>
+                              </div>
+                            </div>
+                            <div style={{ margin: '12px 0 0' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: "'DM Sans',sans-serif" }}>{dayDoneCount}/{dayTotalCount} completed</span>
+                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: "'DM Sans',sans-serif" }}>{Math.round(donePct)}%</span>
+                              </div>
+                              <div style={{ height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 99, marginBottom: 14 }}>
+                                <div style={{ height: '100%', width: `${donePct}%`, background: '#FF8C3A', borderRadius: 99, transition: 'width 0.5s ease', boxShadow: donePct > 0 ? '0 0 8px rgba(255,106,0,0.55)' : 'none' }} />
+                              </div>
+                            </div>
                           </div>
-                          <div style={{ fontSize: 13.5, fontWeight: 700, color: !collapsedDays.has(d.day) ? '#fff' : D.espresso, fontFamily: "'Sora',sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.25 }}>
-                            {d.title || d.theme}
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-                          <span style={{ fontSize: 11, fontWeight: 600, color: !collapsedDays.has(d.day) ? 'rgba(255,255,255,0.88)' : D.muted, whiteSpace: 'nowrap' }}>
-                            {dayDoneCount > 0 ? `${dayDoneCount}/${dayTotalCount}` : dayTotalCount} activities
-                          </span>
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={!collapsedDays.has(d.day) ? 'rgba(255,255,255,0.7)' : D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: !collapsedDays.has(d.day) ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.22s ease', flexShrink: 0 }}><polyline points="6 9 12 15 18 9"/></svg>
-                        </div>
-                      </div>
 
-                      {/* Activities */}
-                      {!collapsedDays.has(d.day) && (() => {
-                        const acts = d.activities || [];
-                        return (
-                          <div style={{ animation: 'accordionSlide 0.28s ease both' }}>
+                          <div style={{ background: '#F7F7F7', padding: '10px 10px 2px', animation: 'accordionSlide 0.28s ease both' }}>
                             {acts.map((a, i) => {
                               const doneKey = `day-${d.day}-act-${i}`;
                               const isDone = doneActivities.has(doneKey);
                               const isLast = i === acts.length - 1;
-                              const liveState = getActivityLiveState(a.time, a.endTime, nowMinutes);
-                              const isActive = liveState === 'active';
-                              const isPast = liveState === 'past';
                               const isTransport = a.type === 'transport' || a.type === 'travel';
                               const isHotelType = a.type === 'hotel' || a.type === 'stay';
                               const isRest = a.energyLevel === 'rest';
-                              const catLabel = isRest ? 'REST' : isHotelType ? 'STAY' : (a.type || 'activity').toUpperCase();
-                              const catColor = isRest ? '#7F77DD' : isHotelType ? '#2563AB' : a.type === 'food' ? '#D97706' : '#FF6A00';
-                              const catBg = isRest ? '#F4F3FF' : isHotelType ? '#E6F1FB' : a.type === 'food' ? '#FEF3C7' : '#FFF3E8';
+                              const liveState = getActivityLiveState(a.time, a.endTime, nowMinutes);
+                              const isActive = liveState === 'active';
+                              const catLabel = isRest ? 'REST' : isHotelType ? 'STAY' : isTransport ? 'TRANSIT' : (a.type || 'activity').toUpperCase();
+                              const catColor = isRest ? '#7F77DD' : isHotelType ? '#2563AB' : isTransport ? '#6B7280' : a.type === 'food' ? '#D97706' : '#FF6A00';
+                              const catBg   = isRest ? '#F4F3FF' : isHotelType ? '#E6F1FB' : isTransport ? '#F3F4F6' : a.type === 'food' ? '#FEF3C7' : '#FFF3E8';
+
                               return (
                                 <div key={i} ref={el => { if (el) activityNodeRefs.current[doneKey] = el; else delete activityNodeRefs.current[doneKey]; }}>
-
-                                  <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', marginBottom: 8, opacity: isDone ? 0.52 : 1, transition: 'opacity 0.3s ease' }}>
-                                    {/* Time column */}
-                                    <div style={{ width: 68, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: 1 }}>
-                                      <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? '#FF6A00' : D.espresso, lineHeight: 1.1, fontFamily: "'DM Sans',sans-serif" }}>{a.time}</span>
-                                      {a.endTime && <span style={{ fontSize: 10, color: D.muted, lineHeight: 1.1 }}>� {a.endTime}</span>}
-                                    </div>
-                                    {/* Orange dot + connector */}
-                                    <div style={{ width: 16, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: isActive ? '#FF6A00' : (isPast ? '#BCA478' : (a.mustDo ? '#FF6A00' : '#D3CFC8')), marginTop: 12, flexShrink: 0, boxShadow: isActive ? '0 0 0 3px rgba(255,106,0,0.2)' : 'none', transition: 'background 0.3s ease' }} />
-                                      {!isLast && <div style={{ width: 1.5, flex: 1, background: 'rgba(28,20,16,0.08)', marginTop: 3 }} />}
-                                    </div>
-                                    {/* Tappable card */}
-                                    <div
-                                      className="act-card-compact"
-                                      onClick={() => isTransport || isHotelType ? null : setPlannerReviewExp({
-                                        name: a.name,
-                                        category: catLabel,
-                                        _catColor: catColor,
-                                        _catBg: catBg,
-                                        description: a.note || a.description || '',
-                                        duration: a.duration,
-                                        bestTime: a.headsUp,
-                                        cost: a.cost,
-                                        vibe: null,
-                                        tier: a.mustDo ? 1 : 0,
-                                        imageQuery: `${a.name} ${form.dest} travel photography`,
-                                        _time: a.time,
-                                        _endTime: a.endTime,
-                                        _area: a.area,
-                                        _doneKey: doneKey,
-                                      })}
-                                      style={{ flex: 1, background: isDone ? 'rgba(28,20,16,0.025)' : '#fff', borderRadius: 16, border: `0.5px solid ${isActive ? 'rgba(255,106,0,0.28)' : D.border}`, boxShadow: isActive ? '0 4px 14px rgba(255,106,0,0.1)' : '0 1px 5px rgba(28,20,16,0.05)', display: 'flex', overflow: 'hidden', minWidth: 0 }}
-                                    >
+                                  <div className={`act-card-compact${isActive ? ' itin-live-active-card' : ''}`} style={{ background: isDone ? 'rgba(28,20,16,0.03)' : '#fff', borderRadius: 14, border: `1px solid ${isActive ? 'rgba(255,106,0,0.28)' : '#EBEBEB'}`, marginBottom: 8, overflow: 'hidden', boxShadow: isActive ? '0 4px 14px rgba(255,106,0,0.1)' : '0 1px 5px rgba(28,20,16,0.05)', opacity: isDone ? 0.6 : 1, transition: 'opacity 0.3s ease' }}>
+                                    <div style={{ display: 'flex', alignItems: 'stretch' }}>
+                                      {/* Checkbox */}
+                                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 12px', flexShrink: 0 }}>
+                                        <button onClick={e => { e.stopPropagation(); toggleActivity(doneKey); }} className="itin-done-btn" style={{ width: 20, height: 20, borderRadius: 5, border: isDone ? 'none' : '1.5px solid #CDCAC4', background: isDone ? '#FF6A00' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0, boxShadow: isDone ? '0 2px 8px rgba(255,106,0,0.35)' : 'none', transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
+                                          {isDone && <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><polyline points="2,5.5 4.5,8 9,3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                                        </button>
+                                      </div>
+                                      {/* Photo */}
                                       {!isTransport && !isHotelType && (
-                                        <div style={{ width: 74, flexShrink: 0, overflow: 'hidden', background: D.neutral }}>
-                                          <PlacePhotoCarousel
-                                            query={`${a.name} ${form.dest} photo`}
-                                            style={{ height: '100%', minHeight: 76, borderRadius: 0 }}
-                                            limit={1}
-                                          />
+                                        <div style={{ width: 96, flexShrink: 0, overflow: 'hidden', background: '#EDE8E2', alignSelf: 'stretch', cursor: 'pointer' }} onClick={() => setPlannerReviewExp({ name: a.name, category: catLabel, _catColor: catColor, _catBg: catBg, description: a.note || a.description || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} travel photography`, _time: a.time, _endTime: a.endTime, _area: a.area, _doneKey: doneKey })}>
+                                          <PlacePhotoCarousel query={`${a.name} ${form.dest} photo`} style={{ height: '100%', minHeight: 90, borderRadius: 0 }} limit={1} />
                                         </div>
                                       )}
-                                      <div style={{ flex: 1, padding: isTransport || isHotelType ? '9px 10px' : '9px 10px 9px 0', minWidth: 0 }}>
+                                      {/* Content */}
+                                      <div style={{ flex: 1, padding: '10px 10px', minWidth: 0, cursor: isTransport || isHotelType ? 'default' : 'pointer' }} onClick={() => isTransport || isHotelType ? null : setPlannerReviewExp({ name: a.name, category: catLabel, _catColor: catColor, _catBg: catBg, description: a.note || a.description || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} travel photography`, _time: a.time, _endTime: a.endTime, _area: a.area, _doneKey: doneKey })}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 3 }}>
+                                          {(a.time || a.endTime) ? (
+                                            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>{a.time}{a.endTime ? ` \u2013 ${a.endTime}` : ''}</span>
+                                          ) : <span />}
+                                          <span style={{ color: '#CDCAC4', fontSize: 16, lineHeight: 1, letterSpacing: 1 }}>\u00b7\u00b7\u00b7</span>
+                                        </div>
                                         {isTransport || isHotelType ? (
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
-                                            <span style={{ fontSize: 16 }}>{a.icon || (isHotelType ? '??' : '??')}</span>
-                                            <span style={{ fontSize: 13, fontWeight: 700, color: D.espresso, lineHeight: 1.25, fontFamily: "'Sora',sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                                            <span style={{ fontSize: 16 }}>{a.icon || (isHotelType ? '🏨' : '🚗')}</span>
+                                            <span style={{ fontSize: 13.5, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.25, textDecoration: isDone ? 'line-through' : 'none' }}>{a.name}</span>
                                           </div>
                                         ) : (
-                                          <div style={{ fontSize: 13, fontWeight: 700, color: D.espresso, lineHeight: 1.25, marginBottom: 4, fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
+                                          <div style={{ fontSize: 13.5, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.25, marginBottom: 5, textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
                                         )}
-                                        <div style={{ display: 'flex', gap: 4, marginBottom: 5, flexWrap: 'wrap' }}>
-                                          <span style={{ fontSize: 9.5, fontWeight: 700, background: catBg, color: catColor, borderRadius: 999, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 0, whiteSpace: 'nowrap' }}>{catLabel}</span>
-                                          {a.mustDo && <span style={{ fontSize: 9.5, fontWeight: 700, background: '#FFF3E8', color: '#FF6A00', borderRadius: 999, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 0, whiteSpace: 'nowrap' }}>Must Do</span>}
-                                          {a.energyLevel && ENERGY_CONFIG[a.energyLevel] && !isRest && <span style={{ fontSize: 9.5, fontWeight: 700, background: ENERGY_CONFIG[a.energyLevel].bg, color: ENERGY_CONFIG[a.energyLevel].color, borderRadius: 999, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 0, whiteSpace: 'nowrap' }}>{ENERGY_CONFIG[a.energyLevel].label}</span>}
+                                        <div style={{ marginBottom: 6 }}>
+                                          <span style={{ fontSize: 10, fontWeight: 700, background: catBg, color: catColor, borderRadius: 999, padding: '2px 9px', textTransform: 'uppercase', letterSpacing: 0.5, border: isRest ? `1px solid ${catColor}` : 'none' }}>{catLabel}</span>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap', overflow: 'hidden' }}>
-                                          {a.duration && <span style={{ fontSize: 10.5, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 2, whiteSpace: 'nowrap', flexShrink: 0 }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{a.duration}</span>}
-                                          {a.cost && <span style={{ fontSize: 10.5, color: D.muted, whiteSpace: 'nowrap', flexShrink: 0 }}>� {a.cost}</span>}
-                                          {a.area && <span style={{ fontSize: 10.5, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 2, minWidth: 0, overflow: 'hidden' }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.area}</span></span>}
+                                        <div style={{ display: 'flex', gap: 5, alignItems: 'center', flexWrap: 'nowrap', overflow: 'hidden' }}>
+                                          {a.duration && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: D.muted, whiteSpace: 'nowrap', flexShrink: 0 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{a.duration}</span>}
+                                          {a.duration && a.cost && <span style={{ color: '#DDDAD6', fontSize: 11 }}>\u00b7</span>}
+                                          {a.cost && <span style={{ fontSize: 11, color: D.muted, whiteSpace: 'nowrap', flexShrink: 0 }}>{a.cost}</span>}
+                                          {a.cost && a.area && <span style={{ color: '#DDDAD6', fontSize: 11 }}>\u00b7</span>}
+                                          {a.area && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 11, color: D.muted, minWidth: 0, overflow: 'hidden' }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.area}</span></span>}
                                         </div>
                                       </div>
-                                    </div>
-                                    {/* Checkbox */}
-                                    <button
-                                      onClick={e => { e.stopPropagation(); toggleActivity(doneKey); }}
-                                      style={{ flexShrink: 0, alignSelf: 'center', width: 26, height: 26, borderRadius: '50%', border: isDone ? 'none' : '1.5px solid rgba(28,20,16,0.15)', background: isDone ? '#FF6A00' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: isDone ? '0 2px 8px rgba(255,106,0,0.35)' : 'none', transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)', padding: 0 }}
-                                    >
-                                      {isDone ? (
-                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2.5,6 5,8.5 9.5,3.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                                      ) : (
-                                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.5" stroke="rgba(28,20,16,0.2)" strokeWidth="1.2"/></svg>
+                                      {/* Must Do badge */}
+                                      {a.mustDo && (
+                                        <div style={{ display: 'flex', alignItems: 'flex-end', padding: '0 10px 10px 4px', flexShrink: 0 }}>
+                                          <span style={{ border: '1.5px solid #FF6A00', color: '#FF6A00', borderRadius: 7, padding: '3px 8px', fontSize: 9.5, fontWeight: 800, whiteSpace: 'nowrap', letterSpacing: 0.5, textTransform: 'uppercase', background: '#FFF3E8', animation: 'floatBadge 3s ease-in-out infinite' }}>Must Do</span>
+                                        </div>
                                       )}
-                                    </button>
+                                    </div>
                                   </div>
-                                  {/* Travel chip */}
+
+                                  {/* Transit connector */}
                                   {!isLast && a.travelToNext && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, paddingLeft: 84 }}>
-                                      <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.06)' }} />
-                                      <span style={{ fontSize: 10.5, color: D.muted, background: '#F4F2EE', borderRadius: 999, padding: '2px 9px', border: `0.5px solid ${D.border}`, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-                                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, marginTop: -2 }}>
+                                      <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.07)' }} />
+                                      <span style={{ fontSize: 11, color: '#6B7280', background: '#F3F4F6', borderRadius: 999, padding: '4px 12px', border: '1px solid #E5E7EB', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V12m0 0V4m0 8H4m8 0h8" /><circle cx="12" cy="19" r="2"/></svg>
                                         {a.travelToNext}
                                       </span>
-                                      <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.06)' }} />
+                                      <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.07)' }} />
                                     </div>
                                   )}
                                 </div>
                               );
                             })}
-                            {/* Day summary */}
-                            {acts.length > 0 && (() => {
-                              const totalMins = acts.reduce((sum, act) => {
-                                const m = (act.duration || '').match(/(\d+(?:\.\d+)?)\s*(hr|hour|min)/i);
-                                if (!m) return sum;
-                                return sum + (m[2].toLowerCase().startsWith('h') ? parseFloat(m[1]) * 60 : parseFloat(m[1]));
-                              }, 0);
-                              const hrs = Math.floor(totalMins / 60);
-                              const mins = Math.round(totalMins % 60);
-                              const durLabel = hrs > 0 ? `${hrs}h${mins > 0 ? ` ${mins}m` : ''}` : (mins > 0 ? `${mins}m` : '');
-                              const paidCount = acts.filter(act => { const c = (act.cost || '').toLowerCase(); return c && c !== 'free' && c !== 'included'; }).length;
-                              return (
-                                <div style={{ margin: '4px 0 10px', background: '#FFF3E8', borderRadius: 12, padding: '9px 14px', border: '0.5px solid rgba(255,106,0,0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                  <div style={{ flex: 1 }}>
-                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>{dayDoneCount}/{dayTotalCount} done</span>
-                                    {durLabel && <span style={{ fontSize: 11, color: D.muted, marginLeft: 7 }}>� {durLabel} total</span>}
-                                    {paidCount > 0 && <span style={{ fontSize: 11, color: D.muted, marginLeft: 7 }}>� {paidCount} paid</span>}
-                                  </div>
-                                  <div style={{ width: 52, height: 4, borderRadius: 99, background: 'rgba(255,106,0,0.15)', flexShrink: 0 }}>
-                                    <div style={{ height: '100%', width: `${dayTotalCount > 0 ? (dayDoneCount / dayTotalCount) * 100 : 0}%`, background: '#FF6A00', borderRadius: 99, transition: 'width 0.4s ease' }} />
-                                  </div>
-                                </div>
-                              );
-                            })()}
-                          </div>
-                        );
-                      })()} {/* end activities */}
 
-                      {/* Day tips */}
-                      {!collapsedDays.has(d.day) && (d.weather?.tip || d.proTip) && (
-                        <div style={{ marginBottom: 8 }}>
-                          {d.weather?.tip && (
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '7px 10px', background: '#FFF8F3', borderRadius: 10, marginBottom: 5, border: '0.5px solid rgba(255,106,0,0.1)' }}>
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
-                              <span style={{ fontSize: 11.5, color: D.secondary, lineHeight: 1.55 }}>{d.weather.tip}</span>
-                            </div>
-                          )}
-                          {d.proTip && (
-                            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '7px 10px', background: '#FFF8F3', borderRadius: 10, border: '0.5px solid rgba(255,106,0,0.1)' }}>
-                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                              <span style={{ fontSize: 11.5, color: D.secondary, lineHeight: 1.55 }}><strong style={{ color: '#FF6A00' }}>Local:</strong> {d.proTip}</span>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                      {/* -- Day closing -- */}
-                      {!collapsedDays.has(d.day) && (() => {
-                        const acts = d.activities || [];
-                        const lastAct = acts[acts.length - 1];
-                        const isLastDay = dayIndex === (itin.days.length - 1);
-                        if (!acts.length || lastAct?.type === 'hotel' || lastAct?.type === 'stay') return null;
-                        // Pick a unique closing message per day (rotate through the 30)
-                        const closing = isLastDay
-                          ? { label: 'Journey Home', note: 'Safe travels! Pack up and head to the airport or station � your adventure ends here, until next time.' }
-                          : DAY_CLOSING_MSGS[dayIndex % DAY_CLOSING_MSGS.length];
-                        return (
-                          <div className="day-closing-card" style={{ display: 'flex', gap: 0, marginTop: 6, marginBottom: 8 }}>
-                            <div style={{ width: 52, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingRight: 10, paddingTop: 10 }}>
-                              <span style={{ fontSize: 10, fontWeight: 500, color: D.muted, fontFamily: "'DM Sans',sans-serif", letterSpacing: 0.2 }}>Night</span>
-                            </div>
-                            <div style={{ width: 20, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 12 }}>
-                              <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#C8C4BC', border: `2px solid ${D.neutral}` }} />
-                            </div>
-                            <div style={{ flex: 1, marginLeft: 10 }}>
-                              <div style={{ background: 'linear-gradient(135deg,#F9F7F3,#F4F2EE)', border: `0.5px solid ${D.border}`, borderRadius: 14, padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{ width: 34, height: 34, borderRadius: 11, background: isSolo ? '#F4F3FF' : '#FFF3E8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  {isLastDay ? (
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#534AB7' : '#FF6A00'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                                      <polyline points="9 22 9 12 15 12 15 22"/>
-                                    </svg>
-                                  ) : (
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#534AB7' : '#FF6A00'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                      <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
-                                      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
-                                      <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
-                                    </svg>
-                                  )}
-                                </div>
-                                <div>
-                                  <div style={{ fontSize: 13, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", marginBottom: 3 }}>{closing.label}</div>
-                                  <div style={{ fontSize: 11.5, color: D.muted, lineHeight: 1.55, fontFamily: "'DM Sans',sans-serif" }}>{closing.note}</div>
+                            {/* Day Summary bar */}
+                            {acts.length > 0 && (
+                              <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #EBEBEB', marginBottom: 8, overflow: 'hidden', boxShadow: '0 1px 5px rgba(28,20,16,0.05)' }}>
+                                <div style={{ display: 'flex', alignItems: 'stretch', minHeight: 56 }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '0 10px 0 12px', borderRight: '1px solid #EBEBEB', flexShrink: 0 }}>
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    <span style={{ fontSize: 10.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>Day {d.day} Summary</span>
+                                  </div>
+                                  <div style={{ flex: 1, display: 'flex' }}>
+                                    {[
+                                      { val: `${dayDoneCount}/${dayTotalCount}`, label: 'Completed' },
+                                      { val: durLabel, label: 'Total duration' },
+                                      { val: walkMins > 0 ? `${walkMins} min` : '\u2014', label: 'Walk time' },
+                                      { val: estSpend, label: 'Est. spend' },
+                                    ].map((stat, si) => (
+                                      <div key={si} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 3px', borderRight: si < 3 ? '1px solid #EBEBEB' : 'none' }}>
+                                        <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.2 }}>{stat.val}</span>
+                                        <span style={{ fontSize: 9.5, color: D.muted, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.3, textAlign: 'center' }}>{stat.label}</span>
+                                      </div>
+                                    ))}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
+                            )}
+
+                            {/* Tips & Recommendations */}
+                            {hasTips && (
+                              <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #EBEBEB', marginBottom: 8, overflow: 'hidden' }}>
+                                <button onClick={toggleTips} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+                                  <span style={{ fontSize: 13, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif" }}>Tips &amp; Recommendations</span>
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: tipsOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.22s ease' }}><polyline points="6 9 12 15 18 9"/></svg>
+                                </button>
+                                {tipsOpen && (
+                                  <div style={{ display: 'flex', gap: 8, padding: '0 10px 12px', animation: 'accordionSlide 0.22s ease both' }}>
+                                    {d.weather && (
+                                      <div style={{ flex: 1, minWidth: 80, background: '#F4F9FF', borderRadius: 12, padding: '12px 10px', border: '1px solid #DDEEFF' }}>
+                                        <div style={{ fontSize: 20, marginBottom: 5 }}>{(d.weather.high || 0) > 30 ? '\u2600\uFE0F' : (d.weather.high || 0) > 18 ? '\u26C5' : '🌧'}</div>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", marginBottom: 3 }}>Weather</div>
+                                        {(d.weather.high != null || d.weather.low != null) && <div style={{ fontSize: 11, color: D.muted }}>{d.weather.high}\u00b0C / {d.weather.low}\u00b0C</div>}
+                                        {d.weather.condition && <div style={{ fontSize: 11, color: D.muted }}>{d.weather.condition}</div>}
+                                      </div>
+                                    )}
+                                    {d.proTip && (
+                                      <div style={{ flex: 1, minWidth: 90, background: '#FFFBF0', borderRadius: 12, padding: '12px 10px', border: '1px solid #FAC775' }}>
+                                        <div style={{ fontSize: 20, marginBottom: 5 }}>⭐</div>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", marginBottom: 3 }}>Local Tip</div>
+                                        <div style={{ fontSize: 11, color: D.secondary, lineHeight: 1.55 }}>{d.proTip}</div>
+                                      </div>
+                                    )}
+                                    {d.weather?.tip && (
+                                      <div style={{ flex: 1, minWidth: 90, background: '#FFF8F3', borderRadius: 12, padding: '12px 10px', border: '1px solid rgba(255,106,0,0.18)' }}>
+                                        <div style={{ fontSize: 20, marginBottom: 5 }}>💡</div>
+                                        <div style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", marginBottom: 3 }}>Note</div>
+                                        <div style={{ fontSize: 11, color: D.secondary, lineHeight: 1.55 }}>{d.weather.tip}</div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
-                        );
-                      })()}
+                        </div>
+                      ) : (
+                        /* Collapsed day row */
+                        <div onClick={toggleDay} style={{ background: '#fff', borderRadius: 14, border: '1px solid #EBEBEB', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 1px 6px rgba(28,20,16,0.05)', cursor: 'pointer', userSelect: 'none' }}>
+                          <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FFF3E8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0, border: '1px solid rgba(255,106,0,0.1)' }}>{dayIcon}</div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: 11.5, color: D.muted, fontFamily: "'DM Sans',sans-serif", marginBottom: 2, lineHeight: 1 }}>
+                              Day {d.day} \u00b7 {dateLabel}{isArrivalDay ? ' \u00b7 Arrival' : isDepartureDay ? ' \u00b7 Departure' : ''}
+                            </div>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                            <span style={{ fontSize: 12.5, color: D.muted, fontWeight: 500 }}>{dayDoneCount > 0 ? `${dayDoneCount}/${dayTotalCount}` : dayTotalCount} activities</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><polyline points="6 9 12 15 18 9"/></svg>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
-                });
-              })()}
-
-              {/* Scroll-to-top in Day Planner */}
-              {showPlannerScrollTop && (
-                <button
-                  onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                  style={{
-                    position: 'fixed', bottom: '5.8rem', right: '1rem', zIndex: 90,
-                    width: 38, height: 38, borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(10px)',
-                    border: '1px solid rgba(0,0,0,0.1)', boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: 0, animation: 'rFadeIn 0.25s ease both',
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="18 15 12 9 6 15"/>
-                  </svg>
-                </button>
-              )}
-
-              {sources.length > 0 && (
-                <div style={{ background: D.surface, border: `0.5px solid ${D.border}`, borderRadius: 12, padding: '12px 14px', marginTop: 4, boxShadow: D.cardShadow }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: D.muted, textTransform: 'uppercase', letterSpacing: .8, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    Researched from
-                  </div>
-                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                    {sources.map((s, i) => (
-                      <a key={i} href={s.url} target="_blank" rel="noreferrer"
-                        style={{ fontSize: 11, color: isSolo ? '#534AB7' : '#FF6A00', background: isSolo ? '#EEEDFE' : '#FFF3E8', borderRadius: 999, padding: '4px 11px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                        {s.title?.slice(0, 28) || new URL(s.url).hostname}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
