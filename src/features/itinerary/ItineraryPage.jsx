@@ -243,6 +243,16 @@ if (typeof document !== 'undefined' && !document.getElementById('itinerary-style
       to   { opacity:1; transform:translateX(0); }
     }
     .itin-act-enter { animation: actCardIn 0.3s cubic-bezier(0.2,0.7,0.2,1) both; }
+    @keyframes accordionSlide {
+      from { opacity:0; transform:translateY(-8px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    @keyframes detailSheetIn {
+      from { transform:translateY(100%); }
+      to   { transform:translateY(0); }
+    }
+    .act-card-compact { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+    .act-card-compact:active { transform: scale(0.985) !important; }
     @keyframes closingSlide {
       from { opacity:0; transform:translateX(10px); }
       to   { opacity:1; transform:translateX(0); }
@@ -1065,6 +1075,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [destinationClock,   setDestinationClock]   = useState(null);
   const [liveHintPinnedKey,  setLiveHintPinnedKey]  = useState(null);
   const [liveHintHoverKey,   setLiveHintHoverKey]   = useState(null);
+  const [detailAct,           setDetailAct]           = useState(null);
 
   useEffect(() => {
     if (!liveHintPinnedKey) return;
@@ -1246,6 +1257,116 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 {plannerReviewExp.bestTime && <span style={{ fontSize: 11, fontWeight: 600, color: '#5C504A', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.07)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>🕐 {plannerReviewExp.bestTime}</span>}
                 {plannerReviewExp.cost && plannerReviewExp.cost !== 'null' && plannerReviewExp.cost !== 'N/A' && <span style={{ fontSize: 11, fontWeight: 700, color: '#1C1410', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.1)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>{plannerReviewExp.cost}</span>}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Activity Detail Bottom Sheet ── */}
+      {detailAct && (
+        <div
+          style={{ position: 'fixed', inset: 0, zIndex: 99990, background: 'rgba(0,0,0,0.72)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', animation: 'rFadeIn 0.2s ease both' }}
+          onClick={e => { if (e.target === e.currentTarget) setDetailAct(null); }}
+        >
+          <div
+            style={{ width: '100%', maxWidth: 560, background: '#fff', borderRadius: '24px 24px 0 0', maxHeight: '92vh', display: 'flex', flexDirection: 'column', animation: 'detailSheetIn 0.32s cubic-bezier(0.2,0.7,0.2,1) both' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Drag handle */}
+            <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 10, flexShrink: 0 }}>
+              <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(28,20,16,0.13)' }} />
+            </div>
+            {/* Header photo */}
+            <div style={{ height: 220, position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+              <PlacePhotoCarousel
+                query={`${detailAct.name} ${form.dest} travel photography`}
+                style={{ height: '100%', borderRadius: 0 }}
+                limit={3}
+              />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.78) 100%)', pointerEvents: 'none' }} />
+              <button
+                onClick={() => setDetailAct(null)}
+                style={{ position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.4)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', padding: 0, zIndex: 2 }}
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              {(() => {
+                const isRest = detailAct.energyLevel === 'rest';
+                const isHT = detailAct.type === 'hotel' || detailAct.type === 'stay';
+                const cl = isRest ? 'REST' : isHT ? 'STAY' : (detailAct.type || 'activity').toUpperCase();
+                const cc = isRest ? '#7F77DD' : isHT ? '#2563AB' : detailAct.type === 'food' ? '#D97706' : '#FF6A00';
+                const cb = isRest ? '#F4F3FF' : isHT ? '#E6F1FB' : detailAct.type === 'food' ? '#FEF3C7' : '#FFF3E8';
+                return <div style={{ position: 'absolute', top: 14, left: 14, background: cb, borderRadius: 999, padding: '4px 12px', fontSize: 10.5, fontWeight: 700, color: cc, letterSpacing: 0.5, textTransform: 'uppercase' }}>{cl}</div>;
+              })()}
+              {detailAct.mustDo && <div style={{ position: 'absolute', top: 14, right: 50, background: 'linear-gradient(135deg,#FF6A00,#E8390E)', borderRadius: 999, padding: '4px 9px', fontSize: 9.5, fontWeight: 800, color: '#fff', letterSpacing: 0.6, textTransform: 'uppercase', boxShadow: '0 2px 8px rgba(255,106,0,0.4)' }}>Must Do</div>}
+              <div style={{ position: 'absolute', bottom: 14, left: 14, right: 14, pointerEvents: 'none' }}>
+                <div style={{ fontSize: 19, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.5)', fontFamily: "'Sora',sans-serif" }}>{detailAct.name}</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 3, fontFamily: "'DM Sans',sans-serif" }}>
+                  {detailAct.dateLabel}{detailAct.time ? ` • ${detailAct.time}${detailAct.endTime ? ` – ${detailAct.endTime}` : ''}` : ''}{detailAct.duration ? ` (${detailAct.duration})` : ''}
+                </div>
+              </div>
+            </div>
+            {/* Scrollable content */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '14px 16px 8px' }}>
+              {/* Meta chips */}
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 13 }}>
+                {detailAct.cost && (
+                  <span style={{ fontSize: 12, fontWeight: 600, color: D.secondary, background: '#F4F2EE', borderRadius: 999, padding: '5px 11px', border: `0.5px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    {detailAct.cost}
+                  </span>
+                )}
+                {detailAct.area && (
+                  <span style={{ fontSize: 12, fontWeight: 600, color: D.secondary, background: '#F4F2EE', borderRadius: 999, padding: '5px 11px', border: `0.5px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {detailAct.area}
+                  </span>
+                )}
+                {detailAct.openingHours && (
+                  <span style={{ fontSize: 12, fontWeight: 600, color: D.secondary, background: '#F4F2EE', borderRadius: 999, padding: '5px 11px', border: `0.5px solid ${D.border}`, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {detailAct.openingHours}
+                  </span>
+                )}
+                {detailAct.hoursSource === 'verified' && (
+                  <span style={{ fontSize: 10.5, fontWeight: 700, background: '#FFF3E8', color: '#FF6A00', borderRadius: 999, padding: '5px 11px', border: '0.5px solid rgba(255,106,0,0.2)' }}>Verified</span>
+                )}
+              </div>
+              {(detailAct.note || detailAct.description) && (
+                <p style={{ fontSize: 13.5, color: D.secondary, lineHeight: 1.7, margin: '0 0 13px', fontFamily: "'DM Sans',sans-serif" }}>{detailAct.note || detailAct.description}</p>
+              )}
+              {detailAct.headsUp && (
+                <div style={{ display: 'flex', gap: 9, alignItems: 'flex-start', background: '#FFFBF0', border: '0.5px solid #FAC775', borderRadius: 10, padding: '9px 12px', marginBottom: 12 }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                  <span style={{ fontSize: 12.5, color: '#7A4F00', lineHeight: 1.6 }}>{detailAct.headsUp}</span>
+                </div>
+              )}
+              <div style={{ height: 1, background: 'linear-gradient(90deg,rgba(255,106,0,0.15),transparent)', marginBottom: 12 }} />
+              <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${detailAct.name} ${form.dest}`)}`} target="_blank" rel="noreferrer"
+                  style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12.5, color: '#2563AB', background: D.blueTint, borderRadius: 12, padding: '10px 14px', textDecoration: 'none', fontWeight: 600, fontFamily: "'DM Sans',sans-serif" }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  Maps
+                </a>
+                <a href={`https://www.google.com/search?q=${encodeURIComponent(`${detailAct.name} ${form.dest}`)}`} target="_blank" rel="noreferrer"
+                  style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12.5, color: D.secondary, background: D.neutral, borderRadius: 12, padding: '10px 14px', textDecoration: 'none', fontWeight: 600, fontFamily: "'DM Sans',sans-serif" }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  Know More
+                </a>
+              </div>
+            </div>
+            {/* Mark as Done */}
+            <div style={{ padding: '10px 16px 28px', borderTop: `1px solid ${D.divider}`, flexShrink: 0 }}>
+              <button
+                onClick={() => { toggleActivity(detailAct.doneKey); setDetailAct(null); }}
+                style={{ width: '100%', padding: '14px', background: doneActivities.has(detailAct.doneKey) ? D.neutral : 'linear-gradient(135deg,#FF6A00,#E8390E)', color: doneActivities.has(detailAct.doneKey) ? D.muted : '#fff', borderRadius: 14, border: 'none', cursor: 'pointer', fontSize: 14.5, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: doneActivities.has(detailAct.doneKey) ? 'none' : '0 4px 16px rgba(255,106,0,0.35)', transition: 'all 0.2s ease' }}
+              >
+                {doneActivities.has(detailAct.doneKey) ? (
+                  <><svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5.5,10.5 12,3.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>Marked as Done</>
+                ) : (
+                  <>Mark as Done <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polyline points="2,7 5.5,10.5 12,3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg></>
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -1613,7 +1734,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                       {/* ── Day header ── */}                      <div className="day-header-card" style={{ background: D.surface, borderRadius: 18, marginBottom: 12, overflow: 'hidden', boxShadow: '0 2px 14px rgba(28,20,16,0.08)', border: `0.5px solid ${D.border}` }}>
                         {/* Gradient accent bar at top */}
-                        <div style={{ height: 3, background: isSolo ? 'linear-gradient(90deg,#7F77DD,#534AB7)' : `linear-gradient(90deg,${D.gold},#A8731E,${D.gold})` }} />
+                        <div style={{ height: 3, background: isSolo ? 'linear-gradient(90deg,#7F77DD,#534AB7)' : 'linear-gradient(90deg,#FF6A00,#E8390E,#FF8C3A)' }} />
                         {/* Flex row: content left + Day N right */}
                         <div style={{ display: 'flex', alignItems: 'stretch' }}>
                           <div style={{ flex: 1, padding: '12px 13px 11px' }}>
@@ -1651,7 +1772,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                   </span>
                                 )}
                                 {dayDoneCount > 0 && (
-                                  <span style={{ fontSize: 10, fontWeight: 600, background: D.sageTint, color: D.sage, borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                                  <span style={{ fontSize: 10, fontWeight: 600, background: '#FFF3E8', color: '#FF6A00', borderRadius: 999, padding: '2px 8px', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
                                     <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="2,6 5,9 10,3"/></svg>
                                     {dayDoneCount}/{dayTotalCount}
                                   </span>
@@ -1668,7 +1789,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                           {/* Day N badge — RIGHT side (also toggles collapse) */}
                           <div
                             onClick={() => setCollapsedDays(prev => { const next = new Set(prev); next.has(d.day) ? next.delete(d.day) : next.add(d.day); return next; })}
-                            style={{ width: 62, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isSolo ? 'linear-gradient(160deg,#7F77DD,#534AB7)' : `linear-gradient(160deg,${D.gold},#A8731E)`, flexShrink: 0, cursor: 'pointer', userSelect: 'none', gap: 0 }}
+                            style={{ width: 62, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: isSolo ? 'linear-gradient(160deg,#7F77DD,#534AB7)' : 'linear-gradient(160deg,#FF6A00,#E8390E)', flexShrink: 0, cursor: 'pointer', userSelect: 'none', gap: 0 }}
                           >
                             <span style={{ fontSize: 9, fontWeight: 700, color: 'rgba(255,255,255,0.65)', textTransform: 'uppercase', letterSpacing: 1, lineHeight: 1.2 }}>DAY</span>
                             <span style={{ fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1, fontFamily: "'Sora',sans-serif" }}>{d.day}</span>
@@ -1708,271 +1829,126 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                       </div>
 
                       {/* Activities */}
-                      {!collapsedDays.has(d.day) && (d.activities || []).map((a, i) => {
-                        const showPhoto  = a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel';
-                        const currentDelay = showPhoto ? photoIndex++ * 600 : 0;
-                        const isLast   = i === d.activities.length - 1;
-                        const doneKey  = `day-${d.day}-act-${i}`;
-                        const isDone   = doneActivities.has(doneKey);
-                        const liveState = getActivityLiveState(a.time, a.endTime, nowMinutes);
-                        const isActive = liveState === 'active';
-                        const isPast = liveState === 'past';
-                        const connectorProgress = getActivityTimeProgress(a.time, a.endTime, nowMinutes);
-                        const connectorPct = Math.max(0, Math.min(100, ((connectorProgress === null ? (isPast ? 100 : 0) : connectorProgress * 100))));
-                        const liveHintKey = `${doneKey}-live`;
-                        const isHintVisible = (liveHintHoverKey === liveHintKey) || (liveHintPinnedKey === liveHintKey);
-                        const liveWhatText = `Now ${nowTimeLabel}: ${a.name} is in progress (${Math.round(connectorPct)}% done). Follow this step in your itinerary.`;
-                        const dotColor = isActive ? D.gold : (isPast ? '#BCA478' : (a.mustDo ? D.gold : '#D3CFC8'));
-                        const allTags  = [
-                          ...(a.mustDo ? ['MUST DO'] : []),
-                          ...(a.energyLevel && ENERGY_CONFIG[a.energyLevel] ? [ENERGY_CONFIG[a.energyLevel].label] : []),
-                        ];
-                        const typeAccent = a.type === 'food' ? D.coral : a.type === 'experience' ? '#7F77DD' : a.type === 'shopping' ? D.sage : a.mustDo ? D.gold : D.border;
-
+                      {!collapsedDays.has(d.day) && (() => {
+                        const acts = d.activities || [];
                         return (
-                          <div
-                            key={i}
-                            ref={(el) => {
-                              if (el) activityNodeRefs.current[doneKey] = el;
-                              else delete activityNodeRefs.current[doneKey];
-                            }}
-                          >
-                            {/* Timeline row */}
-                            <div style={{ display: 'flex', gap: 0, opacity: isDone ? 0.42 : 1, transition: 'opacity .3s' }}>
+                          <div style={{ animation: 'accordionSlide 0.28s ease both' }}>
+                            {acts.map((a, i) => {
+                              const doneKey = `day-${d.day}-act-${i}`;
+                              const isDone = doneActivities.has(doneKey);
+                              const isLast = i === acts.length - 1;
+                              const liveState = getActivityLiveState(a.time, a.endTime, nowMinutes);
+                              const isActive = liveState === 'active';
+                              const isPast = liveState === 'past';
+                              const isTransport = a.type === 'transport' || a.type === 'travel';
+                              const isHotelType = a.type === 'hotel' || a.type === 'stay';
+                              const isRest = a.energyLevel === 'rest';
+                              const catLabel = isRest ? 'REST' : isHotelType ? 'STAY' : (a.type || 'activity').toUpperCase();
+                              const catColor = isRest ? '#7F77DD' : isHotelType ? '#2563AB' : a.type === 'food' ? '#D97706' : '#FF6A00';
+                              const catBg = isRest ? '#F4F3FF' : isHotelType ? '#E6F1FB' : a.type === 'food' ? '#FEF3C7' : '#FFF3E8';
+                              return (
+                                <div key={i} ref={el => { if (el) activityNodeRefs.current[doneKey] = el; else delete activityNodeRefs.current[doneKey]; }}>
 
-                              {/* Time + dot column */}
-                              <div style={{ width: 52, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', paddingRight: 10, paddingTop: 5 }}>
-                                <span style={{ fontSize: 11, fontWeight: 700, color: D.espresso, lineHeight: 1, fontFamily: "'DM Sans',sans-serif" }}>{a.time}</span>
-                                {a.endTime && <span style={{ fontSize: 10, color: D.muted, marginTop: 2 }}>{a.endTime}</span>}
-                                {isActive && (
-                                  <span style={{ marginTop: 3, fontSize: 9, fontWeight: 800, color: D.gold, letterSpacing: 0.35, textTransform: 'uppercase' }}>
-                                    Now {nowTimeLabel}
-                                  </span>
-                                )}
-                              </div>
-
-                              {/* Connector */}
-                              <div style={{ width: 20, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 7 }}>
-                                <div style={{ position: 'relative', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                  {isActive && <div className="itin-dot-glow" style={{ position: 'absolute', width: 20, height: 20, borderRadius: '50%', background: 'rgba(201,145,58,0.22)' }} />}
-                                  <div className={isActive ? 'itin-dot-active itin-now-dot' : ''} style={{ width: 10, height: 10, borderRadius: '50%', background: dotColor, zIndex: 1, boxShadow: (isActive || a.mustDo) ? `0 0 0 3px ${D.goldTint}` : 'none', transition: 'background .35s ease' }} />
-                                </div>
-                                {!isLast && (
-                                  <div style={{ position: 'relative', width: 1.5, flex: 1, background: D.divider, marginTop: 1, overflow: 'visible' }}>
+                                  <div style={{ display: 'flex', gap: 8, alignItems: 'stretch', marginBottom: 8, opacity: isDone ? 0.52 : 1, transition: 'opacity 0.3s ease' }}>
+                                    {/* Time column */}
+                                    <div style={{ width: 68, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: 1 }}>
+                                      <span style={{ fontSize: 11, fontWeight: 700, color: isActive ? '#FF6A00' : D.espresso, lineHeight: 1.1, fontFamily: "'DM Sans',sans-serif" }}>{a.time}</span>
+                                      {a.endTime && <span style={{ fontSize: 10, color: D.muted, lineHeight: 1.1 }}>– {a.endTime}</span>}
+                                    </div>
+                                    {/* Orange dot + connector */}
+                                    <div style={{ width: 16, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: isActive ? '#FF6A00' : (isPast ? '#BCA478' : (a.mustDo ? '#FF6A00' : '#D3CFC8')), marginTop: 12, flexShrink: 0, boxShadow: isActive ? '0 0 0 3px rgba(255,106,0,0.2)' : 'none', transition: 'background 0.3s ease' }} />
+                                      {!isLast && <div style={{ width: 1.5, flex: 1, background: 'rgba(28,20,16,0.08)', marginTop: 3 }} />}
+                                    </div>
+                                    {/* Tappable card */}
                                     <div
-                                      style={{
-                                        position: 'absolute', left: 0, right: 0, top: 0,
-                                        height: `${connectorPct}%`,
-                                        background: isSolo ? '#7F77DD' : D.gold,
-                                        transition: 'height 0.7s cubic-bezier(0.2,0.7,0.2,1)',
-                                      }}
-                                    />
-                                    {isActive && (
-                                      <div data-live-hint-layer="1">
-                                        <button
-                                          type="button"
-                                          className="itin-live-walker"
-                                          title={liveWhatText}
-                                          aria-label={liveWhatText}
-                                          onMouseEnter={() => setLiveHintHoverKey(liveHintKey)}
-                                          onMouseLeave={() => setLiveHintHoverKey(prev => (prev === liveHintKey ? null : prev))}
-                                          onClick={() => setLiveHintPinnedKey(prev => (prev === liveHintKey ? null : liveHintKey))}
-                                          style={{ position: 'absolute', left: '50%', top: `calc(${connectorPct}% - 8px)`, width: 16, height: 16, borderRadius: '50%', transform: 'translateX(-50%)', background: '#fff', border: `1px solid ${isSolo ? '#7F77DD' : D.gold}`, boxShadow: '0 2px 10px rgba(28,20,16,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'top 0.7s cubic-bezier(0.2,0.7,0.2,1)', cursor: 'pointer', padding: 0, zIndex: 3 }}
-                                        >
-                                          <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#7F77DD' : D.gold} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                                            <circle cx="12" cy="5" r="2.4" />
-                                            <path d="M12 8.5v5M12 11.5l-4 2.5M12 11.5l4 2.5M12 13.5l-3 5M12 13.5l3 5" />
-                                          </svg>
-                                        </button>
-                                        {isHintVisible && (
-                                          <div style={{ position: 'absolute', left: 12, top: `calc(${connectorPct}% - 14px)`, transform: 'translateX(0)', minWidth: 168, maxWidth: 240, background: '#1F1713', color: '#fff', borderRadius: 10, padding: '8px 9px', boxShadow: '0 10px 24px rgba(0,0,0,0.24)', zIndex: 4 }}>
-                                            <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.45, textTransform: 'uppercase', color: '#F5D9A8', marginBottom: 4 }}>Live status</div>
-                                            <div style={{ fontSize: 11, lineHeight: 1.45 }}>{liveWhatText}</div>
+                                      className="act-card-compact"
+                                      onClick={() => setDetailAct({ ...a, doneKey, dateLabel })}
+                                      style={{ flex: 1, background: isDone ? 'rgba(28,20,16,0.025)' : '#fff', borderRadius: 16, border: `0.5px solid ${isActive ? 'rgba(255,106,0,0.28)' : D.border}`, boxShadow: isActive ? '0 4px 14px rgba(255,106,0,0.1)' : '0 1px 5px rgba(28,20,16,0.05)', display: 'flex', overflow: 'hidden', minWidth: 0 }}
+                                    >
+                                      {!isTransport && !isHotelType && (
+                                        <div style={{ width: 74, flexShrink: 0, overflow: 'hidden', background: D.neutral }}>
+                                          <PlacePhotoCarousel
+                                            query={`${a.name} ${form.dest} photo`}
+                                            style={{ height: '100%', minHeight: 76, borderRadius: 0 }}
+                                            limit={1}
+                                          />
+                                        </div>
+                                      )}
+                                      <div style={{ flex: 1, padding: isTransport || isHotelType ? '9px 10px' : '9px 10px 9px 0', minWidth: 0 }}>
+                                        {isTransport || isHotelType ? (
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 4 }}>
+                                            <span style={{ fontSize: 16 }}>{a.icon || (isHotelType ? '🏨' : '🚗')}</span>
+                                            <span style={{ fontSize: 13, fontWeight: 700, color: D.espresso, lineHeight: 1.25, fontFamily: "'Sora',sans-serif", overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</span>
                                           </div>
+                                        ) : (
+                                          <div style={{ fontSize: 13, fontWeight: 700, color: D.espresso, lineHeight: 1.25, marginBottom: 4, fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
                                         )}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* ── PHOTO-FIRST activity card ── */}
-                              <div
-                                className={`itin-card-enter itin-act-enter itin-photo-card ${isActive ? 'itin-live-active-card' : ''}`}
-                                style={{ flex: 1, marginLeft: 10, marginBottom: 10, background: D.surface, borderRadius: 16, overflow: 'hidden', boxShadow: '0 2px 8px rgba(28,20,16,0.06)', border: `0.5px solid ${D.border}`, borderLeft: showPhoto ? `0.5px solid ${D.border}` : `3px solid ${typeAccent}`, minWidth: 0, animationDelay: `${i * 60}ms` }}
-                              >
-                                {/* Photo at top (non-hotel/transport only) */}
-                                {showPhoto && (
-                                  <div
-                                    style={{ position: 'relative', height: 150, overflow: 'hidden', cursor: 'zoom-in', background: D.neutral }}
-                                    onClick={e => { const img = e.currentTarget.querySelector('img'); if (img?.src) setLightboxUrl(img.src); }}
-                                  >
-                                    <PlacePhotoCarousel
-                                      query={`${a.name} ${form.dest} photo`}
-                                      style={{ height: 150, borderRadius: 0 }}
-                                      delay={currentDelay}
-                                      limit={3}
-                                      alt={a.name}
-                                      onImageClick={(url) => setLightboxUrl(url)}
-                                    />
-                                    {/* gradient on photo */}
-                                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 40%, rgba(28,20,16,0.62) 100%)', pointerEvents: 'none' }} />
-                                    {/* activity type badge top-left */}
-                                    <div className="itin-float" style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(255,255,255,0.92)', borderRadius: 10, padding: '3px 9px', display: 'flex', alignItems: 'center', gap: 4, backdropFilter: 'blur(4px)', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
-                                      <span style={{ fontSize: 14 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
-                                      <span style={{ fontSize: 10, fontWeight: 700, color: D.espresso, textTransform: 'uppercase', letterSpacing: .5, fontFamily: "'DM Sans',sans-serif" }}>{a.type}</span>
-                                    </div>
-                                    {/* mustDo gold badge top-right */}
-                                    {a.mustDo && (
-                                      <div style={{ position: 'absolute', top: 10, right: 10, background: D.gold, borderRadius: 999, padding: '3px 9px', fontSize: 9, fontWeight: 800, color: '#fff', letterSpacing: .6, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 8px rgba(201,145,58,0.45)' }}>★ Must Do</div>
-                                    )}
-                                    {/* name overlaid */}
-                                    <div style={{ position: 'absolute', bottom: 10, left: 12, right: 12, pointerEvents: 'none' }}>
-                                      <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 1px 6px rgba(0,0,0,0.5)', fontFamily: "'Sora',sans-serif", textDecoration: isDone ? 'line-through' : 'none' }}>{a.name}</div>
-                                    </div>
-                                    {/* done overlay */}
-                                    {isDone && (
-                                      <div style={{ position: 'absolute', inset: 0, background: 'rgba(28,20,16,0.48)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(1px)' }}>
-                                        <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.18)', border: '2px solid rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)' }}>
-                                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                                            <polyline points="4,12 9,17 20,7" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-                                          </svg>
+                                        <div style={{ display: 'flex', gap: 4, marginBottom: 5, flexWrap: 'wrap' }}>
+                                          <span style={{ fontSize: 9.5, fontWeight: 700, background: catBg, color: catColor, borderRadius: 999, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 0, whiteSpace: 'nowrap' }}>{catLabel}</span>
+                                          {a.mustDo && <span style={{ fontSize: 9.5, fontWeight: 700, background: '#FFF3E8', color: '#FF6A00', borderRadius: 999, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 0, whiteSpace: 'nowrap' }}>Must Do</span>}
+                                          {a.energyLevel && ENERGY_CONFIG[a.energyLevel] && !isRest && <span style={{ fontSize: 9.5, fontWeight: 700, background: ENERGY_CONFIG[a.energyLevel].bg, color: ENERGY_CONFIG[a.energyLevel].color, borderRadius: 999, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 0, whiteSpace: 'nowrap' }}>{ENERGY_CONFIG[a.energyLevel].label}</span>}
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'nowrap', overflow: 'hidden' }}>
+                                          {a.duration && <span style={{ fontSize: 10.5, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 2, whiteSpace: 'nowrap', flexShrink: 0 }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{a.duration}</span>}
+                                          {a.cost && <span style={{ fontSize: 10.5, color: D.muted, whiteSpace: 'nowrap', flexShrink: 0 }}>• {a.cost}</span>}
+                                          {a.area && <span style={{ fontSize: 10.5, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 2, minWidth: 0, overflow: 'hidden' }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.area}</span></span>}
                                         </div>
                                       </div>
-                                    )}
+                                    </div>
+                                    {/* Checkbox */}
+                                    <button
+                                      onClick={e => { e.stopPropagation(); toggleActivity(doneKey); }}
+                                      style={{ flexShrink: 0, alignSelf: 'center', width: 26, height: 26, borderRadius: '50%', border: isDone ? 'none' : '1.5px solid rgba(28,20,16,0.15)', background: isDone ? '#FF6A00' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: isDone ? '0 2px 8px rgba(255,106,0,0.35)' : 'none', transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)', padding: 0 }}
+                                    >
+                                      {isDone ? (
+                                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2.5,6 5,8.5 9.5,3.5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                                      ) : (
+                                        <svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.5" stroke="rgba(28,20,16,0.2)" strokeWidth="1.2"/></svg>
+                                      )}
+                                    </button>
                                   </div>
-                                )}
-
-                                {/* Card body */}
-                                <div style={{ padding: '11px 13px 12px' }}>
-                                  {/* Name row for hotel/transport (no photo) */}
-                                  {!showPhoto && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-                                      <span style={{ fontSize: 18 }}>{a.icon || TYPE_ICONS[a.type] || '📍'}</span>
-                                      <span style={{ fontSize: 14, fontWeight: 700, color: isDone ? D.muted : D.espresso, textDecoration: isDone ? 'line-through' : 'none', fontFamily: "'Sora',sans-serif" }}>{a.name}</span>
-                                    </div>
-                                  )}
-
-                                  {/* Tags */}
-                                  {allTags.length > 0 && (
-                                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 7 }}>
-                                      {allTags.map((tag, ti) => {
-                                        const ts = tagStyle(tag, tag === 'MUST DO');
-                                        return <span key={ti} style={{ fontSize: 10, fontWeight: 700, letterSpacing: .7, textTransform: 'uppercase', padding: '2px 9px', borderRadius: 999, background: ts.bg, color: ts.color }}>{tag}</span>;
-                                      })}
-                                    </div>
-                                  )}
-
-                                  {/* Opening hours */}
-                                  {a.openingHours && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 5 }}>
-                                      <span style={{ fontSize: 11 }}>🕐</span>
-                                      <span style={{ fontSize: 11.5, color: D.muted }}>Open {a.openingHours}</span>
-                                      {a.hoursSource === 'verified'  && <span style={{ fontSize: 9, fontWeight: 700, background: D.sageTint, color: D.sage, borderRadius: 4, padding: '1px 5px' }}>✓ verified</span>}
-                                      {a.hoursSource === 'estimated' && <span style={{ fontSize: 9, fontStyle: 'italic', background: '#F4F3FF', color: '#7A6FCF', borderRadius: 4, padding: '1px 5px' }}>Estimated</span>}
-                                    </div>
-                                  )}
-
-                                  {/* Description */}
-                                  {(a.note || a.description) && (
-                                    <div style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, marginBottom: 7 }}>{a.note || a.description}</div>
-                                  )}
-
-                                  {/* Heads-up warning */}
-                                  {a.headsUp && (
-                                    <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', background: '#FFFBF0', border: '0.5px solid #FAC775', borderRadius: 8, padding: '7px 10px', marginBottom: 7 }}>
-                                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                                      <span style={{ fontSize: 11, color: '#7A4F00', lineHeight: 1.5 }}>{a.headsUp}</span>
-                                    </div>
-                                  )}
-
-                                  {/* Meta row */}
-                                  {(a.duration || a.cost || a.area) && (
-                                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 9 }}>
-                                      {a.duration && (
-                                        <span style={{ fontSize: 11, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                                          {a.duration}
-                                        </span>
-                                      )}
-                                      {a.cost && (
-                                        <span style={{ fontSize: 11, color: D.gold, fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                                          {a.cost}
-                                        </span>
-                                      )}
-                                      {a.area && (
-                                        <span style={{ fontSize: 11, color: D.muted, display: 'inline-flex', alignItems: 'center', gap: 3 }}>
-                                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                          {a.area}
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-
-                                  {/* Action pills */}
-                                  {a.type !== 'hotel' && a.type !== 'transport' && a.type !== 'travel' && (
-                                    <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
-                                      <a className="itin-action-pill"
-                                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
-                                        target="_blank" rel="noreferrer"
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#2563AB', background: D.blueTint, borderRadius: 999, padding: '6px 14px', textDecoration: 'none', fontWeight: 600, border: 'none', fontFamily: "'DM Sans',sans-serif" }}
-                                      >
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                                        Maps
-                                      </a>
-                                      <a className="itin-action-pill"
-                                        href={`https://www.google.com/search?q=${encodeURIComponent(`${a.name} ${form.dest}`)}`}
-                                        target="_blank" rel="noreferrer"
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 5, fontSize: 12, color: D.secondary, background: D.neutral, borderRadius: 999, padding: '6px 14px', textDecoration: 'none', fontWeight: 600, border: 'none', fontFamily: "'DM Sans',sans-serif" }}
-                                      >
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                        Know more
-                                      </a>
+                                  {/* Travel chip */}
+                                  {!isLast && a.travelToNext && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, paddingLeft: 84 }}>
+                                      <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.06)' }} />
+                                      <span style={{ fontSize: 10.5, color: D.muted, background: '#F4F2EE', borderRadius: 999, padding: '2px 9px', border: `0.5px solid ${D.border}`, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+                                        {a.travelToNext}
+                                      </span>
+                                      <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.06)' }} />
                                     </div>
                                   )}
                                 </div>
-                              </div>
-
-                              {/* Done toggle */}
-                              <button
-                                onClick={() => toggleActivity(doneKey)}
-                                style={{
-                                  flexShrink: 0, alignSelf: 'flex-start', marginTop: 6, marginLeft: 6,
-                                  width: 28, height: 28, borderRadius: '50%',
-                                  border: isDone ? 'none' : `1.5px solid ${D.border}`,
-                                  background: isDone ? accentColor : D.surface,
-                                  cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  boxShadow: isDone ? `0 2px 8px ${accentColor}55` : 'none',
-                                  transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)',
-                                }}
-                              >
-                                {isDone ? (
-                                  <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
-                                    <polyline points="2.5,6.5 5.5,9.5 10.5,3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                  </svg>
-                                ) : (
-                                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                    <circle cx="6" cy="6" r="5" stroke={D.border} strokeWidth="1.5"/>
-                                  </svg>
-                                )}
-                              </button>
-                            </div>
-
-                            {/* Transit chip */}
-                            {!isLast && a.travelToNext && (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, margin: '8px 0 8px 20px' }}>
-                                <div style={{ flex: 1, height: 1, background: D.divider }} />
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: D.neutral, borderRadius: 999, padding: '3px 11px', fontSize: 11, color: D.muted, flexShrink: 0 }}>
-                                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-                                  {a.travelToNext}
+                              );
+                            })}
+                            {/* Day summary */}
+                            {acts.length > 0 && (() => {
+                              const totalMins = acts.reduce((sum, act) => {
+                                const m = (act.duration || '').match(/(\d+(?:\.\d+)?)\s*(hr|hour|min)/i);
+                                if (!m) return sum;
+                                return sum + (m[2].toLowerCase().startsWith('h') ? parseFloat(m[1]) * 60 : parseFloat(m[1]));
+                              }, 0);
+                              const hrs = Math.floor(totalMins / 60);
+                              const mins = Math.round(totalMins % 60);
+                              const durLabel = hrs > 0 ? `${hrs}h${mins > 0 ? ` ${mins}m` : ''}` : (mins > 0 ? `${mins}m` : '');
+                              const paidCount = acts.filter(act => { const c = (act.cost || '').toLowerCase(); return c && c !== 'free' && c !== 'included'; }).length;
+                              return (
+                                <div style={{ margin: '4px 0 10px', background: '#FFF3E8', borderRadius: 12, padding: '9px 14px', border: '0.5px solid rgba(255,106,0,0.15)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                  <div style={{ flex: 1 }}>
+                                    <span style={{ fontSize: 12, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>{dayDoneCount}/{dayTotalCount} done</span>
+                                    {durLabel && <span style={{ fontSize: 11, color: D.muted, marginLeft: 7 }}>• {durLabel} total</span>}
+                                    {paidCount > 0 && <span style={{ fontSize: 11, color: D.muted, marginLeft: 7 }}>• {paidCount} paid</span>}
+                                  </div>
+                                  <div style={{ width: 52, height: 4, borderRadius: 99, background: 'rgba(255,106,0,0.15)', flexShrink: 0 }}>
+                                    <div style={{ height: '100%', width: `${dayTotalCount > 0 ? (dayDoneCount / dayTotalCount) * 100 : 0}%`, background: '#FF6A00', borderRadius: 99, transition: 'width 0.4s ease' }} />
+                                  </div>
                                 </div>
-                                <div style={{ flex: 1, height: 1, background: D.divider }} />
-                              </div>
-                            )}
+                              );
+                            })()}
                           </div>
                         );
-                      })}
+                      })()} {/* end activities */}
 
                       {/* ── Day closing ── */}
                       {!collapsedDays.has(d.day) && (() => {
@@ -1994,14 +1970,14 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                             </div>
                             <div style={{ flex: 1, marginLeft: 10 }}>
                               <div style={{ background: 'linear-gradient(135deg,#F9F7F3,#F4F2EE)', border: `0.5px solid ${D.border}`, borderRadius: 14, padding: '11px 13px', display: 'flex', alignItems: 'center', gap: 10 }}>
-                                <div style={{ width: 34, height: 34, borderRadius: 11, background: isSolo ? '#F4F3FF' : '#F0FAF6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <div style={{ width: 34, height: 34, borderRadius: 11, background: isSolo ? '#F4F3FF' : '#FFF3E8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                   {isLastDay ? (
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#534AB7' : D.sage} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#534AB7' : '#FF6A00'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                                       <polyline points="9 22 9 12 15 12 15 22"/>
                                     </svg>
                                   ) : (
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#534AB7' : D.sage} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isSolo ? '#534AB7' : '#FF6A00'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                       <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
                                       <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
                                       <line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
@@ -2021,6 +1997,22 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   );
                 });
               })()}
+
+              {/* ── Lumi tweak card ── */}
+              <div style={{ display: 'flex', gap: 14, alignItems: 'center', background: 'linear-gradient(135deg,#FF6A00 0%,#E8390E 100%)', borderRadius: 20, padding: '1.1rem 1.2rem', marginBottom: '1.25rem', boxShadow: '0 6px 24px rgba(255,106,0,0.28)', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: -24, right: -24, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
+                <img src={lumi15Img} alt="Lumi" style={{ width: 68, height: 68, objectFit: 'contain', flexShrink: 0, position: 'relative' }} />
+                <div style={{ flex: 1, position: 'relative' }}>
+                  <div style={{ fontSize: 14.5, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", marginBottom: 3, lineHeight: 1.25 }}>Want me to tweak your plan?</div>
+                  <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.82)', marginBottom: 11, lineHeight: 1.5 }}>I can adjust based on your preferences.</div>
+                  <button
+                    onClick={() => { setModifyExps(null); setStep('discover'); setITab('planner'); }}
+                    style={{ padding: '7px 18px', borderRadius: 999, border: 'none', background: '#fff', color: '#FF6A00', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}
+                  >
+                    Let's do it
+                  </button>
+                </div>
+              </div>
 
               {/* Scroll-to-top in Day Planner */}
               {showPlannerScrollTop && (
@@ -2050,7 +2042,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {sources.map((s, i) => (
                       <a key={i} href={s.url} target="_blank" rel="noreferrer"
-                        style={{ fontSize: 11, color: isSolo ? '#534AB7' : '#0F6E56', background: isSolo ? '#EEEDFE' : D.sageTint, borderRadius: 999, padding: '4px 11px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
+                        style={{ fontSize: 11, color: isSolo ? '#534AB7' : '#FF6A00', background: isSolo ? '#EEEDFE' : '#FFF3E8', borderRadius: 999, padding: '4px 11px', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
                         {s.title?.slice(0, 28) || new URL(s.url).hostname}
                       </a>

@@ -1030,7 +1030,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
             <div style={{ background: '#fff', border: '1px solid rgba(29,158,117,0.22)', borderRadius: 16, padding: '12px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .35s ease-out 70ms both' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>In {homeCurrencyCode} (home)</div>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Amount spent In {homeCurrencyCode} (home)</div>
                   {fxLoading ? (
                     <div style={{ fontSize: 13, color: '#9ca3af' }}>Fetching rate…</div>
                   ) : fxRate !== null ? (
