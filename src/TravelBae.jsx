@@ -451,7 +451,6 @@ export default function App() {
   }, [activeTrip, trips]); // ← ADD trips as dependency
 
   const isSolo = activeTripData?.isSolo || false;
-  const isHome = !activeTrip && !activeTripData;
 
   // ── OTP countdown timer ──
   useEffect(() => {
@@ -1365,7 +1364,7 @@ export default function App() {
       {newTripModal && <ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
 
       {/* Top Bar */}
-      <div className={`tb-topbar-glass${isHome ? ' tb-topbar-home' : ''}`} style={isHome ? { ...S.topBar, background: 'transparent', backdropFilter: 'none', borderBottom: 'none', boxShadow: 'none' } : S.topBar}>
+      <div className="tb-topbar-glass" style={S.topBar}>
         {/* Profile button — always top-left */}
         <button
           onClick={() => setProfileOpen(true)}

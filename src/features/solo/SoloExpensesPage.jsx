@@ -33,6 +33,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [showBudgetEdit, setShowBudgetEdit] = useState(false);
   const [editBudget, setEditBudget] = useState(String(budget || ''));
   const [localBudgetCurrency, setLocalBudgetCurrency] = useState(trip.budgetCurrency || null);
+  const [budgetFxRate, setBudgetFxRate] = useState(null);
   const SOLO_SPEND_CURRENCY_KEY = `travelbae_solo_spendcurrency_${trip.id}`;
   const [spendCurrency, setSpendCurrency] = useState(() => {
     try { return localStorage.getItem(`travelbae_solo_spendcurrency_${trip.id}`) || trip.destinationCurrency || trip.budgetCurrency || 'INR'; } catch { return 'INR'; }
@@ -98,6 +99,16 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   }, [customCats, customTagsKey]);
 
   useEffect(() => {
+    const buCurr = localBudgetCurrency;
+    if (!budget || !buCurr || buCurr === spendCurrency) { setBudgetFxRate(null); return; }
+    let cancelled = false;
+    getFxRate(buCurr, spendCurrency).then(r => {
+      if (!cancelled) setBudgetFxRate(r);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [budget, localBudgetCurrency, spendCurrency]);
+
+  useEffect(() => {
     if (window.Chart) { setChartReady(true); return; }
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js';
@@ -115,8 +126,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const daysElapsed = Math.min(days, Math.max(1, rawElapsed));
   const daysLeft = Math.max(0, days - daysElapsed);
   const tsr = total / daysElapsed;
-  const budgetLeft = budget ? budget - total : null;
-  const budgetPct = budget ? Math.min(100, Math.round(total / budget * 100)) : null;
+  const budgetLeft = displayBudget ? displayBudget - total : null;
+  const budgetPct = displayBudget ? Math.min(100, Math.round(total / displayBudget * 100)) : null;
 
   const catTotals = {};
   expenseCats.forEach(c => { catTotals[c.id] = 0; });
@@ -126,17 +137,23 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const projected = Math.round(tsr * days);
   const activeCats = expenseCats.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id]);
   const topCatMeta = expenseCats.find(c => c.id === topCat?.[0]) || null;
-  const overBy = budget ? Math.max(0, projected - budget) : 0;
-  const underBy = budget ? Math.max(0, budget - projected) : 0;
+  const overBy = displayBudget ? Math.max(0, projected - displayBudget) : 0;
+  const underBy = displayBudget ? Math.max(0, displayBudget - projected) : 0;
   const uniqueSpendDays = new Set(expenses.map(e => e.date)).size;
-  const plannedDailyBudget = budget ? budget / Math.max(1, days) : null;
+  const plannedDailyBudget = displayBudget ? displayBudget / Math.max(1, days) : null;
   const pacePct = plannedDailyBudget ? Math.round((tsr / plannedDailyBudget) * 100) : null;
 
   const spendMeta = SOLO_CURRENCIES.find(c => c.code === spendCurrency) || { code: 'INR', symbol: '₹' };
   const spendSymbol = spendMeta.symbol;
-  const budgetCurrMeta = SOLO_CURRENCIES.find(c => c.code === (localBudgetCurrency || spendCurrency)) || spendMeta;
   const fmt = n => `${spendSymbol}${Math.round(n).toLocaleString('en-IN')}`;
-  const fmtBudget = n => `${budgetCurrMeta.symbol}${Math.round(n).toLocaleString('en-IN')}`;
+
+  // displayBudget: budget expressed in current spendCurrency (converted via FX if currencies differ)
+  const displayBudget = !budget ? null
+    : (!localBudgetCurrency || localBudgetCurrency === spendCurrency) ? budget
+    : budgetFxRate !== null ? budget * budgetFxRate
+    : budget; // show raw while FX is loading
+
+  const fmtBudget = fmt; // budget is now always in spendCurrency
 
   const soloFunLines = [];
   if (expenses.length === 0) {
@@ -158,8 +175,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     if (top3[0]) {
       soloFunLines.push(`Biggest spend was ${top3[0].desc}. Iconic decision, no notes.`);
     }
-    if (budget && projected > budget) {
-      soloFunLines.push(`If this pace continues, you may overshoot by ${fmtBudget(projected - budget)}.`);
+    if (budget && projected > displayBudget) {
+      soloFunLines.push(`If this pace continues, you may overshoot by ${fmtBudget(projected - displayBudget)}.`);
     }
   }
   if (soloFunLines.length === 0) {
@@ -199,7 +216,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     if (section !== 'insights' || !chartReady) return;
     const t = setTimeout(renderCharts, 80);
     return () => clearTimeout(t);
-  }, [section, chartReady, expenses, budget]);
+  }, [section, chartReady, expenses, displayBudget]);
 
   const handleAdd = async () => {
     if (!form.desc || !form.amount) return;
@@ -291,8 +308,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             tooltip: {
               callbacks: {
                 label: ctx => ctx.dataIndex === 0
-                  ? ` Spent: ${fmtBudget(Math.min(total, budget))}`
-                  : ` Left: ${fmtBudget(Math.max(0, budget - total))}`,
+                  ? ` Spent: ${fmt(Math.min(total, displayBudget))}`
+                  : ` Left: ${fmt(Math.max(0, displayBudget - total))}`,
               },
             },
           },
@@ -534,9 +551,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5 }}>Budget Left</div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#FFD0B0', textShadow: '0 1px 8px rgba(0,0,0,0.15)', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) .1s both' }}>
-                {budgetLeft < 0 ? '-' : ''}{fmtBudget(Math.abs(budgetLeft))}
+                {budgetLeft < 0 ? '-' : ''}{fmt(Math.abs(budgetLeft))}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of {fmtBudget(budget)}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of {fmt(displayBudget)}</div>
             </div>
           )}
         </div>
@@ -718,7 +735,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
               <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Budget health</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 {[
-                  { label: 'Trip budget', value: fmtBudget(budget), color: '#374151' },
+                  { label: 'Trip budget', value: fmt(displayBudget), color: '#374151' },
                   { label: 'Projected end', value: fmt(projected), color: projected > budget ? '#D85B00' : '#FF8C3A' },
                 ].map(s => (
                   <div key={s.label} style={{ background: '#F9F9F8', borderRadius: 12, padding: '9px 11px', border: '1px solid rgba(0,0,0,0.06)' }}>

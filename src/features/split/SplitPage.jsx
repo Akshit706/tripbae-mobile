@@ -57,6 +57,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
   const homeMeta = SPLIT_CURRENCIES.find(c => c.code === homeCurrencyCode) || { code: 'INR', symbol: '₹' };
   const [fxRate, setFxRate] = useState(null);
   const [fxLoading, setFxLoading] = useState(false);
+  const [budgetFxRate, setBudgetFxRate] = useState(null);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const getNow = () => {
@@ -109,6 +110,11 @@ function SplitPage({ trip, myNickname, myAvatar }) {
   const CAT_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
 
   const budget = localBudget;
+  // displayBudget: budget expressed in current spendCurrency (converted via FX if currencies differ)
+  const displayBudget = !budget ? null
+    : (!localBudgetCurrency || localBudgetCurrency === spendCurrency) ? budget
+    : budgetFxRate !== null ? budget * budgetFxRate
+    : budget; // show raw while FX is loading
 
   useEffect(() => {
     if (window.Chart) { setChartReady(true); return; }
@@ -130,7 +136,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
     if (section !== 'insights' || !chartReady) return;
     const t = setTimeout(renderCharts, 80);
     return () => clearTimeout(t);
-  }, [section, chartReady, expenses, budget]);
+  }, [section, chartReady, expenses, displayBudget]);
 
   useEffect(() => {
     if (section !== 'insights' || spendCurrency === homeCurrencyCode) { setFxRate(null); setFxLoading(false); return; }
@@ -141,6 +147,16 @@ function SplitPage({ trip, myNickname, myAvatar }) {
     }).catch(() => { if (!cancelled) setFxLoading(false); });
     return () => { cancelled = true; };
   }, [section, spendCurrency, homeCurrencyCode]);
+
+  useEffect(() => {
+    const buCurr = localBudgetCurrency;
+    if (!localBudget || !buCurr || buCurr === spendCurrency) { setBudgetFxRate(null); return; }
+    let cancelled = false;
+    getFxRate(buCurr, spendCurrency).then(r => {
+      if (!cancelled) setBudgetFxRate(r);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [localBudget, localBudgetCurrency, spendCurrency]);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const days = tripDuration(trip.arrival, trip.departure);
@@ -153,8 +169,8 @@ function SplitPage({ trip, myNickname, myAvatar }) {
   const daysLeft = Math.max(0, days - daysElapsed);
   const tsr = total / daysElapsed;
   const projected = Math.round(tsr * days);
-  const budgetLeft = budget ? budget - total : null;
-  const budgetPct = budget ? Math.min(100, Math.round(total / budget * 100)) : null;
+  const budgetLeft = displayBudget ? displayBudget - total : null;
+  const budgetPct = displayBudget ? Math.min(100, Math.round(total / displayBudget * 100)) : null;
   const perPerson = memberNames.length > 0 ? total / memberNames.length : 0;
 
   const catTotals = {};
@@ -189,8 +205,8 @@ function SplitPage({ trip, myNickname, myAvatar }) {
   }
 
   const top3 = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 3);
-  const overBy = budget ? Math.max(0, projected - budget) : 0;
-  const underBy = budget ? Math.max(0, budget - projected) : 0;
+  const overBy = displayBudget ? Math.max(0, projected - displayBudget) : 0;
+  const underBy = displayBudget ? Math.max(0, displayBudget - projected) : 0;
   const activeCats = expenseCats.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id]);
   const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
   const topCatMeta = expenseCats.find(c => c.id === topCat?.[0]) || null;
@@ -210,14 +226,14 @@ function SplitPage({ trip, myNickname, myAvatar }) {
 
   const topGetsBack = positiveBalances[0] || null;
   const topOwes = negativeBalances[0] || null;
-  const plannedDailyBudget = budget ? budget / Math.max(1, days) : null;
+  const plannedDailyBudget = displayBudget ? displayBudget / Math.max(1, days) : null;
   const pacePct = plannedDailyBudget ? Math.round((tsr / plannedDailyBudget) * 100) : null;
 
   const funInsightLines = [];
   const fmt = n => `${spendSymbol}${Math.round(n).toLocaleString('en-IN')}`;
   const fmtHome = n => `${homeMeta.symbol}${Math.round(n).toLocaleString('en-IN')}`;
-  const budgetCurrMeta = SPLIT_CURRENCIES.find(c => c.code === (localBudgetCurrency || spendCurrency)) || spendMeta;
-  const fmtBudget = n => `${budgetCurrMeta.symbol}${Math.round(n).toLocaleString('en-IN')}`;
+  const budgetCurrMeta = spendMeta; // budget is now always converted to spendCurrency
+  const fmtBudget = fmt;
   if (expenses.length === 0) {
     funInsightLines.push('No spends yet. Wallets are meditating and UPI is on standby.');
   } else {
@@ -242,8 +258,8 @@ function SplitPage({ trip, myNickname, myAvatar }) {
     if (settlements.length === 0) {
       funInsightLines.push('Plot twist: everyone is settled. This is rarer than finding a clean public washroom on a road trip.');
     }
-    if (budget && projected > budget) {
-      funInsightLines.push(`At this pace, the trip may end around ${fmt(projected)} (about ${fmtBudget(projected - budget)} over budget).`);
+    if (budget && projected > displayBudget) {
+      funInsightLines.push(`At this pace, the trip may end around ${fmt(projected)} (about ${fmt(projected - displayBudget)} over budget).`);
     }
   }
   if (funInsightLines.length === 0) {
@@ -263,7 +279,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
         data: {
           datasets: [{ data: [Math.min(total, budget), Math.max(0, budget - total)], backgroundColor: [budgetPct > 85 ? '#D85B00' : '#FF6A00', '#FFF3EB'], borderWidth: 0, hoverOffset: 0 }]
         },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '74%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataIndex === 0 ? ` Spent: ${fmtBudget(Math.min(total, budget))}` : ` Left: ${fmtBudget(Math.max(0, budget - total))}` } } } },
+        options: { responsive: true, maintainAspectRatio: false, cutout: '74%', plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ctx.dataIndex === 0 ? ` Spent: ${fmt(Math.min(total, displayBudget))}` : ` Left: ${fmt(Math.max(0, displayBudget - total))}` } } } },
         plugins: [{ id: 'center', afterDraw(chart) { const { ctx, chartArea: { width, height, left, top } } = chart; const cx = left + width / 2, cy = top + height / 2; ctx.save(); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '600 17px system-ui'; ctx.fillStyle = '#1a1a18'; ctx.fillText(`${budgetPct}%`, cx, cy - 9); ctx.font = '12px system-ui'; ctx.fillStyle = textColor; ctx.fillText('used', cx, cy + 9); ctx.restore(); } }]
       });
     }
@@ -687,9 +703,9 @@ function SplitPage({ trip, myNickname, myAvatar }) {
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5 }}>Budget Left</div>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 700, color: budgetLeft < 0 ? '#FFD3C4' : '#FFD0B0', textShadow: '0 1px 8px rgba(0,0,0,0.15)', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) .1s both' }}>
-                {budgetLeft < 0 ? '-' : ''}{fmtBudget(Math.abs(budgetLeft))}
+                {budgetLeft < 0 ? '-' : ''}{fmt(Math.abs(budgetLeft))}
               </div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of {fmtBudget(budget)}</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', marginTop: 2 }}>of {fmt(displayBudget)}</div>
             </div>
           )}
         </div>
@@ -998,7 +1014,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 14 }}>
             {[
               { label: 'Daily rate', value: fmt(tsr), sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB' },
-              { label: 'Projected', value: fmt(projected), sub: budget && projected > budget ? `+${fmtBudget(overBy)} over` : 'on track', color: budget && projected > budget ? '#D85B00' : '#FF8C3A', bg: budget && projected > budget ? '#FFF8F4' : '#FFF3EB' },
+              { label: 'Projected', value: fmt(projected), sub: budget && projected > displayBudget ? `+${fmt(overBy)} over` : 'on track', color: budget && projected > displayBudget ? '#D85B00' : '#FF8C3A', bg: budget && projected > displayBudget ? '#FFF8F4' : '#FFF3EB' },
               { label: 'Days left', value: daysLeft, sub: `${daysElapsed}d elapsed`, color: '#6366f1', bg: '#EEF2FF' },
             ].map((s, idx) => (
               <div key={idx} style={{ background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '11px 10px', textAlign: 'center', animation: `soloFadeUp .3s ease-out ${idx * 55}ms both` }}>
@@ -1054,7 +1070,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
               <div style={{ height: 7, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
                 <div style={{ height: '100%', width: `${Math.min(pacePct, 100)}%`, borderRadius: 99, transition: 'width .6s cubic-bezier(.2,.8,.2,1)', background: pacePct > 115 ? 'linear-gradient(90deg,#D85B00,#FF6A00)' : 'linear-gradient(90deg,#FF6A00,#FF8C3A)' }} />
               </div>
-              <div style={{ fontSize: 11, color: '#9ca3af' }}>{fmt(tsr)}/day actual · {fmtBudget(plannedDailyBudget)}/day planned</div>
+              <div style={{ fontSize: 11, color: '#9ca3af' }}>{fmt(tsr)}/day actual · {fmt(plannedDailyBudget)}/day planned</div>
             </div>
           )}
 
@@ -1064,8 +1080,8 @@ function SplitPage({ trip, myNickname, myAvatar }) {
               <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 }}>Budget health</div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
                 {[
-                  { label: 'Trip budget', value: fmtBudget(budget), color: '#374151' },
-                  { label: 'Projected end', value: fmt(projected), color: projected > budget ? '#D85B00' : '#FF8C3A' },
+                  { label: 'Trip budget', value: fmt(displayBudget), color: '#374151' },
+                  { label: 'Projected end', value: fmt(projected), color: projected > displayBudget ? '#D85B00' : '#FF8C3A' },
                 ].map(s => (
                   <div key={s.label} style={{ background: '#F9F9F8', borderRadius: 12, padding: '9px 11px', border: '1px solid rgba(0,0,0,0.06)' }}>
                     <div style={{ fontSize: 10, color: '#9ca3af', fontWeight: 600, marginBottom: 3 }}>{s.label}</div>

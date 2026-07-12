@@ -173,10 +173,6 @@ code {
   background: linear-gradient(90deg, transparent, rgba(29, 158, 117, 0.35), rgba(55, 138, 221, 0.35), transparent);
 }
 
-.tb-topbar-glass.tb-topbar-home::after {
-  display: none;
-}
-
 .tb-nav-ribbon {
   position: static;
   top: auto;
