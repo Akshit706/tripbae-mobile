@@ -1064,7 +1064,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
           {budget && pacePct !== null && (
             <div style={{ background: '#fff', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 16, padding: '13px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .4s ease-out 120ms both' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 9 }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1 }}>Crew pace</div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1 }}>Crew </div>
                 <div style={{ fontSize: 13, fontWeight: 800, color: pacePct > 115 ? '#D85B00' : '#FF6A00', fontFamily: "'Sora',sans-serif" }}>{pacePct}% of plan</div>
               </div>
               <div style={{ height: 7, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', marginBottom: 6 }}>
