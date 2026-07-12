@@ -1523,26 +1523,14 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               <div>
                 {/* Trip header card */}
                 <div style={{ background: 'linear-gradient(135deg,#FF5500,#FF8C3A)', borderRadius: 18, marginBottom: 12, overflow: 'hidden', boxShadow: '0 4px 20px rgba(255,106,0,0.22)', position: 'relative', animation: 'fadeSlideIn 0.4s ease both' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 14px' }}>
-                    <div style={{ width: 56, height: 56, flexShrink: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-                      <img src={lumi10Img} alt="Lumi" style={{ width: 56, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.2))' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px' }}>
+                    <div style={{ width: 40, height: 40, flexShrink: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                      <img src={lumi10Img} alt="Lumi" style={{ width: 40, height: 'auto', objectFit: 'contain', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.2))' }} />
                     </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                        <span style={{ fontSize: 18, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1, letterSpacing: -0.3 }}>Itinerary</span>
-                      </div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans',sans-serif", marginBottom: 8 }}>
-                        {arrLabel && depLabel ? `${arrLabel} \u2013 ${depLabel} \u00b7 ${days} Day${days > 1 ? 's' : ''}` : `${days} Day${days > 1 ? 's' : ''}`}
-                      </div>
-                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.22)', borderRadius: 999, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.35)' }}>
-                        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', flexShrink: 0, animation: 'dotPulse 1.6s ease-in-out infinite' }} />
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#fff', fontFamily: "'DM Sans',sans-serif" }}>Live {livePct}%</span>
-                      </div>
-                    </div>
+                    <span style={{ flex: 1, fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,0.92)', letterSpacing: 2.4, fontFamily: "'DM Sans',sans-serif", textShadow: '0 1px 6px rgba(0,0,0,0.25)' }}>{'\u2736'} ITINERARY {'\u2736'}</span>
                     {itin.quickTips?.length > 0 && (
-                      <button onClick={() => setShowTipsPopup(true)} style={{ flexShrink: 0, width: 42, height: 42, borderRadius: 12, border: 'none', background: 'rgba(255,255,255,0.22)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px rgba(255,255,255,0.3)', transition: 'all 0.2s ease', animation: 'bulbGlow 2.5s ease-in-out infinite' }}>
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
+                      <button onClick={() => setShowTipsPopup(true)} style={{ flexShrink: 0, width: 38, height: 38, borderRadius: 11, border: 'none', background: 'rgba(255,255,255,0.22)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px rgba(255,255,255,0.3)', transition: 'all 0.2s ease', animation: 'bulbGlow 2.5s ease-in-out infinite' }}>
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
                       </button>
                     )}
                   </div>
