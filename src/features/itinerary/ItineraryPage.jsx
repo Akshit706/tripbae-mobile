@@ -1625,7 +1625,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                       {isExpanded ? (
                         /* Expanded dark header */
                         <div style={{ borderRadius: 16, overflow: 'hidden', boxShadow: '0 3px 16px rgba(28,20,16,0.12)' }}>
-                          <div onClick={toggleDay} style={{ background: isSolo ? 'linear-gradient(140deg,#3A2D6E,#2A1F56)' : 'linear-gradient(140deg,#3D1800,#5C2800)', padding: '14px 14px 0', cursor: 'pointer', userSelect: 'none' }}>
+                          <div onClick={toggleDay} style={{ background: isSolo ? 'linear-gradient(140deg,#3A2D6E,#2A1F56)' : 'linear-gradient(140deg,#FF5500,#FF8C3A)', padding: '14px 14px 0', cursor: 'pointer', userSelect: 'none' }}>
                             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
                               <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>{dayIcon}</div>
                               <div style={{ flex: 1, minWidth: 0 }}>
@@ -1644,8 +1644,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: "'DM Sans',sans-serif" }}>{dayDoneCount}/{dayTotalCount} completed</span>
                                 <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.55)', fontFamily: "'DM Sans',sans-serif" }}>{Math.round(donePct)}%</span>
                               </div>
-                              <div style={{ height: 4, background: 'rgba(255,255,255,0.2)', borderRadius: 99, marginBottom: 14 }}>
-                                <div style={{ height: '100%', width: `${donePct}%`, background: '#FF8C3A', borderRadius: 99, transition: 'width 0.5s ease', boxShadow: donePct > 0 ? '0 0 8px rgba(255,106,0,0.55)' : 'none' }} />
+                              <div style={{ height: 4, background: 'rgba(255,255,255,0.25)', borderRadius: 99, marginBottom: 14 }}>
+                                <div style={{ height: '100%', width: `${donePct}%`, background: '#fff', borderRadius: 99, transition: 'width 0.5s ease', boxShadow: donePct > 0 ? '0 0 8px rgba(255,255,255,0.5)' : 'none' }} />
                               </div>
                             </div>
                           </div>
