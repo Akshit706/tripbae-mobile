@@ -70,7 +70,7 @@ export function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onCo
         <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'center' }}>
           {confirmStyle === 'danger'
             ? <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#993C1D" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-            : <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#0F6E56" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9,12 12,15 16,9"/></svg>}
+            : <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#FF8C3A" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="9,12 12,15 16,9"/></svg>}
         </div>
         <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{title}</div>
         <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.6, marginBottom: 22 }}>{message}</div>

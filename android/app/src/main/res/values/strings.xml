@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TravelBae</string>
+    <string name="title_activity_main">TravelBae</string>
+    <string name="package_name">com.travelbae.app</string>
+    <string name="custom_url_scheme">com.travelbae.app</string>
+</resources>

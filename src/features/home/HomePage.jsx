@@ -178,14 +178,14 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
     : 'linear-gradient(145deg,#083433 0%,#0f5a55 52%,#0a3c38 100%)';
   const glowBg = trip.isSolo
     ? 'radial-gradient(circle,rgba(127,119,221,0.42) 0%,transparent 72%)'
-    : 'radial-gradient(circle,rgba(29,158,117,0.42) 0%,transparent 72%)';
+    : 'radial-gradient(circle,rgba(255,106,0,0.42) 0%,transparent 72%)';
   let statusBadgeStyle;
   if (isPast) {
     statusBadgeStyle = { background: 'rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.78)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(7px)' };
   } else if (status.label === 'Ongoing') {
-    statusBadgeStyle = { background: 'rgba(29,158,117,0.28)', color: '#1fcea8', border: '1px solid rgba(29,158,117,0.55)', backdropFilter: 'blur(7px)' };
+    statusBadgeStyle = { background: 'rgba(255,106,0,0.28)', color: '#FF8C3A', border: '1px solid rgba(255,106,0,0.55)', backdropFilter: 'blur(7px)' };
   } else {
-    statusBadgeStyle = { background: 'rgba(29,158,117,0.22)', color: '#86EFC9', border: '1px solid rgba(94,232,184,0.36)', backdropFilter: 'blur(7px)' };
+    statusBadgeStyle = { background: 'rgba(255,106,0,0.22)', color: '#FFB87A', border: '1px solid rgba(94,232,184,0.36)', backdropFilter: 'blur(7px)' };
   }
   const cardDelay = idx * 70;
 
@@ -302,7 +302,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
           <button
             onClick={e => { e.stopPropagation(); onCopy(trip.shareCode, trip.id); }}
             style={{ padding: '4px 12px', borderRadius: 999, background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(8px)', cursor: 'pointer', marginRight: 8, flexShrink: 0 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: copied === trip.id ? '#1fcea8' : 'rgba(255,255,255,0.75)', letterSpacing: 0.4 }}>{copied === trip.id ? 'Copied' : trip.shareCode}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: copied === trip.id ? '#FF8C3A' : 'rgba(255,255,255,0.75)', letterSpacing: 0.4 }}>{copied === trip.id ? 'Copied' : trip.shareCode}</span>
           </button>
         )}
         {showMenu && <div style={{ position: 'relative', flexShrink: 0 }}>
@@ -324,7 +324,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
                 )}
                 <button
                   onClick={e => { e.stopPropagation(); setMenuOpen(null); setConfirmComplete(trip); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#FF8C3A', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)' }}>
                   Mark as Completed
                 </button>
                 <button
@@ -738,7 +738,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         />
         <div style={{ position: 'relative', zIndex: 2 }}>
           <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.8px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'left' }}>
-            {greetPhrase}{profileName ? <span style={{ color: '#043D28', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
+            {greetPhrase}{profileName ? <span style={{ color: '#7A2E00', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
           </div>
           <div style={{ position: 'relative', marginBottom: 20 }}>
             <div style={{ overflow: 'hidden', minHeight: 74 }}>
@@ -753,7 +753,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', color: '#0D1108', whiteSpace: 'nowrap' }}>
                   {HERO_TAGLINES[tagIdx].line1}
                 </div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', whiteSpace: 'nowrap', color: '#043D28' }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', whiteSpace: 'nowrap', color: '#7A2E00' }}>
                   {HERO_TAGLINES[tagIdx].line2}
                 </div>
               </div>
@@ -764,7 +764,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               aria-label="Next fact"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <polyline points="9 18 15 12 9 6" stroke="#043D28" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points="9 18 15 12 9 6" stroke="#7A2E00" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           </div>

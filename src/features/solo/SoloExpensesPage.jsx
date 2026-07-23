@@ -270,7 +270,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     }
   };
 
-  const CAT_COLORS = { food: '#BA7517', transport: '#0F6E56', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E', other: '#6b6b68' };
+  const CAT_COLORS = { food: '#BA7517', transport: '#FF8C3A', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E', other: '#6b6b68' };
   const SOLO_ACCENT = '#FF6A00';
   const SOLO_ACCENT_2 = '#FF8C3A';
   const SOLO_ACCENT_BG = '#FFF3EB';
@@ -338,7 +338,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     if (barRef.current) {
       const cats = activeCats;
       if (cats.length === 0) return;
-      const BAR_COLORS = { food:'#BA7517', transport:'#1D9E75', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E' };
+      const BAR_COLORS = { food:'#BA7517', transport:'#FF6A00', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E' };
       chartInstances.current.bar = new window.Chart(barRef.current, {
         type: 'bar',
         data: {

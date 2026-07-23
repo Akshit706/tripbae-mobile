@@ -1293,11 +1293,11 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       {/* ════════ CURRENCY VIEW ════════ */}
       {view === 'currency' && (
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
-          <div style={{ background: 'linear-gradient(135deg,#E1F5EE,#F0FAF5)', border: '0.5px solid #9FE1CB', borderRadius: 14, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', border: '0.5px solid #9FE1CB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontFamily: "'Sora',sans-serif", fontWeight: 700, color: '#0F6E56' }}>{currencyMeta.symbol}</div>
+          <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#FFF7F0)', border: '0.5px solid rgba(255,106,0,0.3)', borderRadius: 14, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', border: '0.5px solid rgba(255,106,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontFamily: "'Sora',sans-serif", fontWeight: 700, color: '#FF8C3A' }}>{currencyMeta.symbol}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#0F6E56' }}>Currently using {currencyMeta.code}</div>
-              <div style={{ fontSize: 11.5, color: '#0F6E56', opacity: 0.85, marginTop: 2 }}>{currencyMeta.name}</div>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#FF8C3A' }}>Currently using {currencyMeta.code}</div>
+              <div style={{ fontSize: 11.5, color: '#FF8C3A', opacity: 0.85, marginTop: 2 }}>{currencyMeta.name}</div>
             </div>
           </div>
 
@@ -1310,21 +1310,21 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   className="pf-row"
                   onClick={() => savePrefs({ ...prefs, currency: c.code })}
                   style={{
-                    width: '100%', background: active ? '#F0FAF5' : '#fff', border: 'none',
+                    width: '100%', background: active ? '#FFF7F0' : '#fff', border: 'none',
                     borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)',
                     padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
                     cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif",
                     transition: 'background .15s',
                   }}
                 >
-                  <div style={{ width: 36, height: 36, borderRadius: 10, background: active ? '#1D9E75' : '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: active ? '#fff' : '#1a1a18', flexShrink: 0 }}>
+                  <div style={{ width: 36, height: 36, borderRadius: 10, background: active ? '#FF6A00' : '#F1EFE8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, fontFamily: "'Sora',sans-serif", color: active ? '#fff' : '#1a1a18', flexShrink: 0 }}>
                     {c.symbol}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13.5, fontWeight: 600, color: '#1a1a18' }}>{c.code}</div>
                     <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 1 }}>{c.name}</div>
                   </div>
-                  {active && <div style={{ fontSize: 14, color: '#1D9E75', fontWeight: 700 }}>✓</div>}
+                  {active && <div style={{ fontSize: 14, color: '#FF6A00', fontWeight: 700 }}>✓</div>}
                 </button>
               );
             })}

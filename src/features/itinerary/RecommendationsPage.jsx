@@ -7,7 +7,7 @@ import { fetchRecommendations, fetchPlacePhotos } from '../../api';
 /* ── Design tokens ── */
 const D = {
   bg:'#FAF8F4', surface:'#FFFFFF', espresso:'#1C1410',
-  gold:'#C9913A', goldTint:'#FDF3E3', sage:'#7A9E7E', sageTint:'#EBF3EC',
+  gold:'#C9913A', goldTint:'#FDF3E3', sage:'#7A9E7E', sageTint:'#FFF3EB',
   coral:'#E8715A', coralTint:'#FDF0EE', blueTint:'#E6F1FB',
   neutral:'#F4F2EE', muted:'#8A7E76', secondary:'#5C504A',
   divider:'rgba(28,20,16,0.06)', border:'rgba(28,20,16,0.09)',

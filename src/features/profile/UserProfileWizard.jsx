@@ -439,7 +439,7 @@ export default function UserProfileWizard({ userName, onDone }) {
                 </div>
               )}
               {profile.photoUrl && !uploading && (
-                <div style={{ fontSize: 12, color: '#0F6E56', marginTop: 6, fontWeight: 600 }}>✓ Photo uploaded</div>
+                <div style={{ fontSize: 12, color: '#FF8C3A', marginTop: 6, fontWeight: 600 }}>✓ Photo uploaded</div>
               )}
             </div>
 

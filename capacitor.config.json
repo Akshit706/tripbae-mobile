@@ -1,0 +1,21 @@
+{
+  "appId": "com.travelbae.app",
+  "appName": "TravelBae",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "providers": ["google.com"]
+    },
+    "SplashScreen": {
+      "launchShowDuration": 2000,
+      "launchAutoHide": true,
+      "backgroundColor": "#FAF8F4"
+    },
+    "StatusBar": {
+      "style": "dark"
+    }
+  }
+}

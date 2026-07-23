@@ -75,7 +75,7 @@ const D = {
   gold:      '#C9913A',
   goldTint:  '#FDF3E3',
   sage:      '#7A9E7E',
-  sageTint:  '#EBF3EC',
+  sageTint:  '#FFF3EB',
   coral:     '#E8715A',
   coralTint: '#FDF0EE',
   blueTint:  '#E6F1FB',
@@ -428,7 +428,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     return { bg: D.neutral, color: D.muted };
   };
 
-  const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
+  const accentColor = isSolo ? '#7F77DD' : '#FF6A00';
 
   /* -- Veg / Non-veg dot -- */
   const VegDot = ({ item }) => {
@@ -551,7 +551,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
               <span style={{ fontSize: 11, fontWeight: 700, color: D.gold, background: D.goldTint, borderRadius: 999, padding: '2px 8px' }}>{item.priceRange}</span>
             )}
             {item.bestTime && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#0F6E56', background: D.sageTint, borderRadius: 999, padding: '2px 8px' }}>?? {item.bestTime}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#FF8C3A', background: D.sageTint, borderRadius: 999, padding: '2px 8px' }}>?? {item.bestTime}</span>
             )}
           </div>
 
@@ -916,8 +916,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const toggleActivity = (key) => setDoneActivities(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
   const accentStyle = isSolo ? S.btnSolo : S.btnP;
-  const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
-  const headerBg = isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)';
+  const accentColor = isSolo ? '#7F77DD' : '#FF6A00';
+  const headerBg = isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#FF6A00,#FF8C3A)';
 
   const TYPE_ICONS = {
     attraction: '???', food: '???', experience: '?',

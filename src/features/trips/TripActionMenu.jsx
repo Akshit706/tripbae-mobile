@@ -94,8 +94,8 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
                 {EMOJI_OPTIONS.map(e => (
                   <div key={e} onClick={() => setEditForm(f => ({ ...f, emoji: e }))}
                     style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer',
-                      border: editForm.emoji === e ? `2px solid ${isSolo ? '#7F77DD' : '#1D9E75'}` : '0.5px solid rgba(0,0,0,0.12)',
-                      background: editForm.emoji === e ? (isSolo ? '#EEEDFE' : '#E1F5EE') : '#fff' }}>
+                      border: editForm.emoji === e ? `2px solid ${isSolo ? '#7F77DD' : '#FF6A00'}` : '0.5px solid rgba(0,0,0,0.12)',
+                      background: editForm.emoji === e ? (isSolo ? '#EEEDFE' : '#FFF3EB') : '#fff' }}>
                     {e}
                   </div>
                 ))}
@@ -157,7 +157,7 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
               {!trip.completed && (
                 <button
                   onClick={() => { setOpen(false); setConfirmComplete(true); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#0F6E56', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)', textAlign: 'left' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#FF8C3A', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)', textAlign: 'left' }}>
                   ✅ Mark as Completed
                 </button>
               )}

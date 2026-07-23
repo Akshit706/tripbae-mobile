@@ -26,6 +26,7 @@ import {
   sendOtp,
   verifyOtp,
 } from './api';
+import { signInWithGoogle } from './auth';
 import HomePageFeature from './features/home/HomePage';
 import ShareCodeModalFeature from './features/home/ShareCodeModal';
 import TripActionMenuFeature from './features/trips/TripActionMenu';
@@ -38,16 +39,12 @@ import ProfilePageFeature from './features/profile/ProfilePage';
 import ClubPageFeature from './features/club/ClubPage';
 import UserProfileWizard from './features/profile/UserProfileWizard';
 
-// Add these two to your api.js:
-// export const deleteTrip = (id) => apiFetch(`/trips/${id}`, { method: 'DELETE' });
-// export const updateTrip = (id, data) => apiFetch(`/trips/${id}`, { method: 'PATCH', body: data });
-
 /* ─── CONSTANTS ─────────────────────────────────────── */
-const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
+const MCOLORS = ['#FF6A00','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#FF8C3A','#993C1D'];
 const API_BASE = 'https://travelbae-backend-sg.onrender.com';
 const CATS = [
   {id:'food',icon:'🍽️',label:'Food',bg:'#FAEEDA'},
-  {id:'transport',icon:'🚗',label:'Transport',bg:'#E1F5EE'},
+  {id:'transport',icon:'🚗',label:'Transport',bg:'#FFF3EB'},
   {id:'stay',icon:'🏠',label:'Stay',bg:'#E6F1FB'},
   {id:'activity',icon:'🎟️',label:'Activity',bg:'#EEEDFE'},
   {id:'shopping',icon:'🛍️',label:'Shopping',bg:'#FAECE7'},
@@ -55,7 +52,7 @@ const CATS = [
 ];
 const CONTACT_CATS = [
   {id:'guardian',icon:'🛡️',label:'Guardian',bg:'#EEEDFE',color:'#534AB7'},
-  {id:'driver',icon:'🚗',label:'Driver',bg:'#E1F5EE',color:'#0F6E56'},
+  {id:'driver',icon:'🚗',label:'Driver',bg:'#FFF3EB',color:'#FF8C3A'},
   {id:'hotel',icon:'🏨',label:'Hotel Staff',bg:'#E6F1FB',color:'#378ADD'},
   {id:'guide',icon:'🗺️',label:'Guide',bg:'#FAEEDA',color:'#854F0B'},
   {id:'medical',icon:'🏥',label:'Medical',bg:'#FAECE7',color:'#993C1D'},
@@ -63,10 +60,6 @@ const CONTACT_CATS = [
   {id:'other',icon:'👤',label:'Other',bg:'#F1EFE8',color:'#6b6b68'},
 ];
 const INTERESTS = ['🏖️ Beaches','🛕 Temples','🌿 Nature','🍽️ Food','🧗 Adventure','🎭 Culture','🛍️ Shopping','🌙 Nightlife','🏛️ History','💆 Wellness'];
-
-
-
-
 
 /* ─── HELPERS ───────────────────────────────────────── */
 function nickName(m) {
@@ -105,7 +98,7 @@ function SoloAvatar({ initials, size = 26 }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
-      background: 'linear-gradient(135deg,#7F77DD,#534AB7)',
+      background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       color: '#fff', fontSize: Math.round(size * .38), fontWeight: 700,
       flexShrink: 0, fontFamily: "'Sora',sans-serif"
@@ -182,7 +175,7 @@ function tripStatusInfo(arrival, departure, completed) {
   const now = new Date(); const a = new Date(arrival); const d = new Date(departure);
   if (now < a) {
     const daysLeft = Math.ceil((a - now) / 86400000);
-    return { label: `In ${daysLeft}d`, color: '#0F6E56', bg: '#E1F5EE', border: '#9FE1CB', isPast: false };
+    return { label: `In ${daysLeft}d`, color: '#FF8C3A', bg: '#FFF3EB', border: 'rgba(255,106,0,0.3)', isPast: false };
   } else if (now <= d) {
     return { label: 'Ongoing', color: '#854F0B', bg: '#FAEEDA', border: '#FAC775', isPast: false };
   }
@@ -191,7 +184,7 @@ function tripStatusInfo(arrival, departure, completed) {
 
 const AI_CACHE_KEY = 'travelbae_trip_ai_cache_v1';
 
-function readAiCache() {
+async function readAiCache() {
   try {
     const raw = localStorage.getItem(AI_CACHE_KEY);
     if (!raw) return {};
@@ -202,7 +195,7 @@ function readAiCache() {
   }
 }
 
-function writeAiCache(map) {
+async function writeAiCache(map) {
   try {
     localStorage.setItem(AI_CACHE_KEY, JSON.stringify(map || {}));
   } catch {
@@ -225,79 +218,43 @@ async function callClaudeWithSystem(system, messages) {
   return reply;
 }
 
-/* ─── CONFIRM DIALOG ─────────────────────────────────── */
-function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, onCancel }) {
-  return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem' }}>
-      <div style={{ background: '#fff', borderRadius: 18, padding: '1.75rem', maxWidth: 340, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)', textAlign: 'center' }}>
-        <div style={{ fontSize: 42, marginBottom: 12 }}>{confirmStyle === 'danger' ? '🗑️' : '✅'}</div>
-        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, marginBottom: 8 }}>{title}</div>
-        <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.6, marginBottom: 22 }}>{message}</div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button style={{ ...S.btn, flex: 1, justifyContent: 'center', padding: '11px' }} onClick={onCancel}>Cancel</button>
-          <button
-            style={{ ...S.btn, flex: 1, justifyContent: 'center', padding: '11px', fontWeight: 600,
-              ...(confirmStyle === 'danger' ? S.btnDanger : S.btnP),
-              background: confirmStyle === 'danger' ? '#993C1D' : undefined,
-              color: confirmStyle === 'danger' ? '#fff' : undefined }}
-            onClick={onConfirm}>
-            {confirmLabel}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
-  root: { fontFamily: "'DM Sans',sans-serif", background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #f8f7f2 34%, #f3f2ed 100%)', color: '#1a1a18', minHeight: '100vh', WebkitFontSmoothing: 'antialiased', position: 'relative', overflowX: 'hidden' },
-  topBar: { background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(14px)', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '0 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 300, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
+  root: { fontFamily: "'DM Sans',sans-serif", background: '#FAF8F4', color: '#1a1a18', minHeight: '100svh', WebkitFontSmoothing: 'antialiased', position: 'relative' },
+  topBar: { background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '12px 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 300, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
   logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, letterSpacing: '-0.45px', color: '#0D2B2E' },
   tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
-  navTabs: { background: 'rgba(255,255,255,0.42)', backdropFilter: 'blur(16px) saturate(1.08)', borderBottom: 'none', display: 'flex', padding: '8px 1rem 10px', overflowX: 'auto', gap: 8 },
+  navTabs: { background: '#fff', borderBottom: 'none', display: 'flex', padding: '8px 1rem 10px', overflowX: 'auto', gap: 8 },
   navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', fontSize: 12, fontWeight: 500, color: '#5D6A7B', cursor: 'pointer', background: 'rgba(255,255,255,0.56)', border: '1px solid rgba(23,37,84,0.08)', borderRadius: 999, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' },
-  navTabActive: { color: '#043D28', background: 'rgba(255,255,255,0.96)', border: '1px solid rgba(4,61,40,0.22)', fontWeight: 700 },
+  navTabActive: { color: '#FF8C3A', background: 'linear-gradient(135deg,#FFF3EB,#F2FFFA)', border: '1px solid rgba(255,106,0,0.32)', fontWeight: 700 },
   soloNavTabActive: { color: '#FF6A00', background: 'linear-gradient(135deg,#FFF3EB,#FFF0E6)', border: '1px solid rgba(255,106,0,0.3)', fontWeight: 700 },
-  page: { padding: '1rem 0.95rem', flex: 1, paddingBottom: '5.5rem', animation: 'tbPageIn .45s cubic-bezier(.2,.7,.2,1)' },
-  btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999, fontSize: 13, fontWeight: 600, border: '1px solid rgba(25,37,67,0.12)', background: 'linear-gradient(180deg,#ffffff,#f6fafe)', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'transform .22s cubic-bezier(.2,.7,.2,1), box-shadow .22s ease, border-color .22s ease, background .22s ease', boxShadow: '0 8px 18px rgba(0,0,0,0.06)', position: 'relative', overflow: 'hidden' },
-  btnP: { background: 'linear-gradient(135deg,#28B88A,#0F6E56)', color: '#fff', border: '0.5px solid rgba(15,110,86,0.68)', boxShadow: '0 10px 22px rgba(15,110,86,0.24)' },
+  page: { padding: '1rem 0.95rem', paddingBottom: '8rem' },
+  btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999, fontSize: 13, fontWeight: 600, border: '1px solid rgba(25,37,67,0.12)', background: '#fff', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 8px 18px rgba(0,0,0,0.06)' },
+  btnP: { background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', color: '#fff', border: '0.5px solid rgba(255,106,0,0.68)', boxShadow: '0 10px 22px rgba(255,106,0,0.24)' },
   btnSolo: { background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', color: '#fff', border: 'none' },
   btnOrange: { background: '#FF6B35', color: '#fff', border: '0.5px solid #FF6B35' },
   btnDanger: { background: '#fff', color: '#993C1D', border: '0.5px solid #F5C4B3' },
-  card: { background: 'linear-gradient(145deg,rgba(255,255,255,0.78),rgba(243,249,255,0.54))', border: '1px solid rgba(255,255,255,0.72)', borderRadius: 30, padding: '1rem 1.05rem', marginBottom: 12, boxShadow: '0 20px 40px rgba(8,16,35,0.10)', backdropFilter: 'blur(14px)', animation: 'tbCardIn .45s cubic-bezier(.2,.7,.2,1)' },
-  input: { fontFamily: "'DM Sans',sans-serif", padding: '11px 13px', border: '1px solid rgba(11,27,50,0.13)', borderRadius: 16, fontSize: 14, background: 'rgba(255,255,255,0.92)', color: '#1a1a18', width: '100%', outline: 'none', boxSizing: 'border-box', boxShadow: '0 6px 16px rgba(15,23,42,0.05)', transition: 'border-color .2s ease, box-shadow .2s ease, transform .2s ease' },
+  card: { background: '#fff', border: '1px solid rgba(0,0,0,0.06)', borderRadius: 30, padding: '1rem 1.05rem', marginBottom: 12, boxShadow: '0 20px 40px rgba(8,16,35,0.10)' },
+  input: { fontFamily: "'DM Sans',sans-serif", padding: '11px 13px', border: '1px solid rgba(11,27,50,0.13)', borderRadius: 16, fontSize: 14, background: '#fff', color: '#1a1a18', width: '100%', outline: 'none', boxSizing: 'border-box', boxShadow: '0 6px 16px rgba(15,23,42,0.05)' },
   label: { fontSize: 11, color: '#6b6b68', fontWeight: 600, letterSpacing: .3, textTransform: 'uppercase', display: 'block', marginBottom: 5, marginTop: 10 },
-  spinner: { width: 36, height: 36, border: '3px solid #E1F5EE', borderTopColor: '#1D9E75', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
+  spinner: { width: 36, height: 36, border: '3px solid #FFF3EB', borderTopColor: '#FF6A00', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
   soloSpinner: { width: 36, height: 36, border: '3px solid #FFF3EB', borderTopColor: '#FF6A00', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
 };
 
 export default function App() {
-  const [authToken, setAuthToken] = useState(localStorage.getItem('travelbae_token'));
-  // authMode: 'password-login' only (simplified)
-  const [authMode, setAuthMode] = useState('password-login');
-  const [authScreen, setAuthScreen] = useState('login');
-  const [authForm, setAuthForm] = useState({ name: '', email: 'tripbae1@gmail.com', password: 'tripbae', otp: '' });
+  const [authToken, setAuthToken] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
-  const [lgShowPw, setLgShowPw] = useState(false);
-  const [otpSentTo, setOtpSentTo] = useState('');
-  const [otpResendCountdown, setOtpResendCountdown] = useState(0);
   const [trips, setTrips] = useState([]);
   const [tripsLoading, setTripsLoading] = useState(false);
-  const [activeTrip, setActiveTrip] = useState(() => {
-    if (!localStorage.getItem('travelbae_token')) return null;
-    return sessionStorage.getItem('tb_active_trip') || null;
-  });
+  const [activeTrip, setActiveTrip] = useState(null);
   const [activeTripData, setActiveTripData] = useState(null);
   const [myNickname, setMyNickname] = useState(null);
   const [tripLoading, setTripLoading] = useState(false);
   const [newTripModal, setNewTripModal] = useState(null);
-  const [tab, setTab] = useState(() => {
-    if (!localStorage.getItem('travelbae_token')) return 'main';
-    return sessionStorage.getItem('tb_active_tab') || 'main';
-  });
+  const [tab, setTab] = useState('main');
   const [profileOpen, setProfileOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [homeTab, setHomeTab] = useState('trips');
@@ -344,6 +301,13 @@ export default function App() {
   const [userProfile, setUserProfile] = useState(null);
   const [sharedFlight, setSharedFlight] = useState(null);
   const [sharedFlightActive, setSharedFlightActive] = useState(false);
+  // ── Load persisted data on mount ──
+  useEffect(() => {
+    const token = localStorage.getItem('travelbae_token');
+    setAuthToken(token);
+    setAuthReady(true);
+  }, []);
+
   const [profile, setProfile] = useState(() => {
     try {
       const raw = localStorage.getItem('travelbae_profile');
@@ -377,13 +341,11 @@ export default function App() {
           const c = cache[t.id] || {};
           return {
             ...t,
-            // DB is source of truth (shared across all members); localStorage is fallback
             _cachedItin:   t.cachedItinerary  ?? c._cachedItin  ?? null,
             _cachedTaste:  t.cachedTaste      ?? c._cachedTaste ?? null,
           };
         });
         setTrips(merged);
-        // Validate restored trip ID still exists
         const savedTripId = sessionStorage.getItem('tb_active_trip');
         if (savedTripId && !merged.find(t => t.id === savedTripId)) {
           setActiveTrip(null);
@@ -406,13 +368,11 @@ export default function App() {
           try { localStorage.setItem('travelbae_profile', JSON.stringify(next)); } catch (_) {}
           return next;
         });
-        // Show onboarding wizard if profile not completed yet
         const up = d?.userProfile;
         if (!up || up.onboardingDone === false) {
           setShowOnboarding(true);
         } else {
           setUserProfile(up);
-          // Sync photo from backend into local profile.avatar
           if (up.photoUrl) {
             setProfile(prev => {
               if (prev?.avatar === up.photoUrl) return prev;
@@ -432,7 +392,6 @@ export default function App() {
     import('./api').then(({ getTrip }) => {
       getTrip(activeTrip)
         .then(d => {
-          // Always prefer the locally cached itin/taste over server (server doesn't store these)
           const localTrip = trips.find(x => x.id === activeTrip);
           setActiveTripData({
             ...d.trip,
@@ -448,21 +407,14 @@ export default function App() {
         })
         .finally(() => setTripLoading(false));
     });
-  }, [activeTrip, trips]); // ← ADD trips as dependency
+  }, [activeTrip, trips]);
 
   const isSolo = activeTripData?.isSolo || false;
-
-  // ── OTP countdown timer ──
-  useEffect(() => {
-    if (otpResendCountdown <= 0) return;
-    const t = setTimeout(() => setOtpResendCountdown(c => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [otpResendCountdown]);
 
   const finishAuth = (data) => {
     localStorage.setItem('travelbae_token', data.token);
     setAuthToken(data.token);
-    const accountName = (data?.user?.name || data?.name || authForm.name || '').trim();
+    const accountName = (data?.user?.name || data?.name || '').trim();
     if (accountName) {
       const nextProfile = { ...profile, name: accountName };
       setProfile(nextProfile);
@@ -470,55 +422,22 @@ export default function App() {
     }
   };
 
-  // Step 1: send OTP
-  const handleSendOtp = async () => {
+  const handleGoogleSignIn = async () => {
     setAuthError(''); setAuthLoading(true);
     try {
-      await sendOtp(authForm.email, authForm.name);
-      setOtpSentTo(authForm.email);
-      setAuthMode('otp-code');
-      setOtpResendCountdown(30);
-    } catch (err) { setAuthError(err.message); }
-    setAuthLoading(false);
-  };
-
-  // Step 2: verify OTP
-  const handleVerifyOtp = async () => {
-    setAuthError(''); setAuthLoading(true);
-    try {
-      const data = await verifyOtp(authForm.email, authForm.otp, authForm.name);
-      if (data.needsName) { setAuthMode('otp-name'); setAuthLoading(false); return; }
-      finishAuth(data);
-    } catch (err) { setAuthError(err.message); }
-    setAuthLoading(false);
-  };
-
-  // Step 3 (only if new user without name): submit name then verify again
-  const handleSubmitName = async () => {
-    if (!authForm.name.trim()) { setAuthError('Please enter your name.'); return; }
-    setAuthError(''); setAuthLoading(true);
-    try {
-      const data = await verifyOtp(authForm.email, authForm.otp, authForm.name);
-      finishAuth(data);
-    } catch (err) { setAuthError(err.message); }
-    setAuthLoading(false);
-  };
-
-  // Password login (classic)
-  const handleAuth = async () => {
-    setAuthError(''); setAuthLoading(true);
-    try {
-      const endpoint = authScreen === 'signup' ? '/auth/signup' : '/auth/login';
-      const body = authScreen === 'signup'
-        ? { name: authForm.name, email: authForm.email, password: authForm.password }
-        : { email: authForm.email, password: authForm.password };
-      const res = await fetch(`${API_BASE}${endpoint}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+      const userCredential = await signInWithGoogle();
+      const idToken = await userCredential.user.getIdToken();
+      const res = await fetch(`${API_BASE}/auth/firebase`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Something went wrong');
-      finishAuth(data);
-    } catch (err) { setAuthError(err.message); }
+      if (!res.ok) throw new Error(data.error || 'Google sign-in failed');
+      await finishAuth(data);
+    } catch (err) {
+      setAuthError(err.message);
+    }
     setAuthLoading(false);
   };
 
@@ -531,7 +450,6 @@ export default function App() {
     setTrips([]);
     setActiveTrip(null);
   };
-
 
   const handleDeleteAccount = async () => {
     const first = window.confirm('Delete your TripBae account?\n\nThis permanently removes your profile, trip memberships, and any trips where you were the only member (along with their expenses, contacts, photos and itinerary).\n\nThis cannot be undone.');
@@ -564,7 +482,6 @@ export default function App() {
     } else {
       setNewTripModal(trip);
     }
-    // Pre-fetch local taste in background so the Local Life tab loads instantly
     if (trip.destination) {
       import('./api').then(async ({ generateLocalTaste }) => {
         try {
@@ -641,15 +558,12 @@ export default function App() {
   // ── DELETE TRIP ──
   const handleDeleteTrip = async (tripId) => {
     try {
-      // Call API — import deleteTrip from api.js (add it there)
       const { deleteTrip } = await import('./api');
       await deleteTrip(tripId);
     } catch (err) {
-      // If backend doesn't support it yet, still remove from local state
       console.warn('Delete API error (removing locally):', err.message);
     }
     setTrips(ts => ts.filter(t => t.id !== tripId));
-    // If currently viewing this trip, go back home
     if (activeTrip === tripId) {
       setActiveTrip(null);
       setActiveTripData(null);
@@ -665,7 +579,6 @@ export default function App() {
       console.warn('Update API error (updating locally):', err.message);
     }
     setTrips(ts => ts.map(t => t.id === tripId ? { ...t, completed: true } : t));
-    // If currently in this trip, update activeTripData too and go back home
     if (activeTrip === tripId) {
       setActiveTripData(d => d ? { ...d, completed: true } : d);
       setActiveTrip(null);
@@ -702,7 +615,6 @@ export default function App() {
     }
     writeAiCache(cache);
 
-    // Persist to DB so all group members see the same itinerary
     const dbUpdate = {};
     if (Object.prototype.hasOwnProperty.call(update, '_cachedItin')) {
       dbUpdate.cachedItinerary = update._cachedItin ?? null;
@@ -715,9 +627,6 @@ export default function App() {
     }
   }, []);
 
-
-
-
   const TAB_ICONS = {
     split:    (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,
     contacts: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
@@ -728,7 +637,6 @@ export default function App() {
   };
   const groupTabs = [
     { id: 'main',      iconKey: 'split',    label: 'Split' },
-    // { id: 'contacts',  iconKey: 'contacts', label: 'Contacts' }, // temporarily hidden
     { id: 'itinerary', iconKey: 'explore',  label: 'Explore' },
     { id: 'photos',    iconKey: 'photos',   label: 'Photos' },
     { id: 'club',      iconKey: 'club',     label: 'Club' },
@@ -739,44 +647,40 @@ export default function App() {
     { id: 'club',      iconKey: 'club',     label: 'Club' },
   ];
   const tabs = isSolo ? soloTabs : groupTabs;
-  const [viewDirection, setViewDirection] = useState('forward');
-  const viewKey = activeTrip ? `${activeTrip}-${tab}` : 'home';
-
   const handleTabChange = (nextTab) => {
     if (nextTab === tab) return;
-    const currentIndex = tabs.findIndex((t) => t.id === tab);
-    const nextIndex = tabs.findIndex((t) => t.id === nextTab);
-    if (currentIndex !== -1 && nextIndex !== -1) {
-      setViewDirection(nextIndex > currentIndex ? 'forward' : 'back');
-    }
     setTab(nextTab);
   };
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo(0, 0);
   }, [tab, activeTrip]);
 
-  // ── AUTH SCREEN ──
+  // ── AUTH LOADING ──
+  if (!authReady) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#FAF8F4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 36, height: 36, border: '3px solid #FFF3EB', borderTopColor: '#FF6A00', borderRadius: '50%', animation: 'spin .75s linear infinite' }} />
+      </div>
+    );
+  }
+
+  // ── AUTH SCREEN — Google-only login ──
   if (!authToken) return (
     <div className="lg-root">
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0}
-
         @keyframes lgSpin       { to{transform:rotate(360deg)} }
         @keyframes lgLogoIn     { from{opacity:0;transform:scale(.87)} to{opacity:1;transform:scale(1)} }
         @keyframes lgTagIn      { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
         @keyframes lgCardSlide  { from{opacity:0;transform:translateY(26px) scale(.99)} to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes lgF1         { from{opacity:0;transform:translateY(9px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lgF2         { from{opacity:0;transform:translateY(9px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes lgF3         { from{opacity:0;transform:translateY(9px)} to{opacity:1;transform:translateY(0)} }
         @keyframes lgBtnIn      { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
         @keyframes lgStampFloat { 0%,100%{transform:rotate(-14deg) translateY(0)} 50%{transform:rotate(-14deg) translateY(-5px)} }
         @keyframes lgTagFloat   { 0%,100%{transform:rotate(8deg) translateY(0)} 50%{transform:rotate(8deg) translateY(-4px)} }
         @keyframes lgPlaneFloat { 0%,100%{transform:translate(0,0) rotate(-25deg)} 50%{transform:translate(3px,-4px) rotate(-25deg)} }
 
-        /* ── Root ── */
         .lg-root {
           min-height:100vh; width:100%;
           background:#FFFFFF;
@@ -785,55 +689,34 @@ export default function App() {
           position:relative; overflow:hidden;
         }
 
-        /* ── Background layer ── */
         .lg-bg { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
-
-        /* No tint — pure white background */
-        .lg-bg-radial { display:none; }
-
-        /* Blurred ambient circles — removed to keep bg white */
-        .lg-bg-c1 { display:none; }
-        .lg-bg-c2 { display:none; }
-        .lg-bg-c3 { display:none; }
-
-        /* World map (continent outlines, very faint) */
         .lg-bg-world { position:absolute; width:100%; bottom:0; left:0; opacity:0.042; }
-
-        /* Airplane route line */
         .lg-bg-route { position:absolute; top:0; left:0; width:100%; height:48%; opacity:0.13; }
-
-        /* Passport stamp */
         .lg-bg-stamp {
           position:absolute; bottom:16%; right:4%;
           width:74px; height:74px;
           opacity:0.072;
           animation:lgStampFloat 7s ease-in-out infinite;
         }
-
-        /* Luggage tag */
         .lg-bg-tag {
           position:absolute; bottom:12%; left:4%;
           opacity:0.065;
           animation:lgTagFloat 9s ease-in-out infinite;
         }
-
-        /* Floating plane dot at route tip */
         .lg-bg-plane {
           position:absolute; top:17%; right:14%;
           opacity:0.13;
           animation:lgPlaneFloat 7s ease-in-out infinite 1.5s;
         }
 
-        /* ── Logo + tagline area ── */
         .lg-above-card {
           position:relative; z-index:1;
           display:flex; flex-direction:column; align-items:center;
-          padding:2.25rem 1.5rem 1.1rem;
+          padding:3rem 1.5rem 1.5rem;
           text-align:center;
         }
         .lg-logo-img {
           width:160px; height:auto; object-fit:contain;
-          display:block;
           animation:lgLogoIn .55s cubic-bezier(.22,.68,0,1.2) both;
         }
         .lg-hero-title {
@@ -841,16 +724,15 @@ export default function App() {
           font-size:16px; font-weight:800;
           color:#FF6A00;
           letter-spacing:0.1px;
-          margin-top:12px; line-height:1.35;
+          margin-top:12px;
           animation:lgTagIn .45s .15s ease both;
         }
         .lg-hero-sub {
           font-size:12.5px; color:#9CA3AF; font-weight:400;
-          margin-top:4px; line-height:1.55;
+          margin-top:4px;
           animation:lgTagIn .45s .25s ease both;
         }
 
-        /* ── Card wrap ── */
         .lg-card-wrap {
           position:relative; z-index:1;
           width:100%;
@@ -859,148 +741,57 @@ export default function App() {
           flex:1;
         }
 
-        /* ── Card ── */
         .lg-card {
-          width:100%; max-width:460px;
+          width:100%; max-width:400px;
           background:rgba(255,255,255,0.97);
           border-radius:28px;
-          padding:1.85rem 1.65rem 1.65rem;
-          box-shadow:
-            0 20px 60px rgba(0,0,0,0.08),
-            0 4px 18px rgba(0,0,0,0.05),
-            0 0 0 1px rgba(0,0,0,0.035);
+          padding:2rem 1.75rem;
+          box-shadow:0 20px 60px rgba(0,0,0,0.08), 0 4px 18px rgba(0,0,0,0.05),0 0 0 1px rgba(0,0,0,0.035);
           animation:lgCardSlide .5s .05s cubic-bezier(.22,.68,0,1.15) both;
+          text-align:center;
         }
         .lg-card-title {
           font-family:'Sora',sans-serif;
-          font-size:19.5px; font-weight:700;
-          color:#1A1A1A; line-height:1.2;
-          margin-bottom:3px;
+          font-size:22px; font-weight:800;
+          color:#1A1A1A;
+          margin-bottom:6px;
+          letter-spacing:-0.3px;
         }
         .lg-card-sub {
-          font-size:13px; color:#6B7280;
-          margin-bottom:1.35rem; line-height:1.5;
+          font-size:14px; color:#6B7280;
+          margin-bottom:1.5rem; line-height:1.5;
         }
 
-        /* ── Fields ── */
-        .lg-field { margin-bottom:.82rem; }
-        .lg-field:nth-child(1) { animation:lgF1 .38s .2s ease both; }
-        .lg-field:nth-child(2) { animation:lgF2 .38s .28s ease both; }
-        .lg-field:nth-child(3) { animation:lgF3 .38s .36s ease both; }
-        .lg-label {
-          display:block;
-          font-size:11.5px; font-weight:600; letter-spacing:0.45px;
-          color:#374151; margin-bottom:5px; text-transform:uppercase;
-        }
-        .lg-input-wrap { position:relative; }
-        .lg-input-icon {
-          position:absolute; left:13px; top:50%; transform:translateY(-50%);
-          color:#FF6A00; display:flex; align-items:center; pointer-events:none;
-        }
-        .lg-input-icon-right {
-          position:absolute; right:13px; top:50%; transform:translateY(-50%);
-          color:#9CA3AF; display:flex; align-items:center;
-          cursor:pointer; background:none; border:none; padding:2px;
-        }
-        .lg-input-icon-right:hover { color:#374151; }
-        .lg-input {
-          width:100%; background:#F8F8FA;
-          border:1.5px solid #EBEBF0; border-radius:13px;
-          padding:12.5px 42px 12.5px 42px;
-          font-size:14.5px; font-family:'DM Sans',sans-serif;
-          color:#111827; outline:none;
-          transition:border-color .18s,box-shadow .2s,background .18s;
-        }
-        .lg-input.no-icon-right { padding-right:14px; }
-        .lg-input::placeholder { color:#B0B4BE; }
-        .lg-input:focus {
-          border-color:#FF6A00; background:#FFFFFF;
-          box-shadow:0 0 0 3.5px rgba(255,106,0,0.10);
-        }
-
-        /* ── Extras row ── */
-        .lg-extras-row {
-          display:flex; align-items:center; justify-content:space-between;
-          margin:.4rem 0 .95rem;
-        }
-        .lg-remember {
-          display:flex; align-items:center; gap:7px;
-          font-size:13px; color:#4B5563; cursor:pointer; user-select:none;
-        }
-        .lg-remember input[type=checkbox] {
-          width:15px; height:15px; accent-color:#FF6A00; cursor:pointer;
-        }
-        .lg-forgot {
-          font-size:13px; font-weight:600; color:#FF6A00;
-          background:none; border:none; cursor:pointer; padding:0;
-          font-family:'DM Sans',sans-serif;
-        }
-        .lg-forgot:hover { text-decoration:underline; }
-
-        /* ── Primary button ── */
-        .lg-btn-primary {
-          width:100%; height:56px;
-          background:linear-gradient(105deg,#FF6A00 0%,#FF8F3D 100%);
-          border:none; border-radius:18px;
-          font-size:15px; font-weight:700; font-family:'DM Sans',sans-serif;
-          color:#fff; cursor:pointer; letter-spacing:0.25px;
-          box-shadow:0 5px 20px rgba(255,106,0,0.32),0 2px 6px rgba(255,106,0,0.16);
-          display:flex; align-items:center; justify-content:center; gap:8px;
-          animation:lgBtnIn .38s .44s ease both;
-          transition:transform .13s,box-shadow .15s,filter .13s;
-          position:relative; overflow:hidden;
-        }
-        .lg-btn-primary::before {
-          content:''; position:absolute; inset:0;
-          background:linear-gradient(105deg,rgba(255,255,255,0.15) 0%,transparent 55%);
-          pointer-events:none;
-        }
-        .lg-btn-primary:hover:not(:disabled) {
-          filter:brightness(1.07); transform:translateY(-2px);
-          box-shadow:0 9px 28px rgba(255,106,0,0.42),0 3px 8px rgba(255,106,0,0.2);
-        }
-        .lg-btn-primary:hover:not(:disabled) .lg-btn-arrow { transform:translateX(4px); }
-        .lg-btn-primary:active:not(:disabled) { transform:scale(0.97); box-shadow:0 3px 12px rgba(255,106,0,0.28); }
-        .lg-btn-primary:disabled { opacity:0.52; cursor:not-allowed; }
-        .lg-btn-arrow { transition:transform .2s cubic-bezier(.34,1.56,.64,1); display:flex; align-items:center; }
-
-        /* ── Divider ── */
-        .lg-divider { display:flex; align-items:center; gap:10px; margin:1.05rem 0 .85rem; }
-        .lg-div-line { flex:1; height:1px; background:#EBEBF0; }
-        .lg-div-text { font-size:11.5px; color:#B0B4BE; font-weight:500; white-space:nowrap; }
-
-        /* ── Social — icon-only ── */
-        .lg-social-row { display:flex; gap:10px; }
-        .lg-social-btn {
-          flex:1; height:44px;
-          background:#F8F8FA; border:1.5px solid #EBEBF0; border-radius:14px;
-          cursor:pointer;
-          display:flex; align-items:center; justify-content:center;
-          transition:background .18s,border-color .18s,transform .12s;
-        }
-        .lg-social-btn:hover { background:#F0F0F5; border-color:#D8D8E0; }
-        .lg-social-btn:active { transform:scale(0.93); }
-
-        /* ── Footer ── */
-        .lg-footer-link { text-align:center; margin-top:1.2rem; font-size:13.5px; color:#6B7280; }
-        .lg-footer-link button {
-          background:none; border:none; cursor:pointer; padding:0;
-          font-size:13.5px; font-weight:600; color:#FF6A00; font-family:'DM Sans',sans-serif;
-        }
-        .lg-footer-link button:hover { text-decoration:underline; }
         .lg-error {
           font-size:12.5px; color:#DC2626;
           background:#FEF2F2; border:1px solid #FECACA;
-          border-radius:10px; padding:8px 12px; margin-bottom:10px;
+          border-radius:10px; padding:8px 12px; margin-bottom:14px;
+          text-align:left;
         }
         .lg-spinner {
-          width:20px; height:20px;
+          width:22px; height:22px;
           border:2.5px solid rgba(255,255,255,0.38); border-top-color:#fff;
           border-radius:50%; animation:lgSpin .6s linear infinite; display:inline-block;
         }
+        .lg-google-btn {
+          width:100%; padding:15px;
+          background:#fff; border:1.5px solid #EBEBF0; border-radius:16px;
+          font-size:15px; font-weight:600;
+          font-family:'DM Sans',sans-serif; color:#1a1a18;
+          cursor:pointer; display:flex; align-items:center; justify-content:center; gap:12px;
+          box-shadow:0 2px 12px rgba(0,0,0,0.06);
+          transition:transform .15s,box-shadow .15s,background .18s;
+          animation:lgBtnIn .38s .4s ease both;
+        }
+        .lg-google-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 4px 20px rgba(0,0,0,0.12); background:#F8F8FA; }
+        .lg-google-btn:active:not(:disabled) { transform:scale(0.98); }
+        .lg-google-btn:disabled { opacity:0.6; cursor:not-allowed; }
+
         .lg-terms {
           text-align:center; margin-top:.9rem;
           font-size:11.5px; color:#A0A4AD; line-height:1.6;
+          position:relative; z-index:2;
+          padding:0 1rem;
         }
         .lg-terms a { color:#9CA3AF; text-decoration:underline; cursor:pointer; }
         .lg-terms a:hover { color:#374151; }
@@ -1008,54 +799,33 @@ export default function App() {
 
       {/* ── Decorative background ── */}
       <div className="lg-bg" aria-hidden="true">
-        {/* Radial warm tint */}
-        <div className="lg-bg-radial" />
-        {/* Blurred ambient circles */}
-        <div className="lg-bg-c1" />
-        <div className="lg-bg-c2" />
-        <div className="lg-bg-c3" />
-
-        {/* World map — simplified continent fills */}
         <svg className="lg-bg-world" viewBox="0 0 400 180" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
           <g fill="#FF6A00">
-            {/* North America */}
             <path d="M40,28 C52,20 80,16 108,22 C125,26 140,38 143,54 C146,70 135,90 120,106 C106,122 84,132 64,126 C46,120 34,104 33,84 C32,64 38,38 40,28Z"/>
-            {/* Greenland */}
             <path d="M108,6 C120,2 136,4 140,14 C143,22 135,31 123,33 C112,34 105,27 108,17Z" opacity="0.65"/>
-            {/* South America */}
             <path d="M78,136 C90,128 110,128 116,142 C122,158 118,180 112,200 C106,218 93,226 80,218 C68,210 65,190 68,170 C71,152 76,143 78,136Z"/>
-            {/* Europe */}
             <path d="M162,22 C173,16 194,14 208,22 C220,28 224,44 220,58 C216,70 202,78 188,80 C175,81 162,72 160,58 C158,46 160,32 162,22Z" opacity="0.9"/>
-            {/* Africa */}
             <path d="M168,78 C184,70 212,70 226,82 C238,94 238,120 230,152 C222,180 208,200 194,203 C181,206 170,190 165,162 C158,136 158,108 164,90Z"/>
-            {/* Asia */}
             <path d="M213,18 C246,8 292,6 330,12 C355,18 370,36 365,54 C360,70 342,88 314,100 C287,112 250,114 226,106 C208,100 204,86 212,68 C217,52 214,34 213,18Z"/>
-            {/* Indian subcontinent */}
             <path d="M246,98 C254,93 267,93 272,101 C278,112 272,128 263,135 C255,141 247,135 244,121 C241,110 244,102 246,98Z" opacity="0.9"/>
-            {/* SE Asia archipelago */}
             <ellipse cx="320" cy="122" rx="16" ry="7" opacity="0.6" transform="rotate(-8,320,122)"/>
             <ellipse cx="342" cy="62" rx="9" ry="5" opacity="0.55"/>
-            {/* Australia */}
             <path d="M292,136 C308,128 336,128 348,142 C358,154 355,170 342,178 C329,185 312,182 304,170 C296,158 294,148 292,136Z"/>
-            {/* New Zealand */}
             <ellipse cx="366" cy="168" rx="5" ry="9" opacity="0.5" transform="rotate(-20,366,168)"/>
           </g>
         </svg>
 
-        {/* Airplane route — arched dashed path */}
         <svg className="lg-bg-route" viewBox="0 0 400 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M 18 180 Q 100 30 230 70 Q 310 96 372 52" fill="none" stroke="#FF6A00" strokeWidth="1.2" strokeDasharray="5 5"/>
           <circle cx="18" cy="180" r="3" fill="#FF6A00"/>
           <circle cx="230" cy="70" r="2" fill="#FF6A00" opacity="0.55"/>
         </svg>
 
-        {/* Plane at route tip */}
         <svg className="lg-bg-plane" width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M22 2L11 13" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round"/>
           <path d="M22 2L15 22L11 13L2 9L22 2Z" fill="#FF6A00" stroke="#FF6A00" strokeWidth="1.2" strokeLinejoin="round"/>
         </svg>
 
-        {/* Passport stamp */}
         <svg className="lg-bg-stamp" viewBox="0 0 74 74" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="37" cy="37" r="33" stroke="#FF6A00" strokeWidth="2" strokeDasharray="3.5 3"/>
           <circle cx="37" cy="37" r="26" stroke="#FF6A00" strokeWidth="1"/>
@@ -1065,7 +835,6 @@ export default function App() {
           <text x="37" y="55" textAnchor="middle" fontFamily="'DM Sans',sans-serif" fontSize="5.5" fill="#FF6A00" letterSpacing="0.8">TRIPBAE · 2026</text>
         </svg>
 
-        {/* Luggage tag */}
         <svg className="lg-bg-tag" width="38" height="56" viewBox="0 0 38 56" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect x="2" y="14" width="34" height="40" rx="6" stroke="#FF6A00" strokeWidth="1.5"/>
           <path d="M19 14 L19 8" stroke="#FF6A00" strokeWidth="1.5" strokeLinecap="round"/>
@@ -1080,119 +849,33 @@ export default function App() {
       <div className="lg-above-card">
         <img src={bglessLogo} alt="TripBae" className="lg-logo-img" />
         <div className="lg-hero-title">Plan. Split. Explore — Together</div>
-        
+        <div className="lg-hero-sub">Sign in to get started</div>
       </div>
 
       {/* ── Card ── */}
       <div className="lg-card-wrap">
         <div className="lg-card">
-          <div className="lg-card-title">
-            {authScreen === 'signup' ? 'Create your account' : 'Ready for your next trip?'}
-          </div>
-          
-
-          {/* Name (signup only) */}
-          {authScreen === 'signup' && (
-            <div className="lg-field">
-              <label className="lg-label">Full name</label>
-              <div className="lg-input-wrap">
-                <span className="lg-input-icon">
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                </span>
-                <input className="lg-input no-icon-right" type="text" placeholder="Your name"
-                  autoFocus={authScreen === 'signup'} value={authForm.name}
-                  onChange={e => setAuthForm(f => ({ ...f, name: e.target.value }))}
-                  onKeyDown={e => e.key === 'Enter' && handleAuth()} />
-              </div>
-            </div>
-          )}
-
-          {/* Email */}
-          <div className="lg-field">
-            <label className="lg-label">Email address</label>
-            <div className="lg-input-wrap">
-              <span className="lg-input-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-              </span>
-              <input className="lg-input no-icon-right" type="email" placeholder="you@example.com"
-                autoFocus={authScreen === 'login'} value={authForm.email}
-                onChange={e => setAuthForm(f => ({ ...f, email: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleAuth()} />
-            </div>
-          </div>
-
-          {/* Password */}
-          <div className="lg-field" style={{ marginBottom: authScreen === 'login' ? 0 : '.82rem' }}>
-            <label className="lg-label">Password</label>
-            <div className="lg-input-wrap">
-              <span className="lg-input-icon">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              </span>
-              <input className="lg-input" type={lgShowPw ? 'text' : 'password'} placeholder="••••••••"
-                value={authForm.password}
-                onChange={e => setAuthForm(f => ({ ...f, password: e.target.value }))}
-                onKeyDown={e => e.key === 'Enter' && handleAuth()} />
-              <button className="lg-input-icon-right" onClick={() => setLgShowPw(v => !v)} tabIndex={-1} type="button">
-                {lgShowPw
-                  ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-                  : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                }
-              </button>
-            </div>
-          </div>
-
-          {/* Remember + Forgot (login only) */}
-          {authScreen === 'login' && (
-            <div className="lg-extras-row">
-              <label className="lg-remember">
-                <input type="checkbox" />
-                Remember me
-              </label>
-              <button className="lg-forgot" type="button">Forgot password?</button>
-            </div>
-          )}
-
           {authError && <div className="lg-error">{authError}</div>}
 
-          {/* CTA */}
-          <button className="lg-btn-primary" onClick={handleAuth}
-            disabled={authLoading || !authForm.email.trim() || !authForm.password.trim() || (authScreen === 'signup' && !authForm.name.trim())}>
-            {authLoading
-              ? <span className="lg-spinner" />
-              : <>
-                  <span>{authScreen === 'signup' ? 'Create account' : 'Log in'}</span>
-                  <span className="lg-btn-arrow">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-                  </span>
-                </>
-            }
+          <button
+            className="lg-google-btn"
+            onClick={handleGoogleSignIn}
+            disabled={authLoading}
+          >
+            {authLoading ? (
+              <span className="lg-spinner" />
+            ) : (
+              <>
+                <svg width="20" height="20" viewBox="0 0 48 48">
+                  <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                  <path fill="#FF3D00" d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+                  <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/>
+                  <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+                </svg>
+                Sign in with Google
+              </>
+            )}
           </button>
-
-          <div className="lg-divider">
-            <div className="lg-div-line" />
-            <span className="lg-div-text">or continue with</span>
-            <div className="lg-div-line" />
-          </div>
-
-          {/* Social — icon only */}
-          <div className="lg-social-row">
-            <button className="lg-social-btn" type="button" title="Google">
-              <svg width="19" height="19" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-            </button>
-            <button className="lg-social-btn" type="button" title="Apple">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="#1A1A1A"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-            </button>
-            <button className="lg-social-btn" type="button" title="Guest">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6B7280" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <div className="lg-footer-link">
-          {authScreen === 'signup'
-            ? <>Already have an account? <button onClick={() => { setAuthScreen('login'); setAuthError(''); }}>Log in</button></>
-            : <>New here? <button onClick={() => { setAuthScreen('signup'); setAuthError(''); }}>Create an account</button></>
-          }
         </div>
 
         <div className="lg-terms">
@@ -1202,14 +885,10 @@ export default function App() {
     </div>
   );
 
-
-
-
   return (
     <div className="tb-app-shell" style={S.root}>
-      <div style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(29,158,117,0.13) 0%, rgba(29,158,117,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
+      <div style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,106,0,0.13) 0%, rgba(255,106,0,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: -190, left: -110, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,106,0,0.07) 0%, rgba(255,106,0,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
-      <div className="tb-noise-layer" />
       {showOnboarding && (
         <UserProfileWizard
           userName={profile?.name || ''}
@@ -1217,7 +896,6 @@ export default function App() {
             setShowOnboarding(false);
             const up = { ...savedProfile, onboardingDone: true };
             setUserProfile(up);
-            // Persist the profile photo into local profile.avatar so it shows in the top bar
             if (savedProfile.photoUrl) {
               saveProfile({ ...profile, avatar: savedProfile.photoUrl });
             }
@@ -1247,149 +925,42 @@ export default function App() {
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes tbShimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
         .tb-shimmer{background:linear-gradient(90deg,#f0ede8 25%,#e4e0d8 50%,#f0ede8 75%);background-size:1200px 100%;animation:tbShimmer 1.4s ease-in-out infinite;border-radius:8px}
-        @keyframes slideIn{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:translateX(0)}}
-        @keyframes tbPageIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-        @keyframes tbCardIn{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes tbBlobDrift{0%{transform:translate3d(0,0,0)}50%{transform:translate3d(-18px,14px,0)}100%{transform:translate3d(0,0,0)}}
-        @keyframes tbGlowPulse{0%{opacity:.65}50%{opacity:1}100%{opacity:.65}}
-        @keyframes tbDestDrift1{0%,100%{transform:translateY(0px) translateX(0px)}33%{transform:translateY(-9px) translateX(4px)}66%{transform:translateY(5px) translateX(-3px)}}
-        @keyframes tbDestDrift2{0%,100%{transform:translateY(0px)}40%{transform:translateY(-7px) translateX(-5px)}80%{transform:translateY(5px) translateX(4px)}}
-        @keyframes tbDestDrift3{0%,100%{transform:translateY(0px) translateX(0px)}50%{transform:translateY(-11px) translateX(3px)}}
-        @keyframes tbDestDrift4{0%,100%{transform:translateY(0px) translateX(0px)}35%{transform:translateY(7px) translateX(-5px)}75%{transform:translateY(-6px) translateX(3px)}}
-        .tb-bg-ambient{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-        .tb-bg-flag{position:absolute;font-size:18px;pointer-events:none;user-select:none;opacity:0.09;filter:grayscale(40%)}
-        .tb-bg-flag.f1{top:58%;left:8%;animation:tbDestDrift1 17s ease-in-out infinite}
-        .tb-bg-flag.f2{top:64%;left:31%;animation:tbDestDrift2 22s ease-in-out infinite;animation-delay:3s}
-        .tb-bg-flag.f3{top:72%;left:55%;animation:tbDestDrift3 19s ease-in-out infinite;animation-delay:7s}
-        .tb-bg-flag.f4{top:55%;left:74%;animation:tbDestDrift4 25s ease-in-out infinite;animation-delay:5s}
-        .tb-bg-flag.f5{top:82%;left:18%;animation:tbDestDrift1 14s ease-in-out infinite;animation-delay:11s}
-        .tb-bg-flag.f6{top:88%;left:42%;animation:tbDestDrift2 20s ease-in-out infinite;animation-delay:2s}
-        .tb-bg-flag.f7{top:78%;left:86%;animation:tbDestDrift3 16s ease-in-out infinite;animation-delay:9s}
-        .tb-bg-flag.f8{top:93%;left:63%;animation:tbDestDrift4 23s ease-in-out infinite;animation-delay:4s}
         *{box-sizing:border-box;margin:0;padding:0}
         a{color:inherit;text-decoration:none}
-        ::selection{background:#c7eedf;color:#053f31}
-        input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#E1F5EE;outline:none}
-        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#1D9E75;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
-        input:focus, select:focus, textarea:focus { border-color:#FF8C3A !important; box-shadow:0 0 0 3px rgba(255,106,0,0.14) !important; }
+        ::selection{background:rgba(255,106,0,0.2);color:#7A2E00}
+        input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#FFF3EB;outline:none}
+        input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#FF6A00;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
+        input:focus, select:focus, textarea:focus { border-color:#FF6A00 !important; box-shadow:0 0 0 3px rgba(255,106,0,0.14) !important; }
+
+        /* ── Safe area top padding to avoid status bar overlap ── */
+        .tb-topbar-glass {
+          padding-top: max(12px, env(safe-area-inset-top, 0px));
+        }
       `}</style>
 
-      <div className="tb-bg-ambient" aria-hidden="true">
-        {/* Dot grid */}
-        <svg style={{position:'absolute',inset:0,width:'100%',height:'100%'}} xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="tbDotGrid" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
-              <circle cx="1.1" cy="1.1" r="0.9" fill="#8896AB" opacity="0.28"/>
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#tbDotGrid)" opacity="0.55"/>
-        </svg>
-
-        {/* Curved flight arcs + animateMotion planes + pulsing pins */}
-        <svg style={{position:'absolute',inset:0,width:'100%',height:'100%'}} viewBox="0 0 400 860" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <path id="tbArc1" d="M-10 820 C70 580 190 360 402 80"/>
-            <path id="tbArc2" d="M-30 570 C90 390 230 270 430 45"/>
-            <path id="tbArc3" d="M15 940 C140 690 280 470 418 195"/>
-            <clipPath id="tbClipBottom">
-              <rect x="-20" y="430" width="460" height="540"/>
-            </clipPath>
-          </defs>
-
-          {/* Dashed arc strokes — confined to bottom 55% of screen */}
-          <path d="M-10 820 C70 580 190 360 402 80" fill="none" stroke="#1D9E75" strokeWidth="1.4" strokeDasharray="5 11" opacity="0.15" clipPath="url(#tbClipBottom)"/>
-          <path d="M-30 570 C90 390 230 270 430 45" fill="none" stroke="#FF6B35" strokeWidth="1.1" strokeDasharray="4 10" opacity="0.11" clipPath="url(#tbClipBottom)"/>
-          <path d="M15 940 C140 690 280 470 418 195" fill="none" stroke="#7F77DD" strokeWidth="1" strokeDasharray="3 9" opacity="0.09" clipPath="url(#tbClipBottom)"/>
-
-          {/* Destination pins — pulsing rings */}
-          <circle cx="402" cy="80" r="3.5" fill="#1D9E75" opacity="0.22">
-            <animate attributeName="r" values="3.5;6;3.5" dur="3s" repeatCount="indefinite"/>
-            <animate attributeName="opacity" values="0.22;0.40;0.22" dur="3s" repeatCount="indefinite"/>
-          </circle>
-          <circle cx="-10" cy="820" r="3" fill="#1D9E75" opacity="0.16">
-            <animate attributeName="r" values="3;5.5;3" dur="3.8s" repeatCount="indefinite" begin="1s"/>
-          </circle>
-          <circle cx="430" cy="45" r="3" fill="#FF6B35" opacity="0.17">
-            <animate attributeName="r" values="3;5;3" dur="4.2s" repeatCount="indefinite" begin="1.5s"/>
-          </circle>
-          <circle cx="-30" cy="570" r="2.5" fill="#FF6B35" opacity="0.14">
-            <animate attributeName="r" values="2.5;4.5;2.5" dur="3.5s" repeatCount="indefinite" begin="2.3s"/>
-          </circle>
-          <circle cx="195" cy="410" r="2.5" fill="#7F77DD" opacity="0.13">
-            <animate attributeName="r" values="2.5;4;2.5" dur="5s" repeatCount="indefinite" begin="3.1s"/>
-          </circle>
-          <circle cx="418" cy="195" r="3" fill="#7F77DD" opacity="0.15">
-            <animate attributeName="r" values="3;5.5;3" dur="3.6s" repeatCount="indefinite" begin="0.4s"/>
-          </circle>
-          <circle cx="260" cy="560" r="2" fill="#BA7517" opacity="0.12">
-            <animate attributeName="r" values="2;3.5;2" dur="4.5s" repeatCount="indefinite" begin="2s"/>
-          </circle>
-
-          {/* Plane 1 — green arc */}
-          <g opacity="0.30">
-            <path d="M0,-4.5 L4.2,0 L0,4.5 L-1.1,0 Z" fill="#FF6B35"/>
-            <animateMotion dur="26s" repeatCount="indefinite" rotate="auto">
-              <mpath href="#tbArc1"/>
-            </animateMotion>
-          </g>
-
-          {/* Plane 2 — orange arc, delayed */}
-          <g opacity="0.22">
-            <path d="M0,-3.8 L3.5,0 L0,3.8 L-0.9,0 Z" fill="#1D9E75"/>
-            <animateMotion dur="34s" repeatCount="indefinite" rotate="auto" begin="9s">
-              <mpath href="#tbArc2"/>
-            </animateMotion>
-          </g>
-
-          {/* Plane 3 — purple arc, small */}
-          <g opacity="0.16">
-            <path d="M0,-3.2 L2.8,0 L0,3.2 L-0.7,0 Z" fill="#7F77DD"/>
-            <animateMotion dur="42s" repeatCount="indefinite" rotate="auto" begin="17s">
-              <mpath href="#tbArc3"/>
-            </animateMotion>
-          </g>
-        </svg>
-
-        {/* Floating country flags — bottom half only, very faded */}
-        <div className="tb-bg-flag f1">🇮🇳</div>
-        <div className="tb-bg-flag f2">🇯🇵</div>
-        <div className="tb-bg-flag f3">🇫🇷</div>
-        <div className="tb-bg-flag f4">🇮🇹</div>
-        <div className="tb-bg-flag f5">🇺🇸</div>
-        <div className="tb-bg-flag f6">🇬🇧</div>
-        <div className="tb-bg-flag f7">🇧🇦</div>
-        <div className="tb-bg-flag f8">🇹🇭</div>
-      </div>
 
       {newTripModal && <ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
 
       {/* Top Bar */}
       <div className="tb-topbar-glass" style={S.topBar}>
-        {/* Profile button — always top-left */}
         <button
           onClick={() => setProfileOpen(true)}
           title="My profile"
           style={{
-            background: 'none', border: 'none', padding: '4px', cursor: 'pointer',
+            width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+            background: profile.avatar ? `url(${profile.avatar}) center/cover` : (isSolo ? 'linear-gradient(135deg,#FF6A00,#FF8C3A)' : 'linear-gradient(135deg,#FF6A00,#FF8C3A)'),
+            color: '#fff', fontWeight: 700, fontSize: 12, fontFamily: "'Sora',sans-serif",
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0,
+            cursor: 'pointer', padding: 0,
+            boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
+            border: '2.5px solid #fff',
+            outline: '1.5px solid rgba(0,0,0,0.08)',
           }}
         >
-          {(userProfile?.photoUrl || profile.avatar) ? (
-            <img
-              src={userProfile?.photoUrl || profile.avatar}
-              alt="profile"
-              style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '2px solid rgba(255,106,0,0.35)' }}
-            />
-          ) : (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1a1a18" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="8" r="4"/>
-              <path d="M4 20c0-4 3.582-7 8-7s8 3 8 7"/>
-            </svg>
-          )}
+          {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '16px 0', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
-          <img src={bglessLogo} alt="TripBae" style={{ height: 72, width: 'auto', objectFit: 'contain', display: 'block' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
+          <img src={bglessClubLogo} alt="TripBae" style={{ height: 32, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {!activeTrip && !activeTripData && (
           <div style={{ marginLeft: 'auto' }}>
@@ -1415,7 +986,6 @@ export default function App() {
         )}
         {activeTrip && activeTripData ? (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-            {/* Home icon — bare, no box */}
             <button
               onClick={() => { setActiveTrip(null); setActiveTripData(null); }}
               title="Home"
@@ -1426,7 +996,6 @@ export default function App() {
                 <path d="M9 21V12h6v9"/>
               </svg>
             </button>
-            {/* Quick action menu inside a trip */}
             <TripActionMenuFeature
               trip={activeTripData}
               onMarkComplete={() => handleMarkComplete(activeTripData.id)}
@@ -1443,8 +1012,7 @@ export default function App() {
         ) : null}
       </div>
 
-      {/* Notification popover — must live OUTSIDE the topbar because backdrop-filter
-          creates a containing block for position:fixed children in all modern browsers */}
+      {/* Notification popover */}
       {showNotifPopover && (
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 9998 }} onClick={() => setShowNotifPopover(false)} />
@@ -1483,99 +1051,32 @@ export default function App() {
       {activeTrip && (
         <div style={{
           position:'fixed', bottom:0, left:0, right:0, zIndex:100,
-          background:'transparent',
-          paddingBottom:'env(safe-area-inset-bottom,12px)',
+          background:'#fff',
+          borderTop:'1px solid rgba(0,0,0,0.07)',
+          paddingBottom:'env(safe-area-inset-bottom, 12px)',
         }}>
-          <div style={{ display:'flex', alignItems:'center', height:66, padding:'0 0 0 10px', gap:8, overflow:'hidden' }}>
-
-            {/* ── White capsule pill: all non-club tabs ── */}
-            <div style={{
-              flex: 1,
-              display: 'flex',
-              alignItems: 'center',
-              background: '#ffffff',
-              borderRadius: 50,
-              height: 52,
-              padding: '3px 4px',
-              gap: 0,
-              boxShadow: '0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
-            }}>
-              {tabs.filter(t => t.id !== 'club').map(t => {
-                const isActive = tab === t.id;
-                const activeColor = '#FF6A00';
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() => handleTabChange(t.id)}
-                    style={{
-                      flex: 1,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: '6px 4px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      gap: 2,
-                      borderRadius: 44,
-                      background: 'transparent',
-                      transition: 'background .18s',
-                      height: '100%',
-                    }}
-                  >
-                    <span style={{ display:'flex', alignItems:'center', justifyContent:'center', opacity: isActive ? 1 : 0.38 }}>
-                      {TAB_ICONS[t.iconKey]?.(isActive ? activeColor : '#6b6b68')}
-                    </span>
-                    <span style={{ fontSize: 9.5, fontWeight: isActive ? 700 : 400, color: isActive ? activeColor : '#8d8c87', fontFamily:"'DM Sans',sans-serif", letterSpacing: 0.1, whiteSpace:'nowrap' }}>
-                      {t.label}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* ── Club pill: always gradient, right side cut by overflow:hidden ── */}
-            <button
-              onClick={() => handleTabChange('club')}
-              style={{
-                flex: '0 0 auto',
-                alignSelf: 'stretch',
-                display: 'flex',
-                alignItems: 'stretch',
-                padding: '7px 0 7px 0',
-                border: 'none',
-                background: 'transparent',
-                cursor: 'pointer',
-              }}
-            >
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                background: tab === 'club'
-                  ? 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 50%,#FF416C 100%)'
-                  : 'linear-gradient(135deg,#6920D4 0%,#A81A96 50%,#D93560 100%)',
-                borderRadius: '22px 0 0 22px',
-                padding: '0 22px 0 16px',
-                minWidth: 96,
-                boxShadow: tab === 'club'
-                  ? '-4px 0 28px rgba(123,47,247,0.6), inset 0 0 0 2px rgba(255,255,255,0.28)'
-                  : '-3px 0 14px rgba(123,47,247,0.28)',
-                transition: 'box-shadow .2s',
-              }}>
-                <img
-                  src={bglessClubLogo}
-                  alt="Club"
-                  style={{ height: 36, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', flexShrink: 0 }}
-                />
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                  <line x1="7" y1="17" x2="17" y2="7"/>
-                  <polyline points="7 7 17 7 17 17"/>
-                </svg>
-              </div>
-            </button>
-
+          <div style={{ display:'grid', gridTemplateColumns:`repeat(${tabs.length}, 1fr)` }}>
+            {tabs.map((t) => {
+              const isActive = tab === t.id;
+              const activeColor = isSolo ? '#FF6A00' : '#FF8C3A';
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => handleTabChange(t.id)}
+                  style={{
+                    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                    padding:'10px 4px 8px', border:'none', background:'transparent', cursor:'pointer',
+                    position:'relative', gap:2,
+                  }}
+                >
+                  <span style={{ display:'flex', alignItems:'center', justifyContent:'center', opacity: isActive ? 1 : 0.45 }}>{TAB_ICONS[t.iconKey]?.(isActive ? activeColor : '#6b6b68')}</span>
+                  <span style={{ fontSize:9.5, fontWeight: isActive ? 700 : 400, color: isActive ? activeColor : '#8d8c87', fontFamily:"'DM Sans',sans-serif", letterSpacing:0.1 }}>{t.label}</span>
+                  {isActive && (
+                    <span style={{ width:4,height:4,borderRadius:'50%',background:activeColor,marginTop:1 }} />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
@@ -1584,7 +1085,7 @@ export default function App() {
         {!activeTrip && (
           tripsLoading
             ? <Spinner variant="trips" />
-            : <div key={viewKey} className={`tb-view-enter tb-view-${viewDirection}`}><HomePageFeature
+            : <div><HomePageFeature
                 trips={trips}
                 onOpenTrip={handleOpenTrip}
                 onCreateTrip={handleCreateTrip}
@@ -1602,7 +1103,7 @@ export default function App() {
           tripLoading || !activeTripData
             ? <Spinner variant="trip" />
             : (
-              <div key={viewKey} className={`tb-view-enter tb-view-${viewDirection}`} style={{ animation: 'tbPageIn .35s cubic-bezier(.2,.7,.2,1)' }}>
+              <div>
                 {isSolo ? (
                   <>
                     {tab === 'main' && <SoloExpensesPageFeature trip={activeTripData} myNickname={myNickname} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
@@ -1638,10 +1139,9 @@ export default function App() {
                   <>
                     {tab === 'main' && (
                       <div className="tb-section-flow" style={{ marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
-                        <SplitPageFeature trip={activeTripData} myNickname={myNickname} myAvatar={userProfile?.photoUrl || profile.avatar || null} />
+                        <SplitPageFeature trip={activeTripData} myNickname={myNickname} />
                       </div>
                     )}
-                    {/* tab === 'contacts' && <div className="tb-section-flow"><ContactsPageFeature trip={activeTripData} myNickname={myNickname} isSolo={false} /></div> */}
                     {tab === 'itinerary' && <div className="tb-section-flow"><ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} /></div>}
                     {tab === 'photos' && (
                       <div className="tb-section-flow" style={{ marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
@@ -1681,8 +1181,6 @@ export default function App() {
         )}
       </div>
 
-      {/* {activeTrip && activeTripData && <TripChatbot trip={activeTripData} myNickname={myNickname} />} */}
-
       {profileOpen && (
         <ProfilePageFeature
           profile={profile}
@@ -1701,4 +1199,3 @@ export default function App() {
     </div>
   );
 }
-

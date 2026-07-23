@@ -8,16 +8,16 @@ import photosImg from '../../assets/photos.png';
 const D = {
   bg: '#FAF8F4', surface: '#FFFFFF', espresso: '#1C1410',
   gold: '#C9913A', goldTint: '#FDF3E3',
-  sage: '#7A9E7E', sageTint: '#EBF3EC',
+  sage: '#7A9E7E', sageTint: '#FFF3EB',
   coral: '#E8715A', coralTint: '#FDF0EE',
   blueTint: '#E6F1FB', neutral: '#F4F2EE',
   muted: '#8A7E76', secondary: '#5C504A',
   divider: 'rgba(28,20,16,0.06)', border: 'rgba(28,20,16,0.08)',
-  green: '#1D9E75', greenDeep: '#0F6E56',
+  green: '#FF6A00', greenDeep: '#FF8C3A',
 };
 
 /* ── Avatar colour palette (matches app) ── */
-const MCOLORS = ['#1D9E75','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#0F6E56','#993C1D'];
+const MCOLORS = ['#FF6A00','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#FF8C3A','#993C1D'];
 function mcolor(name) {
   const code = Math.abs(Array.from(name || '?').reduce((a, c) => a + c.charCodeAt(0), 0));
   return MCOLORS[code % MCOLORS.length];

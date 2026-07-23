@@ -93,7 +93,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
     return [...base, ...extra];
   }, [customCats]);
 
-  const MCOLORS_LIST = ['#1D9E75','#D85A30','#7F77DD','#BA7517','#378ADD','#D4537E','#0F6E56','#993C1D'];
+  const MCOLORS_LIST = ['#FF6A00','#D85A30','#7F77DD','#BA7517','#378ADD','#D4537E','#FF8C3A','#993C1D'];
   const mcolor = (name) => {
     const code = Math.abs(Array.from(name || '').reduce((a, c) => a + c.charCodeAt(0), 0));
     return MCOLORS_LIST[code % MCOLORS_LIST.length];
@@ -107,7 +107,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
       </div>
     );
   };
-  const CAT_COLORS = { food:'#BA7517', transport:'#0F6E56', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
+  const CAT_COLORS = { food:'#BA7517', transport:'#FF8C3A', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
 
   const budget = localBudget;
   // displayBudget: budget expressed in current spendCurrency (converted via FX if currencies differ)
@@ -1027,7 +1027,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
 
           {/* Home currency equivalent */}
           {spendCurrency !== homeCurrencyCode && (
-            <div style={{ background: '#fff', border: '1px solid rgba(29,158,117,0.22)', borderRadius: 16, padding: '12px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .35s ease-out 70ms both' }}>
+            <div style={{ background: '#fff', border: '1px solid rgba(255,106,0,0.22)', borderRadius: 16, padding: '12px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .35s ease-out 70ms both' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Amount spent In {homeCurrencyCode} (home)</div>
@@ -1035,14 +1035,14 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                     <div style={{ fontSize: 13, color: '#9ca3af' }}>Fetching rate…</div>
                   ) : fxRate !== null ? (
                     <>
-                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: '#1D9E75' }}>{fmtHome(total * fxRate)}</div>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: '#FF6A00' }}>{fmtHome(total * fxRate)}</div>
                       <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>1 {spendCurrency} ≈ {homeMeta.symbol}{fxRate.toFixed(2)} {homeCurrencyCode}</div>
                     </>
                   ) : (
                     <div style={{ fontSize: 12, color: '#9ca3af' }}>Rate unavailable</div>
                   )}
                 </div>
-                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EBF3EC', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#0F6E56', flexShrink: 0, fontFamily: "'Sora',sans-serif" }}>
+                <div style={{ width: 44, height: 44, borderRadius: 12, background: '#FFF3EB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#FF8C3A', flexShrink: 0, fontFamily: "'Sora',sans-serif" }}>
                   {homeMeta.symbol}
                 </div>
               </div>
