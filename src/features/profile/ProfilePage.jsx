@@ -457,7 +457,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const goBack = () => (view === 'hub' ? onClose() : setView('hub'));
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #fff9f3 34%, #fff4ea 100%)', zIndex: 620, overflowY: 'auto', fontFamily: "'DM Sans',sans-serif" }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #fff9f3 34%, #fff4ea 100%)', zIndex: 620, overflowY: 'auto', WebkitOverflowScrolling: 'touch', fontFamily: "'DM Sans',sans-serif", transform: 'translateZ(0)', willChange: 'scroll-position' }}>
       <style>{`
         @keyframes pfFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pfBadgePop { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }

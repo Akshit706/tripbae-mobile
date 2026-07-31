@@ -1,5 +1,6 @@
-﻿import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+﻿import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { supabase } from './supabase';
+import { App as CapacitorApp } from '@capacitor/app';
 import bglessLogo from './assets/bgless.png';
 import bglessClubLogo from './assets/bgless_club.png';
 import {
@@ -27,17 +28,19 @@ import {
   verifyOtp,
 } from './api';
 import { signInWithGoogle } from './auth';
-import HomePageFeature from './features/home/HomePage';
-import ShareCodeModalFeature from './features/home/ShareCodeModal';
-import TripActionMenuFeature from './features/trips/TripActionMenu';
-import SoloExpensesPageFeature from './features/solo/SoloExpensesPage';
-// import ContactsPageFeature from './features/contacts/ContactsPage'; // hidden for now
-import SplitPageFeature from './features/split/SplitPage';
-import PhotosPageFeature from './features/photos/PhotosPage';
-import ItineraryPageFeature from './features/itinerary/ItineraryPage';
-import ProfilePageFeature from './features/profile/ProfilePage';
-import ClubPageFeature from './features/club/ClubPage';
-import UserProfileWizard from './features/profile/UserProfileWizard';
+
+const HomePageFeature = lazy(() => import('./features/home/HomePage'));
+const ShareCodeModalFeature = lazy(() => import('./features/home/ShareCodeModal'));
+const TripActionMenuFeature = lazy(() => import('./features/trips/TripActionMenu'));
+const SoloExpensesPageFeature = lazy(() => import('./features/solo/SoloExpensesPage'));
+const SplitPageFeature = lazy(() => import('./features/split/SplitPage'));
+const PhotosPageFeature = lazy(() => import('./features/photos/PhotosPage'));
+const ItineraryPageFeature = lazy(() => import('./features/itinerary/ItineraryPage'));
+const ProfilePageFeature = lazy(() => import('./features/profile/ProfilePage'));
+const ClubPageFeature = lazy(() => import('./features/club/ClubPage'));
+const UserProfileWizard = lazy(() => import('./features/profile/UserProfileWizard'));
+
+const FeatureFallback = () => <Spinner text="Loading…" />;
 
 /* ─── CONSTANTS ─────────────────────────────────────── */
 const MCOLORS = ['#FF6A00','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#FF8C3A','#993C1D'];
@@ -220,8 +223,8 @@ async function callClaudeWithSystem(system, messages) {
 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
-  root: { fontFamily: "'DM Sans',sans-serif", background: '#FAF8F4', color: '#1a1a18', minHeight: '100svh', WebkitFontSmoothing: 'antialiased', position: 'relative' },
-  topBar: { background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: '12px 1.25rem', display: 'flex', alignItems: 'center', gap: 12, position: 'relative', top: 'auto', zIndex: 300, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
+  root: { fontFamily: "'DM Sans',sans-serif", background: '#FAF8F4', color: '#1a1a18', position: 'relative' },
+  topBar: { background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: 'calc(12px + env(safe-area-inset-top, 0px)) max(1.25rem, env(safe-area-inset-left, 0px)) 12px max(1.25rem, env(safe-area-inset-right, 0px))', display: 'flex', alignItems: 'center', gap: 12, zIndex: 300, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
   logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, letterSpacing: '-0.45px', color: '#0D2B2E' },
   tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
@@ -229,7 +232,7 @@ const S = {
   navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', fontSize: 12, fontWeight: 500, color: '#5D6A7B', cursor: 'pointer', background: 'rgba(255,255,255,0.56)', border: '1px solid rgba(23,37,84,0.08)', borderRadius: 999, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' },
   navTabActive: { color: '#FF8C3A', background: 'linear-gradient(135deg,#FFF3EB,#F2FFFA)', border: '1px solid rgba(255,106,0,0.32)', fontWeight: 700 },
   soloNavTabActive: { color: '#FF6A00', background: 'linear-gradient(135deg,#FFF3EB,#FFF0E6)', border: '1px solid rgba(255,106,0,0.3)', fontWeight: 700 },
-  page: { padding: '1rem 0.95rem', paddingBottom: '8rem' },
+  page: { padding: '1rem max(0.95rem, env(safe-area-inset-left, 0px))', paddingBottom: 'calc(8rem + env(safe-area-inset-bottom, 0px))' },
   btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999, fontSize: 13, fontWeight: 600, border: '1px solid rgba(25,37,67,0.12)', background: '#fff', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 8px 18px rgba(0,0,0,0.06)' },
   btnP: { background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', color: '#fff', border: '0.5px solid rgba(255,106,0,0.68)', boxShadow: '0 10px 22px rgba(255,106,0,0.24)' },
   btnSolo: { background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', color: '#fff', border: 'none' },
@@ -241,6 +244,26 @@ const S = {
   spinner: { width: 36, height: 36, border: '3px solid #FFF3EB', borderTopColor: '#FF6A00', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
   soloSpinner: { width: 36, height: 36, border: '3px solid #FFF3EB', borderTopColor: '#FF6A00', borderRadius: '50%', animation: 'spin .75s linear infinite', margin: '0 auto 12px' },
 };
+
+const TAB_ICONS = {
+  split:    (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,
+  contacts: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  explore:  (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
+  photos:   (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  club:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+  expenses: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M22 10H2"/><circle cx="12" cy="15" r="1.5" fill={c} stroke="none"/></svg>,
+};
+const GROUP_TABS = [
+  { id: 'main',      iconKey: 'split',    label: 'Split' },
+  { id: 'itinerary', iconKey: 'explore',  label: 'Explore' },
+  { id: 'photos',    iconKey: 'photos',   label: 'Photos' },
+  { id: 'club',      iconKey: 'club',     label: 'Club' },
+];
+const SOLO_TABS = [
+  { id: 'main',      iconKey: 'expenses', label: 'Expenses' },
+  { id: 'itinerary', iconKey: 'explore',  label: 'Explore' },
+  { id: 'club',      iconKey: 'club',     label: 'Club' },
+];
 
 export default function App() {
   const [authToken, setAuthToken] = useState(null);
@@ -410,6 +433,7 @@ export default function App() {
   }, [activeTrip, trips]);
 
   const isSolo = activeTripData?.isSolo || false;
+  const tabs = isSolo ? SOLO_TABS : GROUP_TABS;
 
   const finishAuth = (data) => {
     localStorage.setItem('travelbae_token', data.token);
@@ -627,26 +651,6 @@ export default function App() {
     }
   }, []);
 
-  const TAB_ICONS = {
-    split:    (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>,
-    contacts: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-    explore:  (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>,
-    photos:   (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
-    club:     (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
-    expenses: (c) => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M22 10H2"/><circle cx="12" cy="15" r="1.5" fill={c} stroke="none"/></svg>,
-  };
-  const groupTabs = [
-    { id: 'main',      iconKey: 'split',    label: 'Split' },
-    { id: 'itinerary', iconKey: 'explore',  label: 'Explore' },
-    { id: 'photos',    iconKey: 'photos',   label: 'Photos' },
-    { id: 'club',      iconKey: 'club',     label: 'Club' },
-  ];
-  const soloTabs = [
-    { id: 'main',      iconKey: 'expenses', label: 'Expenses' },
-    { id: 'itinerary', iconKey: 'explore',  label: 'Explore' },
-    { id: 'club',      iconKey: 'club',     label: 'Club' },
-  ];
-  const tabs = isSolo ? soloTabs : groupTabs;
   const handleTabChange = (nextTab) => {
     if (nextTab === tab) return;
     setTab(nextTab);
@@ -656,6 +660,30 @@ export default function App() {
     if (typeof window === 'undefined') return;
     window.scrollTo(0, 0);
   }, [tab, activeTrip]);
+
+  // ── Android hardware back button ──
+  useEffect(() => {
+    const setupBackButton = async () => {
+      try {
+        let listener;
+        listener = await CapacitorApp.addListener('backButton', () => {
+          // Priority 1: Close profile if open
+          if (profileOpen) { setProfileOpen(false); return; }
+          // Priority 2: Close notification popover
+          if (showNotifPopover) { setShowNotifPopover(false); return; }
+          // Priority 3: Go back from trip to home
+          if (activeTrip) { setActiveTrip(null); setActiveTripData(null); return; }
+          // Priority 4: Exit app if on home screen
+          CapacitorApp.exitApp();
+        });
+        return () => { listener?.remove(); };
+      } catch (e) {
+        // Not on native platform — ignore
+      }
+    };
+    const cleanup = setupBackButton();
+    return () => { cleanup.then(fn => fn?.()); };
+  }, [profileOpen, showNotifPopover, activeTrip]);
 
   // ── AUTH LOADING ──
   if (!authReady) {
@@ -890,17 +918,19 @@ export default function App() {
       <div style={{ position: 'fixed', top: -180, right: -120, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,106,0,0.13) 0%, rgba(255,106,0,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       <div style={{ position: 'fixed', bottom: -190, left: -110, width: 360, height: 360, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,106,0,0.07) 0%, rgba(255,106,0,0) 72%)', zIndex: 0, pointerEvents: 'none' }} />
       {showOnboarding && (
-        <UserProfileWizard
-          userName={profile?.name || ''}
-          onDone={(savedProfile) => {
-            setShowOnboarding(false);
-            const up = { ...savedProfile, onboardingDone: true };
-            setUserProfile(up);
-            if (savedProfile.photoUrl) {
-              saveProfile({ ...profile, avatar: savedProfile.photoUrl });
-            }
-          }}
-        />
+        <Suspense fallback={null}>
+          <UserProfileWizard
+            userName={profile?.name || ''}
+            onDone={(savedProfile) => {
+              setShowOnboarding(false);
+              const up = { ...savedProfile, onboardingDone: true };
+              setUserProfile(up);
+              if (savedProfile.photoUrl) {
+                saveProfile({ ...profile, avatar: savedProfile.photoUrl });
+              }
+            }}
+          />
+        </Suspense>
       )}
       {sharedFlight && (
         <div
@@ -939,7 +969,7 @@ export default function App() {
       `}</style>
 
 
-      {newTripModal && <ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} />}
+      {newTripModal && <Suspense fallback={null}><ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} /></Suspense>}
 
       {/* Top Bar */}
       <div className="tb-topbar-glass" style={S.topBar}>
@@ -960,7 +990,7 @@ export default function App() {
           {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
-          <img src={bglessClubLogo} alt="TripBae" style={{ height: 32, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <img src={bglessClubLogo} alt="TripBae" style={{ height: 70, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {!activeTrip && !activeTripData && (
           <div style={{ marginLeft: 'auto' }}>
@@ -996,7 +1026,7 @@ export default function App() {
                 <path d="M9 21V12h6v9"/>
               </svg>
             </button>
-            <TripActionMenuFeature
+            <Suspense fallback={null}><TripActionMenuFeature
               trip={activeTripData}
               onMarkComplete={() => handleMarkComplete(activeTripData.id)}
               onDelete={() => handleDeleteTrip(activeTripData.id)}
@@ -1007,7 +1037,7 @@ export default function App() {
                   : t
                 ));
               }}
-            />
+            /></Suspense>
           </div>
         ) : null}
       </div>
@@ -1051,32 +1081,99 @@ export default function App() {
       {activeTrip && (
         <div style={{
           position:'fixed', bottom:0, left:0, right:0, zIndex:100,
-          background:'#fff',
-          borderTop:'1px solid rgba(0,0,0,0.07)',
-          paddingBottom:'env(safe-area-inset-bottom, 12px)',
+          background:'transparent',
+          paddingBottom:'env(safe-area-inset-bottom,12px)',
         }}>
-          <div style={{ display:'grid', gridTemplateColumns:`repeat(${tabs.length}, 1fr)` }}>
-            {tabs.map((t) => {
-              const isActive = tab === t.id;
-              const activeColor = isSolo ? '#FF6A00' : '#FF8C3A';
-              return (
-                <button
-                  key={t.id}
-                  onClick={() => handleTabChange(t.id)}
-                  style={{
-                    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-                    padding:'10px 4px 8px', border:'none', background:'transparent', cursor:'pointer',
-                    position:'relative', gap:2,
-                  }}
-                >
-                  <span style={{ display:'flex', alignItems:'center', justifyContent:'center', opacity: isActive ? 1 : 0.45 }}>{TAB_ICONS[t.iconKey]?.(isActive ? activeColor : '#6b6b68')}</span>
-                  <span style={{ fontSize:9.5, fontWeight: isActive ? 700 : 400, color: isActive ? activeColor : '#8d8c87', fontFamily:"'DM Sans',sans-serif", letterSpacing:0.1 }}>{t.label}</span>
-                  {isActive && (
-                    <span style={{ width:4,height:4,borderRadius:'50%',background:activeColor,marginTop:1 }} />
-                  )}
-                </button>
-              );
-            })}
+          <div style={{ display:'flex', alignItems:'center', height:66, padding:'0 0 0 10px', gap:8, overflow:'hidden' }}>
+
+            {/* ── White capsule pill: all non-club tabs ── */}
+            <div style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              background: '#ffffff',
+              borderRadius: 50,
+              height: 52,
+              padding: '3px 4px',
+              gap: 0,
+              boxShadow: '0 4px 24px rgba(0,0,0,0.10), 0 1px 4px rgba(0,0,0,0.06)',
+            }}>
+              {tabs.filter(t => t.id !== 'club').map(t => {
+                const isActive = tab === t.id;
+                const activeColor = '#FF6A00';
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => handleTabChange(t.id)}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '6px 4px',
+                      border: 'none',
+                      cursor: 'pointer',
+                      gap: 2,
+                      borderRadius: 44,
+                      background: 'transparent',
+                      transition: 'background .18s',
+                      height: '100%',
+                    }}
+                  >
+                    <span style={{ display:'flex', alignItems:'center', justifyContent:'center', opacity: isActive ? 1 : 0.38 }}>
+                      {TAB_ICONS[t.iconKey]?.(isActive ? activeColor : '#6b6b68')}
+                    </span>
+                    <span style={{ fontSize: 9.5, fontWeight: isActive ? 700 : 400, color: isActive ? activeColor : '#8d8c87', fontFamily:"'DM Sans',sans-serif", letterSpacing: 0.1, whiteSpace:'nowrap' }}>
+                      {t.label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── Club pill: always gradient, right side cut by overflow:hidden ── */}
+            <button
+              onClick={() => handleTabChange('club')}
+              style={{
+                flex: '0 0 auto',
+                alignSelf: 'stretch',
+                display: 'flex',
+                alignItems: 'stretch',
+                padding: '7px 0 7px 0',
+                border: 'none',
+                background: 'transparent',
+                cursor: 'pointer',
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                background: tab === 'club'
+                  ? 'linear-gradient(135deg,#7B2FF7 0%,#C01FAB 50%,#FF416C 100%)'
+                  : 'linear-gradient(135deg,#6920D4 0%,#A81A96 50%,#D93560 100%)',
+                borderRadius: '22px 0 0 22px',
+                padding: '0 22px 0 16px',
+                minWidth: 96,
+                boxShadow: tab === 'club'
+                  ? '-4px 0 28px rgba(123,47,247,0.6), inset 0 0 0 2px rgba(255,255,255,0.28)'
+                  : '-3px 0 14px rgba(123,47,247,0.28)',
+                transition: 'box-shadow .2s',
+              }}>
+                <img
+                  src={bglessClubLogo}
+                  alt="Club"
+                  style={{ height: 36, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', flexShrink: 0 }}
+                />
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <line x1="7" y1="17" x2="17" y2="7"/>
+                  <polyline points="7 7 17 7 17 17"/>
+                </svg>
+              </div>
+            </button>
+
           </div>
         </div>
       )}
@@ -1085,7 +1182,7 @@ export default function App() {
         {!activeTrip && (
           tripsLoading
             ? <Spinner variant="trips" />
-            : <div><HomePageFeature
+            : <div><Suspense fallback={<Spinner variant="trips" />}><HomePageFeature
                 trips={trips}
                 onOpenTrip={handleOpenTrip}
                 onCreateTrip={handleCreateTrip}
@@ -1096,7 +1193,7 @@ export default function App() {
                 profileName={profile.name}
                 homeTab={homeTab}
                 setHomeTab={setHomeTab}
-              /></div>
+              /></Suspense></div>
         )}
 
         {activeTrip && (
@@ -1104,6 +1201,7 @@ export default function App() {
             ? <Spinner variant="trip" />
             : (
               <div>
+                <Suspense fallback={<Spinner variant="trip" />}>
                 {isSolo ? (
                   <>
                     {tab === 'main' && <SoloExpensesPageFeature trip={activeTripData} myNickname={myNickname} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
@@ -1176,25 +1274,28 @@ export default function App() {
                     )}
                   </>
                 )}
+                </Suspense>
               </div>
             )
         )}
       </div>
 
       {profileOpen && (
-        <ProfilePageFeature
-          profile={profile}
-          onSave={saveProfile}
-          onClose={() => setProfileOpen(false)}
-          onLogout={() => { setProfileOpen(false); handleLogout(); }}
-          onDeleteAccount={() => { setProfileOpen(false); handleDeleteAccount(); }}
-          trips={trips}
-          userProfile={userProfile}
-          onUpdateProfile={(up) => setUserProfile(up)}
-          onOpenOnboarding={() => { setProfileOpen(false); setShowOnboarding(true); }}
-          onMarkActive={handleMarkActive}
-          onDeleteTrip={handleDeleteTrip}
-        />
+        <Suspense fallback={null}>
+          <ProfilePageFeature
+            profile={profile}
+            onSave={saveProfile}
+            onClose={() => setProfileOpen(false)}
+            onLogout={() => { setProfileOpen(false); handleLogout(); }}
+            onDeleteAccount={() => { setProfileOpen(false); handleDeleteAccount(); }}
+            trips={trips}
+            userProfile={userProfile}
+            onUpdateProfile={(up) => setUserProfile(up)}
+            onOpenOnboarding={() => { setProfileOpen(false); setShowOnboarding(true); }}
+            onMarkActive={handleMarkActive}
+            onDeleteTrip={handleDeleteTrip}
+          />
+        </Suspense>
       )}
     </div>
   );

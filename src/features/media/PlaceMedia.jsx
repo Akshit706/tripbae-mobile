@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 
 // Module-level cache: query → resolved URL (or null). Shared across all instances.
 const _photoCache = new Map();
@@ -213,12 +213,13 @@ function PlacePhotosStrip({ queries, style }) {
   );
 }
 
-function PlacePhotoCarousel({ query, style, delay = 0, limit = 3, alt = '', onImageClick }) {
+const PlacePhotoCarousel = memo(function PlacePhotoCarousel({ query, style, delay = 0, limit = 3, alt = '', onImageClick }) {
   const [photos, setPhotos] = useState(() => (_photoListCache.get(query) || []).slice(0, limit));
   const [photoIdx, setPhotoIdx] = useState(0);
   const [loading, setLoading] = useState(!_photoListCache.has(query));
   const [imgErr, setImgErr] = useState(new Set());
 
+  // Reset only when query changes — delay change should NOT reset photo state
   useEffect(() => {
     if (!query) return;
     setPhotoIdx(0);
@@ -238,7 +239,8 @@ function PlacePhotoCarousel({ query, style, delay = 0, limit = 3, alt = '', onIm
       });
     }, delay);
     return () => clearTimeout(timer);
-  }, [query, limit, delay]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, limit]);
 
   const activePhotos = uniquePhotos((photos || []).filter((_, i) => !imgErr.has(i)));
   const canSlide = activePhotos.length > 1;
@@ -332,7 +334,7 @@ function PlacePhotoCarousel({ query, style, delay = 0, limit = 3, alt = '', onIm
       )}
     </div>
   );
-}
+});
 
 
 

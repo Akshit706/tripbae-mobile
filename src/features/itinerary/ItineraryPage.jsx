@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect } from 'react';
+﻿import { useState, useRef, useEffect, useCallback } from 'react';
 import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
@@ -993,6 +993,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     }
   }, [trip._cachedItin, trip._cachedTaste]);
 
+  const runGenerateItineraryRef = useRef();
   const runGenerateItinerary = async (selectedExperiences) => {
     if (selectedExperiences && selectedExperiences.length > 0) {
       setLastSelectedExps(selectedExperiences);
@@ -1002,7 +1003,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     setStep('loading');
     try {
       const { generateItinerary } = await import('../../api');
-      // Derive interests from selected categories so the AI knows what the user cares about
       const interests = (selectedExperiences && selectedExperiences.length > 0)
         ? [...new Set(selectedExperiences.map(e => e.category).filter(Boolean))]
         : [];
@@ -1021,15 +1021,25 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       });
       setItin(result.itinerary);
       setSources(result.sources || []);
-      markItinDone(trip.id); // mark as user-triggered so Day Planner shows modify view on return
+      markItinDone(trip.id);
       setStep('result');
-      setITab('itinerary'); // auto-switch to Itinerary tab
-      // -- Save back to parent trips state so it persists across tab switches --
+      setITab('itinerary');
       onCacheUpdate?.({ _cachedItin: { ...result, selectedExps: selectedExperiences || [] } });
     } catch {
       setStep('error');
     }
   };
+  runGenerateItineraryRef.current = runGenerateItinerary;
+
+  const handleDiscoverComplete = useCallback((selectedExps) => {
+    setModifyExps(null);
+    runGenerateItineraryRef.current?.(selectedExps);
+  }, []);
+
+  const handleDiscoverSkip = useCallback(() => {
+    setModifyExps(null);
+    runGenerateItineraryRef.current?.();
+  }, []);
 
   const runGenerateLocalTaste = async () => {
     // Don't flash spinner if we already have data � refresh silently
@@ -1449,8 +1459,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   <ExperienceDiscovery
                     trip={trip}
                     modifyExps={modifyExps}
-                    onComplete={(selectedExps) => { setModifyExps(null); runGenerateItinerary(selectedExps); }}
-                    onSkip={() => { setModifyExps(null); runGenerateItinerary(); }}
+                    onComplete={handleDiscoverComplete}
+                    onSkip={handleDiscoverSkip}
                   />
                 </>
               )}
@@ -1553,7 +1563,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                             <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>{itin.quickTips.length} insider tips for your journey</div>
                           </div>
                         </div>
-                        <button onClick={() => setShowTipsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>\u2715</button>
+                        <button onClick={() => setShowTipsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>{'\u2715'}</button>
                       </div>
                       <div style={{ overflowY: 'auto', padding: '12px 16px' }}>
                         {itin.quickTips.map((tip, i) => (

@@ -64,11 +64,13 @@ body {
   overflow-x: hidden;
   scroll-behavior: smooth;
   background: radial-gradient(circle at 14% 8%, #ffffff 0%, #f8f7f2 34%, #f3f2ed 100%);
-  animation: tbAmbientShift 18s ease-in-out infinite alternate;
+  background-attachment: fixed;
+  -webkit-overflow-scrolling: touch;
+  transform: translateZ(0);
 }
 
 button {
-  transition: transform 160ms ease, box-shadow 220ms ease, filter 160ms ease;
+  transition: transform 100ms ease, box-shadow 160ms ease;
 }
 
 button:hover {
@@ -140,8 +142,11 @@ code {
 }
 
 .tb-app-shell {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
   isolation: isolate;
+  overflow: hidden;
 }
 
 .tb-noise-layer {
@@ -157,10 +162,10 @@ code {
 }
 
 .tb-topbar-glass {
-  position: relative;
-  top: auto;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
   z-index: var(--tb-z-topbar);
-  padding-top: 0;
 }
 
 .tb-topbar-glass::after {
@@ -216,9 +221,13 @@ code {
 }
 
 .tb-page-shell {
-  position: relative;
-  z-index: 2;
-  scroll-padding-top: 12px;
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  content-visibility: auto;
+  transform: translateZ(0);
+  will-change: scroll-position;
 }
 
 .tb-section-flow {

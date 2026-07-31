@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { mcolor, nickName } from './constants';
 import { S } from './styles';
 
-export function Avatar({ name, size = 26 }) {
+function _Avatar({ name, size = 26 }) {
   const display = nickName(name);
   return (
     <div style={{
@@ -14,8 +15,9 @@ export function Avatar({ name, size = 26 }) {
     </div>
   );
 }
+export const Avatar = memo(_Avatar);
 
-export function SoloAvatar({ initials, size = 26 }) {
+function _SoloAvatar({ initials, size = 26 }) {
   return (
     <div style={{
       width: size, height: size, borderRadius: '50%',
@@ -28,8 +30,9 @@ export function SoloAvatar({ initials, size = 26 }) {
     </div>
   );
 }
+export const SoloAvatar = memo(_SoloAvatar);
 
-export function Spinner({ text, solo }) {
+function _Spinner({ text, solo }) {
   return (
     <div style={{ textAlign: 'center', padding: '3rem 1rem' }}>
       <div style={solo ? S.soloSpinner : S.spinner} />
@@ -37,8 +40,9 @@ export function Spinner({ text, solo }) {
     </div>
   );
 }
+export const Spinner = memo(_Spinner);
 
-export function CatIcon({ id, size = 18, color, style: extraStyle }) {
+function _CatIcon({ id, size = 18, color, style: extraStyle }) {
   const s = { width: size, height: size, display: 'block', flexShrink: 0, ...extraStyle };
   const c = color || 'currentColor';
   const p = { viewBox: '0 0 24 24', fill: 'none', stroke: c, strokeWidth: '1.7', strokeLinecap: 'round', strokeLinejoin: 'round', style: s };
@@ -51,8 +55,9 @@ export function CatIcon({ id, size = 18, color, style: extraStyle }) {
     default: return <svg {...p}><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L2 12V2h10l8.6 8.6a2 2 0 0 1 0 2.8z"/><circle cx="7" cy="7" r="1.5" fill={c} stroke="none"/></svg>;
   }
 }
+export const CatIcon = memo(_CatIcon);
 
-export function Stars({ n, rating }) {
+function _Stars({ n, rating }) {
   return (
     <span>
       {Array.from({ length: 5 }, (_, i) => (
@@ -62,6 +67,7 @@ export function Stars({ n, rating }) {
     </span>
   );
 }
+export const Stars = memo(_Stars);
 
 export function ConfirmDialog({ title, message, confirmLabel, confirmStyle, onConfirm, onCancel }) {
   return (

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback, memo, startTransition } from 'react';
 import { createPortal } from 'react-dom';
 import lumi4Img from '../../assets/Lumi4_bgless.png';
 import { PlacePhotoCarousel } from '../media/PlaceMedia';
@@ -77,6 +77,13 @@ function parseDurationHours(dur) {
   const s = String(dur).match(/(\d+(?:\.\d+)?)/);
   return s ? Math.max(0.5, parseFloat(s[1])) : 1.5;
 }
+function likedExpsDurationSum(likedIds, experiences) {
+  let total = 0;
+  for (const e of experiences) {
+    if (likedIds.has(e.id)) total += parseDurationHours(e.duration);
+  }
+  return total;
+}
 
 /* ── Progress persistence helpers ───────────────────────── */
 function _progKey(tripId) { return `ed_swipe_${tripId}`; }
@@ -139,7 +146,9 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
 /* ══════════════════════════════════════════
    SWIPE CARD
 ══════════════════════════════════════════ */
-function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex, onPointerDown, destination }) {
+const CAROUSEL_STYLE = Object.freeze({ height: '100%', borderRadius: 0 });
+function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex, onPointerDown, onCardEl, destination }) {
+  const cardRef = useRef(null);
   const cfg = catCfg(exp.category);
   // Stamps: visible during drag AND during the fly-out transition
   const likeOpacity = isTop && (isDragging || swipeOut === 'right') ? Math.max(0, Math.min(1, dragX / 65)) : 0;
@@ -149,30 +158,36 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
   const stackY      = stackIndex * 13;
   const zIdx        = 10 - stackIndex;
 
-  // Always use dragX for the top card's transform — fly-out is driven by a state update,
-  // not a CSS keyframe, so the card continues from wherever the user released.
-  const transform = !isTop
-    ? `scale(${stackScale}) translateY(${stackY}px) translateZ(0)`
-    : `translateX(${dragX}px) translateY(${swipeOut ? 0 : dragY * 0.18}px) rotate(${rotation}deg) translateZ(0)`;
+  // Expose the DOM element to parent so it can write transform directly during drag
+  useEffect(() => { if (isTop) onCardEl?.(cardRef.current); }, [isTop]);
+
+  // PURE DOM approach: when dragging the top card, transform is NOT set by React
+  // (undefined → React skips it). The pointer handler writes el.style.transform directly.
+  // This eliminates the jitter caused by React/DOM style conflicts at drag-end.
+  const transform = isDragging && isTop
+    ? undefined  // DOM-managed during live drag AND fly-out/snap-back
+    : !isTop
+      ? `scale(${stackScale}) translateY(${stackY}px) translateZ(0)`
+      : `translateX(${dragX}px) translateY(${swipeOut ? 0 : dragY * 0.18}px) rotate(${rotation}deg) translateZ(0)`;
 
   return (
     <div
+      ref={cardRef}
       onPointerDown={isTop && !swipeOut ? onPointerDown : undefined}
       style={{
         position: 'absolute', width: '100%',
         borderRadius: 24, overflow: 'hidden', background: D.surface,
-        boxShadow: isTop
+        boxShadow: isTop && !isDragging
           ? `0 ${8 + Math.abs(dragX) * 0.05}px ${30 + Math.abs(dragX) * 0.12}px rgba(28,20,16,0.18)`
           : '0 3px 14px rgba(28,20,16,0.09)',
         transform, zIndex: zIdx,
-        // dragging: no transition (direct tracking)
-        // fly-out:  fast ease-in so it accelerates off screen from current position
-        // snap-back: spring ease for settling back to centre
+        // dragging: no transition (direct DOM tracking)
+        // fly-out: fast ease-in, snap-back/stack-to-top: smooth ease-out
         transition: isDragging
           ? 'none'
           : swipeOut
           ? 'transform 0.30s cubic-bezier(0.4,0,1,1), box-shadow 0.20s ease'
-          : 'transform 0.44s cubic-bezier(0.175,0.885,0.32,1.275), box-shadow 0.22s ease',
+          : 'transform 0.30s cubic-bezier(0.2,0.8,0.2,1)',
         cursor: isTop ? (isDragging ? 'grabbing' : 'grab') : 'default',
         userSelect: 'none', WebkitUserSelect: 'none',
         touchAction: 'pan-y', willChange: 'transform',
@@ -182,8 +197,7 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
       <div style={{ position: 'relative', height: 256, overflow: 'hidden', background: '#EDE8E2' }}>
         <PlacePhotoCarousel
           query={exp.imageQuery || `${exp.name} ${destination} high resolution travel photography`}
-          style={{ height: '100%', borderRadius: 0 }}
-          delay={stackIndex * 220}
+          style={CAROUSEL_STYLE}
           limit={3}
         />
         {/* gradient */}
@@ -249,10 +263,341 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
   );
 }
 
+const SwipeCardMemo = memo(SwipeCard);
+
+/* ── LumiCTA: fully static, never re-renders ── */
+const LumiCTA = memo(function LumiCTA({ onSkip }) {
+  return (
+    <button
+      onClick={onSkip}
+      className="ed-cta-lumi"
+      style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 12px 12px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', marginBottom: 0, textAlign: 'left', transform: 'translateZ(0)', contain: 'layout style' }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <img src={lumi8Img} alt="Lumi" style={{ width: 56, height: 56, objectFit: 'contain', flexShrink: 0 }} />
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 }}>Don't want to swipe?</div>
+          <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.15 }}>Create with Lumi</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', fontFamily: "'DM Sans',sans-serif", marginTop: 3 }}>Instantly build your full itinerary.</div>
+        </div>
+      </div>
+      <div className="ed-cta-arrow" style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 6 }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </button>
+  );
+});
+
+/* ── SwipeSeparator: static, never re-renders ── */
+const SwipeSeparator = memo(function SwipeSeparator() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0 12px' }}>
+      <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.08)' }} />
+      <span style={{ fontSize: 10, color: D.muted, fontWeight: 600, fontFamily: "'DM Sans',sans-serif", letterSpacing: 0.6, whiteSpace: 'nowrap' }}>or explore &amp; swipe</span>
+      <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.08)' }} />
+    </div>
+  );
+});
+
+/* ── StatsBar: re-renders only when counts change ── */
+const StatsBar = memo(function StatsBar({ swipedCount, totalCount, likedCount, plannedHours }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', marginBottom: 10, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
+      <div style={{ display: 'flex', alignItems: 'center' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, color: D.muted, fontFamily: "'DM Sans',sans-serif", marginBottom: 5 }}>
+            <span style={{ fontWeight: 700, color: '#1C1410' }}>{swipedCount}</span> of {totalCount} explored
+          </div>
+          <div style={{ height: 5, borderRadius: 999, background: '#FFF3EB', overflow: 'hidden' }}>
+            <div style={{ height: '100%', width: `${totalCount > 0 ? (swipedCount / totalCount) * 100 : 0}%`, background: 'linear-gradient(90deg,#FF6A00,#FF8C3B)', borderRadius: 999, transition: 'width 0.3s ease' }} />
+          </div>
+        </div>
+        <div style={{ width: 1, height: 34, background: 'rgba(28,20,16,0.08)', margin: '0 13px', flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill={likedCount > 0 ? '#FF6A00' : 'none'} stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1C1410', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>{likedCount}</div>
+            <div style={{ fontSize: 10, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Saved</div>
+          </div>
+        </div>
+        <div style={{ width: 1, height: 34, background: 'rgba(28,20,16,0.08)', margin: '0 13px', flexShrink: 0 }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#1C1410', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>{plannedHours}h</div>
+            <div style={{ fontSize: 10, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Planned</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+/* ── CategoryPills: re-renders only when activeFilter or available cats change ── */
+const CategoryPills = memo(function CategoryPills({ availableCats, activeFilter, onSetFilter, catHasUnswiped }) {
+  return (
+    <div className="ed-cat-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 13, scrollbarWidth: 'none' }}>
+      <button onClick={() => onSetFilter(null)} style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 999, border: `1.5px solid ${!activeFilter ? D.gold : D.border}`, background: !activeFilter ? D.goldTint : D.surface, color: !activeFilter ? D.gold : D.muted, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.15s' }}>All</button>
+      {availableCats.map(cat => {
+        const cfg = catCfg(cat);
+        const active = activeFilter === cat;
+        const hasUnswiped = catHasUnswiped[cat];
+        return (
+          <button key={cat} className="ed-cat-pill"
+            onClick={() => onSetFilter(active ? null : cat)}
+            style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, border: `1.5px solid ${active ? cfg.color : D.border}`, background: active ? cfg.bg : D.surface, color: active ? cfg.color : (hasUnswiped ? D.muted : '#C8C4BE'), cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", opacity: hasUnswiped ? 1 : 0.55 }}
+          >
+            {renderCatIcon(cat, 12, active ? cfg.color : (hasUnswiped ? D.muted : '#C8C4BE'))}
+            <span>{cat}</span>
+            {!hasUnswiped && <span style={{ fontSize: 9, marginLeft: 1 }}>✓</span>}
+          </button>
+        );
+      })}
+    </div>
+  );
+});
+
+/* ── SwipeControls: re-renders only when swipeOut or liked count change ── */
+const SwipeControls = memo(function SwipeControls({ likedCount, swipeOut, onSwipe, onGoToConfirm }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: -18, padding: '0 4px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <button
+          className="ed-pass-btn"
+          onClick={() => onSwipe('left')}
+          disabled={!!swipeOut}
+          style={{ width: 64, height: 64, borderRadius: '50%', border: '1.5px solid rgba(28,20,16,0.12)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(28,20,16,0.09)', opacity: swipeOut ? 0.4 : 1 }}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={D.espresso} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+        <span style={{ fontSize: 11, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Skip</span>
+      </div>
+
+      <button
+        onClick={onGoToConfirm}
+        disabled={likedCount === 0}
+        style={{ fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 12, border: `1.5px solid ${likedCount > 0 ? 'rgba(255,106,0,0.3)' : D.border}`, cursor: likedCount > 0 ? 'pointer' : 'default', background: likedCount > 0 ? '#FFF8F4' : D.surface, color: likedCount > 0 ? '#FF6A00' : D.muted, fontFamily: "'DM Sans',sans-serif", boxShadow: likedCount > 0 ? '0 2px 10px rgba(255,106,0,0.1)' : 'none', whiteSpace: 'nowrap', opacity: likedCount === 0 ? 0.4 : 1, transition: 'all 0.2s ease', animation: likedCount > 0 ? 'edFadeUp 0.3s ease both' : undefined }}
+      >
+        {likedCount > 0 ? `Proceed with ${likedCount} activit${likedCount === 1 ? 'y' : 'ies'} →` : 'Build itinerary'}
+      </button>
+
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+        <button
+          className="ed-like-btn"
+          onClick={() => onSwipe('right')}
+          disabled={!!swipeOut}
+          style={{ width: 64, height: 64, borderRadius: '50%', border: '1.5px solid rgba(28,20,16,0.12)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(28,20,16,0.09)', opacity: swipeOut ? 0.4 : 1 }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#F43F5E" stroke="#F43F5E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+        <span style={{ fontSize: 11, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Like</span>
+      </div>
+    </div>
+  );
+});
+
+/* ── SwipeStack: isolates all drag-sensitive state so the outer tree never re-executes during swipes ── */
+const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedIds, likedIds, onSwiped, onLiked, onGoToConfirm, destination, allSwiped, visibleCards, total }) {
+  const [swipeOut, setSwipeOut] = useState(null);
+  const swipeOutRef = useRef(null);
+  const setSwOut = (val) => { setSwipeOut(val); swipeOutRef.current = val; };
+  const [dragX, setDragX] = useState(0);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
+  const setDrag = (val) => { setIsDragging(val); isDraggingRef.current = val; };
+
+  const pointerStart = useRef(null);
+  const lastDragXRef = useRef(0);
+  const cardElRef = useRef(null);
+  const onCardEl = useCallback(el => { cardElRef.current = el; }, []);
+  // Tracks whether a DOM-driven fly-out/snap-back is in progress.
+  // When true, React state updates for dragX/dragY/isDragging are deferred
+  // until the animation completes, preventing the React/DOM style conflict.
+  const animatingRef = useRef(false);
+
+  const doSwipeRef = useRef();
+  doSwipeRef.current = (dir, startX) => {
+    if (swipeOut || total === 0 || animatingRef.current) return;
+    const exp = filteredExp[0];
+    if (!exp) return;
+    const screenW = typeof window !== 'undefined' ? window.innerWidth : 420;
+    const flyX = dir === 'right'
+      ? Math.max(startX, screenW * 1.25)
+      : Math.min(startX, -screenW * 1.25);
+
+    // If this is a button-click swipe (no drag in progress), use React state.
+    // The card is at rest position (no DOM inline transform to conflict with).
+    if (!isDraggingRef.current) {
+      setSwOut(dir);
+      setDragX(flyX);
+      setDragY(0);
+      lastDragXRef.current = flyX;
+      setTimeout(() => {
+        startTransition(() => {
+          if (dir === 'right') onLiked(exp.id);
+          onSwiped(exp.id);
+          setSwOut(null);
+          setDragX(0);
+          setDragY(0);
+          lastDragXRef.current = 0;
+        });
+      }, 330);
+      return;
+    }
+
+    // DRAG swipe: fly out via direct DOM writes.
+    // isDragging stays true in React so transform stays undefined (React doesn't touch it).
+    // The DOM handler controls the entire fly-out animation.
+    animatingRef.current = true;
+    const el = cardElRef.current;
+    if (el) {
+      const rot = Math.max(-34, Math.min(34, startX * 0.055));
+      el.style.transition = 'transform 0.30s cubic-bezier(0.4,0,1,1)';
+      el.style.transform = `translateX(${flyX}px) translateY(0px) rotate(${rot}deg) translateZ(0)`;
+    }
+    // Update React state AFTER the animation completes — no mid-animation re-render
+    setTimeout(() => {
+      animatingRef.current = false;
+      startTransition(() => {
+        if (dir === 'right') onLiked(exp.id);
+        onSwiped(exp.id);
+        setSwOut(null);
+        setDrag(false);
+        setDragX(0);
+        setDragY(0);
+        lastDragXRef.current = 0;
+        // Clear the inline DOM transform so the next card starts clean
+        if (el) { el.style.transition = ''; el.style.transform = ''; }
+      });
+    }, 330);
+  };
+
+  const doSwipe = useCallback((dir, startX) => doSwipeRef.current(dir, startX), []);
+
+  const handlePointerDown = useCallback((e) => {
+    if (swipeOutRef.current) return;
+    pointerStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId, locked: false, lastX: e.clientX, lastT: Date.now(), vx: 0 };
+    setDrag(true);
+  }, []);
+
+  const handlePointerMove = useCallback((e) => {
+    if (!pointerStart.current || e.pointerId !== pointerStart.current.id) return;
+    const dx = e.clientX - pointerStart.current.x;
+    const dy = e.clientY - pointerStart.current.y;
+    if (!pointerStart.current.locked) {
+      const absX = Math.abs(dx), absY = Math.abs(dy);
+      if (absX < 4 && absY < 4) return;
+      if (absY > absX) { pointerStart.current = null; setDrag(false); return; }
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
+      pointerStart.current = { ...pointerStart.current, locked: true };
+    }
+    const now = Date.now();
+    const dt = now - pointerStart.current.lastT;
+    const vx = dt > 0 ? (e.clientX - pointerStart.current.lastX) / dt : 0;
+    pointerStart.current = { ...pointerStart.current, lastX: e.clientX, lastT: now, vx };
+    lastDragXRef.current = dx;
+    // Direct DOM write — no React state update, no re-render.
+    // transform is undefined in the style prop (isDragging=true), so React won't override this.
+    const el = cardElRef.current;
+    if (el) {
+      const rot = Math.max(-34, Math.min(34, dx * 0.055));
+      el.style.transform = `translateX(${dx}px) translateY(${dy * 0.18}px) rotate(${rot}deg) translateZ(0)`;
+    }
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    if (!isDraggingRef.current) { pointerStart.current = null; return; }
+    const dx = lastDragXRef.current;
+    const vx = pointerStart.current?.vx || 0;
+    pointerStart.current = null;
+
+    if (dx > 55 || (vx > 0.35 && dx > 25)) {
+      lastDragXRef.current = 0; doSwipe('right', dx);
+    } else if (dx < -55 || (vx < -0.35 && dx < -25)) {
+      lastDragXRef.current = 0; doSwipe('left', dx);
+    } else {
+      // SNAP-BACK via direct DOM: isDragging stays true so React doesn't touch transform.
+      // The DOM transition animates the card back to rest position smoothly.
+      animatingRef.current = true;
+      const el = cardElRef.current;
+      if (el) {
+        el.style.transition = 'transform 0.30s cubic-bezier(0.2,0.8,0.2,1)';
+        el.style.transform = '';
+      }
+      setTimeout(() => {
+        animatingRef.current = false;
+        setDrag(false);
+        setDragX(0);
+        setDragY(0);
+        lastDragXRef.current = 0;
+        if (el) { el.style.transition = ''; }
+      }, 300);
+    }
+  }, [doSwipe]);
+
+  const handlePointerCancel = useCallback(() => {
+    if (animatingRef.current) return;
+    setDrag(false);
+    pointerStart.current = null;
+    lastDragXRef.current = 0;
+    const el = cardElRef.current;
+    if (el) { el.style.transition = ''; el.style.transform = ''; }
+    setDragX(0);
+    setDragY(0);
+  }, []);
+
+  return (
+    <div
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+      style={{ userSelect: 'none', WebkitUserSelect: 'none' }}
+    >
+      {allSwiped ? (
+        <div style={{ height: 430, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: D.surface, borderRadius: 24, boxShadow: '0 4px 22px rgba(28,20,16,0.10)', border: `0.5px solid ${D.border}`, textAlign: 'center', padding: '2rem', animation: 'edFadeUp 0.4s ease both' }}>
+          <img src={lumi5Img} alt="" style={{ height: 84, width: 'auto', marginBottom: 14, animation: 'edLumiFloat 2.5s ease-in-out infinite' }} />
+          <div style={{ fontSize: 17, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>All swiped! 🎉</div>
+          <div style={{ fontSize: 12.5, color: D.muted, marginBottom: 22 }}>{likedIds.size} liked · ~{Math.round(likedExpsDurationSum(likedIds, experiences))}h of activities</div>
+          <button onClick={onGoToConfirm} style={{ padding: '11px 26px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif", boxShadow: '0 4px 16px rgba(201,145,58,0.28)' }}>
+            See my picks →
+          </button>
+        </div>
+      ) : (
+        <div style={{ position: 'relative', minHeight: 450, margin: '0 auto', maxWidth: 420 }}>
+          {[...visibleCards].reverse().map(({ exp, stackIndex }) => (
+            <SwipeCardMemo
+              key={exp.id}
+              exp={exp}
+              dragX={stackIndex === 0 ? dragX : 0}
+              dragY={stackIndex === 0 ? dragY : 0}
+              isDragging={stackIndex === 0 && isDragging}
+              swipeOut={stackIndex === 0 ? swipeOut : null}
+              isTop={stackIndex === 0}
+              stackIndex={stackIndex}
+              onPointerDown={handlePointerDown}
+              onCardEl={onCardEl}
+              destination={destination}
+            />
+          ))}
+        </div>
+      )}
+      {!allSwiped && (
+        <SwipeControls
+          likedCount={likedIds.size}
+          swipeOut={swipeOut}
+          onSwipe={doSwipe}
+          onGoToConfirm={onGoToConfirm}
+        />
+      )}
+    </div>
+  );
+});
+
 /* ══════════════════════════════════════════
    MAIN COMPONENT
 ══════════════════════════════════════════ */
-export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyExps }) {
+const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete, onSkip, modifyExps }) {
   // Initialise from saved progress (or modifyExps override when coming from the "Modify Experiences" action)
   const _savedProg = modifyExps ? null : loadProgress(trip.id);
   const _hasCachedExps = (_savedProg?.experiences?.length || 0) > 0;
@@ -275,10 +620,6 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
     return new Set(_savedProg?.likedIds  || []);
   });
   const [activeFilter, setActiveFilter] = useState(() => _savedProg?.activeFilter || null);
-  const [swipeOut, setSwipeOut] = useState(null); // 'left'|'right'|null
-  const [dragX, setDragX] = useState(0);
-  const [dragY, setDragY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
   const [reviewExp, setReviewExp] = useState(null); // experience card being reviewed in confirm sheet
   const [expandedCats, setExpandedCats] = useState(new Set());
   const [showAllSwipedMsg, setShowAllSwipedMsg] = useState(false);
@@ -288,14 +629,10 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
     try { return !localStorage.getItem('ed_intro_seen'); } catch { return false; }
   });
   const [introStep, setIntroStep] = useState(0);
-  const dismissIntro = () => {
+  const dismissIntro = useCallback(() => {
     try { localStorage.setItem('ed_intro_seen', '1'); } catch {}
     setShowIntro(false);
-  };
-
-  const pointerStart = useRef(null);
-  const lastDragXRef = useRef(0);
-  const rafRef       = useRef(null);
+  }, []);
 
   const destination = trip.destination || '';
   const days = (trip.arrival && trip.departure)
@@ -321,118 +658,40 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
   }, []);
 
   /* ── Derived ────────────────────────────────────────── */
-  const allUnswiped = experiences.filter(e => !swipedIds.has(e.id));
-  const filteredExp = activeFilter ? allUnswiped.filter(e => e.category === activeFilter) : allUnswiped;
+  const allUnswiped = useMemo(() => experiences.filter(e => !swipedIds.has(e.id)), [experiences, swipedIds]);
+  const filteredExp = useMemo(() => activeFilter ? allUnswiped.filter(e => e.category === activeFilter) : allUnswiped, [allUnswiped, activeFilter]);
   const total = filteredExp.length; // remaining unswiped in current view
-  const likedExps = experiences.filter(e => likedIds.has(e.id));
-  const selectedHours = likedExps.reduce((s, e) => s + parseDurationHours(e.duration), 0);
-  const availableCats = ALL_CATS.filter(c => experiences.some(e => e.category === c));
+  const likedExps = useMemo(() => experiences.filter(e => likedIds.has(e.id)), [experiences, likedIds]);
+  const selectedHours = useMemo(() => likedExps.reduce((s, e) => s + parseDurationHours(e.duration), 0), [likedExps]);
+  const availableCats = useMemo(() => ALL_CATS.filter(c => experiences.some(e => e.category === c)), [experiences]);
+  const catHasUnswiped = useMemo(() => {
+    const m = {};
+    for (const cat of availableCats) m[cat] = experiences.some(e => e.category === cat && !swipedIds.has(e.id));
+    return m;
+  }, [experiences, swipedIds, availableCats]);
 
-  /* ── Swipe action ───────────────────────────────────── */
-  const doSwipe = (dir, startX = 0) => {
-    if (swipeOut || total === 0) return;
-    const exp = filteredExp[0];
-    if (!exp) return;
-    // Project the card off-screen continuing from its current drag position
-    const screenW = typeof window !== 'undefined' ? window.innerWidth : 420;
-    const flyX = dir === 'right'
-      ? Math.max(startX, screenW * 1.25)
-      : Math.min(startX, -screenW * 1.25);
-    setSwipeOut(dir);
-    setDragX(flyX);   // transition (not keyframe) carries it off from startX → flyX
-    setDragY(0);
-    lastDragXRef.current = flyX;
-    setTimeout(() => {
-      setSwipedIds(prev => new Set([...prev, exp.id]));
-      if (dir === 'right') setLikedIds(prev => new Set([...prev, exp.id]));
-      setSwipeOut(null);
-      setDragX(0);
-      setDragY(0);
-      lastDragXRef.current = 0;
-    }, 330);
-  };
-
-  /* ── Pointer handlers ───────────────────────────────── */
-  const handlePointerDown = (e) => {
-    if (swipeOut) return;
-    pointerStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId, locked: false, lastX: e.clientX, lastT: Date.now(), vx: 0 };
-  };
-
-  const handlePointerMove = (e) => {
-    if (!pointerStart.current || e.pointerId !== pointerStart.current.id) return;
-    const dx = e.clientX - pointerStart.current.x;
-    const dy = e.clientY - pointerStart.current.y;
-
-    if (!pointerStart.current.locked) {
-      const absX = Math.abs(dx);
-      const absY = Math.abs(dy);
-      if (absX < 4 && absY < 4) return;
-      if (absY > absX) {
-        pointerStart.current = null;
-        setIsDragging(false);
-        return;
-      }
-      try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* ignore */ }
-      pointerStart.current = { ...pointerStart.current, locked: true };
-      setIsDragging(true);
-    }
-
-    // Track instantaneous velocity (px/ms) for flick detection
-    const now = Date.now();
-    const dt = now - pointerStart.current.lastT;
-    const vx = dt > 0 ? (e.clientX - pointerStart.current.lastX) / dt : 0;
-    pointerStart.current = { ...pointerStart.current, lastX: e.clientX, lastT: now, vx };
-
-    lastDragXRef.current = dx;
-
-    // Batch DOM updates to the next animation frame for silky rendering
-    if (rafRef.current) cancelAnimationFrame(rafRef.current);
-    const snapDx = dx, snapDy = dy;
-    rafRef.current = requestAnimationFrame(() => {
-      setDragX(snapDx);
-      setDragY(snapDy);
-      rafRef.current = null;
-    });
-  };
-
-  const handlePointerUp = () => {
-    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-    if (!isDragging) {
-      pointerStart.current = null;
-      return;
-    }
-    const dx = lastDragXRef.current; // sync ref — always current even if rAF hasn't flushed
-    const vx = pointerStart.current?.vx || 0;
-    setIsDragging(false);
-    pointerStart.current = null;
-    // Keep lastDragXRef intact so doSwipe can read the real position
-    // Trigger on distance ≥ 55 OR flick (|vx| ≥ 0.35 px/ms with some displacement)
-    if      (dx >  55 || (vx >  0.35 && dx >  25)) { lastDragXRef.current = 0; doSwipe('right', dx); }
-    else if (dx < -55 || (vx < -0.35 && dx < -25)) { lastDragXRef.current = 0; doSwipe('left',  dx); }
-    else { lastDragXRef.current = 0; setDragX(0); setDragY(0); }
-  };
-
-  const handlePointerCancel = () => {
-    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
-    setIsDragging(false);
-    pointerStart.current = null;
-    lastDragXRef.current = 0;
-    setDragX(0);
-    setDragY(0);
-  };
+  const onSwiped = useCallback((id) => {
+    setSwipedIds(prev => new Set([...prev, id]));
+  }, []);
+  const onLiked = useCallback((id) => {
+    setLikedIds(prev => new Set([...prev, id]));
+  }, []);
 
   /* ── Wrapped handlers: clear storage on complete / skip ── */
-  const handleComplete = (selectedExps) => { clearProgress(trip.id); onComplete(selectedExps); };
-  const handleSkip     = ()              => { clearProgress(trip.id); onSkip(); };
-  const removeFromPicks = (expId) => {
-    setLikedIds(prev => { const next = new Set(prev); next.delete(expId); return next; });
+  const handleComplete = useCallback((selectedExps) => { clearProgress(trip.id); onComplete(selectedExps); }, [trip.id, onComplete]);
+  const handleSkip     = useCallback(()              => { clearProgress(trip.id); onSkip(); }, [trip.id, onSkip]);
+  const handleGoToConfirm = useCallback(() => setPhase('confirm'), []);
+  const removeFromPicks = useCallback((expId) => {
+    startTransition(() => {
+      setLikedIds(prev => { const next = new Set(prev); next.delete(expId); return next; });
+    });
     setReviewExp(null);
-  };
-  const toggleCat = (cat) => setExpandedCats(prev => {
+  }, []);
+  const toggleCat = useCallback((cat) => setExpandedCats(prev => {
     const next = new Set(prev);
     next.has(cat) ? next.delete(cat) : next.add(cat);
     return next;
-  });
+  }), []);
 
   /* ── Persist progress (including experience cards + phase) to localStorage ── */
   useEffect(() => {
@@ -441,8 +700,11 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
   }, [swipedIds, likedIds, activeFilter, experiences.length, phase]);
 
   /* ── Auto-advance: next category or confirm ────────── */
+  // Note: swipeOut lives in SwipeStack (not in scope here).
+  // The auto-advance only fires when total === 0 (no cards left), which
+  // only happens after a swipe has fully completed and the card was removed.
   useEffect(() => {
-    if (phase !== 'swipe' || experiences.length === 0 || swipeOut) return;
+    if (phase !== 'swipe' || experiences.length === 0) return;
     if (total > 0) return; // still cards available
 
     if (activeFilter !== null) {
@@ -471,10 +733,10 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
       const timer = setTimeout(() => setPhase('confirm'), 360);
       return () => clearTimeout(timer);
     }
-  }, [total, phase, activeFilter, swipeOut, experiences.length]);
+  }, [total, phase, activeFilter, experiences.length]);
 
   /* ── Build visible card stack ──────────────────────── */
-  const visibleCards = filteredExp.slice(0, 3).map((exp, stackIndex) => ({ exp, stackIndex }));
+  const visibleCards = useMemo(() => filteredExp.slice(0, 3).map((exp, stackIndex) => ({ exp, stackIndex })), [filteredExp]);
 
   /* ── Intro overlay — shown as a standalone gate on first visit ── */
   const introOverlay = showIntro ? (
@@ -761,7 +1023,7 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
               <div style={{ position: 'relative', height: 256, overflow: 'hidden', background: '#EDE8E2' }}>
                 <PlacePhotoCarousel
                   query={reviewExp.imageQuery || `${reviewExp.name} ${destination} high resolution travel photography`}
-                  style={{ height: '100%', borderRadius: 0 }}
+                  style={CAROUSEL_STYLE}
                   limit={3}
                 />
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,rgba(0,0,0,0.04) 0%,transparent 30%,rgba(0,0,0,0.76) 100%)', pointerEvents: 'none' }} />
@@ -824,161 +1086,36 @@ export default function ExperienceDiscovery({ trip, onComplete, onSkip, modifyEx
   const allSwiped = experiences.length > 0 && allUnswiped.length === 0 && activeFilter === null;
 
   return (
-    <div
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerCancel}
-      style={{ background: D.bg, userSelect: 'none', WebkitUserSelect: 'none' }}
-    >
-      {/* ── Create with Lumi — full-width CTA (top) ── */}
-      <button
-        onClick={handleSkip}
-        className="ed-cta-lumi"
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px 12px 12px', borderRadius: 16, border: 'none', cursor: 'pointer', background: 'linear-gradient(135deg,#FF6A00,#FF8C3B)', marginBottom: 0, textAlign: 'left' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src={lumi8Img} alt="Lumi" style={{ width: 56, height: 56, objectFit: 'contain', flexShrink: 0 }} />
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.75)', fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 3 }}>Don't want to swipe?</div>
-            <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", lineHeight: 1.15 }}>Create with Lumi</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', fontFamily: "'DM Sans',sans-serif", marginTop: 3 }}>Instantly build your full itinerary.</div>
-          </div>
-        </div>
-        <div className="ed-cta-arrow" style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginLeft: 6 }}>
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        </div>
-      </button>
-
-      {/* ── separator ── */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0 12px' }}>
-        <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.08)' }} />
-        <span style={{ fontSize: 10, color: D.muted, fontWeight: 600, fontFamily: "'DM Sans',sans-serif", letterSpacing: 0.6, whiteSpace: 'nowrap' }}>or explore &amp; swipe</span>
-        <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.08)' }} />
-      </div>
-
-      {/* ── Explored / Saved / Planned stats bar ── */}
-      <div style={{ background: '#fff', borderRadius: 14, padding: '10px 14px', marginBottom: 10, border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
-        <div style={{ display: 'flex', alignItems: 'center' }}>
-          {/* Explored */}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, color: D.muted, fontFamily: "'DM Sans',sans-serif", marginBottom: 5 }}>
-              <span style={{ fontWeight: 700, color: '#1C1410' }}>{swipedIds.size}</span> of {experiences.length} explored
-            </div>
-            <div style={{ height: 5, borderRadius: 999, background: '#FFF3EB', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: `${experiences.length > 0 ? (swipedIds.size / experiences.length) * 100 : 0}%`, background: 'linear-gradient(90deg,#FF6A00,#FF8C3B)', borderRadius: 999, transition: 'width 0.3s ease' }} />
-            </div>
-          </div>
-          <div style={{ width: 1, height: 34, background: 'rgba(28,20,16,0.08)', margin: '0 13px', flexShrink: 0 }} />
-          {/* Saved */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill={likedIds.size > 0 ? '#FF6A00' : 'none'} stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1C1410', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>{likedIds.size}</div>
-              <div style={{ fontSize: 10, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Saved</div>
-            </div>
-          </div>
-          <div style={{ width: 1, height: 34, background: 'rgba(28,20,16,0.08)', margin: '0 13px', flexShrink: 0 }} />
-          {/* Planned */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#1C1410', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>{Math.round(selectedHours)}h</div>
-              <div style={{ fontSize: 10, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Planned</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Category filter pills ── */}
-      <div className="ed-cat-scroll" style={{ display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2, marginBottom: 13, scrollbarWidth: 'none' }}>
-        <button onClick={() => setActiveFilter(null)} style={{ flexShrink: 0, fontSize: 11, fontWeight: 700, padding: '4px 12px', borderRadius: 999, border: `1.5px solid ${!activeFilter ? D.gold : D.border}`, background: !activeFilter ? D.goldTint : D.surface, color: !activeFilter ? D.gold : D.muted, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.15s' }}>All</button>
-        {availableCats.map(cat => {
-          const cfg = catCfg(cat);
-          const active = activeFilter === cat;
-          const hasUnswiped = experiences.some(e => e.category === cat && !swipedIds.has(e.id));
-          return (
-            <button key={cat} className="ed-cat-pill"
-              onClick={() => setActiveFilter(active ? null : cat)}
-              style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, padding: '4px 10px', borderRadius: 999, border: `1.5px solid ${active ? cfg.color : D.border}`, background: active ? cfg.bg : D.surface, color: active ? cfg.color : (hasUnswiped ? D.muted : '#C8C4BE'), cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", opacity: hasUnswiped ? 1 : 0.55 }}
-            >
-              {renderCatIcon(cat, 12, active ? cfg.color : (hasUnswiped ? D.muted : '#C8C4BE'))}
-              <span>{cat}</span>
-              {!hasUnswiped && <span style={{ fontSize: 9, marginLeft: 1 }}>✓</span>}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Card stack ── */}
-      {allSwiped ? (
-        <div style={{ height: 430, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: D.surface, borderRadius: 24, boxShadow: '0 4px 22px rgba(28,20,16,0.10)', border: `0.5px solid ${D.border}`, textAlign: 'center', padding: '2rem', animation: 'edFadeUp 0.4s ease both' }}>
-          <img src={lumi5Img} alt="" style={{ height: 84, width: 'auto', marginBottom: 14, animation: 'edLumiFloat 2.5s ease-in-out infinite' }} />
-          <div style={{ fontSize: 17, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 5 }}>All swiped! 🎉</div>
-          <div style={{ fontSize: 12.5, color: D.muted, marginBottom: 22 }}>{likedIds.size} liked · ~{Math.round(selectedHours)}h of activities</div>
-          <button onClick={() => setPhase('confirm')} style={{ padding: '11px 26px', fontSize: 14, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif", boxShadow: '0 4px 16px rgba(201,145,58,0.28)' }}>
-            See my picks →
-          </button>
-        </div>
-      ) : (
-        <div style={{ position: 'relative', minHeight: 450, margin: '0 auto', maxWidth: 420 }}>
-          {/* Render back-to-front */}
-          {[...visibleCards].reverse().map(({ exp, stackIndex }) => (
-            <SwipeCard
-              key={exp.id}
-              exp={exp}
-              dragX={stackIndex === 0 ? dragX : 0}
-              dragY={stackIndex === 0 ? dragY : 0}
-              isDragging={stackIndex === 0 && isDragging}
-              swipeOut={stackIndex === 0 ? swipeOut : null}
-              isTop={stackIndex === 0}
-              stackIndex={stackIndex}
-              onPointerDown={handlePointerDown}
-              destination={destination}
-            />
-          ))}
-        </div>
-      )}
-
-      {/* ── Action buttons ── */}
-      {!allSwiped && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: -18, padding: '0 4px' }}>
-          {/* Skip */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <button
-              className="ed-pass-btn"
-              onClick={() => doSwipe('left')}
-              disabled={!!swipeOut}
-              style={{ width: 64, height: 64, borderRadius: '50%', border: '1.5px solid rgba(28,20,16,0.12)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(28,20,16,0.09)', opacity: swipeOut ? 0.4 : 1 }}
-            >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={D.espresso} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
-            <span style={{ fontSize: 11, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Skip</span>
-          </div>
-
-          {/* Center: Build CTA */}
-          <button
-            onClick={() => setPhase('confirm')}
-            disabled={likedIds.size === 0}
-            style={{ fontSize: 11, fontWeight: 700, padding: '8px 14px', borderRadius: 12, border: `1.5px solid ${likedIds.size > 0 ? 'rgba(255,106,0,0.3)' : D.border}`, cursor: likedIds.size > 0 ? 'pointer' : 'default', background: likedIds.size > 0 ? '#FFF8F4' : D.surface, color: likedIds.size > 0 ? '#FF6A00' : D.muted, fontFamily: "'DM Sans',sans-serif", boxShadow: likedIds.size > 0 ? '0 2px 10px rgba(255,106,0,0.1)' : 'none', whiteSpace: 'nowrap', opacity: likedIds.size === 0 ? 0.4 : 1, transition: 'all 0.2s ease', animation: likedIds.size > 0 ? 'edFadeUp 0.3s ease both' : undefined }}
-          >
-            {likedIds.size > 0 ? `Proceed with ${likedIds.size} activit${likedIds.size === 1 ? 'y' : 'ies'} →` : 'Build itinerary'}
-          </button>
-
-          {/* Like */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-            <button
-              className="ed-like-btn"
-              onClick={() => doSwipe('right')}
-              disabled={!!swipeOut}
-              style={{ width: 64, height: 64, borderRadius: '50%', border: '1.5px solid rgba(28,20,16,0.12)', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 12px rgba(28,20,16,0.09)', opacity: swipeOut ? 0.4 : 1 }}
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="#F43F5E" stroke="#F43F5E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-            </button>
-            <span style={{ fontSize: 11, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>Like</span>
-          </div>
-        </div>
-      )}
-
+    <div style={{ background: D.bg, userSelect: 'none', WebkitUserSelect: 'none' }}>
+      <LumiCTA onSkip={handleSkip} />
+      <SwipeSeparator />
+      <StatsBar
+        swipedCount={swipedIds.size}
+        totalCount={experiences.length}
+        likedCount={likedIds.size}
+        plannedHours={Math.round(selectedHours)}
+      />
+      <CategoryPills
+        availableCats={availableCats}
+        activeFilter={activeFilter}
+        onSetFilter={setActiveFilter}
+        catHasUnswiped={catHasUnswiped}
+      />
+      <SwipeStack
+        experiences={experiences}
+        filteredExp={filteredExp}
+        swipedIds={swipedIds}
+        likedIds={likedIds}
+        onSwiped={onSwiped}
+        onLiked={onLiked}
+        onGoToConfirm={handleGoToConfirm}
+        destination={destination}
+        allSwiped={allSwiped}
+        visibleCards={visibleCards}
+        total={total}
+      />
     </div>
   );
-}
+});
+
+export default ExperienceDiscovery;

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import {
   formatDateRange,
   normalizeMembers,
@@ -132,7 +132,7 @@ const HERO_GREETINGS = {
 
 // currency utilities — see top of file (getFxRate, getCurrencyForCountry)
 
-function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, setConfirmComplete, setConfirmDelete, forceMonochrome = false, showMenu = true, isArchiving = false }) {
+const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, setConfirmComplete, setConfirmDelete, forceMonochrome = false, showMenu = true, isArchiving = false }) {
   const [photos, setPhotos] = useState([]);
   const [photoIdx, setPhotoIdx] = useState(0);
   const touchStartX = useRef(null);
@@ -339,7 +339,7 @@ function TripCard({ trip, idx, onOpen, copied, onCopy, menuOpen, setMenuOpen, se
       </div>
     </div>
   );
-}
+});
 
 function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive, profileName, homeTab = 'trips', setHomeTab = () => {} }) {
   const [showCreate, setShowCreate] = useState(false);

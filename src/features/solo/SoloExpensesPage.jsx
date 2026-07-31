@@ -116,6 +116,18 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     document.head.appendChild(script);
   }, []);
 
+  const spendMeta = SOLO_CURRENCIES.find(c => c.code === spendCurrency) || { code: 'INR', symbol: '₹' };
+  const spendSymbol = spendMeta.symbol;
+  const fmt = n => `${spendSymbol}${Math.round(n).toLocaleString('en-IN')}`;
+
+  // displayBudget: budget expressed in current spendCurrency (converted via FX if currencies differ)
+  const displayBudget = !budget ? null
+    : (!localBudgetCurrency || localBudgetCurrency === spendCurrency) ? budget
+    : budgetFxRate !== null ? budget * budgetFxRate
+    : budget; // show raw while FX is loading
+
+  const fmtBudget = fmt; // budget is now always in spendCurrency
+
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const days = tripDuration(trip.arrival, trip.departure);
   const tripStart = new Date(trip.arrival);
@@ -142,18 +154,6 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const uniqueSpendDays = new Set(expenses.map(e => e.date)).size;
   const plannedDailyBudget = displayBudget ? displayBudget / Math.max(1, days) : null;
   const pacePct = plannedDailyBudget ? Math.round((tsr / plannedDailyBudget) * 100) : null;
-
-  const spendMeta = SOLO_CURRENCIES.find(c => c.code === spendCurrency) || { code: 'INR', symbol: '₹' };
-  const spendSymbol = spendMeta.symbol;
-  const fmt = n => `${spendSymbol}${Math.round(n).toLocaleString('en-IN')}`;
-
-  // displayBudget: budget expressed in current spendCurrency (converted via FX if currencies differ)
-  const displayBudget = !budget ? null
-    : (!localBudgetCurrency || localBudgetCurrency === spendCurrency) ? budget
-    : budgetFxRate !== null ? budget * budgetFxRate
-    : budget; // show raw while FX is loading
-
-  const fmtBudget = fmt; // budget is now always in spendCurrency
 
   const soloFunLines = [];
   if (expenses.length === 0) {

@@ -1310,7 +1310,7 @@ function ClubPage({ trip, onTripRefresh }) {
       {showClubGate && (
         <div style={{ position:'fixed', inset:0, background:'rgba(28,20,16,0.58)', backdropFilter:'blur(6px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.25rem', animation:'clubFadeIn .22s ease both' }}
           onClick={dismissClubGate}>
-          <div style={{ background:'#fff', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:420, boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'clubSheetIn .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
+          <div style={{ background:'#fff', borderRadius:24, width:'100%', maxWidth:420, maxHeight:'90dvh', overflowY:'auto', WebkitOverflowScrolling:'touch', boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'clubSheetIn .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
             onClick={e => e.stopPropagation()}>
 
             {clubGateStep === 0 ? (
