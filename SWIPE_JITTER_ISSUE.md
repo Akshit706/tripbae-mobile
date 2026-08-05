@@ -104,26 +104,49 @@ This happens on **every single swipe** — not just occasionally.
 
 **Status:** Applied but effectiveness not confirmed.
 
+## Resolution
+
+The jitter was caused by a **React/DOM style conflict** at drag-end transitions. The code mixed direct DOM writes (`el.style.transform = ...`) during drag with React state for fly-out/snap-back, causing a visible jitter frame when React committed a transform value that conflicted with the inline DOM style.
+
+### Attempt 1: rAF-Throttled React State (Failed)
+
+Replaced all direct DOM writes with `requestAnimationFrame`-throttled React state updates. This made the jitter **worse** on mobile WebView because every pointer move triggered a React re-render, which is significantly slower than direct DOM writes on Android's WebView.
+
+### Final Fix: Pure DOM Approach
+
+**Strategy:** Keep direct DOM writes for drag, fly-out, and snap-back. React state is only updated AFTER the animation completes. This eliminates the React/DOM style conflict entirely.
+
+**Key changes:**
+
+1. **`SwipeCard`** — When `isDragging && isTop`, `transform` is `undefined` in the style prop (React skips it). The pointer handler writes `el.style.transform` directly with zero re-renders during drag.
+
+2. **`SwipeStack`** — Added `animatingRef` (a ref flag) that blocks React state updates while a DOM-driven animation is in progress. During:
+   - **Drag:** Direct DOM writes, no React state updates
+   - **Fly-out (swipe):** `isDragging` stays true, `animatingRef=true`, DOM sets `transition` + `transform`. React state (`swipeOut`, `dragX`, `isDragging`) updated after 330ms timeout
+   - **Snap-back:** Same pattern — DOM transition animates back to rest, React state deferred 300ms
+   - **Button-click swipes** (no drag in progress): Use React state normally since the card is at rest with no inline transform to conflict with
+
+3. **`handlePointerUp`** — No longer clears `el.style.transform` before the swipe animation. Instead, `doSwipe` handles the DOM writes directly.
+
+4. **`handlePointerCancel`** — No longer clears DOM inline style immediately (deferred via `animatingRef`).
+
+**Result:** React never commits a `transform` value while a DOM-driven animation is in progress, so there's no jitter frame. The card transitions are smooth on both web and mobile WebView.
+
 ## What Has NOT Been Tried
 
 1. **useLayoutEffect instead of useState for the fly-out** — The jitter frame happens between React commit and browser paint. `useLayoutEffect` runs synchronously after DOM mutations but before paint, so the card never renders at position 0.
    - Alternative: `useLayoutEffect` in the doSwipe flow to ensure `setSwipeOut` + `setDragX` are painted in the same frame.
    - Alternative: `requestAnimationFrame` to align state updates with the browser's paint cycle.
 
-2. **Never clearing `el.style.transform` at all** — Instead of `el.style.transform = ''`, handle the DOM inline style through the entire lifecycle and only let React's `transform` prop take over via a class toggle.
-   - **The real solution may be:** Don't use direct DOM manipulation + React state for the same CSS property. Pick one system. Either:
-     - **Pure React:** Remove all direct DOM `el.style.transform` writes, use React state + requestAnimationFrame throttling for smooth drag.
-     - **Pure DOM:** Manage the entire card lifecycle via DOM refs and CSS classes, React only updates the data (experiences list).
+2. **CSS `will-change: transform` on the card container** — Already present. Not the issue.
 
-3. **CSS `will-change: transform` on the card container** — Already present. Not the issue.
+3. **Completely removing the 0.30s fly-out CSS transition** — Instead of relying on CSS transitions that conflict with React state, handle the fly-off animation purely via React `setDragX` updates.
 
-4. **Completely removing the 0.30s fly-out CSS transition** — Instead of relying on CSS transitions that conflict with React state, handle the fly-off animation purely via React `setDragX` updates.
+4. **CSS `content-visibility: auto`** on the page sections below the cards — ensures paint isolation.
 
-5. **CSS `content-visibility: auto`** on the page sections below the cards — ensures paint isolation.
+5. **The cards container minHeight changing** — When cards shift, the container height changes because stacked cards take up different visual space than one top card. This layout shift cascades down. A fixed-height container (`height: 450px` is already there on the card area) should prevent this, but verify.
 
-6. **The cards container minHeight changing** — When cards shift, the container height changes because stacked cards take up different visual space than one top card. This layout shift cascades down. A fixed-height container (`height: 450px` is already there on the card area) should prevent this, but verify.
-
-7. **Replacing `visibleCards.slice(0,3)` rendering** — Currently renders 3 cards even when shadow cards are invisible. When Card A is removed, Card B needs to shift up, and the 3rd card needs to render. This insert/remove of DOM elements causes layout shifts.
+6. **Replacing `visibleCards.slice(0,3)` rendering** — Currently renders 3 cards even when shadow cards are invisible. When Card A is removed, Card B needs to shift up, and the 3rd card needs to render. This insert/remove of DOM elements causes layout shifts.
 
 ## How to Reproduce
 

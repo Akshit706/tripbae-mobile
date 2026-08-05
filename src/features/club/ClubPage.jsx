@@ -460,6 +460,7 @@ function ClubPage({ trip, onTripRefresh }) {
   const [chatPhotoDragging, setChatPhotoDragging] = useState(false);
   const [chatPhotoSelected, setChatPhotoSelected] = useState(new Set());
   const [splitSection, setSplitSection] = useState('expenses');
+
   const [splitFormOpen, setSplitFormOpen] = useState(false);
   const [splitDraft, setSplitDraft] = useState({ desc: '', amount: '', paidBy: '', splitWith: [] });
   const [splitTouch, setSplitTouch] = useState({ entryId: null, startX: 0, deltaX: 0, startAt: 0 });
@@ -478,6 +479,12 @@ function ClubPage({ trip, onTripRefresh }) {
       return !localStorage.getItem(CLUB_INTRO_KEY) || !localStorage.getItem(CLUB_TERMS_KEY);
     } catch { return true; }
   });
+
+  // Hide the fixed topbar/bottom nav whenever the club gate/info overlay is open
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: !!showClubGate } }));
+  }, [showClubGate]);
+
   const [clubGateStep, setClubGateStep] = useState(() => {
     try {
       const iSeen = !!localStorage.getItem(CLUB_INTRO_KEY);
@@ -1310,7 +1317,7 @@ function ClubPage({ trip, onTripRefresh }) {
       {showClubGate && (
         <div style={{ position:'fixed', inset:0, background:'rgba(28,20,16,0.58)', backdropFilter:'blur(6px)', zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:'1.25rem', animation:'clubFadeIn .22s ease both' }}
           onClick={dismissClubGate}>
-          <div style={{ background:'#fff', borderRadius:24, width:'100%', maxWidth:420, maxHeight:'90dvh', overflowY:'auto', WebkitOverflowScrolling:'touch', boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'clubSheetIn .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
+          <div style={{ background:'#fff', borderRadius:24, width:'100%', maxWidth:420, maxHeight:'90dvh', overflowY:'auto', WebkitOverflowScrolling:'touch', touchAction:'pan-y', boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'clubSheetIn .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
             onClick={e => e.stopPropagation()}>
 
             {clubGateStep === 0 ? (
@@ -2266,12 +2273,12 @@ function ClubPage({ trip, onTripRefresh }) {
                   onClick={handleToggle}
                   disabled={clubBusy}
                   title={listed ? 'Snooze — hide your card' : 'Go live — show your card'}
-                  style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '5px 10px', borderRadius: 999, border: listed ? '1px solid rgba(255,106,0,0.35)' : '1px solid rgba(0,0,0,0.1)', background: listed ? 'rgba(255,106,0,0.1)' : 'rgba(255,255,255,0.9)', cursor: clubBusy ? 'not-allowed' : 'pointer', flexShrink: 0, transition: 'all .2s ease' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 999, border: listed ? '1px solid rgba(255,106,0,0.35)' : '1px solid rgba(0,0,0,0.1)', background: listed ? 'rgba(255,106,0,0.1)' : 'rgba(255,255,255,0.9)', cursor: clubBusy ? 'not-allowed' : 'pointer', flexShrink: 0, transition: 'all .2s ease', touchAction: 'manipulation', minHeight: 44 }}
                 >
-                  <span style={{ width: 28, height: 16, borderRadius: 999, background: listed ? '#FF6A00' : '#D3D1C7', padding: 2, display: 'block', flexShrink: 0, transition: 'background .2s ease', position: 'relative' }}>
-                    <span style={{ width: 12, height: 12, borderRadius: '50%', background: '#fff', display: 'block', position: 'absolute', top: 2, left: listed ? 14 : 2, transition: 'left .2s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.18)' }} />
+                  <span style={{ width: 36, height: 20, borderRadius: 999, background: listed ? '#FF6A00' : '#D3D1C7', padding: 2, display: 'block', flexShrink: 0, transition: 'background .2s ease', position: 'relative' }}>
+                    <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#fff', display: 'block', position: 'absolute', top: 2, left: listed ? 18 : 2, transition: 'left .2s ease', boxShadow: '0 1px 3px rgba(0,0,0,0.18)' }} />
                   </span>
-                  <span style={{ fontSize: 11, fontWeight: 600, color: listed ? '#FF8C3A' : '#9ca3af', whiteSpace: 'nowrap' }}>{listed ? 'Live' : 'Snoozed'}</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: listed ? '#FF8C3A' : '#9ca3af', whiteSpace: 'nowrap' }}>{listed ? 'Live' : 'Snoozed'}</span>
                 </button>
                 {/* Filter button */}
                 <button

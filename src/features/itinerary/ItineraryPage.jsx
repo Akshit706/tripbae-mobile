@@ -4,7 +4,7 @@ import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 import { PlacePhoto, PlacePhotosStrip, PlacePhotoCarousel } from '../media/PlaceMedia';
 import RecommendationsPage from './RecommendationsPage';
-import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime } from '../../api';
+import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime, generateItinerary } from '../../api';
 import lumi15Img from '../../assets/lumi15.png';
 import lumi17Img from '../../assets/lumi17.png';
 import lumi4Img from '../../assets/Lumi4_bgless.png';
@@ -385,7 +385,6 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     setStep('loading');
     setDoneItems(new Set());
     try {
-      const { generateLocalTaste } = await import('../../api');
       const r = await generateLocalTaste({ destination: dest });
       setData(r);
       setStep('result');
@@ -1002,10 +1001,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     }
     setStep('loading');
     try {
-      const { generateItinerary } = await import('../../api');
       const interests = (selectedExperiences && selectedExperiences.length > 0)
         ? [...new Set(selectedExperiences.map(e => e.category).filter(Boolean))]
         : [];
+      console.log('[Itinerary] → calling generateItinerary /ai/itinerary', { destination: form.dest, days, budget: form.budget, people: parseInt(form.people) || 1, interests, arrivalSlot: form.arrivalSlot, departureSlot: form.departureSlot, firstActivitySlot: firstActivitySlot(), selCount: (selectedExperiences || []).length });
       const result = await generateItinerary({
         destination: form.dest,
         days,
@@ -1025,7 +1024,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       setStep('result');
       setITab('itinerary');
       onCacheUpdate?.({ _cachedItin: { ...result, selectedExps: selectedExperiences || [] } });
-    } catch {
+    } catch (err) {
+      console.log('[Itinerary] /ai/itinerary FAILED →', err?.message || err);
       setStep('error');
     }
   };
@@ -1487,7 +1487,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Couldn't generate itinerary</div>
                   <div style={{ fontSize: 12.5, color: '#8A7E76', marginBottom: 20 }}>Something went wrong. Try again or pick differently.</div>
                   <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <button style={{ ...S.btn, ...accentStyle, padding: '10px 24px' }} onClick={() => runGenerateItinerary()}>Try Again</button>
+                    <button style={{ ...S.btn, ...accentStyle, padding: '10px 24px' }} onClick={() => { console.log('[Itinerary] Try Again CLICKED'); runGenerateItinerary(); }}>Try Again</button>
                     <button style={{ ...S.btn, padding: '10px 24px', background: '#F4F2EE', color: '#5C504A', border: 'none', borderRadius: 12 }} onClick={() => setStep('discover')}>Pick Experiences</button>
                   </div>
                 </div>

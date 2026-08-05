@@ -6,17 +6,34 @@ function getToken() {
 
 async function apiFetch(path, options = {}) {
   const token = getToken();
-  const res = await fetch(`${BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...options.headers,
-    },
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 min timeout for AI endpoints
+  let res;
+  try {
+    res = await fetch(`${BASE}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...options.headers,
+      },
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === 'AbortError') throw new Error('Request timed out — the backend may be waking up. Please try again.');
+    throw err;
+  }
+  clearTimeout(timeoutId);
+  // Handle non-JSON responses (e.g., HTML error pages from Render proxy)
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    if (!res.ok) throw new Error(`Server returned ${res.status} — backend may be waking up. Please try again.`);
+    throw new Error('Server returned a non-JSON response. Please try again.');
+  }
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Something went wrong');
+  if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
   return data;
 }
 

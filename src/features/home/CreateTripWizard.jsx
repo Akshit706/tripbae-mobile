@@ -107,6 +107,12 @@ export default function CreateTripWizard({
   const [destLoading, setDestLoading] = useState(false);
   const destDebounce = useRef(null);
 
+  // Tell TravelBae to hide the fixed topbar/bottom nav while this overlay is open
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: true } }));
+    return () => window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: false } }));
+  }, []);
+
   // Body scroll lock is managed by HomePage — do not duplicate it here
 
   const searchDest = useCallback(async (text) => {
@@ -147,7 +153,7 @@ export default function CreateTripWizard({
   /* ── Render ──────────────────────────────── */
   return (
     <div
-      style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(0,0,0,0.45)', backdropFilter:'blur(8px)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'calc(env(safe-area-inset-top, 0px) + 10svh) 0 0' }}
+      style={{ position:'fixed', inset:0, zIndex:1200, background:'rgba(0,0,0,0.45)', backdropFilter:'blur(8px)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'calc(env(safe-area-inset-top, 0px) + 8svh) 0 0' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <style>{`
@@ -157,7 +163,7 @@ export default function CreateTripWizard({
 
       <div
         className="tb-modal-pop"
-        style={{ width:'100%', maxWidth:460, height:'min(660px, 94svh)', background:'#fff', borderRadius:'28px 28px 0 0', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 28px 80px rgba(0,0,0,0.22)', animation:'lumiPop .32s cubic-bezier(.16,.84,.24,1.04) both' }}
+        style={{ width:'100%', maxWidth:460, height:'min(640px, 92svh)', background:'#fff', borderRadius:'28px 28px 0 0', overflow:'hidden', display:'flex', flexDirection:'column', boxShadow:'0 28px 80px rgba(0,0,0,0.22)', animation:'lumiPop .32s cubic-bezier(.16,.84,.24,1.04) both' }}
         onClick={(e) => e.stopPropagation()}
       >
 

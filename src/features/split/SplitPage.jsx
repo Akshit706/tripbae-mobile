@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { getFxRate } from '../home/HomePage';
-import { addExpense, updateExpense, deleteExpense } from '../../api';
+import { addExpense, updateExpense, deleteExpense, updateTrip } from '../../api';
 import { CATS, normalizeMembers, tripDuration, tripStatusInfo } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Avatar, CatIcon } from '../shared/ui';
@@ -746,7 +746,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                 if (!isNaN(v) && v > 0) {
                   setLocalBudget(v);
                   setLocalBudgetCurrency(spendCurrency);
-                  try { const { updateTrip } = await import('../../api'); await updateTrip(trip.id, { budget: v, budgetCurrency: spendCurrency }); } catch (_) {}
+                  try { await updateTrip(trip.id, { budget: v, budgetCurrency: spendCurrency }); } catch (_) {}
                 }
                 setShowBudgetEdit(false);
               }}>✓ Save</button>
@@ -755,7 +755,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                 onClick={async () => {
                   setLocalBudget(null);
                   setLocalBudgetCurrency(null);
-                  try { const { updateTrip } = await import('../../api'); await updateTrip(trip.id, { budget: null, budgetCurrency: null }); } catch (_) {}
+                  try { await updateTrip(trip.id, { budget: null, budgetCurrency: null }); } catch (_) {}
                   setShowBudgetEdit(false);
                 }}>Remove</button>
             )}

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useMemo, useCallback, memo, startTransition } from 'react';
 import { createPortal } from 'react-dom';
+import { fetchExperiences } from '../../api';
 import lumi4Img from '../../assets/Lumi4_bgless.png';
-import { PlacePhotoCarousel } from '../media/PlaceMedia';
+import { PlacePhotoCarousel, preloadPlacePhotos } from '../media/PlaceMedia';
 import lumi8Img from '../../assets/lumi8.png';
 import lumi11Img from '../../assets/lumi11.png';
 import lumi15Img from '../../assets/lumi15.png';
@@ -130,7 +131,7 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
     @keyframes ctaBtnGlow { 0%,100% { box-shadow:0 3px 10px rgba(255,106,0,0.22); } 50% { box-shadow:0 4px 18px rgba(255,106,0,0.4); } }
     @keyframes ctaShimmer { 0%{transform:translateX(-130%) skewX(-18deg)} 100%{transform:translateX(230%) skewX(-18deg)} }
     @keyframes ctaArrowNudge { 0%,100%{transform:translateX(0)} 60%{transform:translateX(4px)} }
-    .ed-cta-lumi { animation: ctaBtnGlow 2.2s ease-in-out infinite !important; overflow:hidden !important; position:relative !important; }
+    .ed-cta-lumi { animation: ctaBtnGlow 2.2s ease-in-out infinite !important; overflow:hidden !important; position:relative !important; contain: layout style paint !important; }
     .ed-cta-lumi::after { content:''; position:absolute; top:0; bottom:0; width:28%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent); animation:ctaShimmer 2.6s ease-in-out infinite 0.9s; pointer-events:none; }
     .ed-cta-arrow { animation: ctaArrowNudge 1.6s ease-in-out infinite; }
     .ed-like-btn,.ed-pass-btn { transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease !important; }
@@ -157,6 +158,8 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
   const stackScale  = 1 - stackIndex * 0.044;
   const stackY      = stackIndex * 13;
   const zIdx        = 10 - stackIndex;
+  // Cards beyond the 3 visible ones are invisible but keep loading their photo
+  const hidden     = stackIndex >= 3;
 
   // Expose the DOM element to parent so it can write transform directly during drag
   useEffect(() => { if (isTop) onCardEl?.(cardRef.current); }, [isTop]);
@@ -169,6 +172,7 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
     : !isTop
       ? `scale(${stackScale}) translateY(${stackY}px) translateZ(0)`
       : `translateX(${dragX}px) translateY(${swipeOut ? 0 : dragY * 0.18}px) rotate(${rotation}deg) translateZ(0)`;
+  if (window.__tbSwipeLog) console.log(`[Swipe] render ${exp.name.slice(0, 18)} idx=${stackIndex} top=${isTop} drag=${isDragging} swOut=${swipeOut} transform=${transform}`);
 
   return (
     <div
@@ -181,13 +185,13 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
           ? `0 ${8 + Math.abs(dragX) * 0.05}px ${30 + Math.abs(dragX) * 0.12}px rgba(28,20,16,0.18)`
           : '0 3px 14px rgba(28,20,16,0.09)',
         transform, zIndex: zIdx,
+        opacity: hidden ? 0 : 1,
+        pointerEvents: hidden ? 'none' : undefined,
         // dragging: no transition (direct DOM tracking)
-        // fly-out: fast ease-in, snap-back/stack-to-top: smooth ease-out
-        transition: isDragging
+        // fly-out: fast ease-in only — snap-back and stack shifts are instant (no CSS transition)
+        transition: isDragging || !swipeOut
           ? 'none'
-          : swipeOut
-          ? 'transform 0.30s cubic-bezier(0.4,0,1,1), box-shadow 0.20s ease'
-          : 'transform 0.30s cubic-bezier(0.2,0.8,0.2,1)',
+          : 'transform 0.30s cubic-bezier(0.4,0,1,1), box-shadow 0.20s ease',
         cursor: isTop ? (isDragging ? 'grabbing' : 'grab') : 'default',
         userSelect: 'none', WebkitUserSelect: 'none',
         touchAction: 'pan-y', willChange: 'transform',
@@ -421,6 +425,8 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
     if (swipeOut || total === 0 || animatingRef.current) return;
     const exp = filteredExp[0];
     if (!exp) return;
+    const t0 = Date.now();
+    if (window.__tbSwipeLog) console.log('[Swipe] doSwipe start', dir, startX, t0);
     const screenW = typeof window !== 'undefined' ? window.innerWidth : 420;
     const flyX = dir === 'right'
       ? Math.max(startX, screenW * 1.25)
@@ -435,6 +441,7 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
       lastDragXRef.current = flyX;
       setTimeout(() => {
         startTransition(() => {
+          if (window.__tbSwipeLog) console.log('[Swipe] BUTTON-swipe React commit', Date.now() - t0, 'ms after start');
           if (dir === 'right') onLiked(exp.id);
           onSwiped(exp.id);
           setSwOut(null);
@@ -455,11 +462,13 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
       const rot = Math.max(-34, Math.min(34, startX * 0.055));
       el.style.transition = 'transform 0.30s cubic-bezier(0.4,0,1,1)';
       el.style.transform = `translateX(${flyX}px) translateY(0px) rotate(${rot}deg) translateZ(0)`;
+      if (window.__tbSwipeLog) console.log('[Swipe] DOM fly-out set', Date.now() - t0, 'ms after start');
     }
     // Update React state AFTER the animation completes — no mid-animation re-render
     setTimeout(() => {
       animatingRef.current = false;
       startTransition(() => {
+        if (window.__tbSwipeLog) console.log('[Swipe] React commit (swipe done)', Date.now() - t0, 'ms after start; card removed');
         if (dir === 'right') onLiked(exp.id);
         onSwiped(exp.id);
         setSwOut(null);
@@ -477,6 +486,7 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
 
   const handlePointerDown = useCallback((e) => {
     if (swipeOutRef.current) return;
+    if (window.__tbSwipeLog) console.log('[Swipe] pointerDown', Date.now());
     pointerStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId, locked: false, lastX: e.clientX, lastT: Date.now(), vx: 0 };
     setDrag(true);
   }, []);
@@ -511,6 +521,7 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
     const dx = lastDragXRef.current;
     const vx = pointerStart.current?.vx || 0;
     pointerStart.current = null;
+    if (window.__tbSwipeLog) console.log('[Swipe] pointerUp', Date.now(), 'dx=', dx, 'vx=', vx.toFixed(2));
 
     if (dx > 55 || (vx > 0.35 && dx > 25)) {
       lastDragXRef.current = 0; doSwipe('right', dx);
@@ -598,6 +609,8 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
    MAIN COMPONENT
 ══════════════════════════════════════════ */
 const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete, onSkip, modifyExps }) {
+  // Set window.__tbSwipeLog = false in console to silence swipe logs
+  window.__tbSwipeLog = true;
   // Initialise from saved progress (or modifyExps override when coming from the "Modify Experiences" action)
   const _savedProg = modifyExps ? null : loadProgress(trip.id);
   const _hasCachedExps = (_savedProg?.experiences?.length || 0) > 0;
@@ -640,18 +653,32 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
     : 1;
   const tripActiveHours = days * 10; // ~10 usable hours/day
 
+  /* ── Preload photos for the whole deck so swiping never waits on an image ── */
+  useEffect(() => {
+    if (!experiences.length) return;
+    const queries = experiences.map(exp =>
+      exp.imageQuery || `${exp.name} ${destination} high resolution travel photography`
+    );
+    if (window.__tbSwipeLog) console.log(`[Photo] preloading ${queries.length} deck photos…`);
+    preloadPlacePhotos(queries);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [experiences.length]);
+
   /* ── Fetch experiences (skipped if already loaded from localStorage cache) ── */
   useEffect(() => {
+    console.log('[Explore] mount: experiences cached?', experiences.length);
     if (experiences.length > 0) return; // already restored from cache — skip API call
     let cancelled = false;
-    import('../../api').then(({ fetchExperiences }) =>
-      fetchExperiences({ destination, days, budget: trip.budget })
-    ).then(data => {
+    console.log('[Explore] fetching /ai/experiences →', { destination, days, budget: trip.budget });
+    fetchExperiences({ destination, days, budget: trip.budget })
+    .then(data => {
       if (cancelled) return;
+      console.log('[Explore] /ai/experiences OK →', data.experiences?.length, 'experiences');
       const exps = (data.experiences || []).map((e, i) => ({ ...e, id: e.id || `exp-${i}` }));
       setExperiences(exps);
       setPhase('swipe');
-    }).catch(() => {
+    }).catch((err) => {
+      console.log('[Explore] /ai/experiences FAILED →', err?.message || err);
       if (!cancelled) setPhase('error');
     });
     return () => { cancelled = true; };
@@ -736,7 +763,9 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
   }, [total, phase, activeFilter, experiences.length]);
 
   /* ── Build visible card stack ──────────────────────── */
-  const visibleCards = useMemo(() => filteredExp.slice(0, 3).map((exp, stackIndex) => ({ exp, stackIndex })), [filteredExp]);
+  // Render 4 cards: the 4th is invisible (opacity 0 / z-index below) but its photo
+  // starts loading immediately, so when it becomes visible it never flashes.
+  const visibleCards = useMemo(() => filteredExp.slice(0, 4).map((exp, stackIndex) => ({ exp, stackIndex })), [filteredExp]);
 
   /* ── Intro overlay — shown as a standalone gate on first visit ── */
   const introOverlay = showIntro ? (
@@ -845,8 +874,18 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
         <div style={{ fontSize: 12.5, color: D.muted, marginBottom: 22, lineHeight: 1.6 }}>The backend might still be waking up.<br/>Try again in a moment, or skip to auto-generate.</div>
         <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button
-            onClick={() => { setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('loading'); clearProgress(trip.id);
-            import('../../api').then(({ fetchExperiences }) => fetchExperiences({ destination, days, budget: trip.budget })).then(data => { setExperiences((data.experiences||[]).map((e,i)=>({...e,id:e.id||`exp-${i}`}))); setPhase('swipe'); }).catch(() => setPhase('error')); }}
+            onClick={() => {
+              console.log('[Explore] Try Again CLICKED');
+              setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('loading'); clearProgress(trip.id);
+              console.log('[Explore] Try Again → fetching /ai/experiences', { destination, days, budget: trip.budget });
+              fetchExperiences({ destination, days, budget: trip.budget }).then(data => {
+                console.log('[Explore] Try Again OK →', data.experiences?.length, 'experiences');
+                setExperiences((data.experiences||[]).map((e,i)=>({...e,id:e.id||`exp-${i}`}))); setPhase('swipe');
+              }).catch((err) => {
+                console.log('[Explore] Try Again FAILED →', err?.message || err);
+                setPhase('error');
+              });
+            }}
             style={{ padding: '11px 22px', fontSize: 13, fontWeight: 700, borderRadius: 14, border: 'none', cursor: 'pointer', background: `linear-gradient(135deg,${D.gold},#A8731E)`, color: '#fff', fontFamily: "'Sora',sans-serif" }}
           >
             Try Again

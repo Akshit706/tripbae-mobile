@@ -1,4 +1,5 @@
 import { useState, useEffect, memo } from 'react';
+import { fetchPlacePhotos } from '../../api';
 
 // Module-level cache: query → resolved URL (or null). Shared across all instances.
 const _photoCache = new Map();
@@ -68,7 +69,6 @@ function uniquePhotos(urls = []) {
 async function fetchCached(query) {
   if (_photoCache.has(query)) return _photoCache.get(query);
   if (_photoInFlight.has(query)) return _photoInFlight.get(query);
-  const { fetchPlacePhotos } = await import('../../api');
   const promise = fetchPlacePhotos(query)
     .then(data => {
       const urls = uniquePhotos(data.urls || []);
@@ -94,7 +94,6 @@ async function fetchCachedList(query, limit = 3) {
     const inFlight = await _photoListInFlight.get(query);
     return (inFlight || []).slice(0, limit);
   }
-  const { fetchPlacePhotos } = await import('../../api');
   const promise = fetchPlacePhotos(query)
     .then(data => {
       const urls = uniquePhotos((data.urls || []).filter(Boolean));
@@ -222,6 +221,7 @@ const PlacePhotoCarousel = memo(function PlacePhotoCarousel({ query, style, dela
   // Reset only when query changes — delay change should NOT reset photo state
   useEffect(() => {
     if (!query) return;
+    if (window.__tbSwipeLog) console.log(`[Photo] carousel ${query.slice(0, 24)} loading=${loading} cached=${_photoListCache.has(query)} t=${Date.now()}`);
     setPhotoIdx(0);
     setImgErr(new Set());
 
@@ -234,6 +234,7 @@ const PlacePhotoCarousel = memo(function PlacePhotoCarousel({ query, style, dela
     setLoading(true);
     const timer = setTimeout(() => {
       fetchCachedList(query, limit).then(urls => {
+        if (window.__tbSwipeLog) console.log(`[Photo] loaded ${query.slice(0, 24)} count=${urls.length} t=${Date.now()}`);
         setPhotos(urls || []);
         setLoading(false);
       });
@@ -338,5 +339,38 @@ const PlacePhotoCarousel = memo(function PlacePhotoCarousel({ query, style, dela
 
 
 
+
+// Preload photos for a list of queries using the SAME cache + dedup the carousel uses.
+// Also warms the browser's image cache (new Image()) so the <img> never re-downloads.
+export function preloadPlacePhotos(queries) {
+  for (const q of queries) {
+    if (!q) continue;
+    if (_photoListCache.has(q) || _photoListInFlight.has(q)) {
+      // Already cached — still warm the image bytes if not done yet
+      const urls = _photoListCache.get(q);
+      warmImageCache(urls || []);
+      continue;
+    }
+    fetchCachedList(q, 3).then(urls => {
+      warmImageCache(urls || []);
+    }).catch(() => {});
+  }
+}
+
+// Force the browser to actually download + decode the images so <img> renders instantly later.
+const _warmed = new Set();
+function warmImageCache(urls) {
+  for (const u of urls) {
+    if (!u || _warmed.has(u)) continue;
+    _warmed.add(u);
+    const img = new Image();
+    img.src = u;
+    // decode() forces the browser to finish decoding before we need it,
+    // avoiding a one-frame flash when the <img> element appears later.
+    if (typeof img.decode === 'function') {
+      img.decode().catch(() => {});
+    }
+  }
+}
 
 export { PlacePhoto, PlacePhotosStrip, PlacePhotoCarousel };

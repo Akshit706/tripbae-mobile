@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 import { App as CapacitorApp } from '@capacitor/app';
 import bglessLogo from './assets/bgless.png';
 import bglessClubLogo from './assets/bgless_club.png';
+import clubLogo from './assets/club.png';
 import {
   aiChat,
   getTrips,
@@ -223,8 +224,8 @@ async function callClaudeWithSystem(system, messages) {
 
 /* ─── STYLES ─────────────────────────────────────────── */
 const S = {
-  root: { fontFamily: "'DM Sans',sans-serif", background: '#FAF8F4', color: '#1a1a18', position: 'relative' },
-  topBar: { background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: 'calc(12px + env(safe-area-inset-top, 0px)) max(1.25rem, env(safe-area-inset-left, 0px)) 12px max(1.25rem, env(safe-area-inset-right, 0px))', display: 'flex', alignItems: 'center', gap: 12, zIndex: 300, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
+  root: { fontFamily: "'DM Sans',sans-serif", background: '#FAF8F4', color: '#1a1a18' },
+  topBar: { position: 'fixed', top: 0, left: 0, right: 0, background: '#fff', borderBottom: '1px solid rgba(0,0,0,0.07)', padding: 'calc(12px + env(safe-area-inset-top, 0px)) max(1.25rem, env(safe-area-inset-left, 0px)) 12px max(1.25rem, env(safe-area-inset-right, 0px))', display: 'flex', alignItems: 'center', gap: 12, zIndex: 300, boxShadow: '0 1px 0 rgba(0,0,0,0.04)' },
   logoText: { fontFamily: "'Sora',sans-serif", fontSize: 19, fontWeight: 800, letterSpacing: '-0.45px', color: '#0D2B2E' },
   tripPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
   soloPill: { marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.35)', borderRadius: 999, padding: '6px 13px', fontSize: 12, color: '#F2F4F5', fontWeight: 700, cursor: 'pointer' },
@@ -232,7 +233,7 @@ const S = {
   navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', fontSize: 12, fontWeight: 500, color: '#5D6A7B', cursor: 'pointer', background: 'rgba(255,255,255,0.56)', border: '1px solid rgba(23,37,84,0.08)', borderRadius: 999, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' },
   navTabActive: { color: '#FF8C3A', background: 'linear-gradient(135deg,#FFF3EB,#F2FFFA)', border: '1px solid rgba(255,106,0,0.32)', fontWeight: 700 },
   soloNavTabActive: { color: '#FF6A00', background: 'linear-gradient(135deg,#FFF3EB,#FFF0E6)', border: '1px solid rgba(255,106,0,0.3)', fontWeight: 700 },
-  page: { padding: '1rem max(0.95rem, env(safe-area-inset-left, 0px))', paddingBottom: 'calc(8rem + env(safe-area-inset-bottom, 0px))' },
+  page: { padding: 'calc(60px + env(safe-area-inset-top, 0px)) max(0.95rem, env(safe-area-inset-left, 0px)) 1rem', paddingBottom: 'calc(8rem + env(safe-area-inset-bottom, 0px))' },
   btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999, fontSize: 13, fontWeight: 600, border: '1px solid rgba(25,37,67,0.12)', background: '#fff', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 8px 18px rgba(0,0,0,0.06)' },
   btnP: { background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', color: '#fff', border: '0.5px solid rgba(255,106,0,0.68)', boxShadow: '0 10px 22px rgba(255,106,0,0.24)' },
   btnSolo: { background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', color: '#fff', border: 'none' },
@@ -283,6 +284,9 @@ export default function App() {
   const [homeTab, setHomeTab] = useState('trips');
   const [seenHomeNotifIds, setSeenHomeNotifIds] = useState(new Set());
   const [showNotifPopover, setShowNotifPopover] = useState(false);
+  // Any full-screen overlay (wizard, club gate, info modal) can broadcast that it's open;
+  // when true, we hide the fixed topbar + bottom nav so they never peek over the overlay.
+  const [overlayOpen, setOverlayOpen] = useState(false);
 
   const tripNotifications = useMemo(() => {
     const now = new Date();
@@ -685,6 +689,14 @@ export default function App() {
     return () => { cleanup.then(fn => fn?.()); };
   }, [profileOpen, showNotifPopover, activeTrip]);
 
+  // ── HIDE topbar/bottom nav while a full-screen overlay is open ──
+  // Overlays (CreateTripWizard, ClubPage gate/info) dispatch 'tb:overlay' events.
+  useEffect(() => {
+    const onChange = (e) => setOverlayOpen(!!e.detail?.open);
+    window.addEventListener('tb:overlay', onChange);
+    return () => window.removeEventListener('tb:overlay', onChange);
+  }, []);
+
   // ── AUTH LOADING ──
   if (!authReady) {
     return (
@@ -955,7 +967,7 @@ export default function App() {
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes tbShimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
         .tb-shimmer{background:linear-gradient(90deg,#f0ede8 25%,#e4e0d8 50%,#f0ede8 75%);background-size:1200px 100%;animation:tbShimmer 1.4s ease-in-out infinite;border-radius:8px}
-        *{box-sizing:border-box;margin:0;padding:0}
+        *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
         a{color:inherit;text-decoration:none}
         ::selection{background:rgba(255,106,0,0.2);color:#7A2E00}
         input[type=range]{-webkit-appearance:none;height:4px;border-radius:4px;background:#FFF3EB;outline:none}
@@ -972,7 +984,7 @@ export default function App() {
       {newTripModal && <Suspense fallback={null}><ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} /></Suspense>}
 
       {/* Top Bar */}
-      <div className="tb-topbar-glass" style={S.topBar}>
+      {!overlayOpen && <div className="tb-topbar-glass" style={S.topBar}>
         <button
           onClick={() => setProfileOpen(true)}
           title="My profile"
@@ -990,7 +1002,7 @@ export default function App() {
           {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
-          <img src={bglessClubLogo} alt="TripBae" style={{ height: 70, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <img src={bglessLogo} alt="TripBae" style={{ height: 70, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {!activeTrip && !activeTripData && (
           <div style={{ marginLeft: 'auto' }}>
@@ -1037,10 +1049,10 @@ export default function App() {
                   : t
                 ));
               }}
-            /></Suspense>
+             /></Suspense>
           </div>
         ) : null}
-      </div>
+      </div>}
 
       {/* Notification popover */}
       {showNotifPopover && (
@@ -1078,7 +1090,7 @@ export default function App() {
       )}
 
       {/* Bottom Nav Bar */}
-      {activeTrip && (
+      {activeTrip && !overlayOpen && (
         <div style={{
           position:'fixed', bottom:0, left:0, right:0, zIndex:100,
           background:'transparent',

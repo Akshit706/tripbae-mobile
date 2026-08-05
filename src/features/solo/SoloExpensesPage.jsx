@@ -7,7 +7,7 @@ import lumiMood3 from '../../assets/lumi_mood3.png';
 import lumiMood4 from '../../assets/lumi_mood4.png';
 import lumiMood5 from '../../assets/lumi_mood5.png';
 import lumiMood6 from '../../assets/lumi_mood6.png';
-import { addExpense, updateExpense, deleteExpense } from '../../api';
+import { addExpense, updateExpense, deleteExpense, updateTrip } from '../../api';
 import { CATS, tripDuration } from '../shared/constants';
 import { S } from '../shared/styles';
 import { CatIcon } from '../shared/ui';
@@ -596,7 +596,6 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                   setBudget(v);
                   setLocalBudgetCurrency(spendCurrency);
                   try {
-                    const { updateTrip } = await import('../../api');
                     await updateTrip(trip.id, { budget: v, budgetCurrency: spendCurrency });
                     onTripUpdate?.({ budget: v, budgetCurrency: spendCurrency });
                   } catch (_) {}
@@ -611,7 +610,6 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                   setBudget(null);
                   setLocalBudgetCurrency(null);
                   try {
-                    const { updateTrip } = await import('../../api');
                     await updateTrip(trip.id, { budget: null, budgetCurrency: null });
                     onTripUpdate?.({ budget: null, budgetCurrency: null });
                   } catch (_) {}

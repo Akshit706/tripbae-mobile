@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { updateTrip } from '../../api';
 import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { ConfirmDialog } from '../shared/ui';
@@ -31,7 +32,6 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
     if (!editForm.groupName || !editForm.destination || !editForm.arrival || !editForm.departure) return;
     setSaving(true);
     try {
-      const { updateTrip } = await import('../../api');
       const updates = {
         groupName: editForm.groupName,
         destination: editForm.destination,
