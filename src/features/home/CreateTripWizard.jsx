@@ -656,7 +656,7 @@ export default function CreateTripWizard({
   /* ══════════════════════════════════════════════ */
   return (
     <div
-      style={{ position:'fixed', inset:0, zIndex:1200, background:'rgba(0,0,0,0.45)', backdropFilter:'blur(8px)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'calc(env(safe-area-inset-top, 0px) + 8svh) 0 0' }}
+      style={{ position:'fixed', inset:0, zIndex:1200, background:'rgba(0,0,0,0.45)', backdropFilter:'blur(8px)', display:'flex', alignItems:'flex-end', justifyContent:'center', padding:'calc(env(safe-area-inset-top, 0px) + 5svh) 0 0' }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <style>{`
