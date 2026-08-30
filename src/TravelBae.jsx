@@ -45,7 +45,7 @@ const FeatureFallback = () => <Spinner text="Loading…" />;
 
 /* ─── CONSTANTS ─────────────────────────────────────── */
 const MCOLORS = ['#FF6A00','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#FF8C3A','#993C1D'];
-const API_BASE = 'https://waiver-coins-regardless-tap.trycloudflare.com';
+const API_BASE = 'https://travelbae-backend-sg.onrender.com';
 const CATS = [
   {id:'food',icon:'🍽️',label:'Food',bg:'#FAEEDA'},
   {id:'transport',icon:'🚗',label:'Transport',bg:'#FFF3EB'},

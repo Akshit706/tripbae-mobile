@@ -947,7 +947,7 @@ function ClubPage({ trip, onTripRefresh, onLeaveClub }) {
     setProfilePhotoUploading(true);
     try {
       // bust browser GET cache so each upload gets a fresh token
-      const auth = await fetch(`https://waiver-coins-regardless-tap.trycloudflare.com/ai/imagekit-auth?_=${Date.now()}`, {
+      const auth = await fetch(`https://travelbae-backend-sg.onrender.com/ai/imagekit-auth?_=${Date.now()}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('travelbae_token') || ''}` },
       }).then(r => r.json());
       if (!auth.publicKey || !auth.signature || !auth.token) throw new Error('Auth failed');

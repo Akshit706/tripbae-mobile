@@ -1,6 +1,6 @@
 import { Capacitor } from '@capacitor/core';
 
-const SHARE_API = 'https://waiver-coins-regardless-tap.trycloudflare.com/share';
+const SHARE_API = 'https://travelbae-backend-sg.onrender.com/share';
 
 async function shareHtmlFile(html, destination, title) {
   const fileName = `tripbae-${(destination || 'trip').replace(/\s+/g, '-').toLowerCase()}-picks.html`;
