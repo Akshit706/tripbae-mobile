@@ -61,12 +61,10 @@
 
 body {
   margin: 0;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
+  overflow: hidden;
   background: radial-gradient(circle at 14% 8%, #ffffff 0%, #f8f7f2 34%, #f3f2ed 100%);
   background-attachment: fixed;
   -webkit-overflow-scrolling: touch;
-  transform: translateZ(0);
 }
 
 button {
@@ -222,12 +220,15 @@ code {
 
 .tb-page-shell {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  content-visibility: auto;
-  transform: translateZ(0);
-  will-change: scroll-position;
+  scroll-padding-top: calc(96px + env(safe-area-inset-top, 0px));
+}
+
+.tb-page-shell--home {
+  scroll-padding-top: calc(52px + env(safe-area-inset-top, 0px));
 }
 
 .tb-section-flow {

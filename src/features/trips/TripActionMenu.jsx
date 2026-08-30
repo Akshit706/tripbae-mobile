@@ -157,7 +157,7 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
               {!trip.completed && (
                 <button
                   onClick={() => { setOpen(false); setConfirmComplete(true); }}
-                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#FF8C3A', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)', textAlign: 'left' }}>
+                  style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '12px 16px', border: 'none', background: 'none', fontSize: 13, cursor: 'pointer', color: '#C44400', fontFamily: "'DM Sans',sans-serif", borderBottom: '0.5px solid rgba(0,0,0,0.07)', textAlign: 'left' }}>
                   ✅ Mark as Completed
                 </button>
               )}

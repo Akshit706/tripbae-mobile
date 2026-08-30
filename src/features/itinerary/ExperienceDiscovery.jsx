@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback, memo, startTransition } from 'react';
 import { createPortal } from 'react-dom';
 import { fetchExperiences } from '../../api';
+import { shareTripPicks } from '../../utils/shareTripPicks';
 import lumi4Img from '../../assets/Lumi4_bgless.png';
 import { PlacePhotoCarousel, preloadPlacePhotos } from '../media/PlaceMedia';
 import lumi8Img from '../../assets/lumi8.png';
@@ -40,6 +41,113 @@ const CAT = {
 };
 const ALL_CATS = Object.keys(CAT);
 function catCfg(c) { return CAT[c] || { bg: '#F4F2EE', color: '#8A7E76', emoji: '📍' }; }
+
+function escHtml(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function renderShareExpCard(e, photoMap) {
+  const cfg = catCfg(e.category || '');
+  const chips = [
+    e.duration ? `⏱ ${e.duration}` : null,
+    e.cost && e.cost !== 'null' && e.cost !== 'N/A' ? e.cost : null,
+    e.tier === 1 ? '🔥 Must Do' : null,
+    e.bestTime ? `🕐 ${e.bestTime}` : null,
+  ].filter(Boolean).slice(0, 3);
+  const photos = photoMap?.get(e.id || e.name) || [];
+  return `<div class="card">
+    ${photos.length ? `<div class="card-photos">${photos.map(src => `<img class="card-photo" src="${escHtml(src)}" alt=""/>`).join('')}</div>` : ''}
+    <div class="card-body">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span style="font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;background:${escHtml(cfg.bg)};color:${escHtml(cfg.color)}">${escHtml(e.category || '')}</span>
+        ${e.vibe ? `<span style="font-size:10px;color:#8A7E76;font-style:italic">${escHtml(e.vibe)}</span>` : ''}
+      </div>
+      <div class="card-name">${escHtml(e.name || '')}</div>
+      <div class="card-desc">${escHtml(e.description || '')}</div>
+      ${chips.length ? `<div class="chips">${chips.map(c => `<span class="chip">${escHtml(c)}</span>`).join('')}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+export async function generateShareHtml({ destination, tripName, likedExps = [], rejectedExps = [], leftoverExps = [] }) {
+  const allExps = [...likedExps, ...rejectedExps, ...leftoverExps];
+  const photoMap = new Map();
+  for (const e of allExps) {
+    try {
+      const q = e.imageQuery || `${e.name} ${destination} high resolution travel photography`;
+      const raw = localStorage.getItem('tb_ph_' + q);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Date.now() < parsed.e && parsed.u?.length) {
+          photoMap.set(e.id || e.name, parsed.u.slice(0, 3));
+        }
+      }
+    } catch { /* skip */ }
+  }
+
+  const mkSection = (label, emoji, badgeCls, exps, emptyMsg) => `
+    <div class="section">
+      <div class="section-label"><span class="section-badge ${badgeCls}">${emoji}</span>${escHtml(label)}<span class="count-pill">${exps.length}</span></div>
+      ${exps.length > 0 ? `<div class="cards-grid">${exps.map(e => renderShareExpCard(e, photoMap)).join('')}</div>` : `<div class="empty">${escHtml(emptyMsg)}</div>`}
+    </div>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>My TripBae Picks — ${escHtml(destination)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#FAF8F4;color:#1C1410;min-height:100vh}
+.header{background:#fff;padding:26px 20px 22px;text-align:center;border-bottom:1px solid rgba(28,20,16,.07)}
+.trip-title{font-family:'Sora',sans-serif;font-size:24px;font-weight:800;color:#1C1410;letter-spacing:-.3px;margin-bottom:3px}
+.trip-sub{font-size:13px;color:#8A7E76;margin-bottom:14px}
+.header-stats{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.stat-pill{background:#FFF3EB;border-radius:999px;padding:5px 14px;font-size:12px;color:#FF6A00;font-weight:700;border:1.5px solid rgba(255,106,0,.2)}
+.section{padding:22px 16px 6px}
+.section-label{display:flex;align-items:center;gap:9px;font-family:'Sora',sans-serif;font-size:15px;font-weight:800;color:#1C1410;margin-bottom:14px}
+.section-badge{width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.badge-green{background:#D1FAE5}.badge-red{background:#FEE2E2}.badge-gray{background:#F3F4F6}
+.count-pill{font-size:11px;font-weight:700;padding:3px 10px;border-radius:999px;background:#FFF3EB;color:#FF6A00;border:1.5px solid rgba(255,106,0,.22)}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-bottom:16px}
+.card{background:#fff;border-radius:14px;border:1px solid rgba(28,20,16,.08);box-shadow:0 2px 8px rgba(28,20,16,.05);overflow:hidden}
+.card-photos{display:flex;gap:2px;height:128px}
+.card-photo{flex:1;min-width:0;object-fit:cover;display:block;height:100%}
+.card-body{padding:11px 13px 13px}
+.card-name{font-family:'Sora',sans-serif;font-size:14px;font-weight:700;color:#1C1410;margin-bottom:5px;line-height:1.25}
+.card-desc{font-size:12px;color:#5C504A;line-height:1.62;margin-bottom:9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.chips{display:flex;gap:5px;flex-wrap:wrap}
+.chip{font-size:10.5px;font-weight:600;padding:3px 9px;border-radius:999px;background:#F4F2EE;color:#5C504A;border:1px solid rgba(28,20,16,.07)}
+.empty{text-align:center;padding:18px 16px;font-size:13px;color:#8A7E76;background:#fff;border-radius:14px;border:1px dashed rgba(28,20,16,.12);margin-bottom:16px}
+.section-divider{height:1px;background:rgba(28,20,16,.07);margin:0 16px}
+.footer{text-align:center;padding:22px 16px 30px;border-top:1px solid rgba(28,20,16,.07);margin-top:8px}
+.footer-sub{font-size:11px;color:#8A7E76}
+</style>
+</head>
+<body>
+<div class="header">
+  <div style="font-family:Sora,sans-serif;font-size:22px;font-weight:800;color:#FF6A00;margin-bottom:12px">TripBae</div>
+  <div class="trip-title">${escHtml(destination)}</div>
+  <div class="trip-sub">${escHtml(tripName ? `${tripName} · ` : '')}Experience Plan</div>
+  <div class="header-stats">
+    <div class="stat-pill">✅ ${likedExps.length} Selected</div>
+    <div class="stat-pill">✗ ${rejectedExps.length} Passed</div>
+    <div class="stat-pill">⏳ ${leftoverExps.length} To Decide</div>
+  </div>
+</div>
+${mkSection('Selected Experiences', '✅', 'badge-green', likedExps, 'No experiences selected yet.')}
+<div class="section-divider"></div>
+${mkSection('Passed / Skipped', '✗', 'badge-red', rejectedExps, 'Nothing skipped!')}
+<div class="section-divider"></div>
+${mkSection("Haven't Decided Yet", '⏳', 'badge-gray', leftoverExps, 'All experiences reviewed!')}
+<div class="footer">
+  <div class="footer-sub"> · Curated by Lumi ✦</div>
+</div>
+</body>
+</html>`;
+}
 
 function renderCatIcon(category, size = 13, color = 'currentColor') {
   const p = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', stroke: color, strokeWidth: '2', strokeLinecap: 'round', strokeLinejoin: 'round', style: { display: 'block', flexShrink: 0 } };
@@ -131,6 +239,7 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
     @keyframes ctaBtnGlow { 0%,100% { box-shadow:0 3px 10px rgba(255,106,0,0.22); } 50% { box-shadow:0 4px 18px rgba(255,106,0,0.4); } }
     @keyframes ctaShimmer { 0%{transform:translateX(-130%) skewX(-18deg)} 100%{transform:translateX(230%) skewX(-18deg)} }
     @keyframes ctaArrowNudge { 0%,100%{transform:translateX(0)} 60%{transform:translateX(4px)} }
+    @keyframes edSpin { to { transform: rotate(360deg); } }
     .ed-cta-lumi { animation: ctaBtnGlow 2.2s ease-in-out infinite !important; overflow:hidden !important; position:relative !important; contain: layout style paint !important; }
     .ed-cta-lumi::after { content:''; position:absolute; top:0; bottom:0; width:28%; background:linear-gradient(90deg,transparent,rgba(255,255,255,0.22),transparent); animation:ctaShimmer 2.6s ease-in-out infinite 0.9s; pointer-events:none; }
     .ed-cta-arrow { animation: ctaArrowNudge 1.6s ease-in-out infinite; }
@@ -144,10 +253,95 @@ if (typeof document !== 'undefined' && !document.getElementById('exp-disc-styles
   document.head.appendChild(el);
 }
 
+const CAROUSEL_STYLE = Object.freeze({ height: '100%', borderRadius: 0 });
+
+/* ══════════════════════════════════════════
+   EXPERIENCE DETAIL MODAL (tap on swipe card)
+══════════════════════════════════════════ */
+function ExperienceDetailModal({ exp, destination, onClose }) {
+  const cfg = catCfg(exp.category);
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  return createPortal(
+    <div
+      style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(10,7,5,0.72)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.25rem', animation: 'edFadeUp 0.18s ease both' }}
+      onClick={onClose}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        style={{ width: '100%', maxWidth: 420, background: D.surface, borderRadius: 24, overflow: 'hidden', boxShadow: '0 8px 40px rgba(28,20,16,0.22)', animation: 'edCardIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both', maxHeight: 'calc(100vh - 2.5rem)', overflowY: 'auto' }}
+      >
+        <div style={{ position: 'relative', height: 256, overflow: 'hidden', background: '#EDE8E2' }}>
+          <PlacePhotoCarousel
+            query={exp.imageQuery || `${exp.name} ${destination} high resolution travel photography`}
+            style={CAROUSEL_STYLE}
+            limit={3}
+          />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom,rgba(0,0,0,0.04) 0%,transparent 30%,rgba(0,0,0,0.76) 100%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: 14, left: 14, display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.94)', backdropFilter: 'blur(10px)', borderRadius: 999, padding: '4px 10px 4px 7px', boxShadow: '0 2px 8px rgba(0,0,0,0.12)' }}>
+            {renderCatIcon(exp.category, 13, cfg.color)}
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: cfg.color, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.7 }}>{exp.category}</span>
+          </div>
+          {exp.tier === 1 && (
+            <div style={{ position: 'absolute', top: 14, right: 44, display: 'inline-flex', alignItems: 'center', gap: 4, background: 'linear-gradient(135deg,#FF6B35,#E8390E)', borderRadius: 999, padding: '4px 9px 4px 7px', boxShadow: '0 2px 10px rgba(232,57,14,0.45)' }}>
+              <span style={{ fontSize: 10 }}>🔥</span>
+              <span style={{ fontSize: 9.5, fontWeight: 800, color: '#fff', fontFamily: "'Sora',sans-serif", textTransform: 'uppercase', letterSpacing: 1 }}>MUST DO</span>
+            </div>
+          )}
+          <div style={{ position: 'absolute', bottom: 12, left: 14, right: 50, pointerEvents: 'none' }}>
+            <div style={{ fontSize: 19, fontWeight: 800, color: '#fff', lineHeight: 1.2, textShadow: '0 2px 8px rgba(0,0,0,0.6)', fontFamily: "'Sora',sans-serif", letterSpacing: -0.2 }}>{exp.name}</div>
+            {exp.vibe && <span style={{ marginTop: 4, display: 'inline-block', fontSize: 9.5, fontWeight: 700, color: 'rgba(255,255,255,0.9)', background: 'rgba(255,255,255,0.14)', borderRadius: 999, padding: '2px 8px', backdropFilter: 'blur(4px)', textTransform: 'uppercase', letterSpacing: 0.8 }}>{exp.vibe}</span>}
+          </div>
+          <button onClick={onClose} style={{ position: 'absolute', top: 12, right: 12, width: 30, height: 30, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.45)', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', backdropFilter: 'blur(4px)', zIndex: 2, padding: 0 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div style={{ padding: '13px 15px 17px', display: 'flex', flexDirection: 'column', gap: 9 }}>
+          <p style={{ fontSize: 12.5, color: D.secondary, lineHeight: 1.65, margin: 0, fontFamily: "'DM Sans',sans-serif" }}>{exp.description}</p>
+          {exp.bestTime && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start', padding: '8px 10px', background: '#FFFBF0', borderRadius: 8, border: '0.5px solid #FAC775' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              <span style={{ fontSize: 12, color: '#7A4F00', lineHeight: 1.55 }}>{exp.bestTime}</span>
+            </div>
+          )}
+          <div style={{ height: '1px', background: 'linear-gradient(90deg,rgba(255,106,0,0.15),transparent)', margin: '0 -1px' }} />
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'nowrap', alignItems: 'center', overflow: 'hidden' }}>
+            {exp.duration && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, color: '#5C504A', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.07)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {exp.duration}
+              </span>
+            )}
+            {exp.cost && exp.cost !== 'null' && exp.cost !== 'N/A' && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#1C1410', background: '#F4F2EE', borderRadius: 999, padding: '4px 10px', border: '1px solid rgba(28,20,16,0.1)', fontFamily: "'DM Sans',sans-serif", flexShrink: 0, whiteSpace: 'nowrap' }}>{exp.cost}</span>
+            )}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${exp.name} ${destination}`)}`} target="_blank" rel="noreferrer"
+              style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12, color: '#2563AB', background: '#EFF6FF', borderRadius: 10, padding: '9px 12px', textDecoration: 'none', fontWeight: 600, fontFamily: "'DM Sans',sans-serif" }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              Maps
+            </a>
+            <a href={`https://www.google.com/search?q=${encodeURIComponent(`${exp.name} ${destination}`)}`} target="_blank" rel="noreferrer"
+              style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 12, color: D.secondary, background: '#F4F2EE', borderRadius: 10, padding: '9px 12px', textDecoration: 'none', fontWeight: 600, fontFamily: "'DM Sans',sans-serif" }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Know More
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 /* ══════════════════════════════════════════
    SWIPE CARD
 ══════════════════════════════════════════ */
-const CAROUSEL_STYLE = Object.freeze({ height: '100%', borderRadius: 0 });
 function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex, onPointerDown, onCardEl, destination }) {
   const cardRef = useRef(null);
   const cfg = catCfg(exp.category);
@@ -401,7 +595,7 @@ const SwipeControls = memo(function SwipeControls({ likedCount, swipeOut, onSwip
 });
 
 /* ── SwipeStack: isolates all drag-sensitive state so the outer tree never re-executes during swipes ── */
-const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedIds, likedIds, onSwiped, onLiked, onGoToConfirm, destination, allSwiped, visibleCards, total }) {
+const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedIds, likedIds, onSwiped, onLiked, onGoToConfirm, destination, allSwiped, visibleCards, total, onOpenDetail }) {
   const [swipeOut, setSwipeOut] = useState(null);
   const swipeOutRef = useRef(null);
   const setSwOut = (val) => { setSwipeOut(val); swipeOutRef.current = val; };
@@ -488,7 +682,6 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
     if (swipeOutRef.current) return;
     if (window.__tbSwipeLog) console.log('[Swipe] pointerDown', Date.now());
     pointerStart.current = { x: e.clientX, y: e.clientY, id: e.pointerId, locked: false, lastX: e.clientX, lastT: Date.now(), vx: 0 };
-    setDrag(true);
   }, []);
 
   const handlePointerMove = useCallback((e) => {
@@ -501,6 +694,7 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
       if (absY > absX) { pointerStart.current = null; setDrag(false); return; }
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
       pointerStart.current = { ...pointerStart.current, locked: true };
+      setDrag(true);
     }
     const now = Date.now();
     const dt = now - pointerStart.current.lastT;
@@ -517,9 +711,16 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
   }, []);
 
   const handlePointerUp = useCallback(() => {
+    const start = pointerStart.current;
+    if (!start?.locked) {
+      pointerStart.current = null;
+      setDrag(false);
+      if (start && !swipeOutRef.current && filteredExp[0]) onOpenDetail?.(filteredExp[0]);
+      return;
+    }
     if (!isDraggingRef.current) { pointerStart.current = null; return; }
     const dx = lastDragXRef.current;
-    const vx = pointerStart.current?.vx || 0;
+    const vx = start?.vx || 0;
     pointerStart.current = null;
     if (window.__tbSwipeLog) console.log('[Swipe] pointerUp', Date.now(), 'dx=', dx, 'vx=', vx.toFixed(2));
 
@@ -528,8 +729,6 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
     } else if (dx < -55 || (vx < -0.35 && dx < -25)) {
       lastDragXRef.current = 0; doSwipe('left', dx);
     } else {
-      // SNAP-BACK via direct DOM: isDragging stays true so React doesn't touch transform.
-      // The DOM transition animates the card back to rest position smoothly.
       animatingRef.current = true;
       const el = cardElRef.current;
       if (el) {
@@ -545,7 +744,7 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
         if (el) { el.style.transition = ''; }
       }, 300);
     }
-  }, [doSwipe]);
+  }, [doSwipe, filteredExp, onOpenDetail]);
 
   const handlePointerCancel = useCallback(() => {
     if (animatingRef.current) return;
@@ -634,8 +833,11 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
   });
   const [activeFilter, setActiveFilter] = useState(() => _savedProg?.activeFilter || null);
   const [reviewExp, setReviewExp] = useState(null); // experience card being reviewed in confirm sheet
+  const [detailExp, setDetailExp] = useState(null);
   const [expandedCats, setExpandedCats] = useState(new Set());
   const [showAllSwipedMsg, setShowAllSwipedMsg] = useState(false);
+  const [sharing, setSharing] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
 
   /* ── One-time intro overlay ── */
   const [showIntro, setShowIntro] = useState(() => {
@@ -690,6 +892,32 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
   const total = filteredExp.length; // remaining unswiped in current view
   const likedExps = useMemo(() => experiences.filter(e => likedIds.has(e.id)), [experiences, likedIds]);
   const selectedHours = useMemo(() => likedExps.reduce((s, e) => s + parseDurationHours(e.duration), 0), [likedExps]);
+
+  const handleShare = async () => {
+    setSharing(true);
+    try {
+      const rejectedExps = experiences.filter(e => swipedIds.has(e.id) && !likedIds.has(e.id));
+      const html = await generateShareHtml({
+        destination,
+        tripName: trip.name || '',
+        likedExps,
+        rejectedExps,
+        leftoverExps: allUnswiped,
+      });
+      await shareTripPicks({
+        html,
+        destination,
+        onCopied: () => {
+          setShareCopied(true);
+          setTimeout(() => setShareCopied(false), 2500);
+        },
+      });
+    } catch (err) {
+      if (err?.name !== 'AbortError') console.error('Share failed', err);
+    } finally {
+      setSharing(false);
+    }
+  };
   const availableCats = useMemo(() => ALL_CATS.filter(c => experiences.some(e => e.category === c)), [experiences]);
   const catHasUnswiped = useMemo(() => {
     const m = {};
@@ -952,16 +1180,20 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
     return (
       <div style={{ background: D.bg, paddingBottom: '2rem', animation: 'edConfirmIn 0.38s ease both' }}>
 
-        {/* Hero banner — single-line white card */}
-        <div style={{ background: '#fff', borderRadius: 16, padding: '0.7rem 1rem', marginBottom: '1rem', border: '1.5px solid rgba(255,106,0,0.25)', boxShadow: '0 2px 12px rgba(255,106,0,0.07)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'nowrap' }}>
-            <img src={lumi20Img} alt="" style={{ height: 52, width: 'auto', objectFit: 'contain', flexShrink: 0 }} />
-            <span style={{ fontSize: 9.5, fontWeight: 700, color: '#FF6A00', letterSpacing: 1.4, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>Your Picks</span>
-            <div style={{ width: 1, height: 16, background: D.border, flexShrink: 0 }} />
-            <span style={{ fontSize: 20, fontWeight: 800, color: '#FF6A00', fontFamily: "'Sora',sans-serif", letterSpacing: -0.3, lineHeight: 1, flexShrink: 0 }}>{likedExps.length}</span>
-            <span style={{ fontSize: 12.5, fontWeight: 600, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flexShrink: 0 }}>Experiences</span>
-            <div style={{ width: 1, height: 16, background: D.border, flexShrink: 0 }} />
-            <span style={{ fontSize: 12, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', flexShrink: 0 }}>{Math.round(selectedHours)}h Planned</span>
+        {/* Hero banner — wrap stats so hours never clip the card */}
+        <div style={{ background: '#fff', borderRadius: 16, padding: '0.75rem 1rem', marginBottom: '1rem', border: '1.5px solid rgba(255,106,0,0.25)', boxShadow: '0 2px 12px rgba(255,106,0,0.07)', overflow: 'hidden' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            <img src={lumi20Img} alt="" style={{ height: 48, width: 'auto', maxWidth: 56, objectFit: 'contain', flexShrink: 0 }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 9.5, fontWeight: 700, color: '#FF6A00', letterSpacing: 1.4, textTransform: 'uppercase', fontFamily: "'DM Sans',sans-serif" }}>Your Picks</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px 12px', flexWrap: 'wrap', marginTop: 4 }}>
+                <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6 }}>
+                  <span style={{ fontSize: 20, fontWeight: 800, color: '#FF6A00', fontFamily: "'Sora',sans-serif", letterSpacing: -0.3, lineHeight: 1 }}>{likedExps.length}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 600, color: D.espresso, fontFamily: "'DM Sans',sans-serif" }}>Experiences</span>
+                </span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: D.muted, fontFamily: "'DM Sans',sans-serif" }}>{Math.round(selectedHours)}h Planned</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1007,6 +1239,41 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
             </div>
           </div>
         )}
+
+        {/* Share for Feedback */}
+        <div style={{ background: D.surface, borderRadius: 16, padding: '1rem 1.1rem', marginBottom: '1rem', border: '1.5px solid rgba(255,106,0,0.22)', boxShadow: '0 2px 12px rgba(255,106,0,0.06)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 10, background: '#FFF3EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif" }}>Share for Feedback</div>
+          </div>
+          <div style={{ fontSize: 12, color: D.muted, lineHeight: 1.65, marginBottom: 11, fontFamily: "'DM Sans',sans-serif" }}>
+            Share what you've <strong>selected</strong>, <strong>passed</strong>, and haven't decided yet — so friends can guide you before you build.
+          </div>
+          <button
+            onClick={handleShare}
+            disabled={sharing}
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px', fontSize: 13, fontWeight: 700, borderRadius: 13, border: 'none', cursor: sharing ? 'wait' : 'pointer', background: sharing ? '#F0EFEC' : 'linear-gradient(135deg,#1C1410,#3D3028)', color: sharing ? D.muted : '#fff', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.18s ease' }}
+          >
+            {sharing ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'edSpin 0.8s linear infinite', flexShrink: 0 }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                Generating…
+              </>
+            ) : shareCopied ? (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Link Copied!
+              </>
+            ) : (
+              <>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                Share My Plan
+              </>
+            )}
+          </button>
+        </div>
 
         {/* CTA */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -1152,7 +1419,15 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
         allSwiped={allSwiped}
         visibleCards={visibleCards}
         total={total}
+        onOpenDetail={setDetailExp}
       />
+      {detailExp && (
+        <ExperienceDetailModal
+          exp={detailExp}
+          destination={destination}
+          onClose={() => setDetailExp(null)}
+        />
+      )}
     </div>
   );
 });

@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { getFxRate } from '../home/HomePage';
 import { addExpense, updateExpense, deleteExpense, updateTrip } from '../../api';
 import { CATS, normalizeMembers, tripDuration, tripStatusInfo } from '../shared/constants';
@@ -12,6 +13,79 @@ import lumiMood3 from '../../assets/lumi_mood3.png';
 import lumiMood4 from '../../assets/lumi_mood4.png';
 import lumiMood5 from '../../assets/lumi_mood5.png';
 import lumiMood6 from '../../assets/lumi_mood6.png';
+
+/* ── iOS-style swipe-left to reveal actions (pointer events for Capacitor WebView) ──────────── */
+function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
+  const [offsetX, setOffsetX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef({ active: false, startX: 0, startY: 0, startOffset: 0, isHoriz: null, pid: null, el: null });
+  const W = 168;
+  const THRESH = 8;
+  const clamp = (x) => Math.min(0, Math.max(-W, x));
+
+  const onPointerDown = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    drag.current = { active: true, startX: e.clientX, startY: e.clientY, startOffset: offsetX, isHoriz: null, pid: e.pointerId, el: e.currentTarget };
+  };
+
+  const onPointerMove = (e) => {
+    if (!drag.current.active || e.pointerId !== drag.current.pid) return;
+    const dx = e.clientX - drag.current.startX;
+    const dy = e.clientY - drag.current.startY;
+    if (drag.current.isHoriz === null) {
+      if (Math.abs(dx) < THRESH && Math.abs(dy) < THRESH) return;
+      drag.current.isHoriz = Math.abs(dx) > Math.abs(dy);
+      if (!drag.current.isHoriz) {
+        drag.current.active = false;
+        return;
+      }
+      try { drag.current.el?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      setDragging(true);
+    }
+    if (!drag.current.isHoriz) return;
+    setOffsetX(clamp(drag.current.startOffset + dx));
+  };
+
+  const endDrag = (e) => {
+    if (e && drag.current.pid != null && e.pointerId !== drag.current.pid) return;
+    const wasHoriz = drag.current.isHoriz;
+    drag.current.active = false;
+    drag.current.isHoriz = null;
+    drag.current.pid = null;
+    setDragging(false);
+    if (wasHoriz) setOffsetX((p) => (p < -W / 2 ? -W : 0));
+  };
+
+  const actions = [
+    { label: 'Duplicate', bg: '#6366f1', fn: () => { setOffsetX(0); onDuplicate(); }, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> },
+    { label: 'Edit',      bg: '#f59e0b', fn: () => { setOffsetX(0); onEdit(); },      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> },
+    { label: 'Delete',    bg: '#ef4444', fn: () => { setOffsetX(0); onDelete(); },    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> },
+  ];
+
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, marginBottom: 10, boxShadow: '0 2px 12px rgba(15,23,42,0.06)' }}>
+      <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: W, display: 'flex' }}>
+        {actions.map(({ label, bg, fn, icon }) => (
+          <button key={label} onClick={fn}
+            style={{ flex: 1, border: 'none', background: bg, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+            {icon}
+          </button>
+        ))}
+      </div>
+      <div
+        onClick={() => offsetX < 0 && setOffsetX(0)}
+        style={{ transform: `translateX(${offsetX}px)`, transition: dragging ? 'none' : 'transform .25s cubic-bezier(.25,.46,.45,.94)', position: 'relative', zIndex: 1, background: '#fff', borderRadius: 16, border: '1px solid rgba(0,0,0,0.08)', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'pan-y' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function SplitPage({ trip, myNickname, myAvatar }) {
   const memberNames = normalizeMembers(trip.members);
   const [expenses, setExpenses] = useState(trip.expenses || []);
@@ -25,6 +99,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
   const [localBudget, setLocalBudget] = useState(trip.budget || null);
   const [localBudgetCurrency, setLocalBudgetCurrency] = useState(trip.budgetCurrency || null);
   const [budgetInput, setBudgetInput] = useState('');
+  const [sharing, setSharing] = useState(false);
   const SPLIT_WELCOME_KEY = `travelbae_split_welcome_${trip.id}`;
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return !localStorage.getItem(`travelbae_split_welcome_${trip.id}`); } catch { return false; }
@@ -107,7 +182,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
       </div>
     );
   };
-  const CAT_COLORS = { food:'#BA7517', transport:'#FF8C3A', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
+  const CAT_COLORS = { food:'#BA7517', transport:'#FF6A00', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
 
   const budget = localBudget;
   // displayBudget: budget expressed in current spendCurrency (converted via FX if currencies differ)
@@ -157,6 +232,12 @@ function SplitPage({ trip, myNickname, myAvatar }) {
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [localBudget, localBudgetCurrency, spendCurrency]);
+
+  useLayoutEffect(() => {
+    if (!showForm) return undefined;
+    window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: true } }));
+    return () => window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: false } }));
+  }, [showForm]);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const days = tripDuration(trip.arrival, trip.departure);
@@ -267,6 +348,26 @@ function SplitPage({ trip, myNickname, myAvatar }) {
   }
   const funInsightLine = funInsightLines[(expenses.length + settlements.length + memberNames.length) % funInsightLines.length];
 
+  const handleShareReport = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const { generateAndShareExpensePDF } = await import('../../utils/generateExpensePDF');
+      await generateAndShareExpensePDF(
+        { name: trip.groupName || trip.destination || 'Trip', destination: trip.destination || '', startDate: trip.arrival, endDate: trip.departure, totalBudget: displayBudget || null, totalSpent: total, travelers: memberNames, totalDays: days },
+        expenses.map(e => ({ description: e.desc, category: e.cat, paidBy: e.paidBy, date: e.date, amount: e.amount })),
+        { dailyRate: tsr, dailyBudget: plannedDailyBudget, projectedEnd: projected, daysElapsed, totalDays: days, daysLeft, budgetSaved: budgetLeft ?? 0, crewPacePercent: pacePct, allSettled: settlements.length === 0, moodMessage: funInsightLine || '' },
+        spendSymbol
+      );
+    } catch (err) {
+      console.error('Expense PDF error:', err);
+      if (err?.message && !/abort|cancel|dismiss/i.test(err.message)) {
+        alert('Could not share the report. Please try again.');
+      }
+    }
+    setSharing(false);
+  };
+
   function renderCharts() {
     Object.values(chartInstances.current).forEach(c => { try { c.destroy(); } catch (_) {} });
     chartInstances.current = {};
@@ -351,6 +452,16 @@ function SplitPage({ trip, myNickname, myAvatar }) {
     catch (err) { alert('Could not delete: ' + err.message); }
   };
 
+  const handleDuplicateExpense = async (exp) => {
+    try {
+      const splitArr = Array.isArray(exp.split) && exp.split.length > 0 ? exp.split : memberNames;
+      const now = getNow();
+      const nowDate = new Date(`${now.date}T${now.time}:00`).toISOString();
+      const data = await addExpense(trip.id, { desc: exp.desc, amount: exp.amount, paidBy: exp.paidBy, cat: exp.cat, split: splitArr, date: nowDate, time: now.time });
+      setExpenses(es => [data.expense, ...es]);
+    } catch (err) { alert('Could not duplicate: ' + err.message); }
+  };
+
   const filteredExpenses = filterCat === 'all' ? expenses : expenses.filter(e => e.cat === filterCat);
   const sortedExpenses = [...filteredExpenses].sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -393,9 +504,9 @@ function SplitPage({ trip, myNickname, myAvatar }) {
     { id: 'insights', label: 'Insights' },
   ];
 
-  /* ── Fullscreen expense form ── */
-  if (showForm) return (
-    <div style={{ position: 'fixed', inset: 0, background: '#f7f6f2', zIndex: 400, display: 'flex', flexDirection: 'column', animation: 'slideUp .25s ease-out' }}>
+  /* ── Fullscreen expense form (portal so app header/nav cannot cover Save) ── */
+  if (showForm) return createPortal((
+    <div style={{ position: 'fixed', inset: 0, background: '#f7f6f2', zIndex: 800, display: 'flex', flexDirection: 'column', animation: 'slideUp .25s ease-out', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       {/* Header */}
@@ -408,7 +519,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom, 0px))' }}>
 
         {/* Amount block */}
         <div style={{ background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
@@ -583,7 +694,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
         </div>
       </div>
     </div>
-  );
+  ), document.body);
 
   return (
     <div style={{ padding: '0 1.25rem' }}>
@@ -593,6 +704,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
         @keyframes heroPulse { 0%,100%{opacity:0.07;transform:scale(1)} 50%{opacity:0.14;transform:scale(1.1)} }
         @keyframes heroShimmer { 0%{transform:translateX(-120%) skewX(-18deg)} 100%{transform:translateX(220%) skewX(-18deg)} }
         @keyframes heroNumIn { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
+        @keyframes spin { to{transform:rotate(360deg)} }
         @keyframes lumiSplitPop{from{opacity:0;transform:scale(0.88) translateY(20px)}60%{transform:scale(1.02) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
       `}</style>
 
@@ -630,6 +742,14 @@ function SplitPage({ trip, myNickname, myAvatar }) {
           <div style={{ background:'#fff', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:400, boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'lumiSplitPop .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ height:4, background:'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
+            <div style={{ textAlign:'center', padding:'0.9rem 1.25rem 0.2rem' }}>
+              <div style={{ fontFamily:"'Sora',sans-serif", fontSize:16, fontWeight:900, color:'#1C1410', lineHeight:1.2 }}>
+                Welcome to your trip
+              </div>
+              <div style={{ fontSize:12, color:'#9a9a96', marginTop:4 }}>
+                Split smarter, travel lighter
+              </div>
+            </div>
             <button onClick={dismissWelcome} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
@@ -820,7 +940,10 @@ function SplitPage({ trip, myNickname, myAvatar }) {
             const timeLabel = getExpenseTimeLabel(exp);
             const dateLabel = new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
             return (
-              <div key={exp.id} style={{ background: '#fff', borderRadius: 16, marginBottom: 10, boxShadow: '0 2px 12px rgba(15,23,42,0.06)', border: '1px solid rgba(0,0,0,0.08)' }}>
+              <SwipeableExpenseRow key={exp.id}
+                onEdit={() => handleEditExpense(exp)}
+                onDelete={() => handleDelete(exp.id)}
+                onDuplicate={() => handleDuplicateExpense(exp)}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 12px' }}>
                   <div style={{ width: 38, height: 38, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0 }}><CatIcon id={cat.id} size={18} /></div>
                   <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
@@ -838,13 +961,9 @@ function SplitPage({ trip, myNickname, myAvatar }) {
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827' }}>{fmt(exp.amount)}</div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 5 }}>
-                      <button onClick={() => handleEditExpense(exp)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1, fontFamily: "'DM Sans',sans-serif" }}>✎</button>
-                      <button onClick={() => handleDelete(exp.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1, opacity: 0.75, fontFamily: "'DM Sans',sans-serif" }}>✕</button>
-                    </div>
                   </div>
                 </div>
-              </div>
+              </SwipeableExpenseRow>
             );
           })}
         </div>
@@ -1027,7 +1146,7 @@ function SplitPage({ trip, myNickname, myAvatar }) {
 
           {/* Home currency equivalent */}
           {spendCurrency !== homeCurrencyCode && (
-            <div style={{ background: '#fff', border: '1px solid rgba(255,106,0,0.22)', borderRadius: 16, padding: '12px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .35s ease-out 70ms both' }}>
+            <div style={{ background: '#fff', border: '1px solid rgba(29,158,117,0.22)', borderRadius: 16, padding: '12px 14px', marginBottom: 10, boxShadow: '0 2px 10px rgba(0,0,0,0.04)', animation: 'soloFadeUp .35s ease-out 70ms both' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 4 }}>Amount spent In {homeCurrencyCode} (home)</div>
@@ -1194,15 +1313,25 @@ function SplitPage({ trip, myNickname, myAvatar }) {
         </div>
       )}
 
-      {/* ── Floating Add button — only on expenses tab ── */}
-      {section === 'expenses' && (
+      {section === 'expenses' && createPortal(
         <button
           onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: getNow().date, time: getNow().time, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); setShowForm(true); }}
-          style={{ position: 'fixed', bottom: 88, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#FF6A00,#D85B00)', border: 'none', boxShadow: '0 4px 20px rgba(255,106,0,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-          +
-        </button>
+          style={{ position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#FF6A00,#D85B00)', border: 'none', boxShadow: '0 4px 20px rgba(255,106,0,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 400 }}
+        >+</button>,
+        document.body
+      )}
+      {section === 'insights' && createPortal(
+        <button
+          onClick={handleShareReport}
+          title="Share Expense Report"
+          style={{ position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#FF6A00,#D85B00)', border: 'none', boxShadow: '0 4px 20px rgba(255,106,0,0.45)', cursor: sharing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', zIndex: 400, opacity: sharing ? 0.7 : 1 }}
+        >
+          {sharing
+            ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          }
+        </button>,
+        document.body
       )}
     </div>
   );

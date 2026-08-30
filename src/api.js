@@ -1,5 +1,5 @@
 // src/api.js
-const BASE = 'https://travelbae-backend-sg.onrender.com';
+const BASE = 'https://waiver-coins-regardless-tap.trycloudflare.com';
 function getToken() {
   return localStorage.getItem('travelbae_token');
 }
@@ -39,6 +39,9 @@ async function apiFetch(path, options = {}) {
 
 export const fetchPlacePhotos = (q) =>
   apiFetch(`/ai/photos?q=${encodeURIComponent(q)}`);
+
+export const fetchDestinationHints = (q) =>
+  apiFetch(`/ai/destination-hints?q=${encodeURIComponent(q)}`);
 
 export const fetchDestinationLocalTime = (destination) =>
   apiFetch(`/ai/local-time?destination=${encodeURIComponent(destination)}`);

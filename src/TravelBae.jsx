@@ -1,9 +1,9 @@
-﻿import { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
+﻿import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import { supabase } from './supabase';
 import { App as CapacitorApp } from '@capacitor/app';
-import bglessLogo from './assets/bgless.png';
 import bglessClubLogo from './assets/bgless_club.png';
-import clubLogo from './assets/club.png';
+import orangeLogo from './assets/logo_orange.png';
+import clubComingSoon from './assets/club-coming-soon.png';
 import {
   aiChat,
   getTrips,
@@ -28,7 +28,7 @@ import {
   sendOtp,
   verifyOtp,
 } from './api';
-import { signInWithGoogle } from './auth';
+import { signInWithGoogle, signInWithEmail, signUpWithEmail, sendVerificationEmail, firebaseAuthMessage } from './auth';
 
 const HomePageFeature = lazy(() => import('./features/home/HomePage'));
 const ShareCodeModalFeature = lazy(() => import('./features/home/ShareCodeModal'));
@@ -45,7 +45,7 @@ const FeatureFallback = () => <Spinner text="Loading…" />;
 
 /* ─── CONSTANTS ─────────────────────────────────────── */
 const MCOLORS = ['#FF6A00','#D85A30','#BA7517','#7F77DD','#378ADD','#D4537E','#FF8C3A','#993C1D'];
-const API_BASE = 'https://travelbae-backend-sg.onrender.com';
+const API_BASE = 'https://waiver-coins-regardless-tap.trycloudflare.com';
 const CATS = [
   {id:'food',icon:'🍽️',label:'Food',bg:'#FAEEDA'},
   {id:'transport',icon:'🚗',label:'Transport',bg:'#FFF3EB'},
@@ -233,7 +233,10 @@ const S = {
   navTab: { display: 'flex', alignItems: 'center', gap: 5, padding: '9px 12px', fontSize: 12, fontWeight: 500, color: '#5D6A7B', cursor: 'pointer', background: 'rgba(255,255,255,0.56)', border: '1px solid rgba(23,37,84,0.08)', borderRadius: 999, fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap', boxShadow: '0 8px 20px rgba(15,23,42,0.06)' },
   navTabActive: { color: '#FF8C3A', background: 'linear-gradient(135deg,#FFF3EB,#F2FFFA)', border: '1px solid rgba(255,106,0,0.32)', fontWeight: 700 },
   soloNavTabActive: { color: '#FF6A00', background: 'linear-gradient(135deg,#FFF3EB,#FFF0E6)', border: '1px solid rgba(255,106,0,0.3)', fontWeight: 700 },
-  page: { padding: 'calc(60px + env(safe-area-inset-top, 0px)) max(0.95rem, env(safe-area-inset-left, 0px)) 1rem', paddingBottom: 'calc(8rem + env(safe-area-inset-bottom, 0px))' },
+  /* Header is ~94px (12 + 70 logo + 12) + safe-area; small extra gap — trip pages only */
+  page: { padding: 'calc(96px + env(safe-area-inset-top, 0px)) max(0.95rem, env(safe-area-inset-left, 0px)) 1rem', paddingBottom: 'calc(8rem + env(safe-area-inset-bottom, 0px))', scrollPaddingTop: 'calc(96px + env(safe-area-inset-top, 0px))' },
+  /* Home: no extra inset so the hero flags sit flush under the header */
+  pageHome: { padding: 'calc(52px + env(safe-area-inset-top, 0px)) 0 0', paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom, 0px))', scrollPaddingTop: 'calc(52px + env(safe-area-inset-top, 0px))' },
   btn: { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 13px', borderRadius: 999, fontSize: 13, fontWeight: 600, border: '1px solid rgba(25,37,67,0.12)', background: '#fff', color: '#1a1a18', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 8px 18px rgba(0,0,0,0.06)' },
   btnP: { background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', color: '#fff', border: '0.5px solid rgba(255,106,0,0.68)', boxShadow: '0 10px 22px rgba(255,106,0,0.24)' },
   btnSolo: { background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', color: '#fff', border: 'none' },
@@ -271,6 +274,13 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+  const [lgMode, setLgMode] = useState('login'); // 'login' | 'signup'
+  const [lgName, setLgName] = useState('');
+  const [lgEmail, setLgEmail] = useState('');
+  const [lgPassword, setLgPassword] = useState('');
+  const [lgShowPw, setLgShowPw] = useState(false);
+  const [lgVerifyEmail, setLgVerifyEmail] = useState(''); // non-empty => show "check your inbox" screen
+  const [lgVerifyResent, setLgVerifyResent] = useState(false);
   const [trips, setTrips] = useState([]);
   const [tripsLoading, setTripsLoading] = useState(false);
   const [activeTrip, setActiveTrip] = useState(null);
@@ -287,6 +297,7 @@ export default function App() {
   // Any full-screen overlay (wizard, club gate, info modal) can broadcast that it's open;
   // when true, we hide the fixed topbar + bottom nav so they never peek over the overlay.
   const [overlayOpen, setOverlayOpen] = useState(false);
+  const [showClubComingSoon, setShowClubComingSoon] = useState(false);
 
   const tripNotifications = useMemo(() => {
     const now = new Date();
@@ -469,6 +480,86 @@ export default function App() {
     setAuthLoading(false);
   };
 
+  const exchangeFirebaseToken = async (idToken) => {
+    const res = await fetch(`${API_BASE}/auth/firebase`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Sign-in failed');
+    await finishAuth(data);
+  };
+
+  const handleEmailSubmit = async (e) => {
+    e.preventDefault();
+    const name = lgName.trim();
+    const email = lgEmail.trim();
+    const password = lgPassword;
+    if (!email || !password) return setAuthError('Please fill in all fields.');
+    if (lgMode === 'signup') {
+      if (!name) return setAuthError('Please enter your name.');
+      if (password.length < 6) return setAuthError('Password must be at least 6 characters.');
+    }
+    setAuthError('');
+    setAuthLoading(true);
+    try {
+      if (lgMode === 'signup') {
+        // Firebase creates the account and emails a verification link to this
+        // address. We deliberately DO NOT log them in — access is gated until
+        // they confirm the email, so nobody can sign up with someone else's
+        // address and impersonate them.
+        await signUpWithEmail(email, password, name);
+        setLgVerifyEmail(email);
+        setLgVerifyResent(false);
+        setLgPassword('');
+      } else {
+        // Signing in with correct credentials succeeds in Firebase even when
+        // the email is unverified — we must block app access ourselves.
+        const cred = await signInWithEmail(email, password);
+        const user = cred.user;
+        if (!user.emailVerified) {
+          setLgVerifyEmail(user.email || email);
+          setLgVerifyResent(false);
+          return;
+        }
+        await exchangeFirebaseToken(await user.getIdToken());
+      }
+    } catch (err) {
+      setAuthError(firebaseAuthMessage(err));
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    setAuthError('');
+    setLgVerifyResent(false);
+    setAuthLoading(true);
+    try {
+      const { auth: fAuth } = await import('./firebase');
+      const current = fAuth.currentUser;
+      let target = current;
+      if (!target) {
+        const cred = await signInWithEmail(lgVerifyEmail, lgPassword || 'x');
+        target = cred.user;
+      }
+      await sendVerificationEmail(target);
+      setLgVerifyResent(true);
+    } catch (err) {
+      setAuthError(err.message || 'Could not resend the verification email. Please try again.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const switchLgMode = (mode) => {
+    setLgMode(mode);
+    setLgVerifyEmail('');
+    setLgVerifyResent(false);
+    setAuthError('');
+  };
+
   const handleLogout = () => {
     localStorage.removeItem('travelbae_token');
     localStorage.removeItem(AI_CACHE_KEY);
@@ -576,6 +667,16 @@ export default function App() {
     setTab('main');
   };
 
+  const closeClubComingSoon = () => setShowClubComingSoon(false);
+
+  const leaveClubToHome = () => {
+    setShowClubComingSoon(false);
+    setTab('main');
+    setHomeTab('trips');
+    setActiveTrip(null);
+    setActiveTripData(null);
+  };
+
   const handleShareCodeDismiss = () => {
     const id = newTripModal.id;
     setNewTripModal(null);
@@ -656,6 +757,10 @@ export default function App() {
   }, []);
 
   const handleTabChange = (nextTab) => {
+    if (nextTab === 'club') {
+      setShowClubComingSoon(true);
+      return;
+    }
     if (nextTab === tab) return;
     setTab(nextTab);
   };
@@ -671,6 +776,7 @@ export default function App() {
       try {
         let listener;
         listener = await CapacitorApp.addListener('backButton', () => {
+          if (showClubComingSoon) { closeClubComingSoon(); return; }
           // Priority 1: Close profile if open
           if (profileOpen) { setProfileOpen(false); return; }
           // Priority 2: Close notification popover
@@ -687,11 +793,11 @@ export default function App() {
     };
     const cleanup = setupBackButton();
     return () => { cleanup.then(fn => fn?.()); };
-  }, [profileOpen, showNotifPopover, activeTrip]);
+  }, [profileOpen, showNotifPopover, activeTrip, showClubComingSoon]);
 
   // ── HIDE topbar/bottom nav while a full-screen overlay is open ──
   // Overlays (CreateTripWizard, ClubPage gate/info) dispatch 'tb:overlay' events.
-  useEffect(() => {
+  useLayoutEffect(() => {
     const onChange = (e) => setOverlayOpen(!!e.detail?.open);
     window.addEventListener('tb:overlay', onChange);
     return () => window.removeEventListener('tb:overlay', onChange);
@@ -722,11 +828,12 @@ export default function App() {
         @keyframes lgPlaneFloat { 0%,100%{transform:translate(0,0) rotate(-25deg)} 50%{transform:translate(3px,-4px) rotate(-25deg)} }
 
         .lg-root {
-          min-height:100vh; width:100%;
+          height:100vh; height:100dvh; width:100%;
           background:#FFFFFF;
           display:flex; flex-direction:column;
           font-family:'DM Sans',sans-serif;
-          position:relative; overflow:hidden;
+          position:relative; overflow-x:hidden; overflow-y:auto;
+          -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
         }
 
         .lg-bg { position:absolute; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
@@ -827,6 +934,72 @@ export default function App() {
         .lg-google-btn:active:not(:disabled) { transform:scale(0.98); }
         .lg-google-btn:disabled { opacity:0.6; cursor:not-allowed; }
 
+        .lg-form { text-align:left; }
+        .lg-field { margin-bottom:14px; }
+        .lg-field label {
+          display:block; font-size:12px; font-weight:600; color:#6B7280;
+          margin-bottom:6px; letter-spacing:0.2px;
+        }
+        .lg-input-wrap { position:relative; }
+        .lg-input {
+          width:100%; padding:13px 14px; font-size:15px; font-family:'DM Sans',sans-serif;
+          border:1.5px solid #E5E7EB; border-radius:14px; color:#111827; background:#fff;
+          transition:border-color .15s,box-shadow .15s;
+        }
+        .lg-input:focus { outline:none; border-color:#FF6A00; box-shadow:0 0 0 3px rgba(255,106,0,0.14); }
+        .lg-show-pw {
+          position:absolute; right:6px; top:50%; transform:translateY(-50%);
+          background:none; border:none; cursor:pointer; padding:8px;
+          color:#9CA3AF; font-size:12.5px; font-weight:600; font-family:'DM Sans',sans-serif;
+        }
+        .lg-show-pw:hover { color:#6B7280; }
+        .lg-submit-btn {
+          width:100%; padding:15px; margin-top:4px;
+          background:linear-gradient(135deg,#FF6A00,#F04E23); border:none; border-radius:16px;
+          color:#fff; font-size:15px; font-weight:700; font-family:'DM Sans',sans-serif;
+          cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+          box-shadow:0 8px 20px rgba(255,106,0,0.28);
+          transition:transform .15s,box-shadow .15s,opacity .18s;
+          animation:lgBtnIn .38s .3s ease both;
+        }
+        .lg-submit-btn:hover:not(:disabled) { transform:translateY(-1px); box-shadow:0 10px 26px rgba(255,106,0,0.34); }
+        .lg-submit-btn:active:not(:disabled) { transform:scale(0.98); }
+        .lg-submit-btn:disabled { opacity:0.65; cursor:not-allowed; }
+        .lg-switch { text-align:center; margin-top:14px; font-size:13.5px; color:#6B7280; }
+        .lg-switch button {
+          background:none; border:none; color:#FF6A00; font-weight:700; cursor:pointer;
+          font-size:13.5px; font-family:'DM Sans',sans-serif;
+        }
+        .lg-switch button:hover { text-decoration:underline; }
+        .lg-divider {
+          display:flex; align-items:center; gap:12px; margin:20px 0 18px;
+          color:#A0A4AD; font-size:12px; font-weight:600;
+        }
+        .lg-divider::before, .lg-divider::after { content:''; flex:1; height:1px; background:#F0EDE8; }
+
+        .lg-verify { text-align:center; }
+        .lg-verify-icon { font-size:34px; margin-bottom:6px; }
+        .lg-verify-title {
+          font-family:'Sora',sans-serif; font-size:18px; font-weight:800;
+          color:#1A1A1A; margin-bottom:8px;
+        }
+        .lg-verify-sub { font-size:13.5px; color:#6B7280; line-height:1.55; margin-bottom:18px; }
+        .lg-verify-sub strong { color:#1A1A1A; }
+        .lg-verify-resend {
+          width:100%; padding:14px; border:none; border-radius:16px;
+          background:linear-gradient(135deg,#FF6A00,#F04E23); color:#fff;
+          font-size:15px; font-weight:700; font-family:'DM Sans',sans-serif; cursor:pointer;
+          display:flex; align-items:center; justify-content:center; gap:8px;
+          box-shadow:0 8px 20px rgba(255,106,0,0.28);
+        }
+        .lg-verify-resend:disabled { opacity:0.65; cursor:not-allowed; }
+        .lg-verify-back { margin-top:14px; }
+        .lg-verify-back button {
+          background:none; border:none; color:#FF6A00; font-weight:700; cursor:pointer;
+          font-size:13.5px; font-family:'DM Sans',sans-serif;
+        }
+        .lg-verify-back button:hover { text-decoration:underline; }
+
         .lg-terms {
           text-align:center; margin-top:.9rem;
           font-size:11.5px; color:#A0A4AD; line-height:1.6;
@@ -887,7 +1060,7 @@ export default function App() {
 
       {/* ── Logo + tagline ── */}
       <div className="lg-above-card">
-        <img src={bglessLogo} alt="TripBae" className="lg-logo-img" />
+        <img src={orangeLogo} alt="TripBae" className="lg-logo-img" />
         <div className="lg-hero-title">Plan. Split. Explore — Together</div>
         <div className="lg-hero-sub">Sign in to get started</div>
       </div>
@@ -896,6 +1069,114 @@ export default function App() {
       <div className="lg-card-wrap">
         <div className="lg-card">
           {authError && <div className="lg-error">{authError}</div>}
+
+          {lgVerifyEmail ? (
+            <div className="lg-verify">
+              <div className="lg-verify-icon">✉️</div>
+              <div className="lg-verify-title">
+                {lgMode === 'signup' ? 'Confirm your email' : 'Verify your email'}
+              </div>
+              <div className="lg-verify-sub">
+                We sent a confirmation link to <strong>{lgVerifyEmail}</strong>.
+                {lgMode === 'signup'
+                  ? ' Click it to activate your account, then sign in.'
+                  : ' Click it to verify your account, then sign in again.'}
+              </div>
+              <button
+                className="lg-verify-resend"
+                onClick={handleResendVerification}
+                disabled={authLoading}
+              >
+                {authLoading
+                  ? <span className="lg-spinner" />
+                  : (lgVerifyResent ? 'Verification email sent ✓' : 'Resend email')}
+              </button>
+              <div className="lg-verify-back">
+                <button type="button" onClick={() => { setLgVerifyEmail(''); setLgVerifyResent(false); setAuthError(''); }}>← Back to sign in</button>
+              </div>
+            </div>
+          ) : (
+          <form className="lg-form" onSubmit={handleEmailSubmit} noValidate>
+            {lgMode === 'signup' && (
+              <div className="lg-field">
+                <label htmlFor="lg-name">Full name</label>
+                <input
+                  id="lg-name"
+                  className="lg-input"
+                  type="text"
+                  placeholder="Your name"
+                  autoComplete="name"
+                  value={lgName}
+                  onChange={e => setLgName(e.target.value)}
+                  disabled={authLoading}
+                />
+              </div>
+            )}
+
+            <div className="lg-field">
+              <label htmlFor="lg-email">Email</label>
+              <input
+                id="lg-email"
+                className="lg-input"
+                type="email"
+                placeholder="you@example.com"
+                autoComplete="email"
+                value={lgEmail}
+                onChange={e => setLgEmail(e.target.value)}
+                disabled={authLoading}
+              />
+            </div>
+
+            <div className="lg-field">
+              <label htmlFor="lg-password">Password</label>
+              <div className="lg-input-wrap">
+                <input
+                  id="lg-password"
+                  className="lg-input"
+                  type={lgShowPw ? 'text' : 'password'}
+                  placeholder={lgMode === 'signup' ? 'At least 6 characters' : 'Your password'}
+                  autoComplete={lgMode === 'signup' ? 'new-password' : 'current-password'}
+                  value={lgPassword}
+                  onChange={e => setLgPassword(e.target.value)}
+                  disabled={authLoading}
+                />
+                <button
+                  type="button"
+                  className="lg-show-pw"
+                  onClick={() => setLgShowPw(v => !v)}
+                  disabled={authLoading}
+                  aria-label={lgShowPw ? 'Hide password' : 'Show password'}
+                >
+                  {lgShowPw ? 'Hide' : 'Show'}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className="lg-submit-btn" disabled={authLoading}>
+              {authLoading ? (
+                <span className="lg-spinner" />
+              ) : (
+                lgMode === 'signup' ? 'Create account' : 'Sign in'
+              )}
+            </button>
+
+            <div className="lg-switch">
+              {lgMode === 'signup' ? (
+                <>
+                  Already have an account?{' '}
+                  <button type="button" onClick={() => switchLgMode('login')}>Sign in</button>
+                </>
+              ) : (
+                <>
+                  New to TripBae?{' '}
+                  <button type="button" onClick={() => switchLgMode('signup')}>Create an account</button>
+                </>
+              )}
+            </div>
+          </form>
+          )}
+
+          <div className="lg-divider">or continue with</div>
 
           <button
             className="lg-google-btn"
@@ -983,6 +1264,21 @@ export default function App() {
 
       {newTripModal && <Suspense fallback={null}><ShareCodeModalFeature trip={newTripModal} onDismiss={handleShareCodeDismiss} /></Suspense>}
 
+      {showClubComingSoon && (
+        <div
+          onClick={closeClubComingSoon}
+          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.72)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'max(6px, env(safe-area-inset-top, 0px)) 8px max(6px, env(safe-area-inset-bottom, 0px))', backdropFilter: 'blur(4px)' }}
+        >
+          <div onClick={e => e.stopPropagation()} style={{ position: 'relative', maxWidth: 640, width: '100%', maxHeight: '100%', borderRadius: 20, overflow: 'hidden', boxShadow: '0 24px 80px rgba(0,0,0,0.6)' }}>
+            <img src={clubComingSoon} alt="Tripbae Club Coming Soon" style={{ display: 'block', width: '100%', height: 'auto', maxHeight: 'calc(100dvh - 12px)', objectFit: 'contain', objectPosition: 'center top' }} />
+            <button
+              onClick={closeClubComingSoon}
+              style={{ position: 'absolute', top: 12, right: 12, width: 32, height: 32, borderRadius: '50%', border: 'none', background: 'rgba(0,0,0,0.5)', color: '#fff', fontSize: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', lineHeight: 1 }}
+            >✕</button>
+          </div>
+        </div>
+      )}
+
       {/* Top Bar */}
       {!overlayOpen && <div className="tb-topbar-glass" style={S.topBar}>
         <button
@@ -1001,8 +1297,8 @@ export default function App() {
         >
           {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', position: 'absolute', left: '50%', transform: 'translateX(-50%)' }}>
-          <img src={bglessLogo} alt="TripBae" style={{ height: 70, width: 'auto', objectFit: 'contain', display: 'block' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', position: 'absolute', left: '50%', transform: 'translate(-50%, 4px)' }}>
+          <img src={orangeLogo} alt="Tripbae" style={{ height: 70, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {!activeTrip && !activeTripData && (
           <div style={{ marginLeft: 'auto' }}>
@@ -1092,7 +1388,7 @@ export default function App() {
       {/* Bottom Nav Bar */}
       {activeTrip && !overlayOpen && (
         <div style={{
-          position:'fixed', bottom:0, left:0, right:0, zIndex:100,
+          position:'fixed', bottom:0, left:0, right:0, zIndex:350,
           background:'transparent',
           paddingBottom:'env(safe-area-inset-bottom,12px)',
         }}>
@@ -1146,7 +1442,7 @@ export default function App() {
 
             {/* ── Club pill: always gradient, right side cut by overflow:hidden ── */}
             <button
-              onClick={() => handleTabChange('club')}
+              onClick={() => setShowClubComingSoon(true)}
               style={{
                 flex: '0 0 auto',
                 alignSelf: 'stretch',
@@ -1190,7 +1486,10 @@ export default function App() {
         </div>
       )}
 
-      <div className="tb-page-shell" style={S.page}>
+      <div
+        className={`tb-page-shell${!activeTrip ? ' tb-page-shell--home' : ''}`}
+        style={activeTrip ? S.page : S.pageHome}
+      >
         {!activeTrip && (
           tripsLoading
             ? <Spinner variant="trips" />
@@ -1221,6 +1520,7 @@ export default function App() {
                     {tab === 'club' && (
                       <ClubPageFeature
                         trip={activeTripData}
+                        onLeaveClub={leaveClubToHome}
                         onTripRefresh={async () => {
                           try {
                             const { getTrip } = await import('./api');
@@ -1261,6 +1561,7 @@ export default function App() {
                     {tab === 'club' && (
                       <div className="tb-section-flow"><ClubPageFeature
                         trip={activeTripData}
+                        onLeaveClub={leaveClubToHome}
                         onTripRefresh={async () => {
                           try {
                             const { getTrip } = await import('./api');

@@ -11,6 +11,7 @@ import { fetchPlacePhotos, getFxRatesFromBackend } from '../../api';
 import currencyData from '../../../currency.json';
 import CreateTripWizard from './CreateTripWizard';
 import mountainImg from '../../assets/mountain.png';
+import flagImg from '../../assets/flag.png';
 import lumi9 from '../../assets/lumi9.png';
 import lumi5 from '../../assets/lumi5_bgless.png';
 
@@ -136,6 +137,20 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
   const [photos, setPhotos] = useState([]);
   const [photoIdx, setPhotoIdx] = useState(0);
   const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+  const didSwipe = useRef(false);
+  const openedAt = useRef(0);
+
+  const openTrip = (event) => {
+    if (didSwipe.current) {
+      didSwipe.current = false;
+      return;
+    }
+    const now = Date.now();
+    if (now - openedAt.current < 450) return;
+    openedAt.current = now;
+    onOpen(trip.id, event);
+  };
 
   useEffect(() => {
     if (!trip.destination) return;
@@ -173,12 +188,8 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
   const statusPillLabel = status.label === 'Ongoing'
     ? 'Ongoing'
     : (daysToStart != null && daysToStart > 0 ? `In ${daysToStart}d` : (isPast ? 'Past' : status.label));
-  const cardBg = trip.isSolo
-    ? 'linear-gradient(145deg,#121a42 0%,#27316c 52%,#171d4a 100%)'
-    : 'linear-gradient(145deg,#083433 0%,#0f5a55 52%,#0a3c38 100%)';
-  const glowBg = trip.isSolo
-    ? 'radial-gradient(circle,rgba(127,119,221,0.42) 0%,transparent 72%)'
-    : 'radial-gradient(circle,rgba(255,106,0,0.42) 0%,transparent 72%)';
+  const cardBg = 'linear-gradient(145deg,#1a1108 0%,#2d1a08 52%,#1a1108 100%)';
+  const glowBg = 'radial-gradient(circle,rgba(255,106,0,0.38) 0%,transparent 72%)';
   let statusBadgeStyle;
   if (isPast) {
     statusBadgeStyle = { background: 'rgba(255,255,255,0.16)', color: 'rgba(255,255,255,0.78)', border: '1px solid rgba(255,255,255,0.28)', backdropFilter: 'blur(7px)' };
@@ -192,13 +203,32 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
   return (
     <div
       className={`tb-trip-card-new${isArchiving ? ' tb-trip-archiving' : ''}`}
-      style={{ background: cardBg, opacity: isPast ? 0.72 : 1, animation: `fadeUp 0.45s ease both`, animationDelay: `${cardDelay}ms`, boxShadow: '0 18px 42px rgba(16,24,40,0.22), 0 4px 10px rgba(16,24,40,0.14)', filter: forceMonochrome ? 'grayscale(1) saturate(0.02) contrast(1.06)' : 'none' }}
-      onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+      role="button"
+      tabIndex={0}
+      style={{ background: cardBg, opacity: isPast ? 0.72 : 1, animation: `fadeUp 0.45s ease both`, animationDelay: `${cardDelay}ms`, boxShadow: '0 18px 42px rgba(16,24,40,0.22), 0 4px 10px rgba(16,24,40,0.14)', filter: forceMonochrome ? 'grayscale(1) saturate(0.02) contrast(1.06)' : 'none', cursor: 'pointer' }}
+      onClick={openTrip}
+      onTouchStart={e => {
+        touchStartX.current = e.touches[0].clientX;
+        touchStartY.current = e.touches[0].clientY;
+        didSwipe.current = false;
+      }}
       onTouchEnd={e => {
-        if (touchStartX.current === null || photos.length < 2) return;
-        const diff = touchStartX.current - e.changedTouches[0].clientX;
-        if (Math.abs(diff) > 40) setPhotoIdx(i => (i + (diff > 0 ? 1 : -1) + photos.length) % photos.length);
+        if (touchStartX.current == null) return;
+        const dx = touchStartX.current - e.changedTouches[0].clientX;
+        const dy = (touchStartY.current ?? 0) - e.changedTouches[0].clientY;
         touchStartX.current = null;
+        touchStartY.current = null;
+        if (photos.length >= 2 && Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+          didSwipe.current = true;
+          setPhotoIdx(i => (i + (dx > 0 ? 1 : -1) + photos.length) % photos.length);
+          return;
+        }
+        // Android WebView often never fires click after touch handlers — treat a tap as open.
+        if (Math.abs(dx) < 18 && Math.abs(dy) < 18) {
+          const el = e.target;
+          if (el && typeof el.closest === 'function' && el.closest('button')) return;
+          openTrip(e);
+        }
       }}
     >
       {/* Photo backgrounds */}
@@ -216,7 +246,7 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
             zIndex: 0,
             pointerEvents: 'none',
           }}
-          onError={e => { e.target.style.display = 'none'; }}
+          onError={() => setPhotos(prev => { const next = prev.filter(u => u !== url); if (photoIdx >= next.length) setPhotoIdx(Math.max(0, next.length - 1)); return next; })}
         />
       ))}
 
@@ -235,7 +265,7 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 68, background: 'linear-gradient(180deg,rgba(255,255,255,0.11) 0%,transparent 100%)', borderRadius: '26px 26px 0 0', pointerEvents: 'none', zIndex: 2 }} />
 
       {/* card body */}
-      <div style={{ padding: '14px 16px 0', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
+      <div style={{ padding: '14px 16px 0', position: 'relative', zIndex: 3 }}>
         {/* top row: status badge right-aligned */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', marginBottom: 10 }}>
           {/* Status badges */}
@@ -243,7 +273,7 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
             {trip.isSolo && (
               <span style={{ padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700, background: 'rgba(99,102,241,0.2)', color: '#C7D2FE', border: '1px solid rgba(129,140,248,0.42)', boxShadow: '0 0 20px rgba(79,70,229,0.28)' }}>Solo</span>
             )}
-            <span style={{ padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...(!isPast ? { boxShadow: '0 0 20px rgba(34,197,94,0.22)' } : {}) }}>
+            <span style={{ padding: '5px 14px', borderRadius: 999, fontSize: 11, fontWeight: 700, ...statusBadgeStyle, ...(!isPast ? { boxShadow: '0 0 20px rgba(255,106,0,0.22)' } : {}) }}>
               {statusPillLabel}
             </span>
           </div>
@@ -276,7 +306,7 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
 
       {/* Budget row */}
       {budgetBase > 0 && (
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.14)', position: 'relative', zIndex: 3, cursor: 'pointer' }} onClick={(event) => onOpen(trip.id, event)}>
+        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.14)', position: 'relative', zIndex: 3 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 16px 4px' }}>
             <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.52)', fontWeight: 600 }}>Budget</span>
             <span style={{ fontSize: 11, color: '#FF6B35', fontWeight: 800, letterSpacing: 0.1 }}>{budgetPct}% · ₹{budgetLeft.toLocaleString('en-IN')} left</span>
@@ -289,7 +319,7 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
 
       {/* footer */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 14px', borderTop: '1px solid rgba(255,255,255,0.12)', background: 'linear-gradient(180deg,rgba(6,12,26,0.55) 0%, rgba(4,9,20,0.84) 100%)', backdropFilter: 'blur(14px)', position: 'relative', zIndex: 3 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', flex: 1, minWidth: 0 }} onClick={(event) => onOpen(trip.id, event)}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
           <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.82)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           </div>
@@ -355,6 +385,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   const [joining, setJoining] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [confirmComplete, setConfirmComplete] = useState(null);
+  const [ongoingWarning, setOngoingWarning] = useState(false);
   const [menuOpen, setMenuOpen] = useState(null);
   const [archivingTripId, setArchivingTripId] = useState(null);
   const [tagIdx, setTagIdx] = useState(() => Math.floor(Math.random() * HERO_TAGLINES.length));
@@ -434,11 +465,17 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     return d.toISOString().split('T')[0];
   })();
 
-  const [form, setForm] = useState({
+  const blankForm = (name = profileName) => ({
     groupName: '', destination: '', arrival: today, departure: '',
     arrivalSlot: 'morning', departureSlot: 'morning',
-    createdBy: profileName || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '',
+    arrivalCity: '', departureCity: '',
+    createdBy: name || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '',
+    destinationMode: null,
+    selectedCities: [],
+    lumiHighlights: [],
   });
+
+  const [form, setForm] = useState(() => blankForm());
 
   useEffect(() => {
     setForm(f => ({ ...f, createdBy: profileName || '' }));
@@ -564,6 +601,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         departure: form.departure,
         arrivalSlot: form.arrivalSlot,
         departureSlot: form.departureSlot,
+        arrivalCity: form.arrivalCity || null,
+        departureCity: form.departureCity || null,
         isSolo: isSoloMode,
         people: isSoloMode ? 1 : 2,
         budget: form.budget ? parseFloat(form.budget) : null,
@@ -572,11 +611,14 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         budgetInDestination: form.budget ? Number(convertedBudget.toFixed(2)) : null,
         travelNotes: form.travelNotes || null,
         nickname: (profileName || form.createdBy || 'Me').trim(),
+        ...(form.destinationMode ? { destinationMode: form.destinationMode } : {}),
+        ...(form.selectedCities?.length > 0 ? { selectedCities: form.selectedCities } : {}),
+        ...(form.lumiHighlights?.length > 0 ? { lumiHighlights: form.lumiHighlights } : {}),
       });
       setShowCreate(false);
       setCreateStep(0);
       setFxError('');
-      setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '' });
+      setForm(blankForm());
     } catch (err) {
       alert('Could not create trip: ' + err.message);
     }
@@ -604,7 +646,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     setTimeout(() => setCopied(null), 1800);
   };
 
-  const totalCreateSteps = 7;
+  const totalCreateSteps = 8;
   const nextCreateStep = () => setCreateStep((s) => Math.min(totalCreateSteps - 1, s + 1));
   const prevCreateStep = () => setCreateStep((s) => Math.max(0, s - 1));
   const autoAdvance = () => {
@@ -612,9 +654,10 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   };
   const canAdvanceCurrentStep = () => {
     if (createStep === 0) return !!form.groupName.trim();
-    if (createStep === 1) return !!form.destination.trim();
-    if (createStep === 2) return !!form.arrival;
-    if (createStep === 3) return !!form.departure;
+    if (createStep === 1) return !!form.destinationMode;
+    if (createStep === 2) return !!form.destination.trim();
+    if (createStep === 3) return !!form.arrival && !!form.arrivalCity;
+    if (createStep === 4) return !!form.departure && !!form.departureCity;
     return true;
   };
 
@@ -635,7 +678,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
   }
 
   return (
-    <div style={{ margin: '-1rem -0.95rem', fontFamily: "'Inter', 'DM Sans', sans-serif", minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+    <div style={{ margin: 0, fontFamily: "'Inter', 'DM Sans', sans-serif", minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         @keyframes float { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-5px)} }
@@ -667,6 +710,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
         .tb-trip-card-new {
           border-radius: 26px; margin-bottom: 16px; overflow: hidden; position: relative;
           cursor: pointer; will-change: transform; transform: translateZ(0);
+          -webkit-tap-highlight-color: transparent; touch-action: pan-y;
           box-shadow: 0 4px 6px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.10), 0 24px 48px rgba(0,0,0,0.06);
           transition: transform 0.18s ease, box-shadow 0.18s ease;
         }
@@ -702,6 +746,20 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       `}</style>
 
       {/* Confirm dialogs */}
+      {ongoingWarning && (
+        <ConfirmDialog
+          title="Trip in progress!"
+          message="You already have an ongoing trip. Are you sure you want to plan another one right now?"
+          confirmLabel="Create anyway"
+          confirmStyle="primary"
+          onConfirm={() => {
+            setOngoingWarning(false);
+            setForm(blankForm());
+            setCreateStep(0); setShowCreate(true); setShowJoin(false);
+          }}
+          onCancel={() => setOngoingWarning(false)}
+        />
+      )}
       {confirmDelete && (
         <ConfirmDialog
           title="Delete Trip"
@@ -736,9 +794,20 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
             pointerEvents: 'none', opacity: 0.88, zIndex: 0,
           }}
         />
+        {/* Prayer flag — mountaineering touch, top-left corner */}
+        <img
+          src={flagImg}
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: 'absolute', top: -22, left: -16,
+            width: 120, height: 'auto',
+            pointerEvents: 'none', opacity: 0.88, zIndex: 1,
+          }}
+        />
         <div style={{ position: 'relative', zIndex: 2 }}>
           <div className="tb-hero-greet" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1.8px', color: '#FF6B35', textTransform: 'uppercase', marginBottom: 10, textAlign: 'left' }}>
-            {greetPhrase}{profileName ? <span style={{ color: '#7A2E00', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
+            {greetPhrase}{profileName ? <span style={{ color: '#C44400', fontWeight: 700 }}>, {profileName.split(' ')[0]}</span> : ''}
           </div>
           <div style={{ position: 'relative', marginBottom: 20 }}>
             <div style={{ overflow: 'hidden', minHeight: 74 }}>
@@ -753,7 +822,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', color: '#0D1108', whiteSpace: 'nowrap' }}>
                   {HERO_TAGLINES[tagIdx].line1}
                 </div>
-                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', whiteSpace: 'nowrap', color: '#7A2E00' }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 30, fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.7px', whiteSpace: 'nowrap', color: '#C44400' }}>
                   {HERO_TAGLINES[tagIdx].line2}
                 </div>
               </div>
@@ -764,7 +833,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
               aria-label="Next fact"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <polyline points="9 18 15 12 9 6" stroke="#7A2E00" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
+                <polyline points="9 18 15 12 9 6" stroke="#FF6A00" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </button>
           </div>
@@ -780,8 +849,12 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
                 boxShadow: '0 5px 18px rgba(242,100,25,0.36), inset 0 1px 0 rgba(255,255,255,0.14)',
               }}
               onClick={() => {
-                setForm({ groupName: '', destination: '', arrival: today, departure: '', arrivalSlot: 'morning', departureSlot: 'morning', createdBy: profileName || '', budget: '', budgetCurrency: 'INR', destinationCurrency: '', destinationCountry: '', travelNotes: '' });
-                setCreateStep(0); setShowCreate(true); setShowJoin(false);
+                const openWizard = () => {
+                  setForm(blankForm());
+                  setCreateStep(0); setShowCreate(true); setShowJoin(false);
+                };
+                const ongoing = activeTrips.some(t => !t.completed && t.arrival && t.departure && t.arrival <= today && t.departure >= today);
+                if (ongoing) { setOngoingWarning(true); } else { openWizard(); }
               }}
             >
               <div style={{ position: 'absolute', top: -16, left: -16, width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,255,255,0.09)', pointerEvents: 'none' }} />

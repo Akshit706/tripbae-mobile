@@ -1,0 +1,21 @@
+---
+description: Rebuild the Capacitor Android app after any code or asset changes
+alwaysApply: true
+---
+
+# Rebuild after changes
+
+After finishing UI, JS, asset, or Capacitor config changes, always ship a fresh native build before stopping. Do not leave the user on a stale APK.
+
+1. `npm run cap:sync` (Vite production build + `npx cap sync`)
+2. Assemble debug APK with Homebrew JDK 21:
+
+```bash
+export JAVA_HOME="/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"
+export PATH="$JAVA_HOME/bin:$PATH"
+cd android && ./gradlew assembleDebug
+```
+
+3. Report the APK path: `android/app/build/outputs/apk/debug/app-debug.apk`
+
+Skip only if the user explicitly says not to rebuild.

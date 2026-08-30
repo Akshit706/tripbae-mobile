@@ -1,6 +1,6 @@
 {
   "appId": "com.travelbae.app",
-  "appName": "TripBae",
+  "appName": "Tripbae",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

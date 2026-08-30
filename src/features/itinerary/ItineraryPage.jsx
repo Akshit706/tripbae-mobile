@@ -1,4 +1,4 @@
-﻿import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
@@ -10,7 +10,8 @@ import lumi17Img from '../../assets/lumi17.png';
 import lumi4Img from '../../assets/Lumi4_bgless.png';
 import lumi10Img from '../../assets/lumi10.png';
 import lumi19Img from '../../assets/lumi19.png';
-import ExperienceDiscovery from './ExperienceDiscovery';
+import ExperienceDiscovery, { generateShareHtml } from './ExperienceDiscovery';
+import { shareTripPicks } from '../../utils/shareTripPicks';
 
 /* -- Category colours (for My Selections sheet) ------------- */
 const EXP_CAT = {
@@ -75,7 +76,7 @@ const D = {
   gold:      '#C9913A',
   goldTint:  '#FDF3E3',
   sage:      '#7A9E7E',
-  sageTint:  '#FFF3EB',
+  sageTint:  '#EBF3EC',
   coral:     '#E8715A',
   coralTint: '#FDF0EE',
   blueTint:  '#E6F1FB',
@@ -427,7 +428,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
     return { bg: D.neutral, color: D.muted };
   };
 
-  const accentColor = isSolo ? '#7F77DD' : '#FF6A00';
+  const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
 
   /* -- Veg / Non-veg dot -- */
   const VegDot = ({ item }) => {
@@ -550,7 +551,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
               <span style={{ fontSize: 11, fontWeight: 700, color: D.gold, background: D.goldTint, borderRadius: 999, padding: '2px 8px' }}>{item.priceRange}</span>
             )}
             {item.bestTime && (
-              <span style={{ fontSize: 11, fontWeight: 600, color: '#FF8C3A', background: D.sageTint, borderRadius: 999, padding: '2px 8px' }}>?? {item.bestTime}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: '#0F6E56', background: D.sageTint, borderRadius: 999, padding: '2px 8px' }}>?? {item.bestTime}</span>
             )}
           </div>
 
@@ -643,7 +644,7 @@ function LocalTastePage({ destination, isSolo, autoData, autoStep, onRetry }) {
       {filterOpen && (
         <div style={{ position:'fixed',inset:0,background:'rgba(14,16,24,0.45)',zIndex:600,display:'flex',alignItems:'flex-end',justifyContent:'center' }}
           onClick={e => { if (e.target === e.currentTarget) setFilterOpen(false); }}>
-          <div style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem 2rem',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',animation:'rSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both' }}>
+          <div style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem calc(2rem + env(safe-area-inset-bottom, 0px))',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',animation:'rSheetIn 0.28s cubic-bezier(0.2,0.7,0.2,1) both', marginBottom: 66 }}>
             <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16 }}>
               <div style={{ fontFamily:"'Sora',sans-serif",fontSize:16,fontWeight:800 }}>Filter Local Life</div>
               <button onClick={() => setFilterOpen(false)} style={{ width:30,height:30,borderRadius:'50%',border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'#6b6b68',padding:0 }}>?</button>
@@ -849,6 +850,19 @@ const SLOT_ORDER = ['morning', 'afternoon', 'evening'];
 
 const MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
+/** Parses multi-city route from travelNotes */
+function parseCitiesFromNotes(notes) {
+  if (!notes) return null;
+  const m = notes.match(/MULTI-CITY ROUTE[^:]*:\s*([^\n.]+)/);
+  if (!m) return null;
+  const cities = m[1].split(/\u2192|->/).map(s => {
+    const cm = s.trim().match(/^(.+?)\s*\(\s*(\d+)\s+days?\s*\)/i);
+    if (cm) return { name: cm[1].trim(), days: parseInt(cm[2]) };
+    return { name: s.trim().replace(/\(.*?\)/, '').trim(), days: 1 };
+  }).filter(c => c.name.length > 0);
+  return cities.length >= 2 ? cities : null;
+}
+
 function formatTripDate(arrivalStr, dayIndex) {
   // dayIndex: 0 = arrival day
   const base = new Date(arrivalStr);
@@ -903,6 +917,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [modifyExps, setModifyExps] = useState(null);
   const [plannerExpandedCats, setPlannerExpandedCats] = useState(new Set());
   const [plannerReviewExp, setPlannerReviewExp] = useState(null);
+  const [plannerSharing, setPlannerSharing] = useState(false);
+  const [plannerCopied, setPlannerCopied] = useState(false);
+  // const [plannerShorts, setPlannerShorts] = useState(null);
+  // const [plannerShortsLoading, setPlannerShortsLoading] = useState(false);
   const [collapsedDays, setCollapsedDays] = useState(new Set());
   const [localTasteData, setLocalTasteData] = useState(trip._cachedTaste || null);
   const [localTasteStep, setLocalTasteStep] = useState(trip._cachedTaste ? 'result' : 'loading');
@@ -912,11 +930,55 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const lastAutoScrollKeyRef = useRef(null);
   const dayHeaderRefs = useRef({});
   const collapsedInitRef = useRef(false);
+  const [expandedTransit, setExpandedTransit] = useState(null);
+  const expandedTransitTimer = useRef(null);
   const toggleActivity = (key) => setDoneActivities(prev => { const n = new Set(prev); n.has(key) ? n.delete(key) : n.add(key); return n; });
 
+  const handlePlannerShare = async () => {
+    setPlannerSharing(true);
+    try {
+      let likedExps = lastSelectedExps;
+      let rejectedExps = [];
+      let leftoverExps = [];
+      try {
+        const raw = localStorage.getItem(`ed_swipe_${trip.id}`);
+        if (raw) {
+          const prog = JSON.parse(raw);
+          const swipedSet = new Set(prog.swipedIds || []);
+          const likedSet  = new Set(prog.likedIds  || []);
+          const exps = prog.experiences || [];
+          if (exps.length > 0) {
+            likedExps    = exps.filter(e => likedSet.has(e.id));
+            rejectedExps = exps.filter(e => swipedSet.has(e.id) && !likedSet.has(e.id));
+            leftoverExps = exps.filter(e => !swipedSet.has(e.id));
+          }
+        }
+      } catch { /* use fallback */ }
+      const html = await generateShareHtml({
+        destination: form.dest,
+        tripName: trip.name || '',
+        likedExps,
+        rejectedExps,
+        leftoverExps,
+      });
+      await shareTripPicks({
+        html,
+        destination: form.dest,
+        onCopied: () => {
+          setPlannerCopied(true);
+          setTimeout(() => setPlannerCopied(false), 2500);
+        },
+      });
+    } catch (err) {
+      if (err?.name !== 'AbortError') console.error('Share failed', err);
+    } finally {
+      setPlannerSharing(false);
+    }
+  };
+
   const accentStyle = isSolo ? S.btnSolo : S.btnP;
-  const accentColor = isSolo ? '#7F77DD' : '#FF6A00';
-  const headerBg = isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#FF6A00,#FF8C3A)';
+  const accentColor = isSolo ? '#7F77DD' : '#1D9E75';
+  const headerBg = isSolo ? 'linear-gradient(135deg,#7F77DD,#534AB7)' : 'linear-gradient(135deg,#1D9E75,#0F6E56)';
 
   const TYPE_ICONS = {
     attraction: '???', food: '???', experience: '?',
@@ -992,7 +1054,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     }
   }, [trip._cachedItin, trip._cachedTaste]);
 
-  const runGenerateItineraryRef = useRef();
   const runGenerateItinerary = async (selectedExperiences) => {
     if (selectedExperiences && selectedExperiences.length > 0) {
       setLastSelectedExps(selectedExperiences);
@@ -1001,10 +1062,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     }
     setStep('loading');
     try {
+      // Derive interests from selected categories so the AI knows what the user cares about
       const interests = (selectedExperiences && selectedExperiences.length > 0)
         ? [...new Set(selectedExperiences.map(e => e.category).filter(Boolean))]
         : [];
-      console.log('[Itinerary] → calling generateItinerary /ai/itinerary', { destination: form.dest, days, budget: form.budget, people: parseInt(form.people) || 1, interests, arrivalSlot: form.arrivalSlot, departureSlot: form.departureSlot, firstActivitySlot: firstActivitySlot(), selCount: (selectedExperiences || []).length });
       const result = await generateItinerary({
         destination: form.dest,
         days,
@@ -1016,30 +1077,30 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         firstActivitySlot: firstActivitySlot(),
         arrival: form.arrival,
         travelNotes: form.travelNotes || '',
+        // Pass parsed route so backend can run per-city Serper research
+        ...(parseCitiesFromNotes(trip.travelNotes)?.length > 1
+          ? { selectedCities: parseCitiesFromNotes(trip.travelNotes) }
+          : {}),
+        // Pass Lumi highlights if embedded in travelNotes
+        ...((() => {
+          const lm = (trip.travelNotes || '').match(/LUMI PREFERENCES:\s*([^\n.]+)/);
+          if (!lm) return {};
+          const h = lm[1].split(',').map(s => s.trim()).filter(Boolean);
+          return h.length > 0 ? { lumiHighlights: h } : {};
+        })()),
         ...(selectedExperiences && selectedExperiences.length > 0 ? { selectedExperiences } : {}),
       });
       setItin(result.itinerary);
       setSources(result.sources || []);
-      markItinDone(trip.id);
+      markItinDone(trip.id); // mark as user-triggered so Day Planner shows modify view on return
       setStep('result');
-      setITab('itinerary');
+      setITab('itinerary'); // auto-switch to Itinerary tab
+      // -- Save back to parent trips state so it persists across tab switches --
       onCacheUpdate?.({ _cachedItin: { ...result, selectedExps: selectedExperiences || [] } });
-    } catch (err) {
-      console.log('[Itinerary] /ai/itinerary FAILED →', err?.message || err);
+    } catch {
       setStep('error');
     }
   };
-  runGenerateItineraryRef.current = runGenerateItinerary;
-
-  const handleDiscoverComplete = useCallback((selectedExps) => {
-    setModifyExps(null);
-    runGenerateItineraryRef.current?.(selectedExps);
-  }, []);
-
-  const handleDiscoverSkip = useCallback(() => {
-    setModifyExps(null);
-    runGenerateItineraryRef.current?.();
-  }, []);
 
   const runGenerateLocalTaste = async () => {
     // Don't flash spinner if we already have data � refresh silently
@@ -1071,6 +1132,18 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     return () => { cancelled = true; };
   }, [form.dest]);
 
+  // YouTube Shorts — disabled for now
+  // useEffect(() => {
+  //   if (!plannerReviewExp) { setPlannerShorts(null); return; }
+  //   let cancelled = false;
+  //   setPlannerShorts(null);
+  //   setPlannerShortsLoading(true);
+  //   fetchPlaceShorts(plannerReviewExp.name, form.dest)
+  //     .then(data => { if (!cancelled) { setPlannerShorts(data?.videoIds || []); setPlannerShortsLoading(false); } })
+  //     .catch(() => { if (!cancelled) { setPlannerShorts([]); setPlannerShortsLoading(false); } });
+  //   return () => { cancelled = true; };
+  // }, [plannerReviewExp?.name, form.dest]);
+
   const handleRedo = () => {
     clearItinDone(trip.id);
     clearPlannerStep(trip.id);
@@ -1094,6 +1167,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   const [nearbyStep,         setNearbyStep]         = useState('loading');
   const [showPlannerScrollTop, setShowPlannerScrollTop] = useState(false);
   const [showTipsPopup,      setShowTipsPopup]      = useState(false);
+  const [showExpsPopup,      setShowExpsPopup]      = useState(false);
+  const [showRoutePopup,     setShowRoutePopup]     = useState(false);
   const [clockNowMs,         setClockNowMs]         = useState(() => Date.now());
   const [destinationClock,   setDestinationClock]   = useState(null);
   const [liveHintPinnedKey,  setLiveHintPinnedKey]  = useState(null);
@@ -1341,6 +1416,48 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   )}
                 </button>
               )}
+              {/* YouTube Shorts — disabled for now */}
+              {/* {(plannerShortsLoading || (plannerShorts && plannerShorts.length > 0)) && (
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FF0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", letterSpacing: 0.2 }}>YouTube Shorts</span>
+                  </div>
+                  {plannerShortsLoading ? (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {[0,1].map(i => (
+                        <div key={i} style={{ flex: 1, height: 160, borderRadius: 12, background: 'linear-gradient(90deg,#F7F5F1 25%,#ECE8E0 50%,#F7F5F1 75%)', backgroundSize: '420px 100%', animation: 'tbPlaceShimmer 1.35s ease-in-out infinite' }} />
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
+                      {plannerShorts.map(vid => (
+                        <a
+                          key={vid}
+                          href={`https://youtube.com/shorts/${vid}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ flexShrink: 0, position: 'relative', width: 100, height: 178, borderRadius: 12, overflow: 'hidden', display: 'block', background: '#000', textDecoration: 'none' }}
+                        >
+                          <img
+                            src={`https://img.youtube.com/vi/${vid}/hqdefault.jpg`}
+                            alt="YouTube Short"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                          />
+                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.4)' }}>
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="#fff"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            </div>
+                          </div>
+                          <div style={{ position: 'absolute', bottom: 6, left: 6, background: 'rgba(0,0,0,0.6)', borderRadius: 4, padding: '2px 5px' }}>
+                            <span style={{ fontSize: 9, fontWeight: 700, color: '#fff', fontFamily: "'DM Sans',sans-serif" }}>SHORT</span>
+                          </div>
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )} */}
             </div>
           </div>
         </div>
@@ -1399,6 +1516,41 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 </div>
               </div>
 
+              {/* -- Share for feedback -- */}
+              <div style={{ background: '#fff', borderRadius: 16, padding: '0.85rem 1.1rem', marginBottom: '1rem', border: '1.5px solid rgba(255,106,0,0.22)', boxShadow: '0 2px 12px rgba(255,106,0,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <div style={{ width: 28, height: 28, borderRadius: 9, background: '#FFF3EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                  </div>
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1C1410', fontFamily: "'Sora',sans-serif" }}>Share for Feedback</span>
+                </div>
+                <div style={{ fontSize: 11.5, color: '#8A7E76', lineHeight: 1.62, marginBottom: 10, fontFamily: "'DM Sans',sans-serif" }}>
+                  Share your <strong>selected</strong>, <strong>passed</strong>, and undecided experiences so friends can guide you.
+                </div>
+                <button
+                  onClick={handlePlannerShare}
+                  disabled={plannerSharing}
+                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px', fontSize: 13, fontWeight: 700, borderRadius: 12, border: 'none', cursor: plannerSharing ? 'wait' : 'pointer', background: plannerSharing ? '#F0EFEC' : 'linear-gradient(135deg,#1C1410,#3D3028)', color: plannerSharing ? '#8A7E76' : '#fff', fontFamily: "'DM Sans',sans-serif", transition: 'all 0.18s ease' }}
+                >
+                  {plannerSharing ? (
+                    <>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'edSpin 0.8s linear infinite', flexShrink: 0 }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+                      Generating…
+                    </>
+                  ) : plannerCopied ? (
+                    <>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      Link Copied!
+                    </>
+                  ) : (
+                    <>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                      Share My Plan
+                    </>
+                  )}
+                </button>
+              </div>
+
               {/* -- View selected experiences (mirrors ExperienceDiscovery confirm page) -- */}
               {lastSelectedExps.length > 0 && (() => {
                 const ALL_EXP_CATS = ['Attractions','Food','Cafes','Hidden Gems','Adventure','Shopping','Nightlife','Culture','Viewpoints','Local Experiences','Party'];
@@ -1441,6 +1593,122 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   </div>
                 );
               })()}
+
+              {/* -- Lumi enriched additions (when user selected few experiences and Lumi filled gaps) -- */}
+              {lastSelectedExps.length > 0 && itin && (() => {
+                const LUMI_ADD_TYPE_TO_CAT = {
+                  'attraction': 'Attractions', 'food': 'Food', 'cafe': 'Cafes', 'cafes': 'Cafes',
+                  'shopping': 'Shopping', 'nightlife': 'Nightlife', 'culture': 'Culture',
+                  'adventure': 'Adventure', 'viewpoint': 'Viewpoints', 'viewpoints': 'Viewpoints',
+                  'local': 'Local Experiences', 'party': 'Party', 'hidden gem': 'Hidden Gems',
+                };
+                const SKIP_LA = new Set(['hotel','transport','transit','travel','transfer','rest','stay']);
+                const lumiAddedActs = (itin.days || []).flatMap((d, di) =>
+                  (d.activities || [])
+                    .filter(a => a.lumiAdded === true && !SKIP_LA.has((a.type || '').toLowerCase()))
+                    .map((a, ai) => ({ ...a, _laId: `la-${di}-${ai}` }))
+                );
+                if (lumiAddedActs.length === 0) return null;
+                const lumiAddedByCat = lumiAddedActs.reduce((acc, a) => {
+                  const cat = LUMI_ADD_TYPE_TO_CAT[(a.type || '').toLowerCase()] || (a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : 'Experiences');
+                  if (!acc[cat]) acc[cat] = [];
+                  acc[cat].push(a);
+                  return acc;
+                }, {});
+                if (Object.keys(lumiAddedByCat).length === 0) return null;
+                return (
+                  <div style={{ background: '#FFF8F2', borderRadius: 16, padding: '1rem 1.1rem', border: '1px solid rgba(255,106,0,0.15)', boxShadow: D.cardShadow }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                      <span style={{ fontSize: 18, lineHeight: 1 }}>✨</span>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif" }}>Lumi also added</div>
+                        <div style={{ fontSize: 11, color: D.muted, fontFamily: "'DM Sans',sans-serif", marginTop: 1 }}>Essentials Lumi included to make your trip complete</div>
+                      </div>
+                    </div>
+                    {Object.entries(lumiAddedByCat).map(([cat, items]) => {
+                      const cfg = expCatCfg(cat);
+                      const isOpen = plannerExpandedCats.has(`la-${cat}`);
+                      return (
+                        <div key={cat} style={{ marginBottom: 6, borderRadius: 12, border: `1px solid ${isOpen ? 'rgba(255,106,0,0.2)' : 'rgba(255,106,0,0.1)'}`, overflow: 'hidden', transition: 'border-color 0.2s ease' }}>
+                          <button
+                            onClick={() => setPlannerExpandedCats(prev => { const next = new Set(prev); next.has(`la-${cat}`) ? next.delete(`la-${cat}`) : next.add(`la-${cat}`); return next; })}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: isOpen ? '#FFF0E6' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s ease' }}
+                          >
+                            {renderExpCatIcon(cat, 13, isOpen ? '#FF6A00' : D.muted)}
+                            <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flex: 1 }}>{cat}</span>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: '#FF6A00', background: '#FFF0E6', borderRadius: 999, padding: '2px 7px', border: '1px solid rgba(255,106,0,0.15)', flexShrink: 0 }}>{items.length}</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}><polyline points="6 9 12 15 18 9"/></svg>
+                          </button>
+                          {isOpen && (
+                            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', padding: '6px 12px 10px' }}>
+                              {items.map(a => (
+                                <button key={a._laId} onClick={() => setPlannerReviewExp({ name: a.name, category: cat, _catColor: cfg.color, _catBg: cfg.bg, description: a.note || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} photo`, _time: a.time, _endTime: a.endTime, _area: a.area })} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: '#FFF0E6', color: '#CC5500', border: '1px solid rgba(255,106,0,0.18)', fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  {a.name}
+                                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* -- View Lumi Selected experiences (when Lumi built the itinerary, no user-selected exps) -- */}
+              {lastSelectedExps.length === 0 && itin && (() => {
+                const LUMI_TYPE_TO_CAT = {
+                  'attraction': 'Attractions', 'food': 'Food', 'cafe': 'Cafes', 'cafes': 'Cafes',
+                  'shopping': 'Shopping', 'nightlife': 'Nightlife', 'culture': 'Culture',
+                  'adventure': 'Adventure', 'viewpoint': 'Viewpoints', 'viewpoints': 'Viewpoints',
+                  'local': 'Local Experiences', 'party': 'Party', 'hidden gem': 'Hidden Gems',
+                };
+                const allActs = (itin.days || []).flatMap((d, di) =>
+                  (d.activities || [])
+                    .filter(a => a.type !== 'transport' && a.type !== 'travel' && a.type !== 'hotel' && a.type !== 'stay' && a.type !== 'rest')
+                    .map((a, ai) => ({ ...a, _lumiId: `lumi-${di}-${ai}` }))
+                );
+                const lumiByCategory = allActs.reduce((acc, a) => {
+                  const cat = LUMI_TYPE_TO_CAT[(a.type || '').toLowerCase()] || (a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : 'Experiences');
+                  if (!acc[cat]) acc[cat] = [];
+                  acc[cat].push(a);
+                  return acc;
+                }, {});
+                if (Object.keys(lumiByCategory).length === 0) return null;
+                return (
+                  <div style={{ background: D.surface, borderRadius: 16, padding: '1rem 1.1rem', border: `0.5px solid ${D.border}`, boxShadow: D.cardShadow }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif", marginBottom: 10 }}>View Lumi Selected experiences</div>
+                    {Object.entries(lumiByCategory).map(([cat, items]) => {
+                      const cfg = expCatCfg(cat);
+                      const isOpen = plannerExpandedCats.has(cat);
+                      return (
+                        <div key={cat} style={{ marginBottom: 6, borderRadius: 12, border: `1px solid ${isOpen ? 'rgba(28,20,16,0.15)' : D.border}`, overflow: 'hidden', transition: 'border-color 0.2s ease' }}>
+                          <button
+                            onClick={() => setPlannerExpandedCats(prev => { const next = new Set(prev); next.has(cat) ? next.delete(cat) : next.add(cat); return next; })}
+                            style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: isOpen ? '#F8F7F5' : 'transparent', border: 'none', cursor: 'pointer', textAlign: 'left', transition: 'background 0.2s ease' }}
+                          >
+                            {renderExpCatIcon(cat, 13, isOpen ? D.espresso : D.muted)}
+                            <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", flex: 1 }}>{cat}</span>
+                            <span style={{ fontSize: 10, fontWeight: 600, color: D.secondary, background: '#F0EFEC', borderRadius: 999, padding: '2px 7px', border: '1px solid rgba(28,20,16,0.1)', flexShrink: 0 }}>{items.length}</span>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={D.muted} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }}><polyline points="6 9 12 15 18 9"/></svg>
+                          </button>
+                          {isOpen && (
+                            <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', padding: '6px 12px 10px' }}>
+                              {items.map(a => (
+                                <button key={a._lumiId} onClick={() => setPlannerReviewExp({ name: a.name, category: cat, _catColor: cfg.color, _catBg: cfg.bg, description: a.note || a.description || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} photo`, _time: a.time, _endTime: a.endTime, _area: a.area })} style={{ fontSize: 11, fontWeight: 600, padding: '3px 10px', borderRadius: 999, background: '#F4F2EE', color: D.espresso, border: '1px solid rgba(28,20,16,0.09)', fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                  {a.name}
+                                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.35 }}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <>
@@ -1459,8 +1727,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   <ExperienceDiscovery
                     trip={trip}
                     modifyExps={modifyExps}
-                    onComplete={handleDiscoverComplete}
-                    onSkip={handleDiscoverSkip}
+                    onComplete={(selectedExps) => { setModifyExps(null); runGenerateItinerary(selectedExps); }}
+                    onSkip={() => { setModifyExps(null); runGenerateItinerary(); }}
                   />
                 </>
               )}
@@ -1487,7 +1755,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   <div style={{ fontSize: 15, fontWeight: 600, marginBottom: 8 }}>Couldn't generate itinerary</div>
                   <div style={{ fontSize: 12.5, color: '#8A7E76', marginBottom: 20 }}>Something went wrong. Try again or pick differently.</div>
                   <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
-                    <button style={{ ...S.btn, ...accentStyle, padding: '10px 24px' }} onClick={() => { console.log('[Itinerary] Try Again CLICKED'); runGenerateItinerary(); }}>Try Again</button>
+                    <button style={{ ...S.btn, ...accentStyle, padding: '10px 24px' }} onClick={() => runGenerateItinerary()}>Try Again</button>
                     <button style={{ ...S.btn, padding: '10px 24px', background: '#F4F2EE', color: '#5C504A', border: 'none', borderRadius: 12 }} onClick={() => setStep('discover')}>Pick Experiences</button>
                   </div>
                 </div>
@@ -1500,6 +1768,67 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       {/* -- TAB: ITINERARY (day-by-day schedule) -- */}
       {iTab === 'itinerary' && (
         <div style={{ paddingBottom: '2.5rem' }}>
+          {/* ── Cities Covered strip ── */}
+          {(() => {
+            const routeCities = parseCitiesFromNotes(trip.travelNotes);
+            if (!routeCities) return null;
+            return (
+              <>
+                <div
+                  onClick={() => setShowRoutePopup(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 12, background: 'linear-gradient(135deg,#FF6A00 0%,#E8390E 100%)', borderRadius: 14, cursor: 'pointer', boxShadow: '0 2px 10px rgba(255,106,0,0.22)', userSelect: 'none' }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.75)', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 2 }}>Your Route · {routeCities.length} cities</div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'DM Sans',sans-serif" }}>
+                      {routeCities.map(c => c.name).join(' → ')}
+                    </div>
+                  </div>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+                </div>
+                {showRoutePopup && (
+                  <div
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.55)', zIndex: 1200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+                    onClick={e => { if (e.target === e.currentTarget) setShowRoutePopup(false); }}
+                  >
+                    <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 480, padding: '1.4rem 1.25rem calc(2rem + env(safe-area-inset-bottom, 0px))', boxShadow: '0 -4px 32px rgba(0,0,0,0.18)', marginBottom: 66 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.1rem' }}>
+                        <div style={{ flex: 1, fontSize: 16, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif" }}>Your Route</div>
+                        <button onClick={() => setShowRoutePopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0 }}>✕</button>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                        {routeCities.map((city, i) => (
+                          <div key={city.name} style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 28, flexShrink: 0 }}>
+                              <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#FF6A00' : i === routeCities.length - 1 ? '#FF8C3A' : '#FFF3E8', border: `2px solid ${i === 0 ? '#FF6A00' : i === routeCities.length - 1 ? '#FF8C3A' : '#FFCBA0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, zIndex: 1 }}>
+                                <span style={{ fontSize: 11, fontWeight: 800, color: i === 0 || i === routeCities.length - 1 ? '#fff' : '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>{i + 1}</span>
+                              </div>
+                              {i < routeCities.length - 1 && (
+                                <div style={{ width: 2, flex: 1, minHeight: 20, background: 'linear-gradient(180deg,#FFCBA0,#E8E4DC)', margin: '2px 0' }} />
+                              )}
+                            </div>
+                            <div style={{ paddingBottom: i < routeCities.length - 1 ? 16 : 0, flex: 1 }}>
+                              <div style={{ fontSize: 14.5, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.25 }}>{city.name}</div>
+                              <div style={{ fontSize: 11.5, color: D.muted, marginTop: 2, fontFamily: "'DM Sans',sans-serif" }}>
+                                {city.days} day{city.days > 1 ? 's' : ''}
+                                {i < routeCities.length - 1 && <span style={{ marginLeft: 8, color: '#FF6A00', fontSize: 11 }}>↓ travel to next city</span>}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ marginTop: '1.2rem', padding: '10px 14px', background: D.neutral, borderRadius: 12 }}>
+                        <div style={{ fontSize: 12, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>
+                          <span style={{ fontWeight: 700 }}>{routeCities.reduce((s, c) => s + c.days, 0)} days total</span> · {routeCities.length} cities
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
           {step === 'loading' && (
             <div style={{ textAlign: 'center', padding: '4rem 1.5rem' }}>
               <div style={isSolo ? S.soloSpinner : S.spinner} />
@@ -1543,6 +1872,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg>
                       </button>
                     )}
+                    {/* Experiences summary button */}
+                    <button onClick={() => setShowExpsPopup(true)} style={{ flexShrink: 0, width: 38, height: 38, borderRadius: 11, border: 'none', background: 'rgba(255,255,255,0.22)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 0 2px rgba(255,255,255,0.3)', transition: 'all 0.2s ease' }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                    </button>
                   </div>
                 </div>
 
@@ -1563,7 +1896,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                             <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>{itin.quickTips.length} insider tips for your journey</div>
                           </div>
                         </div>
-                        <button onClick={() => setShowTipsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>{'\u2715'}</button>
+                        <button onClick={() => setShowTipsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>\u2715</button>
                       </div>
                       <div style={{ overflowY: 'auto', padding: '12px 16px' }}>
                         {itin.quickTips.map((tip, i) => (
@@ -1579,6 +1912,136 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   </div>
                 )}
 
+                {/* Experiences summary popup */}
+                {showExpsPopup && (() => {
+                  const hasUserExps = lastSelectedExps.length > 0;
+                  const LUMI_TYPE_TO_CAT_LOCAL = {
+                    'attraction': 'Attractions', 'food': 'Food', 'cafe': 'Cafes', 'cafes': 'Cafes',
+                    'shopping': 'Shopping', 'nightlife': 'Nightlife', 'culture': 'Culture',
+                    'adventure': 'Adventure', 'viewpoint': 'Viewpoints', 'viewpoints': 'Viewpoints',
+                    'local': 'Local Experiences', 'party': 'Party', 'hidden gem': 'Hidden Gems',
+                  };
+                  const SKIP_TYPES = new Set(['transport','travel','hotel','stay','rest','transit','transfer']);
+                  let byCategory = {};
+                  if (hasUserExps) {
+                    byCategory = lastSelectedExps.reduce((acc, e) => {
+                      const cat = e.category || 'Experiences';
+                      if (!acc[cat]) acc[cat] = [];
+                      acc[cat].push(e);
+                      return acc;
+                    }, {});
+                  } else {
+                    const allActs = (itin.days || []).flatMap((d, di) =>
+                      (d.activities || []).filter(a => !SKIP_TYPES.has((a.type||'').toLowerCase()))
+                        .map((a, ai) => ({ ...a, _lumiId: `lumi-${di}-${ai}` }))
+                    );
+                    byCategory = allActs.reduce((acc, a) => {
+                      const cat = LUMI_TYPE_TO_CAT_LOCAL[(a.type||'').toLowerCase()] || (a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : 'Experiences');
+                      if (!acc[cat]) acc[cat] = [];
+                      acc[cat].push(a);
+                      return acc;
+                    }, {});
+                  }
+                  // Lumi-enriched additions when user had picks but selection was sparse
+                  const lumiPopupAdded = hasUserExps ? (itin.days || []).flatMap((d, di) =>
+                    (d.activities || [])
+                      .filter(a => a.lumiAdded === true && !SKIP_TYPES.has((a.type||'').toLowerCase()))
+                      .map((a, ai) => ({ ...a, _laPopId: `lap-${di}-${ai}` }))
+                  ) : [];
+                  const lumiPopupByCat = lumiPopupAdded.reduce((acc, a) => {
+                    const cat = LUMI_TYPE_TO_CAT_LOCAL[(a.type||'').toLowerCase()] || (a.type ? a.type.charAt(0).toUpperCase() + a.type.slice(1) : 'Experiences');
+                    if (!acc[cat]) acc[cat] = [];
+                    acc[cat].push(a);
+                    return acc;
+                  }, {});
+                  const totalCount = Object.values(byCategory).reduce((s, arr) => s + arr.length, 0) + lumiPopupAdded.length;
+                  return (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.50)', zIndex: 1200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => { if (e.target === e.currentTarget) setShowExpsPopup(false); }}>
+                      <div style={{ width: '100%', maxWidth: 560, background: '#FFFDF8', borderRadius: '22px 22px 0 0', paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)', boxShadow: '0 -10px 60px rgba(0,0,0,0.22)', animation: 'tipsSheetIn 0.3s cubic-bezier(0.2,0.7,0.2,1) both', maxHeight: 'calc(80vh - 66px)', marginBottom: 66, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 0 0' }}>
+                          <div style={{ width: 36, height: 4, borderRadius: 99, background: 'rgba(28,20,16,0.14)' }} />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 18px 13px', borderBottom: `1px solid ${D.divider}`, flexShrink: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <div style={{ width: 36, height: 36, borderRadius: 12, background: '#FFF3E8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>
+                            </div>
+                            <div>
+                              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: D.espresso }}>{hasUserExps ? 'Your Selected Experiences' : 'Lumi Selected Experiences'}</div>
+                              <div style={{ fontSize: 11, color: D.muted, marginTop: 1 }}>{totalCount} {hasUserExps ? `hand-picked${lumiPopupAdded.length > 0 ? ` + ${lumiPopupAdded.length} Lumi additions` : ''}` : 'curated'} places across your trip</div>
+                            </div>
+                          </div>
+                          <button onClick={() => setShowExpsPopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0, flexShrink: 0 }}>×</button>
+                        </div>
+                        <div style={{ overflowY: 'auto', padding: '12px 16px' }}>
+                          {Object.entries(byCategory).map(([cat, items]) => {
+                            const cfg = expCatCfg(cat);
+                            return (
+                              <div key={cat} style={{ marginBottom: 14 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
+                                  {renderExpCatIcon(cat, 12, cfg.color)}
+                                  <span style={{ fontSize: 11.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.8 }}>{cat}</span>
+                                  <span style={{ fontSize: 10, fontWeight: 600, color: D.muted, background: D.neutral, borderRadius: 999, padding: '1px 6px', border: `1px solid ${D.border}` }}>{items.length}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                                  {items.map((e, idx) => (
+                                    <button
+                                      key={e.id || e._lumiId || idx}
+                                      onClick={() => {
+                                        setShowExpsPopup(false);
+                                        if (hasUserExps) {
+                                          setPlannerReviewExp(e);
+                                        } else {
+                                          setPlannerReviewExp({ name: e.name, category: cat, _catColor: cfg.color, _catBg: cfg.bg, description: e.note || e.description || '', duration: e.duration, bestTime: e.headsUp, cost: e.cost, vibe: null, tier: e.mustDo ? 1 : 0, imageQuery: `${e.name} ${form.dest} photo`, _time: e.time, _endTime: e.endTime, _area: e.area });
+                                        }
+                                      }}
+                                      style={{ fontSize: 11.5, fontWeight: 600, padding: '4px 11px', borderRadius: 999, background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.color}22`, fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                    >
+                                      {e.name}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {lumiPopupAdded.length > 0 && (
+                            <>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 8, marginBottom: 10, paddingTop: 12, borderTop: '1px solid rgba(28,20,16,0.08)' }}>
+                                <span style={{ fontSize: 15 }}>✨</span>
+                                <span style={{ fontSize: 11.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.8 }}>Lumi also added</span>
+                                <span style={{ fontSize: 10, fontWeight: 600, color: '#FF6A00', background: '#FFF0E6', borderRadius: 999, padding: '1px 6px', border: '1px solid rgba(255,106,0,0.15)' }}>{lumiPopupAdded.length}</span>
+                              </div>
+                              {Object.entries(lumiPopupByCat).map(([cat, items]) => {
+                                const cfg = expCatCfg(cat);
+                                return (
+                                  <div key={`lp-${cat}`} style={{ marginBottom: 14 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 7 }}>
+                                      {renderExpCatIcon(cat, 12, '#FF6A00')}
+                                      <span style={{ fontSize: 11.5, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", textTransform: 'uppercase', letterSpacing: 0.8 }}>{cat}</span>
+                                      <span style={{ fontSize: 10, fontWeight: 600, color: '#FF6A00', background: '#FFF0E6', borderRadius: 999, padding: '1px 6px', border: '1px solid rgba(255,106,0,0.15)' }}>{items.length}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
+                                      {items.map(a => (
+                                        <button
+                                          key={a._laPopId}
+                                          onClick={() => { setShowExpsPopup(false); setPlannerReviewExp({ name: a.name, category: cat, _catColor: cfg.color, _catBg: cfg.bg, description: a.note || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} photo`, _time: a.time, _endTime: a.endTime, _area: a.area }); }}
+                                          style={{ fontSize: 11.5, fontWeight: 600, padding: '4px 11px', borderRadius: 999, background: '#FFF0E6', color: '#CC5500', border: '1px solid rgba(255,106,0,0.2)', fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                                        >
+                                          {a.name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* Day sections */}
                 {(itin.days || []).map((d, dayIndex) => {
                   const dateLabel = form.arrival ? formatTripDate(form.arrival, dayIndex) : `Day ${d.day}`;
@@ -1589,6 +2052,30 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   const dayDoneCount  = acts.filter((_, ai) => doneActivities.has(`day-${d.day}-act-${ai}`)).length;
                   const donePct = dayTotalCount > 0 ? (dayDoneCount / dayTotalCount) * 100 : 0;
                   const isExpanded = !collapsedDays.has(d.day);
+                  const dayCity = (() => {
+                    const notes = trip.travelNotes || '';
+                    // Multi-city explicit route — use day-to-city lookup
+                    const _rc = parseCitiesFromNotes(notes);
+                    if (_rc) {
+                      let _n = 1;
+                      for (const _c of _rc) {
+                        for (let _i = 0; _i < _c.days; _i++) {
+                          if (_n === d.day) return _c.name;
+                          _n++;
+                        }
+                      }
+                      return null;
+                    }
+                    // Region/country — extract specific city from first activity's area
+                    if (notes.includes('REGION TRAVEL')) {
+                      const _skip = new Set(['transport','travel','hotel','stay','rest','transit','transfer']);
+                      const _act = (d.activities || []).find(a => !_skip.has((a.type||'').toLowerCase()) && a.area);
+                      if (_act?.area) return _act.area.split(/\s*[—,]\s*/)[0].trim();
+                      return null;
+                    }
+                    // Single city — no tag
+                    return null;
+                  })();
 
                   const dayEmojiList = ['🌅','🏛','🌊','\u26F0','🌿','🏙','🛍','🍽','\u26F5','🌙','🏖','🗺'];
                   const titleLower = (d.title || d.theme || '').toLowerCase();
@@ -1632,7 +2119,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   const durLabel = durHrs > 0 ? `${durHrs}h${durMins > 0 ? ` ${durMins}m` : ''}` : (durMins > 0 ? `${durMins}m` : '\u2014');
 
                   const paidActs = acts.filter(act => { const c = (act.cost || '').toLowerCase(); return c && c !== 'free' && c !== 'included'; });
-                  const estSpend = paidActs.length === 0 ? 'Free' : (paidActs[0]?.cost || `${paidActs.length} paid`);
                   const isCurrentDay = d.day === currentTripDay;
 
                   return (
@@ -1648,9 +2134,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                 <span style={{ fontSize: 14, fontWeight: 800, color: '#FF6A00', lineHeight: 1.1 }}>{d.day}</span>
                               </div>
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1C1410', fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
-                                <div style={{ fontSize: 10, color: '#9CA3AF', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>
-                                  Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}
+                                <div style={{ fontSize: 14.5, fontWeight: 800, color: '#1C1410', fontFamily: "'Sora',sans-serif", lineHeight: 1.3, marginBottom: 2 }}>{d.title || d.theme}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                                  <div style={{ fontSize: 10, color: '#9CA3AF', fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}</div>
+                                  {dayCity && <span style={{ fontSize: 9.5, fontWeight: 800, color: '#FF6A00', background: '#FFF3EB', border: '1px solid rgba(255,106,0,0.22)', borderRadius: 999, padding: '1px 7px', fontFamily: "'DM Sans',sans-serif" }}>{dayCity}</span>}
                                 </div>
                               </div>
                               <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
@@ -1670,6 +2157,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                           </div>
 
                           <div style={{ background: '#F7F7F7', padding: '10px 10px 2px', animation: 'accordionSlide 0.28s ease both' }}>
+                            <div style={{ textAlign: 'center', fontSize: 10.5, fontWeight: 800, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif", letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 8, opacity: 0.85 }}>What to Cover Today</div>
                             {acts.map((a, i) => {
                               const doneKey = `day-${d.day}-act-${i}`;
                               const isDone = doneActivities.has(doneKey);
@@ -1685,7 +2173,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
 
                               return (
                                 <div key={i} ref={el => { if (el) activityNodeRefs.current[doneKey] = el; else delete activityNodeRefs.current[doneKey]; }}>
-                                  <div className={`act-card-compact${isActive ? ' itin-live-active-card' : ''}`} style={{ position: 'relative', background: isDone ? 'rgba(28,20,16,0.03)' : '#fff', borderRadius: 14, border: `1px solid ${isActive ? 'rgba(255,106,0,0.28)' : '#EBEBEB'}`, marginBottom: 8, overflow: 'hidden', boxShadow: isActive ? '0 4px 14px rgba(255,106,0,0.1)' : '0 1px 5px rgba(28,20,16,0.05)', opacity: isDone ? 0.6 : 1, transition: 'opacity 0.3s ease' }}>
+                                  <div
+                                    className={`act-card-compact${isActive ? ' itin-live-active-card' : ''}`}
+                                    style={{ position: 'relative', background: isDone ? 'rgba(28,20,16,0.03)' : '#fff', borderRadius: 14, border: `1px solid ${isActive ? 'rgba(255,106,0,0.28)' : '#EBEBEB'}`, marginBottom: 8, overflow: 'hidden', boxShadow: isActive ? '0 4px 14px rgba(255,106,0,0.1)' : '0 1px 5px rgba(28,20,16,0.05)', opacity: isDone ? 0.6 : 1, transition: 'opacity 0.3s ease', cursor: isTransport || isHotelType ? 'default' : 'pointer' }}
+                                    onClick={() => { if (!isTransport && !isHotelType) setPlannerReviewExp({ name: a.name, category: catLabel, _catColor: catColor, _catBg: catBg, description: a.note || a.description || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} photo`, _time: a.time, _endTime: a.endTime, _area: a.area, _doneKey: doneKey }); }}
+                                  >
                                     {/* Checkbox – top-right corner */}
                                     <button onClick={e => { e.stopPropagation(); toggleActivity(doneKey); }} className="itin-done-btn" style={{ position: 'absolute', top: 8, right: 8, zIndex: 2, width: 18, height: 18, borderRadius: 5, border: isDone ? 'none' : '1.5px solid #CDCAC4', background: isDone ? '#FF6A00' : 'rgba(255,255,255,0.92)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, boxShadow: isDone ? '0 2px 8px rgba(255,106,0,0.4)' : '0 1px 4px rgba(0,0,0,0.08)', transition: 'all 0.2s cubic-bezier(0.34,1.56,0.64,1)' }}>
                                       {isDone && <svg width="10" height="10" viewBox="0 0 11 11" fill="none"><polyline points="2,5.5 4.5,8 9,3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
@@ -1693,14 +2185,14 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                     <div style={{ display: 'flex', alignItems: 'stretch' }}>
                                       {/* Photo with white border */}
                                       {!isTransport && !isHotelType && (
-                                        <div style={{ width: 116, flexShrink: 0, alignSelf: 'stretch', padding: '7px 0 7px 7px', background: '#fff', cursor: 'pointer' }} onClick={() => setPlannerReviewExp({ name: a.name, category: catLabel, _catColor: catColor, _catBg: catBg, description: a.note || a.description || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} photo`, _time: a.time, _endTime: a.endTime, _area: a.area, _doneKey: doneKey })}>
+                                        <div style={{ width: 116, flexShrink: 0, alignSelf: 'stretch', padding: '7px 0 7px 7px', background: '#fff' }}>
                                           <div style={{ width: '100%', height: '100%', borderRadius: 10, overflow: 'hidden', background: '#EDE8E2' }}>
                                             <PlacePhotoCarousel query={`${a.name} ${form.dest} photo`} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 0 }} limit={1} />
                                           </div>
                                         </div>
                                       )}
                                       {/* Content */}
-                                      <div style={{ flex: 1, padding: '8px 26px 8px 10px', minWidth: 0, cursor: isTransport || isHotelType ? 'default' : 'pointer' }} onClick={() => isTransport || isHotelType ? null : setPlannerReviewExp({ name: a.name, category: catLabel, _catColor: catColor, _catBg: catBg, description: a.note || a.description || '', duration: a.duration, bestTime: a.headsUp, cost: a.cost, vibe: null, tier: a.mustDo ? 1 : 0, imageQuery: `${a.name} ${form.dest} photo`, _time: a.time, _endTime: a.endTime, _area: a.area, _doneKey: doneKey })}>
+                                      <div style={{ flex: 1, padding: '8px 26px 8px 10px', minWidth: 0 }}>
                                         {(a.time || a.endTime) ? (
                                           <div style={{ marginBottom: 3 }}>
                                             <span style={{ fontSize: 10.5, fontWeight: 700, color: '#FF6A00', fontFamily: "'DM Sans',sans-serif", whiteSpace: 'nowrap' }}>{a.time}{a.endTime ? ` \u2013 ${a.endTime}` : ''}</span>
@@ -1720,8 +2212,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                         ) : (
                                           <div style={{ fontSize: 12.5, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.25, marginBottom: 4, textDecoration: isDone ? 'line-through' : 'none', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.name}</div>
                                         )}
-                                        <div style={{ marginBottom: 4 }}>
+                                        <div style={{ marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                                           <span style={{ fontSize: 9.5, fontWeight: 700, background: catBg, color: catColor, borderRadius: 999, padding: '2px 8px', textTransform: 'uppercase', letterSpacing: 0.4, border: isRest ? `1px solid ${catColor}` : 'none' }}>{catLabel}</span>
+                                          {a.lumiAdded && <span style={{ fontSize: 9.5, fontWeight: 700, background: '#FFF0E6', color: '#CC5500', borderRadius: 999, padding: '2px 8px', letterSpacing: 0.4, border: '1px solid rgba(255,106,0,0.18)' }}>✨ Lumi</span>}
                                         </div>
                                         <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'nowrap', overflow: 'hidden' }}>
                                           {a.duration && <span style={{ display: 'inline-flex', alignItems: 'center', gap: 3, fontSize: 10.5, color: D.muted, whiteSpace: 'nowrap', flexShrink: 0 }}><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>{a.duration}</span>}
@@ -1740,16 +2233,23 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                   </div>
 
                                   {/* Transit connector */}
-                                  {!isLast && a.travelToNext && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, marginTop: -2 }}>
-                                      <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.07)' }} />
-                                      <span style={{ fontSize: 11, color: '#6B7280', background: '#F3F4F6', borderRadius: 999, padding: '4px 12px', border: '1px solid #E5E7EB', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22V12m0 0V4m0 8H4m8 0h8" /><circle cx="12" cy="19" r="2"/></svg>
-                                        {a.travelToNext}
-                                      </span>
-                                      <div style={{ flex: 1, height: 1, background: 'rgba(28,20,16,0.07)' }} />
-                                    </div>
-                                  )}
+                                  {!isLast && a.travelToNext && (() => {
+                                    const tKey = `${d.day}-${i}`;
+                                    const isExp = expandedTransit === tKey;
+                                    return (
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6, marginTop: -2 }}>
+                                        <div style={{ flex: isExp ? 0 : 1, height: 1, background: 'rgba(28,20,16,0.07)', transition: 'flex 0.2s' }} />
+                                        <button
+                                          onClick={e => { e.stopPropagation(); if (isExp) { clearTimeout(expandedTransitTimer.current); setExpandedTransit(null); } else { setExpandedTransit(tKey); clearTimeout(expandedTransitTimer.current); expandedTransitTimer.current = setTimeout(() => setExpandedTransit(null), 5000); } }}
+                                          style={{ fontSize: 10.5, color: '#6B7280', background: '#F3F4F6', borderRadius: 999, padding: '4px 10px', border: '1px solid #E5E7EB', display: 'inline-flex', alignItems: 'center', gap: 5, maxWidth: isExp ? 'calc(100% - 16px)' : 'calc(100% - 32px)', overflow: 'hidden', cursor: 'pointer', flexShrink: 0 }}
+                                        >
+                                          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M12 22V12m0 0V4m0 8H4m8 0h8" /><circle cx="12" cy="19" r="2"/></svg>
+                                          <span style={{ overflow: 'hidden', textOverflow: isExp ? 'unset' : 'ellipsis', whiteSpace: isExp ? 'normal' : 'nowrap' }}>{a.travelToNext}</span>
+                                        </button>
+                                        <div style={{ flex: isExp ? 0 : 1, height: 1, background: 'rgba(28,20,16,0.07)', transition: 'flex 0.2s' }} />
+                                      </div>
+                                    );
+                                  })()}
                                 </div>
                               );
                             })}
@@ -1767,11 +2267,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                                       { val: `${dayDoneCount}/${dayTotalCount}`, label: 'Completed' },
                                       { val: durLabel, label: 'Total duration' },
                                       { val: walkMins > 0 ? `${walkMins} min` : '\u2014', label: 'Walk time' },
-                                      { val: estSpend, label: 'Est. spend' },
                                     ].map((stat, si) => (
-                                      <div key={si} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '8px 3px', borderRight: si < 3 ? '1px solid #EBEBEB' : 'none' }}>
-                                        <span style={{ fontSize: 12, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.2 }}>{stat.val}</span>
-                                        <span style={{ fontSize: 9.5, color: D.muted, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.3, textAlign: 'center' }}>{stat.label}</span>
+                                      <div key={si} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '7px 4px', borderRight: si < 2 ? '1px solid #EBEBEB' : 'none' }}>
+                                        <span style={{ fontSize: 11, fontWeight: 700, color: D.espresso, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.2 }}>{stat.val}</span>
+                                        <span style={{ fontSize: 9, color: D.muted, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.3, textAlign: 'center' }}>{stat.label}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -1837,9 +2336,10 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                             <span style={{ fontSize: 13, fontWeight: 800, color: '#FF6A00', lineHeight: 1.1 }}>{d.day}</span>
                           </div>
                           <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 14, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.2, marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.title || d.theme}</div>
-                            <div style={{ fontSize: 10, color: D.muted, fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>
-                              Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}
+                            <div style={{ fontSize: 14, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.3, marginBottom: 2 }}>{d.title || d.theme}</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
+                              <div style={{ fontSize: 10, color: D.muted, fontFamily: "'DM Sans',sans-serif", lineHeight: 1 }}>Day {d.day} · {dateLabel}{isArrivalDay ? ' · Arrival' : isDepartureDay ? ' · Departure' : ''}</div>
+                              {dayCity && <span style={{ fontSize: 9.5, fontWeight: 800, color: '#FF6A00', background: '#FFF3EB', border: '1px solid rgba(255,106,0,0.22)', borderRadius: 999, padding: '1px 7px', fontFamily: "'DM Sans',sans-serif" }}>{dayCity}</span>}
                             </div>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
@@ -1858,6 +2358,72 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       )}
 
       <div style={{ display: iTab === 'nearby' ? 'block' : 'none' }}>
+        {/* ── Cities Covered strip ── */}
+        {(() => {
+          const routeCities = parseCitiesFromNotes(trip.travelNotes);
+          if (!routeCities) return null;
+          return (
+            <>
+              {/* Route summary chip strip */}
+              <div
+                onClick={() => setShowRoutePopup(true)}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', marginBottom: 12, background: 'linear-gradient(135deg,#FF6A00 0%,#E8390E 100%)', borderRadius: 14, cursor: 'pointer', boxShadow: '0 2px 10px rgba(255,106,0,0.22)', userSelect: 'none' }}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.75)', letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 2 }}>Your Route · {routeCities.length} cities</div>
+                  <div style={{ fontSize: 12.5, fontWeight: 600, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: "'DM Sans',sans-serif" }}>
+                    {routeCities.map(c => c.name).join(' → ')}
+                  </div>
+                </div>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2.5" strokeLinecap="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </div>
+
+              {/* Route detail popup */}
+              {showRoutePopup && (
+                <div
+                  style={{ position: 'fixed', inset: 0, background: 'rgba(14,16,24,0.55)', zIndex: 1200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}
+                  onClick={e => { if (e.target === e.currentTarget) setShowRoutePopup(false); }}
+                >
+                  <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', maxWidth: 480, padding: '1.4rem 1.25rem calc(2rem + env(safe-area-inset-bottom, 0px))', boxShadow: '0 -4px 32px rgba(0,0,0,0.18)', marginBottom: 66 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.1rem' }}>
+                      <div style={{ flex: 1, fontSize: 16, fontWeight: 800, color: D.espresso, fontFamily: "'Sora',sans-serif" }}>Your Route</div>
+                      <button onClick={() => setShowRoutePopup(false)} style={{ width: 30, height: 30, borderRadius: '50%', border: `1px solid ${D.border}`, background: D.neutral, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, color: D.muted, padding: 0 }}>✕</button>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                      {routeCities.map((city, i) => (
+                        <div key={city.name} style={{ display: 'flex', gap: 12, alignItems: 'stretch' }}>
+                          {/* Timeline line */}
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 28, flexShrink: 0 }}>
+                            <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#FF6A00' : i === routeCities.length - 1 ? '#7F77DD' : '#FFF3E8', border: `2px solid ${i === 0 ? '#FF6A00' : i === routeCities.length - 1 ? '#7F77DD' : '#FFCBA0'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, zIndex: 1 }}>
+                              <span style={{ fontSize: 11, fontWeight: 800, color: i === 0 || i === routeCities.length - 1 ? '#fff' : '#FF6A00', fontFamily: "'DM Sans',sans-serif" }}>{i + 1}</span>
+                            </div>
+                            {i < routeCities.length - 1 && (
+                              <div style={{ width: 2, flex: 1, minHeight: 20, background: 'linear-gradient(180deg,#FFCBA0,#E8E4DC)', margin: '2px 0' }} />
+                            )}
+                          </div>
+                          {/* City info */}
+                          <div style={{ paddingBottom: i < routeCities.length - 1 ? 16 : 0, flex: 1 }}>
+                            <div style={{ fontSize: 14.5, fontWeight: 700, color: D.espresso, fontFamily: "'Sora',sans-serif", lineHeight: 1.25 }}>{city.name}</div>
+                            <div style={{ fontSize: 11.5, color: D.muted, marginTop: 2, fontFamily: "'DM Sans',sans-serif" }}>
+                              {city.days} day{city.days > 1 ? 's' : ''}
+                              {i < routeCities.length - 1 && <span style={{ marginLeft: 8, color: '#FF6A00', fontSize: 11 }}>↓ travel to next city</span>}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: '1.2rem', padding: '10px 14px', background: D.neutral, borderRadius: 12 }}>
+                      <div style={{ fontSize: 12, color: D.secondary, fontFamily: "'DM Sans',sans-serif" }}>
+                        <span style={{ fontWeight: 700 }}>{routeCities.reduce((s, c) => s + c.days, 0)} days total</span> · {routeCities.length} cities
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
         <RecommendationsPage
           destination={form.dest}
           isSolo={isSolo}

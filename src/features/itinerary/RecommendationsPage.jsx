@@ -210,7 +210,7 @@ function FilterModal({ open, onClose, hotels, hospitals, rentals, draft, setDraf
       style={{ position:'fixed',inset:0,background:'rgba(14,16,24,0.45)',zIndex:600,display:'flex',alignItems:'flex-end',justifyContent:'center',animation:'rFadeIn .2s ease-out both' }}
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="r-sheet-in" style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem 2rem',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',maxHeight:'82vh',overflowY:'auto',WebkitOverflowScrolling:'touch',transform:'translateZ(0)',willChange:'scroll-position' }}>
+      <div className="r-sheet-in" style={{ width:'100%',maxWidth:560,background:'#fff',borderRadius:'24px 24px 0 0',padding:'1.1rem 1.1rem 2rem',boxShadow:'0 -8px 40px rgba(0,0,0,0.18)',maxHeight:'82vh',overflowY:'auto' }}>
         <div style={{ display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16 }}>
           <div style={{ fontFamily:"'Sora',sans-serif",fontSize:16,fontWeight:800 }}>{titles[section]}</div>
           <button onClick={onClose} style={{ width:30,height:30,borderRadius:'50%',border:'1px solid rgba(0,0,0,0.1)',background:'rgba(0,0,0,0.04)',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',fontSize:14,color:'#6b6b68',padding:0 }}>✕</button>
@@ -773,7 +773,7 @@ export default function RecommendationsPage({ destination, isSolo, autoData, aut
   const resetFilters = () => setFilterDraft(INIT_FILTERS);
 
   return (
-    <div style={{ background:D.bg, paddingBottom:'2.5rem', position:'relative', transform:'translateZ(0)', willChange:'scroll-position' }}>
+    <div style={{ background:D.bg, paddingBottom:'2.5rem', position:'relative' }}>
 
       {/* ── Hero banner ── */}
       <div style={{

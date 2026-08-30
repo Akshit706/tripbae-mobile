@@ -526,14 +526,16 @@ export default function UserProfileWizard({ userName, onDone }) {
             <div style={{ width: SW, flex: `0 0 ${SW}`, height: '100%', overflowY: 'auto', boxSizing: 'border-box', padding: '1.75rem 1.5rem 1.5rem' }}>
 
               {/* Done icon */}
-              <div style={{ width: 52, height: 52, borderRadius: '50%', background: `linear-gradient(135deg,${AC},#FF8C3A)`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, boxShadow: '0 8px 24px rgba(255,106,0,0.28)' }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: `linear-gradient(135deg,${AC},#FF8C3A)`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, marginInline: 'auto', boxShadow: '0 8px 24px rgba(255,106,0,0.28)' }}>
                 {IC.check()}
               </div>
 
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 900, color: '#111', lineHeight: 1.2, marginBottom: 18 }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 900, color: '#111', lineHeight: 1.2, marginBottom: 18, textAlign: 'center' }}>
                 {stepMeta[5].title}
               </div>
-              <LumiQuote text={stepMeta[5].sub} />
+              <div style={{ textAlign: 'center' }}>
+                <LumiQuote text={stepMeta[5].sub} />
+              </div>
 
               {/* Profile summary card */}
               <div style={{ background: '#fff', border: '1.5px solid #EBE8E2', borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>

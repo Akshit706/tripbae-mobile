@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { tripDuration, normalizeMembers, formatDateRange } from '../shared/constants';
 import { S } from '../shared/styles';
 import { imagekitAuth, updateUserProfile } from '../../api';
+import { PlacePhoto } from '../media/PlaceMedia';
 import bglessLogo from '../../assets/bgless.png';
 
 // ── Logo helpers ────────────────────────────────────────────────────────────
@@ -457,7 +458,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const goBack = () => (view === 'hub' ? onClose() : setView('hub'));
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #fff9f3 34%, #fff4ea 100%)', zIndex: 620, overflowY: 'auto', WebkitOverflowScrolling: 'touch', fontFamily: "'DM Sans',sans-serif", transform: 'translateZ(0)', willChange: 'scroll-position' }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #fff9f3 34%, #fff4ea 100%)', zIndex: 620, overflowY: 'auto', fontFamily: "'DM Sans',sans-serif" }}>
       <style>{`
         @keyframes pfFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pfBadgePop { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }
@@ -1173,46 +1174,94 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                 <div style={{ fontSize: 12, marginTop: 4 }}>Mark a trip as completed and it will appear here.</div>
               </div>
             ) : (
-              pastList.map(t => {
-                const spend = (t.expenses || []).reduce((a, e) => a + (e.amount || 0), 0);
-                const dateRange = (t.arrival && t.departure) ? formatDateRange(t.arrival, t.departure) : null;
-                return (
-                  <div key={t.id} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '12px 14px', marginBottom: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.groupName || 'Untitled trip'}</div>
-                          {t.isSolo && <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: '#EEEDFE', color: '#534AB7', flexShrink: 0 }}>SOLO</span>}
+              <>
+                {pastList.map(t => {
+                  const spend = (t.expenses || []).reduce((a, e) => a + (e.amount || 0), 0);
+                  const dateRange = (t.arrival && t.departure) ? formatDateRange(t.arrival, t.departure) : null;
+                  const travelers = normalizeMembers(t.members || []).length || 1;
+                  const dest = t.destination || t.groupName || 'Trip';
+                  return (
+                    <div key={t.id} style={{ background: '#fff', border: '0.5px solid rgba(255,106,0,0.14)', borderRadius: 18, padding: '14px', marginBottom: 14, boxShadow: '0 2px 14px rgba(255,106,0,0.07)' }}>
+                      {/* Photo + info row */}
+                      <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                        {/* Destination photo with green checkmark */}
+                        <div style={{ position: 'relative', flexShrink: 0 }}>
+                          <div style={{ width: 110, height: 110, borderRadius: 14, overflow: 'hidden', background: '#f0ede8' }}>
+                            <PlacePhoto
+                              query={`${dest} travel landscape`}
+                              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                            />
+                          </div>
+                          <div style={{ position: 'absolute', top: 6, left: 6, width: 24, height: 24, borderRadius: '50%', background: '#4CAF50', border: '2.5px solid #fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.18)' }}>
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          </div>
                         </div>
-                        <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 3 }}>
-                          {t.destination && <span>{t.destination}</span>}
-                          {dateRange && <span style={{ color: '#9a9a96' }}> · {dateRange}</span>}
-                          {spend > 0 && <span> · {currencyMeta.symbol}{Math.round(spend).toLocaleString('en-IN')}</span>}
-                          {(t.photos || []).length > 0 && <span> · {(t.photos || []).length} photos</span>}
+                        {/* Trip details */}
+                        <div style={{ flex: 1, minWidth: 0, paddingTop: 2 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, color: '#1a1a18', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 'calc(100% - 28px)' }}>{t.groupName || dest}</div>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2 }}><circle cx="12" cy="5" r="1.5" fill="#aaa"/><circle cx="12" cy="12" r="1.5" fill="#aaa"/><circle cx="12" cy="19" r="1.5" fill="#aaa"/></svg>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 5 }}>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span style={{ fontSize: 12, color: '#6b6b68' }}>{dest}</span>
+                          </div>
+                          <div style={{ borderTop: '1.5px dashed rgba(0,0,0,0.13)', margin: '8px 0' }} />
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11.5, color: '#444', flexWrap: 'wrap' }}>
+                            {dateRange && (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#555" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                {dateRange}
+                              </div>
+                            )}
+                            {dateRange && <span style={{ color: '#d4d0cb' }}>|</span>}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap' }}>
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={AC} strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                              {travelers} Traveler{travelers !== 1 ? 's' : ''}
+                            </div>
+                          </div>
+                          {spend > 0 && (
+                            <div style={{ marginTop: 6, fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#FF8C3A' }}>
+                              {currencyMeta.symbol}{Math.round(spend).toLocaleString('en-IN')}
+                            </div>
+                          )}
                         </div>
                       </div>
+                      {/* Action buttons */}
+                      {(onMarkActive || onDeleteTrip) && (
+                        <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+                          {onMarkActive && (
+                            <button
+                              onClick={() => onMarkActive(t.id)}
+                              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', borderRadius: 12, border: `1.5px solid ${AC}`, background: '#fff', color: AC, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 700 }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 2v6h6"/><path d="M3 13a9 9 0 1 0 3-7.7L3 8"/></svg>
+                              Restore Trip
+                            </button>
+                          )}
+                          {onDeleteTrip && (
+                            <button
+                              onClick={() => onDeleteTrip(t.id)}
+                              style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '11px 0', borderRadius: 12, border: 'none', background: '#FAECE7', color: '#993C1D', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontSize: 13, fontWeight: 700 }}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><rect x="6" y="6" width="12" height="14" rx="2"/><path d="M10 10v6"/><path d="M14 10v6"/></svg>
+                              Delete Trip
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    {(onMarkActive || onDeleteTrip) && (
-                      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 8, paddingTop: 8, borderTop: '0.5px solid rgba(0,0,0,0.06)' }}>
-                        {onMarkActive && (
-                          <button
-                            onClick={() => onMarkActive(t.id)}
-                            style={{ fontSize: 11, padding: '5px 12px', borderRadius: 10, border: `1px solid rgba(255,106,0,0.28)`, background: AC_SOFT, color: AC, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: 700 }}>
-                            Restore
-                          </button>
-                        )}
-                        {onDeleteTrip && (
-                          <button
-                            onClick={() => onDeleteTrip(t.id)}
-                            style={{ fontSize: 11, padding: '5px 12px', borderRadius: 10, border: '1px solid #F5C4B3', background: '#FAECE7', color: '#993C1D', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", fontWeight: 700 }}>
-                            Delete
-                          </button>
-                        )}
-                      </div>
-                    )}
+                  );
+                })}
+                {/* Restore info banner */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, background: '#FFF3EB', border: '0.5px solid #FFD5A8', borderRadius: 16, padding: '14px 16px', marginTop: 4 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#FFE4CC', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#FF8C3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><circle cx="12" cy="14" r="1.5" fill="#E05C2A" stroke="none"/></svg>
                   </div>
-                );
-              })
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18', lineHeight: 1.3 }}>Trips you restore will appear in your <span style={{ color: AC, fontWeight: 700 }}>My Trips</span></div>
+                    <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 3 }}>You can edit, share or download your itinerary.</div>
+                  </div>
+                </div>
+              </>
             );
           })()}
         </div>
@@ -1293,8 +1342,8 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       {/* ════════ CURRENCY VIEW ════════ */}
       {view === 'currency' && (
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
-          <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#FFF7F0)', border: '0.5px solid rgba(255,106,0,0.3)', borderRadius: 14, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', border: '0.5px solid rgba(255,106,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontFamily: "'Sora',sans-serif", fontWeight: 700, color: '#FF8C3A' }}>{currencyMeta.symbol}</div>
+          <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#FFF8F4)', border: '0.5px solid #FFD5A8', borderRadius: 14, padding: '12px 16px', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: '#fff', border: '0.5px solid #FFD5A8', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontFamily: "'Sora',sans-serif", fontWeight: 700, color: '#FF8C3A' }}>{currencyMeta.symbol}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#FF8C3A' }}>Currently using {currencyMeta.code}</div>
               <div style={{ fontSize: 11.5, color: '#FF8C3A', opacity: 0.85, marginTop: 2 }}>{currencyMeta.name}</div>
@@ -1310,7 +1359,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
                   className="pf-row"
                   onClick={() => savePrefs({ ...prefs, currency: c.code })}
                   style={{
-                    width: '100%', background: active ? '#FFF7F0' : '#fff', border: 'none',
+                    width: '100%', background: active ? '#FFF8F4' : '#fff', border: 'none',
                     borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)',
                     padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12,
                     cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif",

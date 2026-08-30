@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import lumi8Img from '../../assets/lumi8.png';
 import lumi14Img from '../../assets/lumi14.png';
 import lumiMood1 from '../../assets/lumi_mood1.png';
@@ -25,6 +26,78 @@ const SOLO_CURRENCIES = [
   { code: 'ZAR', symbol: 'R' },
 ];
 
+/* ── iOS-style swipe-left to reveal actions (pointer events for Capacitor WebView) ──────────── */
+function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
+  const [offsetX, setOffsetX] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef({ active: false, startX: 0, startY: 0, startOffset: 0, isHoriz: null, pid: null, el: null });
+  const W = 168;
+  const THRESH = 8;
+  const clamp = (x) => Math.min(0, Math.max(-W, x));
+
+  const onPointerDown = (e) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    drag.current = { active: true, startX: e.clientX, startY: e.clientY, startOffset: offsetX, isHoriz: null, pid: e.pointerId, el: e.currentTarget };
+  };
+
+  const onPointerMove = (e) => {
+    if (!drag.current.active || e.pointerId !== drag.current.pid) return;
+    const dx = e.clientX - drag.current.startX;
+    const dy = e.clientY - drag.current.startY;
+    if (drag.current.isHoriz === null) {
+      if (Math.abs(dx) < THRESH && Math.abs(dy) < THRESH) return;
+      drag.current.isHoriz = Math.abs(dx) > Math.abs(dy);
+      if (!drag.current.isHoriz) {
+        drag.current.active = false;
+        return;
+      }
+      try { drag.current.el?.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+      setDragging(true);
+    }
+    if (!drag.current.isHoriz) return;
+    setOffsetX(clamp(drag.current.startOffset + dx));
+  };
+
+  const endDrag = (e) => {
+    if (e && drag.current.pid != null && e.pointerId !== drag.current.pid) return;
+    const wasHoriz = drag.current.isHoriz;
+    drag.current.active = false;
+    drag.current.isHoriz = null;
+    drag.current.pid = null;
+    setDragging(false);
+    if (wasHoriz) setOffsetX((p) => (p < -W / 2 ? -W : 0));
+  };
+
+  const actions = [
+    { label: 'Duplicate', bg: '#FF6A00', fn: () => { setOffsetX(0); onDuplicate(); }, icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> },
+    { label: 'Edit',      bg: '#f59e0b', fn: () => { setOffsetX(0); onEdit(); },      icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> },
+    { label: 'Delete',    bg: '#ef4444', fn: () => { setOffsetX(0); onDelete(); },    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> },
+  ];
+
+  return (
+    <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, marginBottom: 10, boxShadow: '0 2px 12px rgba(15,23,42,0.06)' }}>
+      <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: W, display: 'flex' }}>
+        {actions.map(({ label, bg, fn, icon }) => (
+          <button key={label} onClick={fn}
+            style={{ flex: 1, border: 'none', background: bg, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+            {icon}
+          </button>
+        ))}
+      </div>
+      <div
+        onClick={() => offsetX < 0 && setOffsetX(0)}
+        style={{ transform: `translateX(${offsetX}px)`, transition: dragging ? 'none' : 'transform .25s cubic-bezier(.25,.46,.45,.94)', position: 'relative', zIndex: 1, background: '#fff', borderRadius: 16, border: '1px solid rgba(0,0,0,0.08)', userSelect: 'none', WebkitUserSelect: 'none', touchAction: 'pan-y' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [expenses, setExpenses] = useState(trip.expenses || []);
   const [budget, setBudget] = useState(trip.budget || null);
@@ -34,6 +107,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const [editBudget, setEditBudget] = useState(String(budget || ''));
   const [localBudgetCurrency, setLocalBudgetCurrency] = useState(trip.budgetCurrency || null);
   const [budgetFxRate, setBudgetFxRate] = useState(null);
+  const [sharing, setSharing] = useState(false);
   const SOLO_SPEND_CURRENCY_KEY = `travelbae_solo_spendcurrency_${trip.id}`;
   const [spendCurrency, setSpendCurrency] = useState(() => {
     try { return localStorage.getItem(`travelbae_solo_spendcurrency_${trip.id}`) || trip.destinationCurrency || trip.budgetCurrency || 'INR'; } catch { return 'INR'; }
@@ -116,17 +190,11 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     document.head.appendChild(script);
   }, []);
 
-  const spendMeta = SOLO_CURRENCIES.find(c => c.code === spendCurrency) || { code: 'INR', symbol: '₹' };
-  const spendSymbol = spendMeta.symbol;
-  const fmt = n => `${spendSymbol}${Math.round(n).toLocaleString('en-IN')}`;
-
-  // displayBudget: budget expressed in current spendCurrency (converted via FX if currencies differ)
-  const displayBudget = !budget ? null
-    : (!localBudgetCurrency || localBudgetCurrency === spendCurrency) ? budget
-    : budgetFxRate !== null ? budget * budgetFxRate
-    : budget; // show raw while FX is loading
-
-  const fmtBudget = fmt; // budget is now always in spendCurrency
+  useLayoutEffect(() => {
+    if (!showForm) return undefined;
+    window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: true } }));
+    return () => window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: false } }));
+  }, [showForm]);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const days = tripDuration(trip.arrival, trip.departure);
@@ -138,6 +206,13 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const daysElapsed = Math.min(days, Math.max(1, rawElapsed));
   const daysLeft = Math.max(0, days - daysElapsed);
   const tsr = total / daysElapsed;
+
+  // must be declared before budgetLeft / budgetPct which depend on it
+  const displayBudget = !budget ? null
+    : (!localBudgetCurrency || localBudgetCurrency === spendCurrency) ? budget
+    : budgetFxRate !== null ? budget * budgetFxRate
+    : budget;
+
   const budgetLeft = displayBudget ? displayBudget - total : null;
   const budgetPct = displayBudget ? Math.min(100, Math.round(total / displayBudget * 100)) : null;
 
@@ -154,6 +229,12 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const uniqueSpendDays = new Set(expenses.map(e => e.date)).size;
   const plannedDailyBudget = displayBudget ? displayBudget / Math.max(1, days) : null;
   const pacePct = plannedDailyBudget ? Math.round((tsr / plannedDailyBudget) * 100) : null;
+
+  const spendMeta = SOLO_CURRENCIES.find(c => c.code === spendCurrency) || { code: 'INR', symbol: '₹' };
+  const spendSymbol = spendMeta.symbol;
+  const fmt = n => `${spendSymbol}${Math.round(n).toLocaleString('en-IN')}`;
+
+  const fmtBudget = fmt; // budget is always in spendCurrency
 
   const soloFunLines = [];
   if (expenses.length === 0) {
@@ -183,6 +264,27 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     soloFunLines.push('Your solo money flow looks balanced. Calm plan, clean execution.');
   }
   const soloInsightLine = soloFunLines[(expenses.length + uniqueSpendDays + days) % soloFunLines.length];
+
+  const handleShareReport = async () => {
+    if (sharing) return;
+    setSharing(true);
+    try {
+      const { generateAndShareExpensePDF } = await import('../../utils/generateExpensePDF');
+      await generateAndShareExpensePDF(
+        { name: trip.groupName || trip.destination || 'Trip', destination: trip.destination || '', startDate: trip.arrival, endDate: trip.departure, totalBudget: displayBudget || null, totalSpent: total, travelers: [myNickname || 'Me'], totalDays: days },
+        expenses.map(e => ({ description: e.desc, category: e.cat, paidBy: myNickname || 'Me', date: e.date, amount: e.amount })),
+        { dailyRate: tsr, dailyBudget: plannedDailyBudget, projectedEnd: projected, daysElapsed, totalDays: days, daysLeft, budgetSaved: budgetLeft ?? 0, crewPacePercent: pacePct, allSettled: true, moodMessage: soloInsightLine || '' },
+        spendSymbol
+      );
+    } catch (err) {
+      console.error('Expense PDF error:', err);
+      if (err?.message && !/abort|cancel|dismiss/i.test(err.message)) {
+        alert('Could not share the report. Please try again.');
+      }
+    }
+    setSharing(false);
+  };
+
   const filtered = filterCat === 'all' ? expenses : expenses.filter(e => e.cat === filterCat);
   const sortedFiltered = [...filtered].sort((a, b) => new Date(b.date) - new Date(a.date));
 
@@ -270,7 +372,14 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     }
   };
 
-  const CAT_COLORS = { food: '#BA7517', transport: '#FF8C3A', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E', other: '#6b6b68' };
+  const handleDuplicate = async (exp) => {
+    try {
+      const data = await addExpense(trip.id, { desc: exp.desc, amount: exp.amount, paidBy: myNickname || 'Me', cat: exp.cat, split: [myNickname || 'Me'], note: exp.note || '', date: exp.date, time: exp.time });
+      setExpenses(es => [data.expense, ...es]);
+    } catch (err) { alert('Could not duplicate: ' + err.message); }
+  };
+
+  const CAT_COLORS = { food: '#BA7517', transport: '#FF6A00', stay: '#378ADD', activity: '#7F77DD', shopping: '#D4537E', other: '#6b6b68' };
   const SOLO_ACCENT = '#FF6A00';
   const SOLO_ACCENT_2 = '#FF8C3A';
   const SOLO_ACCENT_BG = '#FFF3EB';
@@ -366,8 +475,8 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     }
   }
 
-  if (showForm) return (
-    <div style={{ position: 'fixed', inset: 0, background: '#f7f6f2', zIndex: 400, display: 'flex', flexDirection: 'column', animation: 'slideUp .25s ease-out' }}>
+  if (showForm) return createPortal((
+    <div style={{ position: 'fixed', inset: 0, background: '#f7f6f2', zIndex: 800, display: 'flex', flexDirection: 'column', animation: 'slideUp .25s ease-out', paddingTop: 'env(safe-area-inset-top, 0px)' }}>
       <style>{`@keyframes slideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}`}</style>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
@@ -379,7 +488,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         </button>
       </div>
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain', paddingBottom: 'calc(2.5rem + env(safe-area-inset-bottom, 0px))' }}>
         <div style={{ background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', padding: '2rem 1.5rem 2.5rem', textAlign: 'center' }}>
           <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)', fontWeight: 600, letterSpacing: .6, textTransform: 'uppercase', marginBottom: 12 }}>How much?</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
@@ -434,7 +543,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         </div>
       </div>
     </div>
-  );
+  ), document.body);
 
   return (
     <div>
@@ -444,6 +553,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         @keyframes heroPulse { 0%,100%{opacity:0.07;transform:scale(1)} 50%{opacity:0.14;transform:scale(1.1)} }
         @keyframes heroShimmer { 0%{transform:translateX(-120%) skewX(-18deg)} 100%{transform:translateX(220%) skewX(-18deg)} }
         @keyframes heroNumIn { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
+        @keyframes spin { to{transform:rotate(360deg)} }
         @keyframes lumiSoloPop{from{opacity:0;transform:scale(0.88) translateY(20px)}60%{transform:scale(1.02) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
       `}</style>
 
@@ -481,36 +591,46 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
           <div style={{ background:'#fff', borderRadius:24, overflow:'hidden', width:'100%', maxWidth:400, boxShadow:'0 28px 80px rgba(28,20,16,0.28)', animation:'lumiSoloPop .45s cubic-bezier(0.34,1.3,0.64,1) both', position:'relative' }}
             onClick={e => e.stopPropagation()}>
             <div style={{ height:4, background:'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
+            <div style={{ textAlign:'center', padding:'0.9rem 1.25rem 0.2rem' }}>
+              <div style={{ fontFamily:"'Sora',sans-serif", fontSize:16, fontWeight:900, color:'#1C1410', lineHeight:1.2 }}>
+                Welcome to your trip
+              </div>
+              <div style={{ fontSize:12, color:'#9a9a96', marginTop:4 }}>
+                Let's get your spending story started
+              </div>
+            </div>
             <button onClick={dismissWelcome} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <div style={{ display:'flex', alignItems:'flex-end', padding:'1.5rem 1.25rem 0', gap:14 }}>
-              <div style={{ width:110, flexShrink:0, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
-                <img src={lumi14Img} alt="Lumi" style={{ width:'auto', height:140, objectFit:'contain', display:'block' }} />
+            {/* Top: label + title + description */}
+            <div style={{ padding:'1.2rem 1.25rem 0.75rem' }}>
+              <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
+                <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
+                <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
               </div>
-              <div style={{ flex:1, minWidth:0, paddingBottom:'1rem' }}>
-                <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
-                  <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
-                  <span style={{ fontSize:9.5, fontWeight:700, color:'#FF6A00', letterSpacing:.8, textTransform:'uppercase', fontFamily:"'DM Sans',sans-serif" }}>Lumi says</span>
-                </div>
-                <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>
-                  Your solo wallet, tracked.
-                </div>
-                <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62, marginBottom:10 }}>
-                  No one to split with — but also no one judging your third coffee. Log every spend, set a budget, and see exactly where the money went. I won't tell.
-                </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                  {[
-                    'Log every expense with category and note',
-                    'Set a trip budget and watch the tracker',
-                    'Visual insights: donut chart, daily breakdown',
-                  ].map((f, i) => (
-                    <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'8px 10px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4' }}>
-                      <svg width="8" height="8" viewBox="0 0 12 10" fill="none" style={{ flexShrink:0 }}><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      <span style={{ fontSize:11.5, color:'#5C504A', lineHeight:1.4, fontWeight:500 }}>{f}</span>
-                    </div>
-                  ))}
-                </div>
+              <div style={{ fontFamily:"'Sora',sans-serif", fontSize:15, fontWeight:800, color:'#1C1410', lineHeight:1.25, marginBottom:7 }}>
+                Your solo wallet, tracked.
+              </div>
+              <div style={{ fontSize:12, color:'#5C504A', lineHeight:1.62 }}>
+                No one to split with — but also no one judging your third coffee. Log every spend, set a budget, and see exactly where the money went. I won't tell.
+              </div>
+            </div>
+            {/* Bottom: Lumi on left + feature boxes on right */}
+            <div style={{ display:'flex', alignItems:'flex-end', padding:'0 1.25rem 0', gap:12 }}>
+              <div style={{ width:96, flexShrink:0, display:'flex', alignItems:'flex-end', justifyContent:'center' }}>
+                <img src={lumi14Img} alt="Lumi" style={{ width:'auto', height:120, objectFit:'contain', display:'block' }} />
+              </div>
+              <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6, paddingBottom:'0.75rem', paddingTop:'0.25rem' }}>
+                {[
+                  'Log expenses by category',
+                  'Set a budget & track it',
+                  'Visual spend charts',
+                ].map((f, i) => (
+                  <div key={i} style={{ display:'flex', gap:8, alignItems:'center', padding:'8px 10px', borderRadius:10, border:'1.5px solid rgba(255,106,0,0.3)', background:'#FFF8F4' }}>
+                    <svg width="8" height="8" viewBox="0 0 12 10" fill="none" style={{ flexShrink:0 }}><polyline points="1,5 4,8 11,1" stroke="#FF6A00" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    <span style={{ fontSize:11.5, color:'#1C1410', lineHeight:1.4, fontWeight:700 }}>{f}</span>
+                  </div>
+                ))}
               </div>
             </div>
             <div style={{ padding:'0 1.25rem 1.25rem' }}>
@@ -659,7 +779,10 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             const timeLabel = getExpenseTimeLabel(exp);
             const dateLabel = new Date(exp.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
             return (
-              <div key={exp.id} style={{ background: '#fff', borderRadius: 16, marginBottom: 10, boxShadow: '0 2px 12px rgba(15,23,42,0.06)', border: '1px solid rgba(0,0,0,0.08)' }}>
+              <SwipeableExpenseRow key={exp.id}
+                onEdit={() => handleEdit(exp)}
+                onDelete={() => handleDelete(exp.id)}
+                onDuplicate={() => handleDuplicate(exp)}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '9px 12px' }}>
                   <div style={{ width: 38, height: 38, borderRadius: 11, display: 'flex', alignItems: 'center', justifyContent: 'center', background: cat.bg, flexShrink: 0 }}><CatIcon id={cat.id} size={18} /></div>
                   <div style={{ flex: 1, minWidth: 0, textAlign: 'center' }}>
@@ -672,13 +795,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
                     <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827' }}>{fmt(exp.amount)}</div>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 5 }}>
-                      <button onClick={() => handleEdit(exp)} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1, fontFamily: "'DM Sans',sans-serif" }}>✎</button>
-                      <button onClick={() => handleDelete(exp.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1, opacity: 0.75, fontFamily: "'DM Sans',sans-serif" }}>✕</button>
-                    </div>
                   </div>
                 </div>
-              </div>
+              </SwipeableExpenseRow>
             );
           })}
         </div>
@@ -692,7 +811,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             {[
               { label: 'Daily rate', value: fmt(tsr), sub: `${daysElapsed}/${days} days`, color: '#FF6A00', bg: '#FFF3EB' },
               { label: 'Projected', value: fmt(projected), sub: budget && projected > budget ? `+${fmtBudget(overBy)} over` : 'on track', color: budget && projected > budget ? '#D85B00' : '#FF8C3A', bg: budget && projected > budget ? '#FFF8F4' : '#FFF3EB' },
-              { label: 'Top cat', value: topCatMeta?.label || '—', sub: fmt(topCat?.[1] || 0), color: '#6366f1', bg: '#EEF2FF' },
+              { label: 'Top cat', value: topCatMeta?.label || '—', sub: fmt(topCat?.[1] || 0), color: '#FF6A00', bg: '#FFF3EB' },
             ].map((s, idx) => (
               <div key={idx} style={{ background: s.bg, border: `1px solid ${s.color}22`, borderRadius: 14, padding: '11px 10px', textAlign: 'center', animation: `soloFadeUp .3s ease-out ${idx * 55}ms both` }}>
                 <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 800, color: '#111827', letterSpacing: '-0.3px', lineHeight: 1.1 }}>{s.value}</div>
@@ -825,14 +944,25 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         </div>
       )}
 
-      {section === 'expenses' && (
+      {section === 'expenses' && createPortal(
         <button
           onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: todayStr, time: getNow().time, note: '' }); setShowForm(true); }}
-          style={{ position: 'fixed', bottom: 88, right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', border: 'none', boxShadow: '0 4px 20px rgba(255,106,0,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 300, transition: 'transform .15s', fontWeight: 300 }}
-          onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
-          onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
-          +
-        </button>
+          style={{ position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', border: 'none', boxShadow: '0 4px 20px rgba(255,106,0,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 400 }}
+        >+</button>,
+        document.body
+      )}
+      {section === 'insights' && createPortal(
+        <button
+          onClick={handleShareReport}
+          title="Share Expense Report"
+          style={{ position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', border: 'none', boxShadow: '0 4px 20px rgba(255,106,0,0.45)', cursor: sharing ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', zIndex: 400, opacity: sharing ? 0.7 : 1 }}
+        >
+          {sharing
+            ? <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>
+            : <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          }
+        </button>,
+        document.body
       )}
     </div>
   );
