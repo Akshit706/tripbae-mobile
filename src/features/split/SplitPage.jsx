@@ -14,10 +14,26 @@ import lumiMood4 from '../../assets/lumi_mood4.png';
 import lumiMood5 from '../../assets/lumi_mood5.png';
 import lumiMood6 from '../../assets/lumi_mood6.png';
 
+const _MCOLORS = ['#FF6A00','#D85A30','#7F77DD','#BA7517','#378ADD','#D4537E','#FF8C3A','#993C1D'];
+const _mcolor = (name) => { const c = Math.abs(Array.from(name || '').reduce((a, b) => a + b.charCodeAt(0), 0)); return _MCOLORS[c % _MCOLORS.length]; };
+
+function MemberCircle({ name, myNickname, myAvatar, size = 32, fontSize = 11, style: extraStyle = {} }) {
+  const [imgErr, setImgErr] = useState(false);
+  const isMe = name === myNickname && !!myAvatar && !imgErr;
+  return (
+    <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, ...(!isMe ? { background: _mcolor(name), color: '#fff', fontSize, fontWeight: 700 } : {}), ...extraStyle }}>
+      {isMe
+        ? <img src={myAvatar} alt={name} onError={() => setImgErr(true)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+        : (name || '?').slice(0, 2).toUpperCase()}
+    </div>
+  );
+}
+
 /* ── iOS-style swipe-left to reveal actions (pointer events for Capacitor WebView) ──────────── */
 function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
   const [offsetX, setOffsetX] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [pressedBtn, setPressedBtn] = useState(null);
   const drag = useRef({ active: false, startX: 0, startY: 0, startOffset: 0, isHoriz: null, pid: null, el: null });
   const W = 168;
   const THRESH = 8;
@@ -66,8 +82,13 @@ function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
     <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, marginBottom: 10, boxShadow: '0 2px 12px rgba(15,23,42,0.06)' }}>
       <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: W, display: 'flex' }}>
         {actions.map(({ label, bg, fn, icon }) => (
-          <button key={label} onClick={fn}
-            style={{ flex: 1, border: 'none', background: bg, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+          <button key={label}
+            onPointerDown={() => setPressedBtn(label)}
+            onPointerUp={() => setPressedBtn(null)}
+            onPointerLeave={() => setPressedBtn(null)}
+            onPointerCancel={() => setPressedBtn(null)}
+            onClick={fn}
+            style={{ flex: 1, border: 'none', background: pressedBtn === label ? `color-mix(in srgb, ${bg} 75%, #000)` : bg, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, transform: pressedBtn === label ? 'scale(0.88)' : 'scale(1)', transition: 'transform 0.1s cubic-bezier(0.34,1.56,0.64,1), background 0.08s', WebkitTapHighlightColor: 'transparent' }}>
             {icon}
           </button>
         ))}
@@ -109,6 +130,13 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
     setShowWelcome(false);
   };
 
+  // sync parent only when tab switches away — never after individual mutations
+  const latestExpensesRef = useRef(expenses);
+  const onTripUpdateRef = useRef(onTripUpdate);
+  useEffect(() => { latestExpensesRef.current = expenses; }, [expenses]);
+  useEffect(() => { onTripUpdateRef.current = onTripUpdate; }, [onTripUpdate]);
+  useEffect(() => () => { onTripUpdateRef.current?.({ expenses: latestExpensesRef.current }); }, []);
+
   // ── Multi-currency support ──
   const SPLIT_CURRENCIES = [
     { code: 'INR', symbol: '₹' }, { code: 'USD', symbol: '$' }, { code: 'EUR', symbol: '€' },
@@ -133,6 +161,19 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
   const [fxRate, setFxRate] = useState(null);
   const [fxLoading, setFxLoading] = useState(false);
   const [budgetFxRate, setBudgetFxRate] = useState(null);
+  // expBaseCurrency: fixed currency in which expense amounts are stored in DB
+  const EXP_BASE_KEY = `travelbae_split_expcurrency_${trip.id}`;
+  const [expBaseCurrency] = useState(() => {
+    try {
+      const stored = localStorage.getItem(EXP_BASE_KEY);
+      if (stored) return stored;
+      const base = localStorage.getItem(SPEND_CURRENCY_KEY) || trip.destinationCurrency || trip.budgetCurrency || 'INR';
+      localStorage.setItem(EXP_BASE_KEY, base);
+      return base;
+    } catch { return 'INR'; }
+  });
+  const [displayFxRate, setDisplayFxRate] = useState(null);
+  const [displayFxLoading, setDisplayFxLoading] = useState(false);
 
   const todayStr = new Date().toISOString().split('T')[0];
   const getNow = () => {
@@ -168,20 +209,10 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
     return [...base, ...extra];
   }, [customCats]);
 
-  const MCOLORS_LIST = ['#FF6A00','#D85A30','#7F77DD','#BA7517','#378ADD','#D4537E','#FF8C3A','#993C1D'];
-  const mcolor = (name) => {
-    const code = Math.abs(Array.from(name || '').reduce((a, c) => a + c.charCodeAt(0), 0));
-    return MCOLORS_LIST[code % MCOLORS_LIST.length];
-  };
-  // Renders an avatar circle: photo for current user, initials for others
-  const memberCircle = (name, size = 32, fontSize = 11, extra = {}) => {
-    const isMe = name === myNickname && !!myAvatar;
-    return (
-      <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, ...(!isMe ? { background: mcolor(name), color: '#fff', fontSize, fontWeight: 700 } : {}), ...extra }}>
-        {isMe ? <img src={myAvatar} alt={name} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} /> : (name || '?').slice(0,2).toUpperCase()}
-      </div>
-    );
-  };
+  const mcolor = _mcolor;
+  const memberCircle = (name, size = 32, fontSize = 11, extra = {}) => (
+    <MemberCircle name={name} myNickname={myNickname} myAvatar={myAvatar} size={size} fontSize={fontSize} style={extra} />
+  );
   const CAT_COLORS = { food:'#BA7517', transport:'#FF6A00', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
 
   const budget = localBudget;
@@ -233,6 +264,17 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
     return () => { cancelled = true; };
   }, [localBudget, localBudgetCurrency, spendCurrency]);
 
+  useEffect(() => {
+    if (expBaseCurrency === spendCurrency) { setDisplayFxRate(1); setDisplayFxLoading(false); return; }
+    let cancelled = false;
+    setDisplayFxLoading(true);
+    setDisplayFxRate(null);
+    getFxRate(expBaseCurrency, spendCurrency).then(r => {
+      if (!cancelled) { setDisplayFxRate(r); setDisplayFxLoading(false); }
+    }).catch(() => { if (!cancelled) { setDisplayFxRate(1); setDisplayFxLoading(false); } });
+    return () => { cancelled = true; };
+  }, [expBaseCurrency, spendCurrency]);
+
   useLayoutEffect(() => {
     if (!showForm) return undefined;
     window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: true } }));
@@ -250,8 +292,9 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
   const daysLeft = Math.max(0, days - daysElapsed);
   const tsr = total / daysElapsed;
   const projected = Math.round(tsr * days);
-  const budgetLeft = displayBudget ? displayBudget - total : null;
-  const budgetPct = displayBudget ? Math.min(100, Math.round(total / displayBudget * 100)) : null;
+  const dispTotal = total * (displayFxRate ?? 1);
+  const budgetLeft = displayBudget ? displayBudget - dispTotal : null;
+  const budgetPct = displayBudget ? Math.min(100, Math.round(dispTotal / displayBudget * 100)) : null;
   const perPerson = memberNames.length > 0 ? total / memberNames.length : 0;
 
   const catTotals = {};
@@ -286,8 +329,8 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
   }
 
   const top3 = [...expenses].sort((a, b) => b.amount - a.amount).slice(0, 3);
-  const overBy = displayBudget ? Math.max(0, projected - displayBudget) : 0;
-  const underBy = displayBudget ? Math.max(0, displayBudget - projected) : 0;
+  const overBy = displayBudget ? Math.max(0, projected * (displayFxRate ?? 1) - displayBudget) : 0;
+  const underBy = displayBudget ? Math.max(0, displayBudget - projected * (displayFxRate ?? 1)) : 0;
   const activeCats = expenseCats.filter(c => catTotals[c.id] > 0).sort((a, b) => catTotals[b.id] - catTotals[a.id]);
   const topCat = Object.entries(catTotals).sort((a, b) => b[1] - a[1])[0];
   const topCatMeta = expenseCats.find(c => c.id === topCat?.[0]) || null;
@@ -308,10 +351,11 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
   const topGetsBack = positiveBalances[0] || null;
   const topOwes = negativeBalances[0] || null;
   const plannedDailyBudget = displayBudget ? displayBudget / Math.max(1, days) : null;
-  const pacePct = plannedDailyBudget ? Math.round((tsr / plannedDailyBudget) * 100) : null;
+  const pacePct = plannedDailyBudget ? Math.round((tsr * (displayFxRate ?? 1) / plannedDailyBudget) * 100) : null;
 
   const funInsightLines = [];
-  const fmt = n => `${spendSymbol}${Math.round(n).toLocaleString('en-IN')}`;
+  const toDisp = (n) => n * (displayFxRate ?? 1);
+  const fmt = n => `${spendSymbol}${Math.round(toDisp(n)).toLocaleString('en-IN')}`;
   const fmtHome = n => `${homeMeta.symbol}${Math.round(n).toLocaleString('en-IN')}`;
   const budgetCurrMeta = spendMeta; // budget is now always converted to spendCurrency
   const fmtBudget = fmt;
@@ -403,7 +447,7 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
     setSaving(true);
     try {
       const payload = {
-        desc: form.desc, amount: parseFloat(form.amount),
+        desc: form.desc, amount: parseFloat(form.amount) / (displayFxRate ?? 1),
         paidBy: form.paidBy, cat: form.cat,
         split: splitWith,
         date: form.time ? new Date(`${form.date}T${form.time}:00`).toISOString() : new Date(form.date).toISOString(),
@@ -413,12 +457,10 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
         const data = await updateExpense(trip.id, editingExpenseId, payload);
         const updated = expenses.map(x => x.id === editingExpenseId ? data.expense : x);
         setExpenses(updated);
-        onTripUpdate?.({ expenses: updated });
       } else {
         const data = await addExpense(trip.id, payload);
         const updated = [data.expense, ...expenses];
         setExpenses(updated);
-        onTripUpdate?.({ expenses: updated });
       }
       setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: getNow().date, time: getNow().time, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false });
       setEditingExpenseId(null);
@@ -435,7 +477,7 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
     const isAll = splitArr.length === memberNames.length && memberNames.every(m => splitArr.includes(m));
     setForm({
       desc: exp.desc || '',
-      amount: String(exp.amount || ''),
+      amount: String(exp.amount ? Math.round(toDisp(exp.amount) * 100) / 100 : ''),
       paidBy: exp.paidBy || myNickname || memberNames[0] || '',
       cat: exp.cat || 'food',
       date: normalizedDate,
@@ -452,24 +494,32 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
   };
 
   const handleDelete = async (expId) => {
+    const snapshot = expenses;
+    const updated = expenses.filter(x => x.id !== expId);
+    setExpenses(updated);
     try {
       await deleteExpense(trip.id, expId);
-      const updated = expenses.filter(x => x.id !== expId);
-      setExpenses(updated);
-      onTripUpdate?.({ expenses: updated });
-    } catch (err) { alert('Could not delete: ' + err.message); }
+    } catch (err) {
+      setExpenses(snapshot);
+      alert('Could not delete: ' + err.message);
+    }
   };
 
   const handleDuplicateExpense = async (exp) => {
+    const splitArr = Array.isArray(exp.split) && exp.split.length > 0 ? exp.split : memberNames;
+    const now = getNow();
+    const nowDate = new Date(`${now.date}T${now.time}:00`).toISOString();
+    const tempId = `_opt_${Date.now()}`;
+    const optimistic = { ...exp, id: tempId, date: nowDate, time: now.time, split: splitArr };
+    const snapshot = expenses;
+    setExpenses([optimistic, ...snapshot]);
     try {
-      const splitArr = Array.isArray(exp.split) && exp.split.length > 0 ? exp.split : memberNames;
-      const now = getNow();
-      const nowDate = new Date(`${now.date}T${now.time}:00`).toISOString();
       const data = await addExpense(trip.id, { desc: exp.desc, amount: exp.amount, paidBy: exp.paidBy, cat: exp.cat, split: splitArr, date: nowDate, time: now.time });
-      const updated = [data.expense, ...expenses];
-      setExpenses(updated);
-      onTripUpdate?.({ expenses: updated });
-    } catch (err) { alert('Could not duplicate: ' + err.message); }
+      setExpenses(prev => prev.map(e => e.id === tempId ? data.expense : e));
+    } catch (err) {
+      setExpenses(snapshot);
+      alert('Could not duplicate: ' + err.message);
+    }
   };
 
   const filteredExpenses = filterCat === 'all' ? expenses : expenses.filter(e => e.cat === filterCat);
@@ -826,8 +876,8 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 6 }}>Total Spent
             <button onClick={() => setShowCurrencyPicker(true)} style={{ background: 'rgba(255,255,255,0.2)', border: '0.5px solid rgba(255,255,255,0.35)', borderRadius: 6, color: 'rgba(255,255,255,0.9)', fontSize: 9, fontWeight: 700, padding: '2px 6px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", letterSpacing: .5, lineHeight: 1.4 }}>{spendCurrency}</button>
           </div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>{fmt(total)}</div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4, fontWeight: 500 }}>{fmt(tsr)}/day · {expenses.length} entries</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>{displayFxLoading ? <span style={{ opacity: 0.5, fontSize: 24 }}>…</span> : fmt(total)}</div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4, fontWeight: 500 }}>{displayFxLoading ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>fetching rate…</span> : <>{fmt(tsr)}/day · {expenses.length} entries</>}</div>
           </div>
           {budget && (
             <div style={{ textAlign: 'right' }}>
@@ -1164,7 +1214,7 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
                     <div style={{ fontSize: 13, color: '#9ca3af' }}>Fetching rate…</div>
                   ) : fxRate !== null ? (
                     <>
-                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: '#FF6A00' }}>{fmtHome(total * fxRate)}</div>
+                      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 22, fontWeight: 800, color: '#FF6A00' }}>{fmtHome(toDisp(total) * fxRate)}</div>
                       <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 3 }}>1 {spendCurrency} ≈ {homeMeta.symbol}{fxRate.toFixed(2)} {homeCurrencyCode}</div>
                     </>
                   ) : (

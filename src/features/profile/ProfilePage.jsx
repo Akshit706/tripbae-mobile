@@ -7,7 +7,7 @@ import bglessLogo from '../../assets/bgless.png';
 
 // ── Logo helpers ────────────────────────────────────────────────────────────
 const TBLogo = ({ h = 15 }) => (
-  <img src={bglessLogo} alt="TravelBae" style={{ height: h, width: 'auto', verticalAlign: 'middle', display: 'inline-block', position: 'relative', top: '-1px' }} />
+  <img src={bglessLogo} alt="TripBae" style={{ height: h, width: 'auto', verticalAlign: 'middle', display: 'inline-block', position: 'relative', top: '-1px' }} />
 );
 const AC = '#FF6A00';
 const AC_SOFT = '#FFF3EA';
@@ -74,7 +74,7 @@ const withLogo = (text, h = 15) => {
   );
 };
 const BADGE_DEFS = [
-  { id: 'early_bird',       name: 'Early Bird',       iconId: 'star',     desc: 'Joined the TravelBae crew',           check: () => true },
+  { id: 'early_bird',       name: 'Early Bird',       iconId: 'star',     desc: 'Joined the TripBae crew',             check: () => true },
   { id: 'first_flight',     name: 'First Flight',     iconId: 'plane',    desc: 'Created your very first trip',         check: s => s.tripCount >= 1 },
   { id: 'group_leader',     name: 'Group Leader',     iconId: 'users',    desc: 'Set off on a group adventure',         check: s => s.groupCount >= 1 },
   { id: 'solo_voyager',     name: 'Solo Voyager',     iconId: 'backpack', desc: 'Embraced a solo journey',              check: s => s.soloCount >= 1 },
@@ -121,17 +121,22 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const [toast, setToast] = useState('');
   const [rateModal, setRateModal] = useState(false);
   const [rateStars, setRateStars] = useState(() => {
-    const saved = parseInt(localStorage.getItem('travelbae_rating') || '0', 10);
+    if (userProfile?.appRating) return userProfile.appRating;
+    const saved = parseInt(localStorage.getItem('tripbae_rating') || '0', 10);
     return Number.isFinite(saved) ? saved : 0;
   });
   const [rateHover, setRateHover] = useState(0);
+  const [earnedBadgeIds, setEarnedBadgeIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('tripbae_earned_badges') || '[]')); }
+    catch { return new Set(); }
+  });
   const [editingProfile, setEditingProfile] = useState(false);
   const [editData, setEditData] = useState({});
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState('');
   const [prefs, setPrefs] = useState(() => {
     try {
-      const raw = localStorage.getItem('travelbae_prefs');
+      const raw = localStorage.getItem('tripbae_prefs');
       if (raw) return JSON.parse(raw);
     } catch { /* ignore */ }
     return {
@@ -144,6 +149,17 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
     };
   });
   const fileRef = useRef(null);
+
+  useEffect(() => {
+    const s = computeProfileStats(trips);
+    setEarnedBadgeIds(prev => {
+      const newIds = BADGE_DEFS.filter(b => b.check(s)).map(b => b.id);
+      if (newIds.every(id => prev.has(id))) return prev;
+      const next = new Set([...prev, ...newIds]);
+      try { localStorage.setItem('tripbae_earned_badges', JSON.stringify([...next])); } catch {}
+      return next;
+    });
+  }, [trips]);
 
   // Full currency list — code, symbol, name
   const CURRENCIES = [
@@ -186,8 +202,10 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const currencyMeta = CURRENCIES.find(c => c.code === prefs.currency) || CURRENCIES[0];
 
   const stats = computeProfileStats(trips);
-  const earned = BADGE_DEFS.filter(b => b.check(stats));
-  const locked = BADGE_DEFS.filter(b => !b.check(stats));
+  const liveEarnedIds = new Set(BADGE_DEFS.filter(b => b.check(stats)).map(b => b.id));
+  const allEarnedIds = new Set([...earnedBadgeIds, ...liveEarnedIds]);
+  const earned = BADGE_DEFS.filter(b => allEarnedIds.has(b.id));
+  const locked = BADGE_DEFS.filter(b => !allEarnedIds.has(b.id));
   const earnedPct = Math.round((earned.length / BADGE_DEFS.length) * 100);
 
   const persist = (next) => {
@@ -198,7 +216,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
 
   const savePrefs = (next) => {
     setPrefs(next);
-    try { localStorage.setItem('travelbae_prefs', JSON.stringify(next)); } catch { /* ignore */ }
+    try { localStorage.setItem('tripbae_prefs', JSON.stringify(next)); } catch { /* ignore */ }
     setSaved(true);
     setTimeout(() => setSaved(false), 1400);
   };
@@ -345,8 +363,8 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
 
   const handleShare = async () => {
     const shareData = {
-      title: 'TravelBae',
-      text: 'Plan trips, split expenses & explore together — try TravelBae with me!',
+      title: 'TripBae',
+      text: 'Plan trips, split expenses & explore together — try TripBae with me!',
       url: window.location.origin,
     };
     try {
@@ -369,20 +387,21 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const submitRating = (stars) => {
     if (!stars) return;
     setRateStars(stars);
-    localStorage.setItem('travelbae_rating', String(stars));
+    localStorage.setItem('tripbae_rating', String(stars));
     setRateModal(false);
+    updateUserProfile({ appRating: stars }).catch(() => {});
     const msgs = {
       1: 'Thanks. We will improve this.',
       2: 'Feedback received. We are on it.',
-      3: 'Thanks for rating TravelBae.',
-      4: 'Great to hear you are enjoying it.',
-      5: 'Amazing. Thanks for the support.',
+      3: 'Thanks for rating TripBae.',
+      4: 'Great to hear you are enjoying it!',
+      5: 'Amazing! Thanks for the love.',
     };
-    showToast(msgs[stars] || 'Thanks for rating TravelBae.');
+    showToast(msgs[stars] || 'Thanks for rating TripBae.');
   };
 
   const handleFeedback = () => {
-    window.location.href = 'mailto:feedback@travelbae.app?subject=TravelBae%20feedback';
+    window.location.href = 'mailto:hello@tripbae.in?subject=TripBae%20Feedback';
   };
 
   const handleProfileSave = async () => {
@@ -405,7 +424,9 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
     stats: 'Travel Stats',
     history: 'Past Trips',
     notifications: 'Notifications',
-    support: 'TravelBae Club',
+    support: 'Rate & Feedback',
+    faqs: 'FAQs',
+    contact: 'Contact Us',
     privacy: 'Privacy & Safety',
     help: 'Help & Support',
     policy: 'Privacy Policy',
@@ -432,17 +453,9 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
     {
       title: 'Support',
       items: [
-        { id: 'help',    iconId: 'help',  label: 'Help & Support',  sub: 'FAQs and contact the team',       accent: '#CC5600', action: 'view' },
-        { id: 'support', iconId: 'club',  label: 'Rate & Feedback', sub: 'Share your rating and thoughts',  accent: '#FF6A00', action: 'view' },
-        { id: 'share',   iconId: 'share', label: 'Share',           sub: 'Invite friends to plan together', accent: '#C05000', action: 'share' },
-      ],
-    },
-    {
-      title: 'Legal',
-      items: [
-        { id: 'policy', iconId: 'policy', label: 'Privacy policy',   sub: 'What we do and do not collect', accent: '#CC5600', action: 'view' },
-        { id: 'terms',  iconId: 'terms',  label: 'Terms of service', sub: 'How we keep things fair',       accent: '#A74400', action: 'view' },
-        { id: 'about',  iconId: 'about',  label: 'About',            sub: 'Our story and version info',    accent: '#E3670D', action: 'view' },
+        { id: 'faqs',    iconId: 'help',  label: 'FAQs',            sub: 'Quick answers to common questions',  accent: '#CC5600', action: 'view' },
+        { id: 'contact', iconId: 'mail',  label: 'Contact',         sub: 'Get in touch with our team',         accent: '#B64C00', action: 'view' },
+        { id: 'support', iconId: 'star',  label: 'Rate & Feedback', sub: 'Share your rating and thoughts',     accent: '#FF6A00', action: 'view' },
       ],
     },
   ];
@@ -458,7 +471,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const goBack = () => (view === 'hub' ? onClose() : setView('hub'));
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #fff9f3 34%, #fff4ea 100%)', zIndex: 620, overflowY: 'auto', fontFamily: "'DM Sans',sans-serif" }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #fff9f3 34%, #fff4ea 100%)', zIndex: 620, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'none', scrollBehavior: 'smooth', fontFamily: "'DM Sans',sans-serif" }}>
       <style>{`
         @keyframes pfFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pfBadgePop { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }
@@ -491,7 +504,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         </div>
       )}
 
-      {/* Rate TravelBae modal */}
+      {/* Rate TripBae modal */}
       {rateModal && (
         <div
           onClick={() => setRateModal(false)}
@@ -1310,31 +1323,189 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         </div>
       )}
 
-      {/* ════════ SUPPORT VIEW ════════ */}
+      {/* ════════ SUPPORT (Rate & Feedback) VIEW ════════ */}
       {view === 'support' && (
-        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem' }}>
-          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
-            <button onClick={handleRate} className="pf-row" style={{ width: '100%', background: '#fff', border: 'none', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif" }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <DrawerIcon id="club" size={18} color={AC} />
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', paddingBottom: '2rem' }}>
+          {/* Rating card */}
+          <div style={{ background: 'linear-gradient(145deg,#fff,#FFF4EA)', border: '0.5px solid rgba(255,106,0,0.2)', borderRadius: 18, padding: '22px 18px', marginBottom: 14, textAlign: 'center' }}>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#1a1a18', marginBottom: 4 }}>How are we doing?</div>
+            <div style={{ fontSize: 12.5, color: '#6b6b68', marginBottom: 16, lineHeight: 1.5 }}>Your rating helps us improve TripBae every day.</div>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 14 }}>
+              {[1, 2, 3, 4, 5].map(n => (
+                <span key={n} style={{ fontSize: 32, color: rateStars >= n ? '#F5B301' : '#E4E2D9', transition: 'color .15s', lineHeight: 1 }}>★</span>
+              ))}
+            </div>
+            {rateStars > 0 && (
+              <div style={{ fontSize: 12, color: '#6b6b68', marginBottom: 14 }}>
+                {['', 'Not great', 'Could be better', "It's okay", 'Pretty good!', 'Loved it!'][rateStars]} · {rateStars}/5 stars
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>Rate TravelBae</div>
-                <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2 }}>{rateStars ? `Current rating: ${rateStars}/5` : 'Tap to add your rating'}</div>
-              </div>
-              <div style={{ fontSize: 18, color: '#c8c6c0' }}>›</div>
+            )}
+            <button
+              onClick={handleRate}
+              style={{ padding: '11px 28px', borderRadius: 12, border: 'none', background: `linear-gradient(135deg,${AC},#D85B00)`, color: '#fff', fontSize: 13.5, fontWeight: 700, cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", boxShadow: '0 6px 18px rgba(255,106,0,0.32)', transition: 'opacity .15s' }}
+            >
+              {rateStars ? 'Update rating' : 'Rate TripBae'}
             </button>
+          </div>
 
-            <button onClick={handleFeedback} className="pf-row" style={{ width: '100%', background: '#fff', border: 'none', borderTop: '0.5px solid rgba(0,0,0,0.06)', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif" }}>
+          {/* Feedback section */}
+          <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Feedback</div>
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden' }}>
+            <button
+              onClick={handleFeedback}
+              className="pf-row"
+              style={{ width: '100%', background: '#fff', border: 'none', padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', textAlign: 'left', fontFamily: "'DM Sans',sans-serif" }}
+            >
               <div style={{ width: 38, height: 38, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <DrawerIcon id="mail" size={18} color={AC} />
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>Send feedback</div>
-                <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2 }}>Tell us what to improve next</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>Send feedback</div>
+                <div style={{ fontSize: 11.5, color: '#6b6b68', marginTop: 2 }}>Feature requests, bugs, or just a hello</div>
               </div>
-              <div style={{ fontSize: 18, color: '#c8c6c0' }}>›</div>
+              <div style={{ fontSize: 16, color: '#c8c6c0' }}>↗</div>
             </button>
+          </div>
+          <div style={{ fontSize: 11.5, color: '#9a9a96', textAlign: 'center', marginTop: 12, lineHeight: 1.6 }}>
+            Your feedback shapes what we build next.
+          </div>
+        </div>
+      )}
+
+      {/* ════════ FAQs VIEW ════════ */}
+      {view === 'faqs' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', paddingBottom: '2rem' }}>
+          {[
+            {
+              cat: 'Getting Started',
+              items: [
+                { q: 'What is TripBae?', a: 'TripBae is your all-in-one travel companion — plan AI-powered itineraries, split expenses fairly, organise group trips, and store memories, all in one place.' },
+                { q: 'Do I need an account?', a: 'Yes. A free account syncs your trips across devices and lets trip mates see shared data. Signing up takes under 30 seconds.' },
+                { q: 'How do I create my first trip?', a: 'Tap the "+" button on the home screen. Choose solo or group, set your destination and dates — you\'re good to go.' },
+              ],
+            },
+            {
+              cat: 'Trips & Groups',
+              items: [
+                { q: 'How do I invite friends to a group trip?', a: 'Inside a group trip, tap the share code at the top and send it to your friends. They enter the code to join instantly.' },
+                { q: 'Can I rename or edit a trip?', a: 'Open the trip → tap the menu (⋯) → Edit Trip. You can update the name, destination, dates, budget and members.' },
+                { q: 'How do I mark a trip as completed?', a: 'Inside a trip → tap the menu (⋯) → Mark as completed. It moves to Past Trips in your profile.' },
+                { q: 'Can I restore a completed trip?', a: 'Yes — Profile → Past Trips → tap Restore Trip. It comes back to your active list with all data intact.' },
+              ],
+            },
+            {
+              cat: 'Expenses & Splitting',
+              items: [
+                { q: 'How does expense splitting work?', a: 'Add an expense, choose who paid and how to split it (equally or custom). TripBae instantly calculates balances and shows the minimum transactions to settle up.' },
+                { q: 'Can I track multiple currencies?', a: 'Yes. Log each expense in any currency and set your preferred display currency in Profile. Exchange rates update automatically.' },
+                { q: 'How do I edit or delete an expense?', a: 'Tap any expense to edit it, or swipe left to delete.' },
+              ],
+            },
+            {
+              cat: 'AI Itinerary & Lumi',
+              items: [
+                { q: 'What is Lumi?', a: 'Lumi is TripBae\'s AI travel guide. It curates local experiences, builds day-by-day itineraries, and shares insider tips tailored to your destination and pace.' },
+                { q: 'How do I generate an itinerary?', a: 'Open a trip → tap Explore → swipe through Lumi\'s experience picks → confirm → tap "Build My Itinerary". That\'s it.' },
+                { q: 'Can I customise the AI itinerary?', a: 'Absolutely. Tap any activity to edit details, swap places, change times, or mark it done. The itinerary is fully yours to shape.' },
+                { q: 'Does Lumi work for any destination?', a: 'Lumi works for most destinations worldwide. Popular destinations get richer, more detailed suggestions.' },
+              ],
+            },
+            {
+              cat: 'Photos & Privacy',
+              items: [
+                { q: 'Are my photos private?', a: 'Yes. Photos are end-to-end encrypted and only visible to you and the trip mates you invited. We never share or use your content to train AI.' },
+                { q: 'Where are my photos stored?', a: 'In a private storage bucket linked to your trip. Nothing ends up in public feeds or accessible to other users.' },
+              ],
+            },
+            {
+              cat: 'Account & Data',
+              items: [
+                { q: 'What happens if I delete a trip?', a: 'All photos, expenses, contacts, and itinerary data tied to that trip are permanently removed. This cannot be undone.' },
+                { q: 'How do I delete my account?', a: 'Profile → scroll to the bottom → Delete account. This permanently removes your profile and all trips where you\'re the sole member.' },
+                { q: 'How do I change my login email?', a: 'Email us at hello@tripbae.in — a real person handles all account-related changes.' },
+              ],
+            },
+          ].map((section) => (
+            <div key={section.cat} style={{ marginBottom: 18 }}>
+              <div style={{ fontSize: 10.5, color: AC, fontWeight: 700, letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>{section.cat}</div>
+              <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden' }}>
+                {section.items.map((it, idx) => (
+                  <details key={it.q} style={{ padding: '13px 16px', borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.06)' }}>
+                    <summary style={{ fontSize: 13.5, fontWeight: 600, color: '#1a1a18', cursor: 'pointer', listStyle: 'none', display: 'flex', alignItems: 'center', gap: 8, userSelect: 'none' }}>
+                      <span className="pf-faq-chevron" style={{ color: AC, fontWeight: 700, display: 'inline-block', transition: 'transform .2s', fontSize: 17, lineHeight: 1, flexShrink: 0 }}>›</span>
+                      <span style={{ flex: 1 }}>{it.q}</span>
+                    </summary>
+                    <div style={{ fontSize: 13, color: '#5a5a56', lineHeight: 1.65, marginTop: 9, paddingLeft: 25, borderTop: '0.5px dashed rgba(0,0,0,0.07)', paddingTop: 9 }}>{it.a}</div>
+                  </details>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#fff)', border: '0.5px solid rgba(255,106,0,0.2)', borderRadius: 14, padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ width: 36, height: 36, background: AC_SOFT, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <DrawerIcon id="mail" size={16} color={AC} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#1a1a18' }}>Still have a question?</div>
+              <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>
+                Email us at{' '}
+                <a href="mailto:hello@tripbae.in" style={{ color: AC, textDecoration: 'none', fontWeight: 600 }}>hello@tripbae.in</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ════════ CONTACT VIEW ════════ */}
+      {view === 'contact' && (
+        <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', paddingBottom: '2rem' }}>
+          <div style={{ background: 'linear-gradient(135deg,#FFF3EB,#fff)', border: '0.5px solid rgba(255,106,0,0.18)', borderRadius: 18, padding: '22px 18px', marginBottom: 16, textAlign: 'center' }}>
+            <div style={{ width: 54, height: 54, background: AC_SOFT, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+              <DrawerIcon id="mail" size={26} color={AC} />
+            </div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: '#1a1a18', marginBottom: 6 }}>We're here to help</div>
+            <div style={{ fontSize: 13, color: '#6b6b68', lineHeight: 1.6, maxWidth: 260, margin: '0 auto' }}>
+              A real person reads every message. We typically reply within 24 hours.
+            </div>
+          </div>
+
+          <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Get in touch</div>
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden', marginBottom: 14 }}>
+            <a href="mailto:hello@tripbae.in" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', textDecoration: 'none', color: 'inherit', borderBottom: '0.5px solid rgba(0,0,0,0.06)' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <DrawerIcon id="mail" size={18} color={AC} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>General support</div>
+                <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>hello@tripbae.in</div>
+              </div>
+              <div style={{ fontSize: 14, color: '#c8c6c0' }}>↗</div>
+            </a>
+            <a href="mailto:hello@tripbae.in?subject=TripBae%20Feedback" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', textDecoration: 'none', color: 'inherit' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <DrawerIcon id="help" size={18} color={AC} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 600, color: '#1a1a18' }}>Send feedback</div>
+                <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2 }}>Feature requests, ideas, or bug reports</div>
+              </div>
+              <div style={{ fontSize: 14, color: '#c8c6c0' }}>↗</div>
+            </a>
+          </div>
+
+          <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', marginBottom: 8, paddingLeft: 2 }}>Response times</div>
+          <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.07)', borderRadius: 14, padding: '14px 16px' }}>
+            {[
+              { label: 'General enquiries', time: 'Within 24 h' },
+              { label: 'Bug reports',       time: 'Within 12 h' },
+              { label: 'Account issues',    time: 'Within 6 h' },
+            ].map((row, idx) => (
+              <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: idx === 0 ? 0 : 10, borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.05)' }}>
+                <div style={{ fontSize: 13, color: '#4a4a46' }}>{row.label}</div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: AC, background: AC_SOFT, padding: '3px 10px', borderRadius: 8 }}>{row.time}</div>
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -1404,13 +1575,13 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
 
           <div style={{ fontSize: 11, color: '#6b6b68', fontWeight: 700, letterSpacing: 0.4, textTransform: 'uppercase', margin: '0 0 8px 4px' }}>Contact us</div>
           <div style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, overflow: 'hidden' }}>
-            <a href="mailto:support@travelbae.app" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', textDecoration: 'none', color: 'inherit' }}>
+            <a href="mailto:hello@tripbae.in" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', textDecoration: 'none', color: 'inherit' }}>
               <div style={{ width: 34, height: 34, background: AC_SOFT, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <DrawerIcon id="mail" size={16} color={AC} />
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a18' }}>Email support</div>
-                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>support@travelbae.app — usually replies within a day</div>
+                <div style={{ fontSize: 11, color: '#6b6b68', marginTop: 1 }}>hello@tripbae.in — We'll get back within 24 hours.</div>
               </div>
               <div style={{ fontSize: 14, color: '#c8c6c0' }}>↗</div>
             </a>
@@ -1454,12 +1625,12 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           <div style={{ fontSize: 11, color: '#6b6b68', marginBottom: 14 }}>Last updated · May 2026</div>
           {[
             { h: 'What we collect',  p: 'Only what you give us: your name, email, trip details, expenses, contacts, photos and itinerary notes. Nothing else.' },
-            { h: 'How we use it',    p: 'Strictly to make TravelBae work — render your trips, sync them across devices, and let your trip mates see shared data. We do not run analytics on your trip content.' },
+            { h: 'How we use it',    p: 'Strictly to make TripBae work — render your trips, sync them across devices, and let your trip mates see shared data. We do not run analytics on your trip content.' },
             { h: 'What we never do', p: 'We never sell your data, share it with advertisers, or use your photos, expenses, or messages to train any AI model — ours or anyone else\'s.' },
             { h: 'Encryption',       p: 'All trip data is encrypted in transit. Photos sit in your private storage bucket, accessible only to you and the trip mates you invited.' },
             { h: 'Your rights',      p: 'Edit or delete anything anytime. Deleting a trip permanently removes its expenses, contacts, photos and itinerary. Deleting your account wipes everything we have on you.' },
             { h: 'Cookies',          p: 'We use a single auth token in localStorage to keep you signed in. No third-party tracking cookies.' },
-            { h: 'Contact',          p: 'Privacy questions? Email privacy@travelbae.app and a real human will reply.' },
+            { h: 'Contact',          p: 'Privacy questions? Email privacy@tripbae.in and a real human will reply.' },
           ].map(s => (
             <div key={s.h} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '14px 16px', marginBottom: 10 }}>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#1a1a18', marginBottom: 6 }}>{s.h}</div>
@@ -1475,13 +1646,13 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
         <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', maxWidth: 680 }}>
           <div style={{ fontSize: 11, color: '#6b6b68', marginBottom: 14 }}>Last updated · May 2026</div>
           {[
-            { h: 'The deal',          p: 'TravelBae is a tool to help you plan trips, split expenses and share memories with people you travel with. By using it, you agree to keep things friendly and lawful.' },
+            { h: 'The deal',          p: 'TripBae is a tool to help you plan trips, split expenses and share memories with people you travel with. By using it, you agree to keep things friendly and lawful.' },
             { h: 'Your account',      p: 'You\'re responsible for what happens under your account. Keep your password secret. One human, one account.' },
             { h: 'Your content',      p: 'Your trips, photos and notes belong to you. You grant us only the minimum permission needed to store and display them inside your trips.' },
-            { h: 'Acceptable use',    p: 'Don\'t upload anything illegal, hateful, or that isn\'t yours to share. Don\'t try to reverse-engineer, scrape, or break TravelBae.' },
+            { h: 'Acceptable use',    p: 'Don\'t upload anything illegal, hateful, or that isn\'t yours to share. Don\'t try to reverse-engineer, scrape, or break TripBae.' },
             { h: 'Group trips',       p: 'When you join a group trip, the other members can see the trip\'s expenses, contacts and photos. Only share share-codes with people you trust.' },
-            { h: 'No warranty',       p: 'TravelBae is provided "as is" — we try hard, but life and code happen. We aren\'t liable for indirect damages from app downtime or data loss.' },
-            { h: 'Changes',           p: 'We may tweak these terms occasionally. We\'ll surface changes inside the app. Continuing to use TravelBae means you accept the latest version.' },
+            { h: 'No warranty',       p: 'TripBae is provided "as is" — we try hard, but life and code happen. We aren\'t liable for indirect damages from app downtime or data loss.' },
+            { h: 'Changes',           p: 'We may tweak these terms occasionally. We\'ll surface changes inside the app. Continuing to use TripBae means you accept the latest version.' },
           ].map(s => (
             <div key={s.h} style={{ background: '#fff', border: '0.5px solid rgba(0,0,0,0.09)', borderRadius: 14, padding: '14px 16px', marginBottom: 10 }}>
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#1a1a18', marginBottom: 6 }}>{s.h}</div>
@@ -1498,7 +1669,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           {/* Hero */}
           <div style={{ textAlign: 'center', padding: '1rem 1rem 1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'center', margin: '0 auto' }}>
-              <img src={bglessLogo} alt="TravelBae" style={{ height: 72, width: 'auto', objectFit: 'contain' }} />
+              <img src={bglessLogo} alt="TripBae" style={{ height: 72, width: 'auto', objectFit: 'contain' }} />
             </div>
             <div style={{ fontSize: 13, color: '#6b6b68', marginTop: 4, fontStyle: 'italic' }}>Plan, split, explore — together.</div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 12, padding: '4px 12px', borderRadius: 12, background: AC_SOFT, border: `0.5px solid rgba(255,106,0,0.28)`, fontSize: 11, color: AC, fontWeight: 600 }}>
@@ -1506,7 +1677,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
             </div>
           </div>
 
-          {/* What is TravelBae */}
+          {/* What is TripBae */}
           <div style={{ background: 'linear-gradient(145deg,#fff,#FFF4EA)', border: '0.5px solid rgba(255,106,0,0.18)', borderRadius: 16, padding: '18px 18px', marginBottom: 12 }}>
             <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, color: AC, marginBottom: 8 }}>What is <TBLogo h={15} />?</div>
             <div style={{ fontSize: 13, color: '#1a1a18', lineHeight: 1.65 }}>
@@ -1528,7 +1699,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
             {[
               { iconId: 'map',     title: 'Plan',             body: 'Generate AI itineraries, pin must-see places, and shape each day around your pace.' },
               { iconId: 'wallet',  title: 'Split',            body: 'Add expenses on the go. Balances and settle-up suggestions appear instantly.' },
-              { iconId: 'users',   title: 'Solo or together', body: 'Spin up a solo journey or a group trip — TravelBae adapts to either mode.' },
+              { iconId: 'users',   title: 'Solo or together', body: 'Spin up a solo journey or a group trip — TripBae adapts to either mode.' },
               { iconId: 'camera',  title: 'Remember',         body: 'Private photo folders per traveller, encrypted and visible only to your trip mates.' },
             ].map((f, idx) => (
               <div key={f.title} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', paddingTop: idx === 0 ? 0 : 10, paddingBottom: 10, borderTop: idx === 0 ? 'none' : '0.5px solid rgba(0,0,0,0.05)' }}>

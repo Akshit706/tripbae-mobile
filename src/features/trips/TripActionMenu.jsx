@@ -1,8 +1,46 @@
 import { useState } from 'react';
 import { updateTrip } from '../../api';
-import { normalizeMembers } from '../shared/constants';
 import { S } from '../shared/styles';
 import { ConfirmDialog } from '../shared/ui';
+
+const AC    = '#FF6A00';
+const AC_BG = '#FFF3EB';
+const AC_BR = '#FFCBA4';
+const SOLO_AC    = '#7F77DD';
+const SOLO_AC_BG = '#EEEDFE';
+const SOLO_AC_BR = '#C5C2F8';
+
+const BUDGET_CURRENCIES = [
+  'INR','USD','EUR','GBP','AED','AUD','CAD','CHF','CNY','JPY',
+  'SGD','THB','MYR','IDR','VND','KRW','NPR','LKR','BDT','PKR',
+];
+
+const LockIcon = () => (
+  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2"/>
+    <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+);
+
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = String(iso).split('T')[0].split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function LockedField({ label, value }) {
+  if (!value) return null;
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#bbb', letterSpacing: 1.1, textTransform: 'uppercase', marginBottom: 5 }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '11px 13px', borderRadius: 12, background: '#EFEFED', border: '1.5px solid rgba(0,0,0,0.06)' }}>
+        <span style={{ flex: 1, fontSize: 13.5, color: '#777', fontFamily: "'DM Sans',sans-serif", lineHeight: 1.4 }}>{value}</span>
+        <span style={{ color: '#bbb', flexShrink: 0, display: 'flex' }}><LockIcon /></span>
+      </div>
+    </div>
+  );
+}
+
 
 function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
   const [open, setOpen] = useState(false);
@@ -11,34 +49,25 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
   const [showEdit, setShowEdit] = useState(false);
   const isSolo = trip?.isSolo;
 
-  const today = new Date().toISOString().split('T')[0];
-  const maxDate = (() => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().split('T')[0]; })();
-  const EMOJI_OPTIONS = isSolo
-    ? ['🎒','🧳','🛺','🚂','🏍️','🌏','🪂','🧗','🌄','☕','📖','🦋']
-    : ['✈️','🏖️','🏔️','🏰','🌴','🗺️','🎡','🛕','🌅','🌿','🎭','🏛️'];
+  const acColor  = isSolo ? SOLO_AC    : AC;
+  const acBg     = isSolo ? SOLO_AC_BG : AC_BG;
+  const acBorder = isSolo ? SOLO_AC_BR : AC_BR;
 
   const [editForm, setEditForm] = useState({
-    groupName: trip?.groupName || '',
-    destination: trip?.destination || '',
-    emoji: trip?.emoji || '✈️',
-    arrival: trip?.arrival ? new Date(trip.arrival).toISOString().split('T')[0] : today,
-    departure: trip?.departure ? new Date(trip.departure).toISOString().split('T')[0] : '',
-    budget: trip?.budget ? String(trip.budget) : '',
-    people: String(normalizeMembers(trip?.members || []).length || 2),
+    groupName:      trip?.groupName || '',
+    budget:         trip?.budget ? String(trip.budget) : '',
+    budgetCurrency: trip?.budgetCurrency || 'INR',
   });
   const [saving, setSaving] = useState(false);
 
   const handleSaveEdit = async () => {
-    if (!editForm.groupName || !editForm.destination || !editForm.arrival || !editForm.departure) return;
+    if (!editForm.groupName) return;
     setSaving(true);
     try {
       const updates = {
-        groupName: editForm.groupName,
-        destination: editForm.destination,
-        emoji: editForm.emoji,
-        arrival: editForm.arrival,
-        departure: editForm.departure,
-        budget: editForm.budget ? parseFloat(editForm.budget) : null,
+        groupName:      editForm.groupName,
+        budget:         editForm.budget ? parseFloat(editForm.budget) : null,
+        budgetCurrency: editForm.budgetCurrency || null,
       };
       await updateTrip(trip.id, updates);
       onEditTrip?.(updates);
@@ -48,6 +77,16 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
     }
     setSaving(false);
   };
+
+  const inputStyle = (filled) => ({
+    width: '100%', boxSizing: 'border-box',
+    padding: '12px 14px', fontSize: 14, borderRadius: 12,
+    border: `1.5px solid ${filled ? acBorder : 'rgba(15,23,42,0.1)'}`,
+    background: filled ? acBg : '#fff',
+    color: '#111', outline: 'none',
+    fontFamily: "'DM Sans','Inter',sans-serif",
+    transition: 'all .15s', marginBottom: 14,
+  });
 
   return (
     <>
@@ -72,64 +111,55 @@ function TripActionMenu({ trip, onMarkComplete, onDelete, onEditTrip }) {
         />
       )}
 
-      {/* Edit Trip Modal */}
+      {/* Edit Trip Popup */}
       {showEdit && (
-        <div className="tb-sheet-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-          <div className="tb-sheet-panel" style={{ background: '#f7f6f2', borderRadius: '20px 20px 0 0', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100, padding: '0 16px' }}>
+          <div style={{ background: '#fff', borderRadius: 24, width: '100%', maxWidth: 420, maxHeight: '80svh', display: 'flex', flexDirection: 'column', boxShadow: '0 24px 80px rgba(0,0,0,0.28)', overflow: 'hidden' }}>
+
             {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', background: '#fff', borderBottom: '0.5px solid rgba(0,0,0,0.08)', position: 'sticky', top: 0, zIndex: 1, borderRadius: '20px 20px 0 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '1rem 1.25rem', borderBottom: '0.5px solid rgba(0,0,0,0.08)', flexShrink: 0 }}>
               <button onClick={() => setShowEdit(false)}
-                style={{ width: 36, height: 36, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, cursor: 'pointer' }}>←</button>
-              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 17, fontWeight: 700, flex: 1 }}>Edit Trip Details</div>
-              <button onClick={handleSaveEdit} disabled={saving || !editForm.groupName || !editForm.destination || !editForm.arrival || !editForm.departure}
-                style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), padding: '8px 22px', fontSize: 14, fontWeight: 600, borderRadius: 12, opacity: (saving || !editForm.groupName || !editForm.destination) ? 0.4 : 1 }}>
+                style={{ width: 34, height: 34, borderRadius: '50%', border: '0.5px solid rgba(0,0,0,0.12)', background: '#f7f6f2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, cursor: 'pointer', flexShrink: 0 }}>←</button>
+              <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, flex: 1 }}>Edit Trip Details</div>
+              <button onClick={handleSaveEdit} disabled={saving || !editForm.groupName}
+                style={{ ...S.btn, ...(isSolo ? S.btnSolo : S.btnP), padding: '8px 20px', fontSize: 13, fontWeight: 600, borderRadius: 12, opacity: (saving || !editForm.groupName) ? 0.4 : 1 }}>
                 {saving ? 'Saving…' : 'Save'}
               </button>
             </div>
 
-            <div style={{ padding: '1.25rem' }}>
-              {/* Emoji */}
-              <label style={S.label}>Trip Emoji</label>
-              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', margin: '6px 0 14px' }}>
-                {EMOJI_OPTIONS.map(e => (
-                  <div key={e} onClick={() => setEditForm(f => ({ ...f, emoji: e }))}
-                    style={{ width: 38, height: 38, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer',
-                      border: editForm.emoji === e ? `2px solid ${isSolo ? '#7F77DD' : '#FF6A00'}` : '0.5px solid rgba(0,0,0,0.12)',
-                      background: editForm.emoji === e ? (isSolo ? '#EEEDFE' : '#FFF3EB') : '#fff' }}>
-                    {e}
-                  </div>
-                ))}
+            {/* Scrollable body */}
+            <div style={{ overflowY: 'auto', flex: 1, padding: '1.25rem' }}>
+
+              {/* Editable: Trip Name */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', letterSpacing: 1.1, textTransform: 'uppercase', marginBottom: 6 }}>
+                {isSolo ? 'Adventure Name' : 'Group Name'} *
+              </div>
+              <input style={inputStyle(!!editForm.groupName)} value={editForm.groupName}
+                onChange={e => setEditForm(f => ({ ...f, groupName: e.target.value }))}
+                placeholder={isSolo ? 'e.g. My Jaipur Chapter' : 'e.g. Goa Gang 2025'} />
+
+              {/* Locked read-only fields */}
+              <LockedField label="Destination" value={trip?.destination} />
+              <LockedField label="Arrival" value={fmtDate(trip?.arrival)} />
+              <LockedField label="Departure" value={fmtDate(trip?.departure)} />
+              <LockedField label="Arriving From" value={trip?.arrivalCity} />
+              <LockedField label="Departing From" value={trip?.departureCity} />
+              <LockedField label="Travel Notes" value={trip?.travelNotes} />
+
+              {/* Editable: Budget + currency */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#aaa', letterSpacing: 1.1, textTransform: 'uppercase', marginBottom: 6 }}>
+                Budget <span style={{ fontWeight: 500, fontSize: 10, color: '#ccc', textTransform: 'none' }}>(optional)</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginBottom: 4 }}>
+                <select value={editForm.budgetCurrency} onChange={e => setEditForm(f => ({ ...f, budgetCurrency: e.target.value }))}
+                  style={{ padding: '12px 10px', fontSize: 13, fontFamily: "'DM Sans',sans-serif", border: `1.5px solid ${acBorder}`, borderRadius: 12, background: acBg, color: acColor, outline: 'none', cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>
+                  {BUDGET_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <input style={{ flex: 1, padding: '12px 14px', fontSize: 14, borderRadius: 12, border: `1.5px solid ${editForm.budget ? acBorder : 'rgba(15,23,42,0.1)'}`, background: editForm.budget ? acBg : '#fff', color: '#111', outline: 'none', fontFamily: "'DM Sans',sans-serif" }}
+                  type="number" value={editForm.budget}
+                  onChange={e => setEditForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
               </div>
 
-              {/* Name */}
-              <label style={S.label}>{isSolo ? 'Adventure Name *' : 'Group Name *'}</label>
-              <input style={{ ...S.input, marginBottom: 14 }} value={editForm.groupName}
-                onChange={e => setEditForm(f => ({ ...f, groupName: e.target.value }))} />
-
-              {/* Destination */}
-              <label style={S.label}>Destination *</label>
-              <input style={{ ...S.input, marginBottom: 14 }} value={editForm.destination}
-                onChange={e => setEditForm(f => ({ ...f, destination: e.target.value }))}
-                placeholder="e.g. Jaipur, Rajasthan" />
-
-              {/* Dates */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
-                <div>
-                  <label style={S.label}>Arrival *</label>
-                  <input style={S.input} type="date" value={editForm.arrival} min={today} max={maxDate}
-                    onChange={e => setEditForm(f => ({ ...f, arrival: e.target.value, departure: f.departure && f.departure < e.target.value ? '' : f.departure }))} />
-                </div>
-                <div>
-                  <label style={S.label}>Departure *</label>
-                  <input style={S.input} type="date" value={editForm.departure} min={editForm.arrival || today} max={maxDate}
-                    onChange={e => setEditForm(f => ({ ...f, departure: e.target.value }))} />
-                </div>
-              </div>
-
-              {/* Budget */}
-              <label style={S.label}>Budget ₹ (optional)</label>
-              <input style={{ ...S.input, marginBottom: 14 }} type="number" value={editForm.budget}
-                onChange={e => setEditForm(f => ({ ...f, budget: e.target.value }))} placeholder="e.g. 50000" />
             </div>
           </div>
         </div>

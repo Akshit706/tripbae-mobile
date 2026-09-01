@@ -28,7 +28,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
   const el = document.createElement('style');
   el.id = 'photos-v2-styles';
   el.textContent = `
-    @keyframes phPageIn   { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes phPageIn   { from{opacity:0;transform:translateY(8px)} to{opacity:1} }
     @keyframes phFadeIn   { from{opacity:0} to{opacity:1} }
     @keyframes phPopIn    { from{opacity:0;transform:scale(0.9) translateY(16px)} 60%{transform:scale(1.02)} to{opacity:1;transform:scale(1) translateY(0)} }
     @keyframes phSlideUp  { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
@@ -54,7 +54,7 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       min-height:100vh; padding-bottom:8rem; animation:phPageIn .3s ease both;
     }
 
-    /* ── Hero card (compact, left-aligned like day planner) ── */
+    /* ── Hero card ── */
     .ph-hero {
       position:relative; border-radius:22px; overflow:hidden;
       background-color:#1a0d00;
@@ -105,7 +105,6 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       display:flex; align-items:center; gap:4px; justify-content:center;
       text-shadow:0 1px 6px rgba(0,0,0,0.45);
     }
-    /* inline stats row */
     .ph-hero-stats {
       display:flex; align-items:center; gap:10px; margin-bottom:0; flex-wrap:nowrap;
       justify-content:center;
@@ -117,7 +116,6 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-hero-stat-lbl { font-size:11px; color:rgba(255,255,255,0.75); text-shadow:0 1px 4px rgba(0,0,0,0.4); }
     .ph-hero-stat-div { width:1px; height:12px; background:rgba(255,255,255,0.18); flex-shrink:0; }
 
-    /* privacy note — inside hero, below stats */
     .ph-privacy-note {
       display:flex; align-items:center; justify-content:center; gap:5px;
       margin-top:10px; padding-top:9px;
@@ -188,6 +186,8 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-upload:hover, .ph-upload.drag {
       border-color:#FF6A00; background:#FFF8F4;
     }
+    .ph-upload-full { cursor:not-allowed; opacity:0.72; }
+    .ph-upload-full:hover, .ph-upload-full.drag { border-color:rgba(28,20,16,0.13) !important; background:#fff !important; }
     .ph-upload-inner {
       display:flex; align-items:center; gap:14px;
       padding:14px 16px;
@@ -237,18 +237,23 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-cell {
       position:relative; overflow:hidden;
       aspect-ratio:1; cursor:pointer; background:#EDE9E4;
-      border:2px solid transparent; transition:opacity .15s;
+      border:2px solid transparent; transition:opacity .15s, transform .12s;
     }
     .ph-cell.sel { border-color:#FF6A00; }
-    .ph-cell img { width:100%; height:100%; object-fit:cover; display:block; transition:filter .15s; }
+    .ph-cell img { width:100%; height:100%; object-fit:cover; display:block; transition:filter .15s, opacity .35s; }
     .ph-cell:hover img { filter:brightness(.85); }
+    .ph-cell:active { transform:scale(0.97); opacity:0.88; }
+    .ph-cell:active img { filter:brightness(.78); }
     .ph-check {
       position:absolute; top:6px; right:6px; width:20px; height:20px; border-radius:50%;
       background:rgba(255,255,255,0.82); border:1.5px solid rgba(28,20,16,0.18);
       display:flex; align-items:center; justify-content:center; z-index:3;
-      transition:all .15s; backdrop-filter:blur(3px);
+      transition:all .15s; backdrop-filter:blur(3px); opacity:0;
     }
-    .ph-cell.sel .ph-check { background:#FF6A00; border-color:#FF6A00; }
+    .ph-cell-selmode .ph-check { opacity:1; }
+    .ph-cell.sel .ph-check { opacity:1; background:#FF6A00; border-color:#FF6A00; }
+    .ph-cell-selmode .ph-del-btn { display:none; }
+    .ph-cell-selmode .ph-expand { display:none; }
     .ph-expand {
       position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
       opacity:0; transition:opacity .15s; pointer-events:none; z-index:2;
@@ -274,14 +279,28 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-empty-title { font-size:15px; font-weight:700; color:#5C504A; margin-bottom:5px; }
     .ph-empty-sub { font-size:12.5px; color:#8A7E76; }
 
-    /* action bar */
+    /* ── FIX 1: action bar sits ABOVE the bottom nav bar ──
+       Bottom nav is ~66px tall + safe area.
+       We add another ~72px on top of that so the bar clears it completely.
+       Use a solid background so it doesn't bleed into the nav. */
     .ph-action-bar {
-      position:fixed; bottom:0; left:50%; transform:translateX(-50%);
-      width:100%; max-width:880px;
-      background:rgba(255,255,255,0.97); backdrop-filter:blur(20px);
-      border-top:1px solid rgba(28,20,16,0.08);
-      padding:12px 1rem; display:flex; align-items:center; gap:8px; z-index:190;
-      animation:phSlideUp .2s ease both;
+      position:fixed;
+      /* 66px nav height + 12px gap + safe area inset */
+      bottom:calc(66px + 12px + env(safe-area-inset-bottom, 0px));
+      left:50%;
+      transform:translateX(-50%);
+      width:calc(100% - 2rem);
+      max-width:848px;
+      background:#FFFFFF;
+      border:1px solid rgba(28,20,16,0.10);
+      border-radius:16px;
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      z-index:400;
+      animation:phSlideUp .22s cubic-bezier(0.34,1.3,0.64,1) both;
+      box-shadow:0 8px 32px rgba(28,20,16,0.14), 0 2px 8px rgba(28,20,16,0.06);
     }
     .ph-action-label { flex:1; font-size:13px; color:#8A7E76; }
     .ph-action-label strong { color:#1C1410; font-size:14px; }
@@ -334,28 +353,60 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       padding:11px; border-radius:13px; cursor:pointer;
     }
 
-    /* lightbox */
+    /* ── FIX 2: Lightbox — true viewport-locked fullscreen, no scroll ──
+       position:fixed with explicit top/left/width/height avoids any
+       scroll-position or parent-transform issues. The inner layout uses
+       flexbox to keep the image dead-centre at all times. */
     .ph-lbox {
-      position:fixed; inset:0; background:rgba(10,8,6,0.96);
-      z-index:600; display:flex; align-items:center; justify-content:center; flex-direction:column;
+      position:fixed;
+      inset:0;
+      background:rgba(10,8,6,0.80);
+      backdrop-filter:blur(28px) saturate(1.3);
+      -webkit-backdrop-filter:blur(28px) saturate(1.3);
+      z-index:600;
+      /* flex centres the image regardless of scroll position */
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      /* no overflow — the image must not cause scroll */
+      overflow:hidden;
+      touch-action:none;
       animation:phFadeIn .18s ease;
     }
-    .ph-lbox-img { max-width:92vw; max-height:78vh; object-fit:contain; border-radius:10px; box-shadow:0 24px 80px rgba(0,0,0,0.7); }
-    .ph-lbox-nav { display:flex; align-items:center; gap:18px; margin-top:18px; }
-    .ph-lbox-btn {
-      background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15);
-      color:#fff; width:40px; height:40px; border-radius:50%;
-      display:flex; align-items:center; justify-content:center; cursor:pointer;
+    .ph-lbox-img {
+      /* constrain to viewport, never overflow */
+      max-width:min(92vw, 900px);
+      max-height:calc(100vh - 140px); /* 140px headroom for nav + close btn */
+      width:auto;
+      height:auto;
+      object-fit:contain;
+      border-radius:12px;
+      box-shadow:0 24px 80px rgba(0,0,0,0.6);
+      flex-shrink:0;
+      /* subtle pop-in */
+      animation:phPopIn .25s cubic-bezier(0.34,1.2,0.64,1) both;
     }
-    .ph-lbox-btn:hover { background:rgba(255,255,255,0.18); }
+    .ph-lbox-nav { display:flex; align-items:center; gap:18px; margin-top:20px; flex-shrink:0; }
+    .ph-lbox-btn {
+      background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18);
+      color:#fff; width:42px; height:42px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center; cursor:pointer;
+      transition:background .15s;
+    }
+    .ph-lbox-btn:hover { background:rgba(255,255,255,0.22); }
     .ph-lbox-btn:disabled { opacity:.2; cursor:default; }
-    .ph-lbox-count { font-size:12px; color:rgba(255,255,255,0.45); min-width:52px; text-align:center; }
+    .ph-lbox-count { font-size:12px; color:rgba(255,255,255,0.5); min-width:52px; text-align:center; }
     .ph-lbox-close {
       position:absolute; top:14px; right:14px;
-      background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.15);
-      color:#fff; width:36px; height:36px; border-radius:50%;
+      background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18);
+      color:#fff; width:38px; height:38px; border-radius:50%;
       display:flex; align-items:center; justify-content:center; cursor:pointer;
+      transition:background .15s;
+      /* ensure it's always on top even if image is tall */
+      z-index:10;
     }
+    .ph-lbox-close:hover { background:rgba(255,255,255,0.22); }
 
     /* welcome popup */
     .ph-welcome-overlay {
@@ -374,6 +425,8 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
   document.head.appendChild(el);
 }
 
+const PHOTO_CAP = 20;
+
 function PhotosPage({ trip, myNickname, myAvatar }) {
   const memberNames = normalizeMembers(trip.members);
   const me = myNickname || memberNames[0] || 'Me';
@@ -388,6 +441,9 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(null);
   const [pendingDeletePhoto, setPendingDeletePhoto] = useState(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const mountedRef = useRef(true);
+  const lbTouchStartRef = useRef(null);
   const WELCOME_KEY = `travelbae_photos_welcome_${trip.id}`;
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return !localStorage.getItem(WELCOME_KEY); } catch { return false; }
@@ -413,12 +469,22 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
 
   /* ── upload ── */
   const processFiles = async (files) => {
-    setUploading(true);
-    setUploadProgress(0);
-    let auth = null;
-    try { auth = await imagekitAuthPhotos(); } catch (e) { console.error('IK auth failed', e); setUploading(false); return; }
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
+    const myCount = (byMember[me] || []).length;
+    const slots = PHOTO_CAP - myCount;
+    if (slots <= 0) return;
+    const toUpload = Array.from(files).slice(0, slots);
+    if (mountedRef.current) { setUploading(true); setUploadProgress(0); }
+    let completed = 0;
+    let fileIdx = 0;
+    const uploadOne = async () => {
+      if (fileIdx >= toUpload.length) return;
+      const file = toUpload[fileIdx++];
+      let auth;
+      try { auth = await imagekitAuthPhotos(); } catch {
+        completed++;
+        if (mountedRef.current) setUploadProgress(Math.round((completed / toUpload.length) * 100));
+        await uploadOne(); return;
+      }
       const safeFile = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const fileName = `${trip.id}_${me}_${Date.now()}_${safeFile}`;
       const form = new FormData();
@@ -426,38 +492,41 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
       form.append('fileName', fileName);
       form.append('folder', `/tb-photos/user/${trip.id}`);
       form.append('useUniqueFileName', 'false');
-      form.append('publicKey',  auth.publicKey);
-      form.append('signature',  auth.signature);
-      form.append('expire',     String(auth.expire));
-      form.append('token',      auth.token);
+      form.append('publicKey', auth.publicKey);
+      form.append('signature', auth.signature);
+      form.append('expire', String(auth.expire));
+      form.append('token', auth.token);
       try {
         const uploadRes = await fetch('https://upload.imagekit.io/api/v1/files/upload', { method: 'POST', body: form });
         const uploadData = await uploadRes.json();
-        if (!uploadData.url) { console.error('IK upload error', uploadData); continue; }
-        const publicUrl = uploadData.url;
-        try {
-          const res = await addPhoto(trip.id, publicUrl);
-          setAllPhotos(p => [...p, res.photo || { id: Date.now() + Math.random(), url: publicUrl, uploader: me }]);
-        } catch {
-          setAllPhotos(p => [...p, { id: Date.now() + Math.random(), url: publicUrl, uploader: me }]);
+        if (uploadData.url) {
+          const publicUrl = uploadData.url;
+          try {
+            const res = await addPhoto(trip.id, publicUrl);
+            if (mountedRef.current) setAllPhotos(p => [...p, res.photo || { id: Date.now() + Math.random(), url: publicUrl, uploader: me }]);
+          } catch {
+            if (mountedRef.current) setAllPhotos(p => [...p, { id: Date.now() + Math.random(), url: publicUrl, uploader: me }]);
+          }
         }
       } catch (e) { console.error('Upload error:', e.message); }
-      setUploadProgress(Math.round(((i + 1) / files.length) * 100));
-    }
-    setUploading(false);
-    setUploadProgress(0);
-    setActiveFolder(me);
+      completed++;
+      if (mountedRef.current) setUploadProgress(Math.round((completed / toUpload.length) * 100));
+      await uploadOne();
+    };
+    await Promise.all(Array.from({ length: Math.min(4, toUpload.length) }, uploadOne));
+    if (mountedRef.current) { setUploading(false); setUploadProgress(0); setActiveFolder(me); }
   };
 
   const handleUpload = (e) => processFiles(Array.from(e.target.files));
   const handleDrop = (e) => {
     e.preventDefault();
     setDragging(false);
+    if ((byMember[me] || []).length >= PHOTO_CAP) return;
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
     if (files.length) processFiles(files);
   };
 
-  /* ── delete (single) ── */
+  /* ── delete single ── */
   const doDeleteSingle = async (photo) => {
     await deletePhoto(trip.id, photo.id);
     setAllPhotos(p => p.filter(x => x.id !== photo.id));
@@ -466,13 +535,14 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
     setConfirmDelete(null);
   };
 
-  /* ── delete (bulk) ── */
+  /* ── delete bulk ── */
   const doDeleteBulk = async () => {
     const toDelete = folderPhotos.filter(p => selected.has(p.id));
-    for (const photo of toDelete) { await deletePhoto(trip.id, photo.id); }
+    await Promise.all(toDelete.map(photo => deletePhoto(trip.id, photo.id).catch(() => {})));
     const deletedIds = new Set(toDelete.map(p => p.id));
     setAllPhotos(p => p.filter(x => !deletedIds.has(x.id)));
     setSelected(new Set());
+    setSelectionMode(false);
     setConfirmDelete(null);
   };
 
@@ -485,7 +555,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
   };
 
   const toggle = (id) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const clearSel = () => setSelected(new Set());
+  const clearSel = () => { setSelected(new Set()); setSelectionMode(false); };
 
   /* ── download selected ── */
   const downloadSelected = async () => {
@@ -507,6 +577,45 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
   const lbPrev = () => setLightbox(l => ({ ...l, index: Math.max(0, l.index - 1) }));
   const lbNext = () => setLightbox(l => ({ ...l, index: Math.min(l.photos.length - 1, l.index + 1) }));
 
+  const handleLbTouchStart = (e) => { lbTouchStartRef.current = e.touches[0].clientX; };
+  const handleLbTouchEnd = (e) => {
+    if (lbTouchStartRef.current === null) return;
+    const dx = e.changedTouches[0].clientX - lbTouchStartRef.current;
+    lbTouchStartRef.current = null;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0 && lightbox.index < lightbox.photos.length - 1) lbNext();
+    else if (dx > 0 && lightbox.index > 0) lbPrev();
+  };
+
+  useEffect(() => { return () => { mountedRef.current = false; }; }, []);
+
+  /* FIX 2: Lock scroll on BOTH html and body when lightbox is open.
+     This prevents any residual scroll offset from shifting the fixed overlay. */
+  useEffect(() => {
+    if (!lightbox) return;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
+    const prevBodyPos = document.body.style.position;
+    const scrollY = window.scrollY;
+
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    // On iOS Safari, overflow:hidden alone isn't enough — fix the body in place
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      document.body.style.position = prevBodyPos;
+      document.body.style.top = '';
+      document.body.style.width = '';
+      // Restore scroll position after iOS Safari body-fix
+      window.scrollTo(0, scrollY);
+    };
+  }, [lightbox]);
+
   useEffect(() => {
     const onKey = (e) => {
       if (confirmDelete) {
@@ -525,15 +634,20 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
 
   const initials = (name) => (name || '?').slice(0, 2).toUpperCase();
   const totalPhotos = allPhotos.length;
+  const myPhotoCount = (byMember[me] || []).length;
+  const atCap = myPhotoCount >= PHOTO_CAP;
+  const lbUrl = (url) => {
+    if (!url || !url.includes('ik.imagekit.io')) return url;
+    const sep = url.includes('?') ? '&' : '?';
+    return `${url}${sep}tr=w-1200,h-1200,fo-auto,q-82`;
+  };
 
-  /* ── pick one photo as hero background ── */
   const heroBgUrl = useMemo(() => {
     if (!allPhotos.length) return null;
     const seed = Math.abs(Array.from(trip.id || 'x').reduce((a, c) => a + c.charCodeAt(0), 0));
     const photo = allPhotos[seed % allPhotos.length];
     if (!photo?.url) return null;
     if (!photo.url.includes('ik.imagekit.io')) return photo.url;
-    // IK real-time transformation: resize + quality
     const sep = photo.url.includes('?') ? '&' : '?';
     return photo.url + sep + 'tr=w-700,h-260,fo-auto,q-65';
   }, [allPhotos, trip.id]);
@@ -545,13 +659,10 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
       {showWelcome && (
         <div className="ph-welcome-overlay" onClick={dismissWelcome}>
           <div className="ph-welcome-box" onClick={e => e.stopPropagation()}>
-            {/* Orange top strip */}
             <div style={{ height: 4, background: 'linear-gradient(90deg,#FF6A00,#FF8C3B,#FF6A00)' }} />
-            {/* X close */}
             <button onClick={dismissWelcome} style={{ position:'absolute', top:14, right:14, width:28, height:28, borderRadius:'50%', border:'none', background:'#F3F4F6', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', padding:0, zIndex:1 }}>
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            {/* Top: heading + description full width */}
             <div style={{ padding:'1.2rem 1.25rem 0.5rem' }}>
               <div style={{ display:'inline-flex', alignItems:'center', gap:5, background:'#FFF3EB', borderRadius:999, padding:'3px 9px', marginBottom:8 }}>
                 <div style={{ width:5, height:5, borderRadius:'50%', background:'#FF6A00' }} />
@@ -564,7 +675,6 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
                 Everyone's snapping — but who's actually saving them? Drop your shots here and the whole group gets instant access. No cloud chaos, no "please send" texts.
               </div>
             </div>
-            {/* Middle: left boxes | Lumi centred | right boxes */}
             <div style={{ display:'flex', alignItems:'center', padding:'0.5rem 1rem 0.75rem', gap:8 }}>
               <div style={{ flex:1, display:'flex', flexDirection:'column', gap:6 }}>
                 {['Private album', 'Member folders'].map((f, i) => (
@@ -584,7 +694,6 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
                 ))}
               </div>
             </div>
-            {/* CTA */}
             <div style={{ padding:'0 1.25rem 1.25rem' }}>
               <button onClick={dismissWelcome} style={{ width:'100%', padding:'13px', fontSize:14, fontWeight:700, borderRadius:14, border:'none', cursor:'pointer', fontFamily:"'DM Sans',sans-serif", background:'linear-gradient(135deg,#FF6A00,#FF8C3B)', color:'#fff', boxShadow:'0 4px 16px rgba(255,106,0,0.3)' }}>
                 Got it, let's shoot 📸
@@ -594,19 +703,16 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
         </div>
       )}
 
-      {/* ── Hero card (compact, left-aligned) ── */}
+      {/* ── Hero card ── */}
       <div className="ph-hero">
-        {/* animated background image */}
         <div style={{ position:'absolute', inset:0, backgroundImage:`url(${photosImg})`, backgroundSize:'cover', backgroundPosition:'center', filter:'brightness(1.28) saturate(1.1)' }} />
         {heroBgUrl && <img className="ph-hero-bg" src={heroBgUrl} alt="" />}
         <div className="ph-hero-dot-grid" />
         <div className="ph-hero-overlay" />
         <div className="ph-hero-scan" />
-        {/* warm orange drift orb */}
         <div style={{ position:'absolute', bottom:-50, right:-20, width:180, height:180, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,106,0,0.32) 0%,transparent 62%)', pointerEvents:'none', zIndex:3, animation:'phOrbDrift 9s ease-in-out infinite' }} />
         <div style={{ position:'absolute', top:-30, left:-20, width:130, height:130, borderRadius:'50%', background:'radial-gradient(circle,rgba(255,180,60,0.18) 0%,transparent 65%)', pointerEvents:'none', zIndex:3, animation:'phOrbDrift 12s ease-in-out infinite 3s' }} />
         <div className="ph-hero-deco-c1" />
-        {/* ⓘ Lumi info button */}
         <button onClick={() => setShowWelcome(true)} title="About Photos" style={{ position:'absolute', top:10, right:10, width:26, height:26, borderRadius:'50%', border:'none', background:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', zIndex:10, padding:0 }}>
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.92)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
         </button>
@@ -682,17 +788,26 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
               {totalPhotos > folderPhotos.length && ` · ${totalPhotos} total`}
             </div>
           </div>
+          {folderPhotos.length > 0 && (
+            <button
+              onClick={() => { setSelectionMode(s => !s); setSelected(new Set()); }}
+              style={selectionMode
+                ? { background: 'rgba(255,106,0,0.1)', color: '#FF6A00', border: '1.5px solid rgba(255,106,0,0.28)', borderRadius: 12, padding: '9px 18px', fontSize: 13.5, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', flexShrink: 0 }
+                : { background: '#FF6A00', color: '#fff', border: 'none', borderRadius: 12, padding: '9px 18px', fontSize: 13.5, fontWeight: 700, fontFamily: "'DM Sans',sans-serif", cursor: 'pointer', flexShrink: 0, boxShadow: '0 3px 12px rgba(255,106,0,0.3)' }}
+            >
+              {selectionMode ? 'Done' : 'Select'}
+            </button>
+          )}
         </div>
 
-        {/* Upload card (my folder) or viewer banner (others) */}
         {isMyFolder ? (
           <label
-            className={`ph-upload ${dragging ? 'drag' : ''}`}
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+            className={`ph-upload ${dragging && !atCap ? 'drag' : ''} ${atCap ? 'ph-upload-full' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); if (!atCap) setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
           >
-            <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} />
+            <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleUpload} disabled={atCap} />
             {uploading && (
               <div className="ph-upload-overlay">
                 <div className="ph-spinner" />
@@ -711,8 +826,8 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
                 </svg>
               </div>
               <div className="ph-upload-right">
-                <div className="ph-upload-title">{dragging ? 'Release to upload' : 'Upload photos'}</div>
-                <div className="ph-upload-sub">Tap to pick · drag and drop · JPG PNG HEIC</div>
+                <div className="ph-upload-title">{atCap ? 'Storage full (20/20)' : dragging ? 'Release to upload' : 'Upload photos'}</div>
+                <div className="ph-upload-sub">{atCap ? 'Delete photos to free up slots' : `${PHOTO_CAP - myPhotoCount} slot${PHOTO_CAP - myPhotoCount !== 1 ? 's' : ''} left · JPG PNG HEIC`}</div>
               </div>
             </div>
           </label>
@@ -749,8 +864,11 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
               ? p.url.replace(/(\/[^/?]+)(\?.*)?$/, '/tr:w-300,h-300,q-75,fo-auto$1$2')
               : p.url;
             return (
-              <div key={p.id} className={`ph-cell ${selected.has(p.id) ? 'sel' : ''}`} onClick={() => toggle(p.id)}>
-                <img src={thumbUrl} alt="" loading="lazy" onError={e => { e.target.style.display = 'none'; }} />
+              <div key={p.id} className={`ph-cell ${selected.has(p.id) ? 'sel' : ''} ${selectionMode ? 'ph-cell-selmode' : ''}`} onClick={() => selectionMode ? toggle(p.id) : openLightbox(idx)}>
+                <img src={thumbUrl} alt="" loading="lazy"
+                  style={{ opacity: 0 }}
+                  onLoad={e => { e.target.style.opacity = 1; }}
+                  onError={e => { e.target.style.display = 'none'; }} />
                 <div className="ph-check">
                   {selected.has(p.id) && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
                 </div>
@@ -770,7 +888,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
         </div>
       )}
 
-      {/* ── Selection action bar ── */}
+      {/* ── Selection action bar — floats above the bottom nav ── */}
       {selected.size > 0 && (
         <div className="ph-action-bar">
           <div className="ph-action-label"><strong>{selected.size}</strong> selected</div>
@@ -816,13 +934,23 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
         </div>
       )}
 
-      {/* ── Lightbox ── */}
+      {/* ── Lightbox — viewport-locked, scroll-proof ── */}
       {lightbox && (
-        <div className="ph-lbox" onClick={() => setLightbox(null)}>
+        <div
+          className="ph-lbox"
+          onClick={() => setLightbox(null)}
+          onTouchStart={handleLbTouchStart}
+          onTouchEnd={handleLbTouchEnd}
+        >
           <button className="ph-lbox-close" onClick={() => setLightbox(null)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-          <img className="ph-lbox-img" src={lightbox.photos[lightbox.index]?.url} alt="" onClick={(e) => e.stopPropagation()} />
+          <img
+            className="ph-lbox-img"
+            src={lbUrl(lightbox.photos[lightbox.index]?.url)}
+            alt=""
+            onClick={(e) => e.stopPropagation()}
+          />
           <div className="ph-lbox-nav" onClick={(e) => e.stopPropagation()}>
             <button className="ph-lbox-btn" onClick={lbPrev} disabled={lightbox.index === 0}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>

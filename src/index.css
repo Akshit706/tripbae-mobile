@@ -59,12 +59,16 @@
   }
 }
 
+html {
+  overscroll-behavior: none;
+}
+
 body {
   margin: 0;
   overflow: hidden;
+  overscroll-behavior: none;
   background: radial-gradient(circle at 14% 8%, #ffffff 0%, #f8f7f2 34%, #f3f2ed 100%);
   background-attachment: fixed;
-  -webkit-overflow-scrolling: touch;
 }
 
 button {
@@ -223,7 +227,7 @@ code {
   min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior: none;
   scroll-padding-top: calc(96px + env(safe-area-inset-top, 0px));
 }
 

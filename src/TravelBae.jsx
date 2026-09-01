@@ -709,8 +709,7 @@ setLgVerifyResent(true);
     }, 520);
   };
 
-  const handleOpenTrip = (tripId, originRect = null) => {
-    startSharedFlight(tripId, originRect);
+  const handleOpenTrip = (tripId) => {
     setActiveTrip(tripId);
     setTab('main');
   };
@@ -813,9 +812,11 @@ setLgVerifyResent(true);
     setTab(nextTab);
   };
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
     window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
   }, [tab, activeTrip]);
 
   // ── Android hardware back button ──
@@ -891,7 +892,7 @@ if (!authToken) return (
         display:flex; flex-direction:column; align-items:center; justify-content:center;
         font-family:'DM Sans',sans-serif;
         position:relative; overflow-x:hidden; overflow-y:auto;
-        -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+        -webkit-overflow-scrolling:touch; overscroll-behavior:none;
         padding: 2rem 1.25rem;
       }
 
@@ -1443,29 +1444,13 @@ if (!authToken) return (
           />
         </Suspense>
       )}
-      {sharedFlight && (
-        <div
-          className={`tb-shared-flight ${sharedFlightActive ? 'is-active' : ''}`}
-          style={{
-            left: sharedFlight.left,
-            top: sharedFlight.top,
-            width: sharedFlight.width,
-            height: sharedFlight.height,
-            '--tb-flight-dx': `${sharedFlight.dx}px`,
-            '--tb-flight-dy': `${sharedFlight.dy}px`,
-            '--tb-flight-sx': String(sharedFlight.scaleX),
-            '--tb-flight-sy': String(sharedFlight.scaleY),
-          }}
-        >
-          <span style={{ fontSize: 20, lineHeight: 1 }}>{sharedFlight.emoji}</span>
-          <span style={{ fontFamily: "'Sora',sans-serif", fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sharedFlight.label}</span>
-        </div>
-      )}
+
       <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
       <style>{`
         @keyframes spin{to{transform:rotate(360deg)}}
         @keyframes tbShimmer{0%{background-position:-600px 0}100%{background-position:600px 0}}
-        .tb-shimmer{background:linear-gradient(90deg,#f0ede8 25%,#e4e0d8 50%,#f0ede8 75%);background-size:1200px 100%;animation:tbShimmer 1.4s ease-in-out infinite;border-radius:8px}
+        .tb-shimmer{background:linear-gradient(90deg,#f0f0f0 25%,#e8e8e8 50%,#f0f0f0 75%);background-size:1200px 100%;animation:tbShimmer 1.4s ease-in-out infinite;border-radius:8px}
+        html,body{scroll-behavior:smooth;-webkit-overflow-scrolling:touch}
         *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
         a{color:inherit;text-decoration:none}
         ::selection{background:rgba(255,106,0,0.2);color:#7A2E00}
@@ -1516,7 +1501,7 @@ if (!authToken) return (
           {!profile.avatar && (profile.name ? profile.name.trim().slice(0, 2).toUpperCase() : '👤')}
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', position: 'absolute', left: '50%', transform: 'translate(-50%, 4px)' }}>
-          <img src={orangeLogo} alt="Tripbae" style={{ height: 70, width: 'auto', objectFit: 'contain', display: 'block' }} />
+          <img src={orangeLogo} alt="Tripbae" style={{ height: 80, width: 'auto', objectFit: 'contain', display: 'block' }} />
         </div>
         {!activeTrip && !activeTripData && (
           <div style={{ marginLeft: 'auto' }}>
@@ -1543,7 +1528,7 @@ if (!authToken) return (
         {activeTrip && activeTripData ? (
           <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
             <button
-              onClick={() => { setActiveTrip(null); setActiveTripData(null); }}
+              onClick={() => { window.scrollTo(0, 0); document.documentElement.scrollTop = 0; document.body.scrollTop = 0; setActiveTrip(null); setActiveTripData(null); }}
               title="Home"
               style={{ background: 'none', border: 'none', padding: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: 0.65 }}
             >
@@ -1767,7 +1752,7 @@ if (!authToken) return (
                   <>
                     {tab === 'main' && (
                       <div className="tb-section-flow" style={{ marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
-                        <SplitPageFeature trip={activeTripData} myNickname={myNickname} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />
+                        <SplitPageFeature trip={activeTripData} myNickname={myNickname} myAvatar={profile.avatar || null} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />
                       </div>
                     )}
                     {tab === 'itinerary' && <div className="tb-section-flow"><ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} /></div>}

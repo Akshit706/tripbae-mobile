@@ -188,7 +188,7 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
   const statusPillLabel = status.label === 'Ongoing'
     ? 'Ongoing'
     : (daysToStart != null && daysToStart > 0 ? `In ${daysToStart}d` : (isPast ? 'Past' : status.label));
-  const cardBg = 'linear-gradient(145deg,#1a1108 0%,#2d1a08 52%,#1a1108 100%)';
+  const cardBg = 'linear-gradient(145deg,#0d1117 0%,#161d28 52%,#0d1117 100%)';
   const glowBg = 'radial-gradient(circle,rgba(255,106,0,0.38) 0%,transparent 72%)';
   let statusBadgeStyle;
   if (isPast) {
@@ -1104,7 +1104,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       <div style={{ flex: 1, minHeight: 16 }} />
       {/* Tagline footer — pinned to bottom */}
       <div style={{ borderTop: '1px solid #e8e6e1', padding: '28px 20px calc(28px + env(safe-area-inset-bottom, 16px))', marginTop: 0, flexShrink: 0 }}>
-        <div style={{ fontFamily: "'Sora', 'DM Sans', sans-serif", fontSize: 38, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.12, letterSpacing: '-1px', marginBottom: 14 }}>
+        <div style={{ fontFamily: "'Sora', 'DM Sans', sans-serif", fontSize: 38, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.12, letterSpacing: '-1px', marginBottom: 14, textAlign: 'left'}}>
   One App for Every<br />Part of the Trip.
 </div>
         <div style={{ fontSize: 12, color: '#c0bfbb', fontWeight: 500, letterSpacing: '0.2px' }}>
