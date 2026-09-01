@@ -336,10 +336,14 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
       };
       if (editingExpenseId) {
         const data = await updateExpense(trip.id, editingExpenseId, payload);
-        setExpenses(es => es.map(x => x.id === editingExpenseId ? data.expense : x));
+        const updated = expenses.map(x => x.id === editingExpenseId ? data.expense : x);
+        setExpenses(updated);
+        onTripUpdate?.({ expenses: updated });
       } else {
         const data = await addExpense(trip.id, payload);
-        setExpenses(es => [data.expense, ...es]);
+        const updated = [data.expense, ...expenses];
+        setExpenses(updated);
+        onTripUpdate?.({ expenses: updated });
       }
       setForm({ desc: '', amount: '', cat: 'food', date: getNow().date, time: getNow().time, note: '' });
       setEditingExpenseId(null);
@@ -366,7 +370,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const handleDelete = async (expId) => {
     try {
       await deleteExpense(trip.id, expId);
-      setExpenses(es => es.filter(x => x.id !== expId));
+      const updated = expenses.filter(x => x.id !== expId);
+      setExpenses(updated);
+      onTripUpdate?.({ expenses: updated });
     } catch (err) {
       alert('Could not delete: ' + err.message);
     }
@@ -375,7 +381,9 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
   const handleDuplicate = async (exp) => {
     try {
       const data = await addExpense(trip.id, { desc: exp.desc, amount: exp.amount, paidBy: myNickname || 'Me', cat: exp.cat, split: [myNickname || 'Me'], note: exp.note || '', date: exp.date, time: exp.time });
-      setExpenses(es => [data.expense, ...es]);
+      const updated = [data.expense, ...expenses];
+      setExpenses(updated);
+      onTripUpdate?.({ expenses: updated });
     } catch (err) { alert('Could not duplicate: ' + err.message); }
   };
 

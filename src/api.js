@@ -47,6 +47,7 @@ export const fetchDestinationLocalTime = (destination) =>
   apiFetch(`/ai/local-time?destination=${encodeURIComponent(destination)}`);
 
 export const imagekitAuth = () => apiFetch('/ai/imagekit-auth');
+export const imagekitAuthPhotos = () => apiFetch('/ai/imagekit-auth-photos');
 
 
 // Auth

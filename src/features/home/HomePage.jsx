@@ -1104,14 +1104,11 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
       <div style={{ flex: 1, minHeight: 16 }} />
       {/* Tagline footer — pinned to bottom */}
       <div style={{ borderTop: '1px solid #e8e6e1', padding: '28px 20px calc(28px + env(safe-area-inset-bottom, 16px))', marginTop: 0, flexShrink: 0 }}>
-        <div style={{ fontFamily: "'Inter', 'DM Sans', sans-serif", fontSize: 32, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.15, letterSpacing: '-0.5px' }}>
-          Plan. Split. Explore.
-        </div>
-        <div style={{ fontFamily: "'Inter', 'DM Sans', sans-serif", fontSize: 32, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.15, letterSpacing: '-0.5px', marginBottom: 14 }}>
-          Together.
-        </div>
+        <div style={{ fontFamily: "'Sora', 'DM Sans', sans-serif", fontSize: 38, fontWeight: 900, color: '#d4d4d4', lineHeight: 1.12, letterSpacing: '-1px', marginBottom: 14 }}>
+  One App for Every<br />Part of the Trip.
+</div>
         <div style={{ fontSize: 12, color: '#c0bfbb', fontWeight: 500, letterSpacing: '0.2px' }}>
-          Made with <svg width="13" height="13" viewBox="0 0 24 24" fill="#e05c5c" stroke="none" style={{ display:'inline-block', verticalAlign:'middle', marginBottom:1 }}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> in Bangalore
+          Made with <svg width="13" height="13" viewBox="0 0 24 24" fill="#e05c5c" stroke="none" style={{ display:'inline-block', verticalAlign:'middle', marginBottom:1 }}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg> in India
         </div>
       </div>
 

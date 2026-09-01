@@ -86,7 +86,7 @@ function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
   );
 }
 
-function SplitPage({ trip, myNickname, myAvatar }) {
+function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
   const memberNames = normalizeMembers(trip.members);
   const [expenses, setExpenses] = useState(trip.expenses || []);
   const [showForm, setShowForm] = useState(false);
@@ -411,10 +411,14 @@ function SplitPage({ trip, myNickname, myAvatar }) {
       };
       if (editingExpenseId) {
         const data = await updateExpense(trip.id, editingExpenseId, payload);
-        setExpenses(es => es.map(x => x.id === editingExpenseId ? data.expense : x));
+        const updated = expenses.map(x => x.id === editingExpenseId ? data.expense : x);
+        setExpenses(updated);
+        onTripUpdate?.({ expenses: updated });
       } else {
         const data = await addExpense(trip.id, payload);
-        setExpenses(es => [data.expense, ...es]);
+        const updated = [data.expense, ...expenses];
+        setExpenses(updated);
+        onTripUpdate?.({ expenses: updated });
       }
       setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: getNow().date, time: getNow().time, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false });
       setEditingExpenseId(null);
@@ -448,8 +452,12 @@ function SplitPage({ trip, myNickname, myAvatar }) {
   };
 
   const handleDelete = async (expId) => {
-    try { await deleteExpense(trip.id, expId); setExpenses(es => es.filter(x => x.id !== expId)); }
-    catch (err) { alert('Could not delete: ' + err.message); }
+    try {
+      await deleteExpense(trip.id, expId);
+      const updated = expenses.filter(x => x.id !== expId);
+      setExpenses(updated);
+      onTripUpdate?.({ expenses: updated });
+    } catch (err) { alert('Could not delete: ' + err.message); }
   };
 
   const handleDuplicateExpense = async (exp) => {
@@ -458,7 +466,9 @@ function SplitPage({ trip, myNickname, myAvatar }) {
       const now = getNow();
       const nowDate = new Date(`${now.date}T${now.time}:00`).toISOString();
       const data = await addExpense(trip.id, { desc: exp.desc, amount: exp.amount, paidBy: exp.paidBy, cat: exp.cat, split: splitArr, date: nowDate, time: now.time });
-      setExpenses(es => [data.expense, ...es]);
+      const updated = [data.expense, ...expenses];
+      setExpenses(updated);
+      onTripUpdate?.({ expenses: updated });
     } catch (err) { alert('Could not duplicate: ' + err.message); }
   };
 

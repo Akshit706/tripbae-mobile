@@ -14,6 +14,9 @@
       "launchAutoHide": true,
       "backgroundColor": "#FAF8F4"
     },
+    "EdgeToEdge": {
+    "backgroundColor": "#FAF8F4"
+    },
     "StatusBar": {
       "style": "dark"
     }

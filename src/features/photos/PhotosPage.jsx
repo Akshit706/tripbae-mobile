@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { addPhoto, deletePhoto, imagekitAuth } from '../../api';
+import { addPhoto, deletePhoto, imagekitAuthPhotos } from '../../api';
 import { normalizeMembers } from '../shared/constants';
 import lumi13Img from '../../assets/lumi13.png';
 import photosImg from '../../assets/photos.png';
@@ -416,7 +416,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
     setUploading(true);
     setUploadProgress(0);
     let auth = null;
-    try { auth = await imagekitAuth(); } catch (e) { console.error('IK auth failed', e); setUploading(false); return; }
+    try { auth = await imagekitAuthPhotos(); } catch (e) { console.error('IK auth failed', e); setUploading(false); return; }
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       const safeFile = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
@@ -637,6 +637,12 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
               <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
             </svg>
             <span className="ph-privacy-note-text">End-to-end encrypted · Visible only to your trip group</span>
+          </div>
+          <div className="ph-privacy-note" style={{ marginTop:6 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
+            </svg>
+            <span className="ph-privacy-note-text">Photos are deleted 3 days after your trip ends</span>
           </div>
         </div>
       </div>
