@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { tripDuration, normalizeMembers, formatDateRange } from '../shared/constants';
 import { S } from '../shared/styles';
-import { imagekitAuth, updateUserProfile } from '../../api';
+import { imagekitAuth, updateUserProfile, getMe } from '../../api';
 import { PlacePhoto } from '../media/PlaceMedia';
+import { usePullToRefreshContainer, PullToRefreshSpinner } from '../shared/pullToRefresh';
 import bglessLogo from '../../assets/bgless.png';
 
 // ── Logo helpers ────────────────────────────────────────────────────────────
@@ -296,6 +297,16 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
     }).catch(() => {});
   };
 
+  const profileScrollRef = useRef(null);
+  const isRefreshing = usePullToRefreshContainer(profileScrollRef, async () => {
+    const r = await getMe();
+    if (r?.user?.name) setName(r.user.name);
+    if (r?.userProfile) {
+      setAvatar(r.userProfile.photoUrl || null);
+      onUpdateProfile?.(r.userProfile);
+    }
+  }, []);
+
   const initials = (name || '?').trim().slice(0, 2).toUpperCase();
 
   // ── Derived stats for Travel Stats view ──
@@ -471,7 +482,8 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
   const goBack = () => (view === 'hub' ? onClose() : setView('hub'));
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #fff9f3 34%, #fff4ea 100%)', zIndex: 620, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'none', scrollBehavior: 'smooth', fontFamily: "'DM Sans',sans-serif" }}>
+    <div ref={profileScrollRef} style={{ position: 'fixed', inset: 0, background: 'radial-gradient(circle at 14% 8%, #ffffff 0%, #fff9f3 34%, #fff4ea 100%)', zIndex: 620, overflowY: 'auto', WebkitOverflowScrolling: 'touch', overscrollBehavior: 'none', scrollBehavior: 'smooth', fontFamily: "'DM Sans',sans-serif" }}>
+      <PullToRefreshSpinner active={isRefreshing} />
       <style>{`
         @keyframes pfFadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes pfBadgePop { from { opacity: 0; transform: scale(.82); } to { opacity: 1; transform: scale(1); } }

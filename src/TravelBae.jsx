@@ -287,12 +287,14 @@ export default function App() {
   const [lgPendingUser, setLgPendingUser] = useState(null);
   const [trips, setTrips] = useState([]);
   const [tripsLoading, setTripsLoading] = useState(false);
-  const [activeTrip, setActiveTrip] = useState(null);
+  // Restore the trip/tab that was active before a reload (see the two
+  // persistence effects below) so a refresh doesn't dump the user on Home.
+  const [activeTrip, setActiveTrip] = useState(() => sessionStorage.getItem('tb_active_trip') || null);
   const [activeTripData, setActiveTripData] = useState(null);
   const [myNickname, setMyNickname] = useState(null);
-  const [tripLoading, setTripLoading] = useState(false);
   const [newTripModal, setNewTripModal] = useState(null);
-  const [tab, setTab] = useState('main');
+  const [tab, setTab] = useState(() => sessionStorage.getItem('tb_active_tab') || 'main');
+  const [visitedTabs, setVisitedTabs] = useState(() => new Set([sessionStorage.getItem('tb_active_tab') || 'main']));
   const [profileOpen, setProfileOpen] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [homeTab, setHomeTab] = useState('trips');
@@ -373,27 +375,40 @@ export default function App() {
     sessionStorage.setItem('tb_active_tab', tab);
   }, [tab]);
 
+  // Track which trip tabs have been mounted so they can stay alive (hidden
+  // via CSS instead of unmounted) once visited, making re-switching instant.
+  useEffect(() => {
+    setVisitedTabs(prev => (prev.has(tab) ? prev : new Set(prev).add(tab)));
+  }, [tab]);
+  useEffect(() => {
+    setVisitedTabs(new Set([tab]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTrip]);
+
+  const refreshTrips = useCallback(() => {
+    return getTrips().then(d => {
+      const cache = readAiCache();
+      const merged = (d.trips || []).map(t => {
+        const c = cache[t.id] || {};
+        return {
+          ...t,
+          _cachedItin:   t.cachedItinerary  ?? c._cachedItin  ?? null,
+          _cachedTaste:  t.cachedTaste      ?? c._cachedTaste ?? null,
+        };
+      });
+      setTrips(merged);
+      const savedTripId = sessionStorage.getItem('tb_active_trip');
+      if (savedTripId && !merged.find(t => t.id === savedTripId)) {
+        setActiveTrip(null);
+        sessionStorage.removeItem('tb_active_trip');
+      }
+    });
+  }, []);
+
   useEffect(() => {
     if (!authToken) return;
     setTripsLoading(true);
-    getTrips()
-      .then(d => {
-        const cache = readAiCache();
-        const merged = (d.trips || []).map(t => {
-          const c = cache[t.id] || {};
-          return {
-            ...t,
-            _cachedItin:   t.cachedItinerary  ?? c._cachedItin  ?? null,
-            _cachedTaste:  t.cachedTaste      ?? c._cachedTaste ?? null,
-          };
-        });
-        setTrips(merged);
-        const savedTripId = sessionStorage.getItem('tb_active_trip');
-        if (savedTripId && !merged.find(t => t.id === savedTripId)) {
-          setActiveTrip(null);
-          sessionStorage.removeItem('tb_active_trip');
-        }
-      })
+    refreshTrips()
       .catch(() => setTrips([]))
       .finally(() => setTripsLoading(false));
   }, [authToken]);
@@ -450,7 +465,10 @@ export default function App() {
 
   useEffect(() => {
     if (!activeTrip) { setActiveTripData(null); setMyNickname(null); return; }
-    setTripLoading(true);
+    // Show the locally-cached trip stub immediately (from the trips list)
+    // so opening a trip feels instant, then refine with the full fetch below.
+    const localTrip = trips.find(x => x.id === activeTrip);
+    setActiveTripData(prev => (prev && prev.id === activeTrip ? prev : (localTrip || prev)));
     import('./api').then(({ getTrip }) => {
       getTrip(activeTrip)
         .then(d => {
@@ -466,8 +484,7 @@ export default function App() {
           const t = trips.find(x => x.id === activeTrip);
           setActiveTripData(t || null);
           setMyNickname(normalizeMembers(t?.members || [])[0] || 'Me');
-        })
-        .finally(() => setTripLoading(false));
+        });
     });
   }, [activeTrip, trips]);
 
@@ -644,6 +661,7 @@ setLgVerifyResent(true);
     const { trip } = await createTrip(tripData);
     setTrips(ts => [trip, ...ts]);
     if (trip.isSolo) {
+      setActiveTripData(trip);
       setActiveTrip(trip.id);
       setTab('main');
     } else {
@@ -710,6 +728,8 @@ setLgVerifyResent(true);
   };
 
   const handleOpenTrip = (tripId) => {
+    const localTrip = trips.find(t => t.id === tripId);
+    if (localTrip) setActiveTripData(localTrip);
     setActiveTrip(tripId);
     setTab('main');
   };
@@ -726,6 +746,7 @@ setLgVerifyResent(true);
 
   const handleShareCodeDismiss = () => {
     const id = newTripModal.id;
+    setActiveTripData(newTripModal);
     setNewTripModal(null);
     setActiveTrip(id);
     setTab('main');
@@ -802,6 +823,28 @@ setLgVerifyResent(true);
       saveAiCache(tripId, dbUpdate).catch(e => console.warn('AI cache DB save failed:', e.message));
     }
   }, []);
+
+  const handleClubTripRefresh = useCallback(async () => {
+    try {
+      const { getTrip } = await import('./api');
+      const data = await getTrip(activeTripData.id);
+      setMyNickname(data.myNickname);
+      setActiveTripData(prev => ({
+        ...data.trip,
+        _cachedItin:  data.trip.cachedItinerary  ?? prev?._cachedItin  ?? null,
+        _cachedTaste: data.trip.cachedTaste      ?? prev?._cachedTaste ?? null,
+      }));
+      setTrips(ts => ts.map(t => (t.id === data.trip.id
+        ? {
+            ...data.trip,
+            _cachedItin:  data.trip.cachedItinerary  ?? t._cachedItin  ?? null,
+            _cachedTaste: data.trip.cachedTaste      ?? t._cachedTaste ?? null,
+          }
+        : t)));
+    } catch (err) {
+      console.warn('Could not refresh trip after club update:', err.message);
+    }
+  }, [activeTripData]);
 
   const handleTabChange = (nextTab) => {
     if (nextTab === 'club') {
@@ -1704,6 +1747,7 @@ if (!authToken) return (
                 onDeleteTrip={handleDeleteTrip}
                 onMarkComplete={handleMarkComplete}
                 onMarkActive={handleMarkActive}
+                onRefreshTrips={refreshTrips}
                 profileName={profile.name}
                 homeTab={homeTab}
                 setHomeTab={setHomeTab}
@@ -1711,86 +1755,66 @@ if (!authToken) return (
         )}
 
         {activeTrip && (
-          tripLoading || !activeTripData
+          !activeTripData
             ? <Spinner variant="trip" />
             : (
               <div>
-                <Suspense fallback={<Spinner variant="trip" />}>
                 {isSolo ? (
                   <>
-                    {tab === 'main' && <SoloExpensesPageFeature trip={activeTripData} myNickname={myNickname} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
-                    {tab === 'itinerary' && <ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />}
-                    {tab === 'club' && (
-                      <ClubPageFeature
-                        trip={activeTripData}
-                        onLeaveClub={leaveClubToHome}
-                        onTripRefresh={async () => {
-                          try {
-                            const { getTrip } = await import('./api');
-                            const data = await getTrip(activeTripData.id);
-                            setMyNickname(data.myNickname);
-                            setActiveTripData(prev => ({
-                              ...data.trip,
-                              _cachedItin:  data.trip.cachedItinerary  ?? prev?._cachedItin  ?? null,
-                              _cachedTaste: data.trip.cachedTaste      ?? prev?._cachedTaste ?? null,
-                            }));
-                            setTrips(ts => ts.map(t => (t.id === data.trip.id
-                              ? {
-                                  ...data.trip,
-                                  _cachedItin:  data.trip.cachedItinerary  ?? t._cachedItin  ?? null,
-                                  _cachedTaste: data.trip.cachedTaste      ?? t._cachedTaste ?? null,
-                                }
-                              : t)));
-                          } catch (err) {
-                            console.warn('Could not refresh trip after club update:', err.message);
-                          }
-                        }}
-                      />
+                    {(visitedTabs.has('main') || tab === 'main') && (
+                      <div style={{ display: tab === 'main' ? '' : 'none' }}>
+                        <Suspense fallback={<Spinner variant="trip" />}>
+                          <SoloExpensesPageFeature trip={activeTripData} myNickname={myNickname} isActive={tab === 'main'} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />
+                        </Suspense>
+                      </div>
+                    )}
+                    {(visitedTabs.has('itinerary') || tab === 'itinerary') && (
+                      <div style={{ display: tab === 'itinerary' ? '' : 'none' }}>
+                        <Suspense fallback={<Spinner variant="trip" />}>
+                          <ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />
+                        </Suspense>
+                      </div>
+                    )}
+                    {(visitedTabs.has('club') || tab === 'club') && (
+                      <div style={{ display: tab === 'club' ? '' : 'none' }}>
+                        <Suspense fallback={<Spinner variant="trip" />}>
+                          <ClubPageFeature trip={activeTripData} onLeaveClub={leaveClubToHome} onTripRefresh={handleClubTripRefresh} />
+                        </Suspense>
+                      </div>
                     )}
                   </>
                 ) : (
                   <>
-                    {tab === 'main' && (
-                      <div className="tb-section-flow" style={{ marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
-                        <SplitPageFeature trip={activeTripData} myNickname={myNickname} myAvatar={profile.avatar || null} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />
+                    {(visitedTabs.has('main') || tab === 'main') && (
+                      <div className="tb-section-flow" style={{ display: tab === 'main' ? '' : 'none', marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
+                        <Suspense fallback={<Spinner variant="trip" />}>
+                          <SplitPageFeature trip={activeTripData} myNickname={myNickname} myAvatar={profile.avatar || null} isActive={tab === 'main'} onTripUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />
+                        </Suspense>
                       </div>
                     )}
-                    {tab === 'itinerary' && <div className="tb-section-flow"><ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} /></div>}
-                    {tab === 'photos' && (
-                      <div className="tb-section-flow" style={{ marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
-                        <PhotosPageFeature trip={activeTripData} myNickname={myNickname} myAvatar={profile.avatar || null} />
+                    {(visitedTabs.has('itinerary') || tab === 'itinerary') && (
+                      <div className="tb-section-flow" style={{ display: tab === 'itinerary' ? '' : 'none' }}>
+                        <Suspense fallback={<Spinner variant="trip" />}>
+                          <ItineraryPageFeature trip={activeTripData} onCacheUpdate={(update) => handleItineraryCache(activeTripData.id, update)} />
+                        </Suspense>
                       </div>
                     )}
-                    {tab === 'club' && (
-                      <div className="tb-section-flow"><ClubPageFeature
-                        trip={activeTripData}
-                        onLeaveClub={leaveClubToHome}
-                        onTripRefresh={async () => {
-                          try {
-                            const { getTrip } = await import('./api');
-                            const data = await getTrip(activeTripData.id);
-                            setMyNickname(data.myNickname);
-                            setActiveTripData(prev => ({
-                              ...data.trip,
-                              _cachedItin:  data.trip.cachedItinerary  ?? prev?._cachedItin  ?? null,
-                              _cachedTaste: data.trip.cachedTaste      ?? prev?._cachedTaste ?? null,
-                            }));
-                            setTrips(ts => ts.map(t => (t.id === data.trip.id
-                              ? {
-                                  ...data.trip,
-                                  _cachedItin:  data.trip.cachedItinerary  ?? t._cachedItin  ?? null,
-                                  _cachedTaste: data.trip.cachedTaste      ?? t._cachedTaste ?? null,
-                                }
-                              : t)));
-                          } catch (err) {
-                            console.warn('Could not refresh trip after club update:', err.message);
-                          }
-                        }}
-                      /></div>
+                    {(visitedTabs.has('photos') || tab === 'photos') && (
+                      <div className="tb-section-flow" style={{ display: tab === 'photos' ? '' : 'none', marginLeft: '-1.25rem', marginRight: '-1.25rem', marginTop: 0, marginBottom: '-6rem' }}>
+                        <Suspense fallback={<Spinner variant="trip" />}>
+                          <PhotosPageFeature trip={activeTripData} myNickname={myNickname} myAvatar={profile.avatar || null} isActive={tab === 'photos'} />
+                        </Suspense>
+                      </div>
+                    )}
+                    {(visitedTabs.has('club') || tab === 'club') && (
+                      <div className="tb-section-flow" style={{ display: tab === 'club' ? '' : 'none' }}>
+                        <Suspense fallback={<Spinner variant="trip" />}>
+                          <ClubPageFeature trip={activeTripData} onLeaveClub={leaveClubToHome} onTripRefresh={handleClubTripRefresh} />
+                        </Suspense>
+                      </div>
                     )}
                   </>
                 )}
-                </Suspense>
               </div>
             )
         )}

@@ -8,11 +8,12 @@ import lumiMood3 from '../../assets/lumi_mood3.png';
 import lumiMood4 from '../../assets/lumi_mood4.png';
 import lumiMood5 from '../../assets/lumi_mood5.png';
 import lumiMood6 from '../../assets/lumi_mood6.png';
-import { addExpense, updateExpense, deleteExpense, updateTrip } from '../../api';
+import { addExpense, updateExpense, deleteExpense, updateTrip, getTrip } from '../../api';
 import { CATS, tripDuration } from '../shared/constants';
 import { S } from '../shared/styles';
 import { CatIcon } from '../shared/ui';
 import { getFxRate } from '../home/HomePage';
+import { usePullToRefresh, PullToRefreshSpinner } from '../shared/pullToRefresh';
 
 const SOLO_CURRENCIES = [
   { code: 'INR', symbol: '₹' }, { code: 'USD', symbol: '$' }, { code: 'EUR', symbol: '€' },
@@ -31,9 +32,20 @@ function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
   const [offsetX, setOffsetX] = useState(0);
   const [dragging, setDragging] = useState(false);
   const drag = useRef({ active: false, startX: 0, startY: 0, startOffset: 0, isHoriz: null, pid: null, el: null });
+  const actionFiredRef = useRef(false);
   const W = 168;
   const THRESH = 8;
   const clamp = (x) => Math.min(0, Math.max(-W, x));
+
+  // Fire on pointerup (immediate, reliable on touch) with a guard so a
+  // trailing synthetic click can't run it a second time — this is what was
+  // causing action buttons to need two taps.
+  const fireAction = (fn) => {
+    if (actionFiredRef.current) return;
+    actionFiredRef.current = true;
+    fn();
+    setTimeout(() => { actionFiredRef.current = false; }, 400);
+  };
 
   const onPointerDown = (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -78,8 +90,10 @@ function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
     <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 16, marginBottom: 10, boxShadow: '0 2px 12px rgba(15,23,42,0.06)' }}>
       <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, width: W, display: 'flex' }}>
         {actions.map(({ label, bg, fn, icon }) => (
-          <button key={label} onClick={fn}
-            style={{ flex: 1, border: 'none', background: bg, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+          <button key={label}
+            onPointerUp={() => fireAction(fn)}
+            onClick={() => fireAction(fn)}
+            style={{ flex: 1, border: 'none', background: bg, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
             {icon}
           </button>
         ))}
@@ -98,7 +112,7 @@ function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
   );
 }
 
-function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
+function SoloExpensesPage({ trip, myNickname, isActive = true, onTripUpdate }) {
   const [expenses, setExpenses] = useState(trip.expenses || []);
   const [budget, setBudget] = useState(trip.budget || null);
   const [showForm, setShowForm] = useState(false);
@@ -195,6 +209,15 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
     window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: true } }));
     return () => window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: false } }));
   }, [showForm]);
+
+  // Pull-to-refresh: window scrolls (not a nested container), so overscroll past
+  // the top of the page while already at scrollY 0 triggers a data refresh.
+  const isRefreshing = usePullToRefresh(() => getTrip(trip.id).then(data => {
+    const t = data.trip || data;
+    setExpenses(t.expenses || []);
+    setBudget(t.budget || null);
+    setLocalBudgetCurrency(t.budgetCurrency || null);
+  }), [trip.id]);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const days = tripDuration(trip.arrival, trip.departure);
@@ -555,6 +578,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
 
   return (
     <div>
+      <PullToRefreshSpinner active={isRefreshing} />
       <style>{`
         @keyframes soloFadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes heroFloat { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-7px) rotate(4deg)} }
@@ -672,7 +696,7 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
             <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 6 }}>Total Spent
               <button onClick={() => setShowCurrencyPicker(true)} style={{ background: 'rgba(255,255,255,0.2)', border: '0.5px solid rgba(255,255,255,0.35)', borderRadius: 6, color: 'rgba(255,255,255,0.9)', fontSize: 9, fontWeight: 700, padding: '2px 6px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", letterSpacing: .5, lineHeight: 1.4 }}>{spendCurrency}</button>
             </div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>{fmt(total)}</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: total > 999999 ? 20 : total > 99999 ? 24 : total > 9999 ? 28 : 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>{fmt(total)}</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4, fontWeight: 500 }}>{fmt(tsr)}/day · {expenses.length} entries</div>
           </div>
           {budget && (
@@ -952,14 +976,14 @@ function SoloExpensesPage({ trip, myNickname, onTripUpdate }) {
         </div>
       )}
 
-      {section === 'expenses' && createPortal(
+      {isActive && section === 'expenses' && createPortal(
         <button
           onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', cat: 'food', date: todayStr, time: getNow().time, note: '' }); setShowForm(true); }}
           style={{ position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#FF6A00,#FF8C3A)', border: 'none', boxShadow: '0 4px 20px rgba(255,106,0,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 400 }}
         >+</button>,
         document.body
       )}
-      {section === 'insights' && createPortal(
+      {isActive && section === 'insights' && createPortal(
         <button
           onClick={handleShareReport}
           title="Share Expense Report"

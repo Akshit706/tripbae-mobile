@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { getFxRate } from '../home/HomePage';
-import { addExpense, updateExpense, deleteExpense, updateTrip } from '../../api';
+import { addExpense, updateExpense, deleteExpense, updateTrip, getTrip } from '../../api';
+import { usePullToRefresh, PullToRefreshSpinner } from '../shared/pullToRefresh';
 import { CATS, normalizeMembers, tripDuration, tripStatusInfo } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Avatar, CatIcon } from '../shared/ui';
@@ -17,13 +18,18 @@ import lumiMood6 from '../../assets/lumi_mood6.png';
 const _MCOLORS = ['#FF6A00','#D85A30','#7F77DD','#BA7517','#378ADD','#D4537E','#FF8C3A','#993C1D'];
 const _mcolor = (name) => { const c = Math.abs(Array.from(name || '').reduce((a, b) => a + b.charCodeAt(0), 0)); return _MCOLORS[c % _MCOLORS.length]; };
 
-function MemberCircle({ name, myNickname, myAvatar, size = 32, fontSize = 11, style: extraStyle = {} }) {
+function MemberCircle({ name, myNickname, myAvatar, members, size = 32, fontSize = 11, style: extraStyle = {} }) {
   const [imgErr, setImgErr] = useState(false);
   const isMe = name === myNickname && !!myAvatar && !imgErr;
+  // Look up teammate's uploaded profile photo from trip.members
+  const teammatePhoto = !isMe && Array.isArray(members)
+    ? members.find(m => (typeof m === 'object' ? (m.nickname || m.name) : m) === name)?.photoUrl
+    : null;
+  const photoSrc = isMe ? myAvatar : (!imgErr ? teammatePhoto : null);
   return (
-    <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, ...(!isMe ? { background: _mcolor(name), color: '#fff', fontSize, fontWeight: 700 } : {}), ...extraStyle }}>
-      {isMe
-        ? <img src={myAvatar} alt={name} onError={() => setImgErr(true)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+    <div style={{ width: size, height: size, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, ...(!photoSrc ? { background: _mcolor(name), color: '#fff', fontSize, fontWeight: 700 } : {}), ...extraStyle }}>
+      {photoSrc
+        ? <img src={photoSrc} alt={name} onError={() => setImgErr(true)} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
         : (name || '?').slice(0, 2).toUpperCase()}
     </div>
   );
@@ -35,9 +41,20 @@ function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
   const [dragging, setDragging] = useState(false);
   const [pressedBtn, setPressedBtn] = useState(null);
   const drag = useRef({ active: false, startX: 0, startY: 0, startOffset: 0, isHoriz: null, pid: null, el: null });
+  const actionFiredRef = useRef(false);
   const W = 168;
   const THRESH = 8;
   const clamp = (x) => Math.min(0, Math.max(-W, x));
+
+  // Fire on pointerup (immediate, reliable on touch) with a guard so a
+  // trailing synthetic click can't run it a second time — this is what was
+  // causing action buttons to need two taps.
+  const fireAction = (fn) => {
+    if (actionFiredRef.current) return;
+    actionFiredRef.current = true;
+    fn();
+    setTimeout(() => { actionFiredRef.current = false; }, 400);
+  };
 
   const onPointerDown = (e) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -84,11 +101,11 @@ function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
         {actions.map(({ label, bg, fn, icon }) => (
           <button key={label}
             onPointerDown={() => setPressedBtn(label)}
-            onPointerUp={() => setPressedBtn(null)}
+            onPointerUp={() => { setPressedBtn(null); fireAction(fn); }}
             onPointerLeave={() => setPressedBtn(null)}
             onPointerCancel={() => setPressedBtn(null)}
-            onClick={fn}
-            style={{ flex: 1, border: 'none', background: pressedBtn === label ? `color-mix(in srgb, ${bg} 75%, #000)` : bg, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, transform: pressedBtn === label ? 'scale(0.88)' : 'scale(1)', transition: 'transform 0.1s cubic-bezier(0.34,1.56,0.64,1), background 0.08s', WebkitTapHighlightColor: 'transparent' }}>
+            onClick={() => fireAction(fn)}
+            style={{ flex: 1, border: 'none', background: pressedBtn === label ? `color-mix(in srgb, ${bg} 75%, #000)` : bg, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0, transform: pressedBtn === label ? 'scale(0.88)' : 'scale(1)', transition: 'transform 0.1s cubic-bezier(0.34,1.56,0.64,1), background 0.08s', WebkitTapHighlightColor: 'transparent', touchAction: 'manipulation' }}>
             {icon}
           </button>
         ))}
@@ -107,7 +124,7 @@ function SwipeableExpenseRow({ onEdit, onDelete, onDuplicate, children }) {
   );
 }
 
-function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
+function SplitPage({ trip, myNickname, myAvatar, isActive = true, onTripUpdate }) {
   const memberNames = normalizeMembers(trip.members);
   const [expenses, setExpenses] = useState(trip.expenses || []);
   const [showForm, setShowForm] = useState(false);
@@ -133,9 +150,17 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
   // sync parent only when tab switches away — never after individual mutations
   const latestExpensesRef = useRef(expenses);
   const onTripUpdateRef = useRef(onTripUpdate);
+  const initialExpensesRef = useRef(expenses);
   useEffect(() => { latestExpensesRef.current = expenses; }, [expenses]);
   useEffect(() => { onTripUpdateRef.current = onTripUpdate; }, [onTripUpdate]);
-  useEffect(() => () => { onTripUpdateRef.current?.({ expenses: latestExpensesRef.current }); }, []);
+  useEffect(() => () => {
+    // Skip the sync (and the parent re-render it triggers) when nothing
+    // changed during this visit — this is what made switching tabs away
+    // from Split feel slow.
+    if (latestExpensesRef.current !== initialExpensesRef.current) {
+      onTripUpdateRef.current?.({ expenses: latestExpensesRef.current });
+    }
+  }, []);
 
   // ── Multi-currency support ──
   const SPLIT_CURRENCIES = [
@@ -150,10 +175,9 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
     { code: 'ZAR', symbol: 'R' },
   ];
   const SPEND_CURRENCY_KEY = `travelbae_split_spendcurrency_${trip.id}`;
-  const [spendCurrency, setSpendCurrency] = useState(() => {
+  const [spendCurrency] = useState(() => {
     try { return localStorage.getItem(SPEND_CURRENCY_KEY) || trip.destinationCurrency || trip.budgetCurrency || 'INR'; } catch { return 'INR'; }
   });
-  const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
   const spendMeta = SPLIT_CURRENCIES.find(c => c.code === spendCurrency) || { code: 'INR', symbol: '₹' };
   const spendSymbol = spendMeta.symbol;
   const homeCurrencyCode = (() => { try { const r = localStorage.getItem('travelbae_prefs'); return r ? (JSON.parse(r).currency || 'INR') : 'INR'; } catch { return 'INR'; } })();
@@ -211,7 +235,7 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
 
   const mcolor = _mcolor;
   const memberCircle = (name, size = 32, fontSize = 11, extra = {}) => (
-    <MemberCircle name={name} myNickname={myNickname} myAvatar={myAvatar} size={size} fontSize={fontSize} style={extra} />
+    <MemberCircle name={name} myNickname={myNickname} myAvatar={myAvatar} members={trip.members} size={size} fontSize={fontSize} style={extra} />
   );
   const CAT_COLORS = { food:'#BA7517', transport:'#FF6A00', stay:'#378ADD', activity:'#7F77DD', shopping:'#D4537E', other:'#6b6b68' };
 
@@ -280,6 +304,13 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
     window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: true } }));
     return () => window.dispatchEvent(new CustomEvent('tb:overlay', { detail: { open: false } }));
   }, [showForm]);
+
+  const isRefreshing = usePullToRefresh(() => getTrip(trip.id).then(data => {
+    const t = data.trip || data;
+    setExpenses(t.expenses || []);
+    setLocalBudget(t.budget || null);
+    setLocalBudgetCurrency(t.budgetCurrency || null);
+  }), [trip.id]);
 
   const total = expenses.reduce((s, e) => s + e.amount, 0);
   const days = tripDuration(trip.arrival, trip.departure);
@@ -758,6 +789,7 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
 
   return (
     <div style={{ padding: '0 1.25rem' }}>
+      <PullToRefreshSpinner active={isRefreshing} />
       <style>{`
         @keyframes soloFadeUp { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
         @keyframes heroFloat { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-7px) rotate(4deg)} }
@@ -767,33 +799,6 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
         @keyframes spin { to{transform:rotate(360deg)} }
         @keyframes lumiSplitPop{from{opacity:0;transform:scale(0.88) translateY(20px)}60%{transform:scale(1.02) translateY(-2px)}to{opacity:1;transform:scale(1) translateY(0)}}
       `}</style>
-
-      {/* ── Currency picker ── */}
-      {showCurrencyPicker && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(28,20,16,0.55)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'flex-end' }}
-          onClick={() => setShowCurrencyPicker(false)}>
-          <div style={{ background: '#fff', borderRadius: '20px 20px 0 0', width: '100%', padding: '0.75rem 1.25rem 2.5rem', maxHeight: '75vh', overflowY: 'auto' }}
-            onClick={e => e.stopPropagation()}>
-            <div style={{ width: 40, height: 4, borderRadius: 99, background: '#D3D1C7', margin: '0 auto 1rem' }} />
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 15, fontWeight: 700, color: '#1C1410', marginBottom: 3 }}>Spending currency</div>
-            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>All amounts in Split will show in this currency</div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
-              {SPLIT_CURRENCIES.map(c => {
-                const active = c.code === spendCurrency;
-                return (
-                  <button key={c.code}
-                    onClick={() => { setSpendCurrency(c.code); try { localStorage.setItem(SPEND_CURRENCY_KEY, c.code); } catch {} setShowCurrencyPicker(false); }}
-                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', borderRadius: 12, border: `1.5px solid ${active ? '#FF6A00' : 'rgba(0,0,0,0.1)'}`, background: active ? '#FFF3EB' : '#fafafa', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", textAlign: 'left' }}>
-                    <span style={{ fontSize: 16, fontWeight: 700, color: active ? '#FF6A00' : '#374151', minWidth: 24 }}>{c.symbol}</span>
-                    <span style={{ fontSize: 12, fontWeight: 600, color: active ? '#7A2800' : '#374151', flex: 1 }}>{c.code}</span>
-                    {active && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Lumi intro popup (first-time) ── */}
       {showWelcome && (
@@ -873,10 +878,8 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
         </button>
         <div style={{ display: 'flex', justifyContent: budget ? 'space-between' : 'center', alignItems: 'flex-start', marginBottom: 12, position: 'relative' }}>
           <div style={{ paddingLeft: budget ? 2 : 0, textAlign: budget ? 'left' : 'center' }}>
-            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 6 }}>Total Spent
-            <button onClick={() => setShowCurrencyPicker(true)} style={{ background: 'rgba(255,255,255,0.2)', border: '0.5px solid rgba(255,255,255,0.35)', borderRadius: 6, color: 'rgba(255,255,255,0.9)', fontSize: 9, fontWeight: 700, padding: '2px 6px', cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", letterSpacing: .5, lineHeight: 1.4 }}>{spendCurrency}</button>
-          </div>
-            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>{displayFxLoading ? <span style={{ opacity: 0.5, fontSize: 24 }}>…</span> : fmt(total)}</div>
+            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', fontWeight: 700, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 5 }}>Total Spent</div>
+            <div style={{ fontFamily: "'Sora',sans-serif", fontSize: total > 999999 ? 20 : total > 99999 ? 24 : total > 9999 ? 28 : 32, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px', animation: 'heroNumIn .5s cubic-bezier(.2,.8,.2,1) both', textShadow: '0 2px 12px rgba(0,0,0,0.18)' }}>{displayFxLoading ? <span style={{ opacity: 0.5, fontSize: 24 }}>…</span> : fmt(total)}</div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 4, fontWeight: 500 }}>{displayFxLoading ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>fetching rate…</span> : <>{fmt(tsr)}/day · {expenses.length} entries</>}</div>
           </div>
           {budget && (
@@ -1373,14 +1376,14 @@ function SplitPage({ trip, myNickname, myAvatar, onTripUpdate }) {
         </div>
       )}
 
-      {section === 'expenses' && createPortal(
+      {isActive && section === 'expenses' && createPortal(
         <button
           onClick={() => { setEditingExpenseId(null); setForm({ desc: '', amount: '', paidBy: myNickname || memberNames[0] || '', cat: 'food', date: getNow().date, time: getNow().time, splitMode: 'all', splitWith: [...memberNames], _splitOpen: false, _paidByOpen: false }); setShowForm(true); }}
           style={{ position: 'fixed', bottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', right: 20, width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(135deg,#FF6A00,#D85B00)', border: 'none', boxShadow: '0 4px 20px rgba(255,106,0,0.45)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, color: '#fff', zIndex: 400 }}
         >+</button>,
         document.body
       )}
-      {section === 'insights' && createPortal(
+      {isActive && section === 'insights' && createPortal(
         <button
           onClick={handleShareReport}
           title="Share Expense Report"

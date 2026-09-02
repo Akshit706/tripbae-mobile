@@ -1,6 +1,8 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { addPhoto, deletePhoto, imagekitAuthPhotos } from '../../api';
+import { useState, useRef, useEffect, useMemo, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
+import { addPhoto, deletePhoto, imagekitAuthPhotos, getTrip } from '../../api';
 import { normalizeMembers } from '../shared/constants';
+import { usePullToRefresh, PullToRefreshSpinner } from '../shared/pullToRefresh';
 import lumi13Img from '../../assets/lumi13.png';
 import photosImg from '../../assets/photos.png';
 
@@ -23,6 +25,37 @@ function mcolor(name) {
   return MCOLORS[code % MCOLORS.length];
 }
 
+/* ── Shared ImageKit thumb helper — same URL shape everywhere so the
+   browser's HTTP cache is reused (grid thumb === lightbox placeholder). ── */
+function ikThumb(url, tr = 'w-300,h-300,q-75,fo-auto') {
+  if (!url || !url.includes('ik.imagekit.io')) return url;
+  return url.replace(/(\/[^/?]+)(\?.*)?$/, `/tr:${tr}$1$2`);
+}
+
+/* ── Downscale on-device before upload — raw phone photos (often 4-12MB
+   HEIC/JPEG) take a long time to upload over cellular; nothing in this app
+   ever displays more than ~1200px anyway (see lbUrl below), so shrinking to
+   1600px on the long edge cuts the upload payload by 80-95% with no visible
+   quality loss, and is what actually makes "upload from gallery" feel fast. */
+async function resizeImageForUpload(file, maxDim = 1600, quality = 0.85) {
+  if (!file.type?.startsWith('image/') || file.size < 400 * 1024) return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    if (scale === 1) { bitmap.close?.(); return file; }
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' });
+  } catch {
+    return file; // format the browser can't decode (rare HEIC cases) — upload as-is
+  }
+}
+
 /* ── Inject CSS ── */
 if (typeof document !== 'undefined' && !document.getElementById('photos-v2-styles')) {
   const el = document.createElement('style');
@@ -31,7 +64,6 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     @keyframes phPageIn   { from{opacity:0;transform:translateY(8px)} to{opacity:1} }
     @keyframes phFadeIn   { from{opacity:0} to{opacity:1} }
     @keyframes phPopIn    { from{opacity:0;transform:scale(0.9) translateY(16px)} 60%{transform:scale(1.02)} to{opacity:1;transform:scale(1) translateY(0)} }
-    @keyframes phSlideUp  { from{transform:translateY(100%);opacity:0} to{transform:translateY(0);opacity:1} }
     @keyframes phSpin     { to{transform:rotate(360deg)} }
     @keyframes phPulse    { 0%,100%{opacity:.7} 50%{opacity:1} }
     @keyframes phHeroGlow { 0%,100%{box-shadow:0 4px 32px rgba(255,106,0,0.22)} 50%{box-shadow:0 16px 56px rgba(255,140,59,0.42)} }
@@ -237,18 +269,19 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     .ph-cell {
       position:relative; overflow:hidden;
       aspect-ratio:1; cursor:pointer; background:#EDE9E4;
-      border:2px solid transparent; transition:opacity .15s, transform .12s;
+      border:2px solid transparent; transition:opacity .12s, transform .12s;
+      -webkit-tap-highlight-color:transparent; touch-action:manipulation;
+      /* virtualize off-screen cells so scrolling stays cheap on large albums */
+      content-visibility:auto; contain-intrinsic-size:200px 200px; contain:layout paint;
     }
     .ph-cell.sel { border-color:#FF6A00; }
-    .ph-cell img { width:100%; height:100%; object-fit:cover; display:block; transition:filter .15s, opacity .35s; }
-    .ph-cell:hover img { filter:brightness(.85); }
+    .ph-cell img { width:100%; height:100%; object-fit:cover; display:block; transition:opacity .3s; }
     .ph-cell:active { transform:scale(0.97); opacity:0.88; }
-    .ph-cell:active img { filter:brightness(.78); }
     .ph-check {
       position:absolute; top:6px; right:6px; width:20px; height:20px; border-radius:50%;
-      background:rgba(255,255,255,0.82); border:1.5px solid rgba(28,20,16,0.18);
+      background:rgba(255,255,255,0.92); border:1.5px solid rgba(28,20,16,0.18);
       display:flex; align-items:center; justify-content:center; z-index:3;
-      transition:all .15s; backdrop-filter:blur(3px); opacity:0;
+      transition:opacity .12s, background .12s, border-color .12s; opacity:0;
     }
     .ph-cell-selmode .ph-check { opacity:1; }
     .ph-cell.sel .ph-check { opacity:1; background:#FF6A00; border-color:#FF6A00; }
@@ -258,72 +291,76 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
       opacity:0; transition:opacity .15s; pointer-events:none; z-index:2;
     }
-    .ph-cell:hover .ph-expand { opacity:1; pointer-events:all; }
     .ph-expand-btn {
-      background:rgba(255,255,255,0.9); backdrop-filter:blur(6px);
+      background:rgba(255,255,255,0.94);
       border-radius:50%; width:34px; height:34px;
       display:flex; align-items:center; justify-content:center;
       border:1px solid rgba(28,20,16,0.08); box-shadow:0 2px 8px rgba(0,0,0,0.1);
     }
     .ph-del-btn {
       position:absolute; top:6px; left:6px; width:26px; height:26px; border-radius:50%;
-      background:rgba(255,255,255,0.88); border:1px solid rgba(28,20,16,0.1);
+      background:rgba(255,255,255,0.92); border:1px solid rgba(28,20,16,0.1);
       display:flex; align-items:center; justify-content:center; z-index:3;
-      opacity:0; cursor:pointer; transition:all .15s; backdrop-filter:blur(4px);
+      opacity:0; cursor:pointer; transition:opacity .12s, background .12s;
     }
-    .ph-cell:hover .ph-del-btn { opacity:1; }
-    .ph-del-btn:hover { background:#FAECE7 !important; border-color:rgba(232,113,90,0.4) !important; }
+    /* Real-hover only (mouse/trackpad) — on touch devices ":hover" fires on
+       tap and briefly flashes the delete/expand icon before the lightbox
+       opens, since there's no true hover state to clear it. */
+    @media (hover:hover) and (pointer:fine) {
+      .ph-cell:hover .ph-expand { opacity:1; pointer-events:all; }
+      .ph-cell:hover .ph-del-btn { opacity:1; }
+      .ph-del-btn:hover { background:#FAECE7 !important; border-color:rgba(232,113,90,0.4) !important; }
+    }
 
     /* empty */
     .ph-empty { text-align:center; padding:3rem 1.25rem 2rem; }
     .ph-empty-title { font-size:15px; font-weight:700; color:#5C504A; margin-bottom:5px; }
     .ph-empty-sub { font-size:12.5px; color:#8A7E76; }
 
-    /* ── FIX 1: action bar sits ABOVE the bottom nav bar ──
-       Bottom nav is ~66px tall + safe area.
-       We add another ~72px on top of that so the bar clears it completely.
-       Use a solid background so it doesn't bleed into the nav. */
-    .ph-action-bar {
+    /* Floating selection toolbar — a small pill anchored bottom-right
+       (same spot as the app's other floating action buttons), instead of
+       a full-width bar sitting on top of the bottom nav. */
+    .ph-float-bar {
       position:fixed;
-      /* 66px nav height + 12px gap + safe area inset */
-      bottom:calc(66px + 12px + env(safe-area-inset-bottom, 0px));
-      left:50%;
-      transform:translateX(-50%);
-      width:calc(100% - 2rem);
-      max-width:848px;
-      background:#FFFFFF;
-      border:1px solid rgba(28,20,16,0.10);
-      border-radius:16px;
-      padding:10px 12px;
+      bottom:calc(88px + env(safe-area-inset-bottom, 0px));
+      right:20px;
       display:flex;
       align-items:center;
       gap:8px;
+      background:#FFFFFF;
+      border:1px solid rgba(28,20,16,0.10);
+      border-radius:999px;
+      padding:7px 8px;
       z-index:400;
-      animation:phSlideUp .22s cubic-bezier(0.34,1.3,0.64,1) both;
-      box-shadow:0 8px 32px rgba(28,20,16,0.14), 0 2px 8px rgba(28,20,16,0.06);
+      animation:phPopIn .2s cubic-bezier(0.34,1.3,0.64,1) both;
+      box-shadow:0 10px 32px rgba(28,20,16,0.2), 0 2px 8px rgba(28,20,16,0.08);
     }
-    .ph-action-label { flex:1; font-size:13px; color:#8A7E76; }
-    .ph-action-label strong { color:#1C1410; font-size:14px; }
-    .ph-btn-ghost {
-      background:#F4F2EE; border:1px solid rgba(28,20,16,0.1);
-      color:#5C504A; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:600;
-      padding:8px 14px; border-radius:10px; cursor:pointer;
+    .ph-float-count {
+      min-width:20px; height:20px; padding:0 6px; border-radius:999px;
+      background:#FF6A00; color:#fff; font-size:11px; font-weight:800;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
     }
-    .ph-btn-primary {
-      background:linear-gradient(135deg,#FF6A00,#D85A30); border:none;
-      color:#fff; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700;
-      padding:8px 16px; border-radius:10px; cursor:pointer;
-      display:flex; align-items:center; gap:6px;
-      box-shadow:0 4px 14px rgba(255,106,0,0.3);
+    .ph-float-btn {
+      width:34px; height:34px; border-radius:50%; border:none; cursor:pointer;
+      background:#F4F2EE; display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; transition:transform .12s;
     }
-    .ph-btn-danger {
-      background:#FDF0EE; border:1px solid rgba(232,113,90,0.3);
-      color:#E8715A; font-size:13px; font-family:'DM Sans',sans-serif; font-weight:700;
-      padding:8px 16px; border-radius:10px; cursor:pointer;
-      display:flex; align-items:center; gap:6px;
+    .ph-float-btn:active { transform:scale(0.9); }
+    .ph-float-btn-danger { background:#FDF0EE; }
+    .ph-float-btn:disabled { cursor:default; }
+    .ph-float-spinner {
+      width:14px; height:14px; border-radius:50%;
+      border:2px solid rgba(255,106,0,0.25); border-top-color:#FF6A00;
+      animation:phSpin .7s linear infinite;
     }
-    .ph-count-badge { background:rgba(255,255,255,0.28); border-radius:99px; padding:1px 7px; font-size:12px; font-weight:800; }
-    .ph-del-badge { background:rgba(232,113,90,0.25); border-radius:99px; padding:1px 7px; font-size:12px; font-weight:800; }
+    .ph-toast {
+      position:fixed; bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+      left:50%; transform:translateX(-50%);
+      background:#1C1410; color:#fff; font-size:13px; font-weight:600;
+      padding:10px 18px; border-radius:22px; z-index:9500;
+      box-shadow:0 8px 24px rgba(0,0,0,0.28); animation:phFadeIn .2s ease;
+      max-width:80vw; text-align:center;
+    }
 
     /* confirm dialog */
     .ph-conf-overlay {
@@ -354,19 +391,18 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
     }
 
     /* ── FIX 2: Lightbox — true viewport-locked fullscreen, no scroll ──
-       position:fixed with explicit top/left/width/height avoids any
-       scroll-position or parent-transform issues. The inner layout uses
-       flexbox to keep the image dead-centre at all times. */
+       Rendered via createPortal straight into document.body so it can
+       never inherit a transformed/scrolling ancestor (which was causing
+       the fixed overlay to land at inconsistent vertical offsets). The
+       image fills the entire viewport (Apple/Google Photos style). */
     .ph-lbox {
       position:fixed;
       inset:0;
-      background:rgba(10,8,6,0.80);
-      backdrop-filter:blur(28px) saturate(1.3);
-      -webkit-backdrop-filter:blur(28px) saturate(1.3);
-      z-index:600;
-      /* flex centres the image regardless of scroll position */
+      background:rgba(20,14,10,0.5);
+      backdrop-filter:blur(34px) saturate(1.4);
+      -webkit-backdrop-filter:blur(34px) saturate(1.4);
+      z-index:9000;
       display:flex;
-      flex-direction:column;
       align-items:center;
       justify-content:center;
       /* no overflow — the image must not cause scroll */
@@ -374,37 +410,47 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
       touch-action:none;
       animation:phFadeIn .18s ease;
     }
+    .ph-lbox-stage {
+      position:relative; width:100vw; height:100dvh; flex-shrink:0;
+    }
+    /* instantly-available blurred stand-in (reuses the already-cached grid
+       thumbnail) so the lightbox never shows a blank frame while the
+       full-res image is still downloading */
+    .ph-lbox-img-ph {
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:contain; filter:blur(20px) brightness(0.82); transform:scale(1.1);
+    }
     .ph-lbox-img {
-      /* constrain to viewport, never overflow */
-      max-width:min(92vw, 900px);
-      max-height:calc(100vh - 140px); /* 140px headroom for nav + close btn */
-      width:auto;
-      height:auto;
-      object-fit:contain;
-      border-radius:12px;
-      box-shadow:0 24px 80px rgba(0,0,0,0.6);
-      flex-shrink:0;
-      /* subtle pop-in */
-      animation:phPopIn .25s cubic-bezier(0.34,1.2,0.64,1) both;
+      position:absolute; inset:0; width:100%; height:100%;
+      object-fit:contain; opacity:0; transition:opacity .25s ease;
     }
-    .ph-lbox-nav { display:flex; align-items:center; gap:18px; margin-top:20px; flex-shrink:0; }
-    .ph-lbox-btn {
-      background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18);
-      color:#fff; width:42px; height:42px; border-radius:50%;
+    .ph-lbox-count {
+      position:fixed; top:calc(16px + env(safe-area-inset-top,0px)); left:50%;
+      transform:translateX(-50%);
+      font-size:12px; color:rgba(255,255,255,0.6);
+      z-index:9010;
+    }
+    .ph-lbox-arrow {
+      position:fixed; top:50%; transform:translateY(-50%);
+      background:linear-gradient(135deg,#FF6A00,#E85A00); border:none;
+      box-shadow:0 6px 18px rgba(255,106,0,0.45);
+      color:#fff; width:44px; height:44px; border-radius:50%;
       display:flex; align-items:center; justify-content:center; cursor:pointer;
-      transition:background .15s;
+      transition:transform .15s, box-shadow .15s, opacity .15s;
+      z-index:9010;
     }
-    .ph-lbox-btn:hover { background:rgba(255,255,255,0.22); }
-    .ph-lbox-btn:disabled { opacity:.2; cursor:default; }
-    .ph-lbox-count { font-size:12px; color:rgba(255,255,255,0.5); min-width:52px; text-align:center; }
+    .ph-lbox-arrow:hover { transform:translateY(-50%) scale(1.06); }
+    .ph-lbox-arrow:disabled { opacity:0; pointer-events:none; }
+    .ph-lbox-arrow-left { left:12px; }
+    .ph-lbox-arrow-right { right:12px; }
     .ph-lbox-close {
-      position:absolute; top:14px; right:14px;
+      position:fixed; top:calc(14px + env(safe-area-inset-top,0px)); right:14px;
       background:rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.18);
       color:#fff; width:38px; height:38px; border-radius:50%;
       display:flex; align-items:center; justify-content:center; cursor:pointer;
       transition:background .15s;
       /* ensure it's always on top even if image is tall */
-      z-index:10;
+      z-index:9010;
     }
     .ph-lbox-close:hover { background:rgba(255,255,255,0.22); }
 
@@ -427,9 +473,52 @@ if (typeof document !== 'undefined' && !document.getElementById('photos-v2-style
 
 const PHOTO_CAP = 20;
 
-function PhotosPage({ trip, myNickname, myAvatar }) {
-  const memberNames = normalizeMembers(trip.members);
+/* ── Memoized grid cell — with stable callback props (see useCallback
+   below), a selection tap only re-renders the cell(s) that actually
+   changed instead of the whole album grid. ── */
+const PhotoCell = memo(function PhotoCell({ photo, idx, isSelected, selectionMode, isMyFolder, onOpen, onToggle, onDelete }) {
+  const thumbUrl = ikThumb(photo.url);
+  return (
+    <div
+      className={`ph-cell ${isSelected ? 'sel' : ''} ${selectionMode ? 'ph-cell-selmode' : ''}`}
+      onClick={() => selectionMode ? onToggle(photo.id) : onOpen(idx)}
+    >
+      <img src={thumbUrl} alt="" loading="lazy" decoding="async"
+        style={{ opacity: 0 }}
+        onLoad={e => { e.target.style.opacity = 1; }}
+        onError={e => { e.target.style.display = 'none'; }} />
+      <div className="ph-check">
+        {isSelected && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+      </div>
+      <div className="ph-expand" onClick={(e) => { e.stopPropagation(); onOpen(idx); }}>
+        <div className="ph-expand-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.secondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+        </div>
+      </div>
+      {isMyFolder && (
+        <button className="ph-del-btn" onClick={(e) => onDelete(photo, e)} title="Delete">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={D.coral} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      )}
+    </div>
+  );
+});
+
+function PhotosPage({ trip, myNickname, myAvatar, isActive = true }) {
+  const memberNames = useMemo(() => normalizeMembers(trip.members), [trip.members]);
   const me = myNickname || memberNames[0] || 'Me';
+
+  // Backend attaches each member's real profile photo (member.photoUrl) —
+  // build a nickname -> photoUrl lookup so teammates show their real photo
+  // too, not just initials for everyone except "me".
+  const memberPhotos = useMemo(() => {
+    const map = {};
+    (trip.members || []).forEach(m => {
+      if (m && typeof m === 'object' && m.nickname) map[m.nickname] = m.photoUrl || null;
+    });
+    return map;
+  }, [trip.members]);
+  const avatarFor = (name) => memberPhotos[name] || (name === me ? myAvatar : null);
 
   const initialPhotos = trip.photos || [];
   const [allPhotos, setAllPhotos] = useState(initialPhotos);
@@ -448,6 +537,15 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
   const [showWelcome, setShowWelcome] = useState(() => {
     try { return !localStorage.getItem(WELCOME_KEY); } catch { return false; }
   });
+
+  // The page now stays mounted across tab switches (kept alive for instant
+  // switching), so re-sync from the trip prop whenever it changes upstream.
+  useEffect(() => { setAllPhotos(trip.photos || []); }, [trip.photos]);
+
+  const isRefreshing = usePullToRefresh(() => getTrip(trip.id).then(data => {
+    const t = data.trip || data;
+    setAllPhotos(t.photos || []);
+  }), [trip.id]);
 
   const byMember = useMemo(() => {
     const map = {};
@@ -485,10 +583,11 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
         if (mountedRef.current) setUploadProgress(Math.round((completed / toUpload.length) * 100));
         await uploadOne(); return;
       }
-      const safeFile = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const uploadFile = await resizeImageForUpload(file);
+      const safeFile = uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
       const fileName = `${trip.id}_${me}_${Date.now()}_${safeFile}`;
       const form = new FormData();
-      form.append('file', file);
+      form.append('file', uploadFile, fileName);
       form.append('fileName', fileName);
       form.append('folder', `/tb-photos/user/${trip.id}`);
       form.append('useUniqueFileName', 'false');
@@ -546,7 +645,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
     setConfirmDelete(null);
   };
 
-  const askDeleteSingle = (photo, e) => { e.stopPropagation(); setPendingDeletePhoto(photo); setConfirmDelete('single'); };
+  const askDeleteSingle = useCallback((photo, e) => { e.stopPropagation(); setPendingDeletePhoto(photo); setConfirmDelete('single'); }, []);
   const askDeleteBulk = () => setConfirmDelete('bulk');
   const cancelDelete = () => { setConfirmDelete(null); setPendingDeletePhoto(null); };
   const confirmDeleteAction = () => {
@@ -554,26 +653,66 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
     else if (confirmDelete === 'bulk') doDeleteBulk();
   };
 
-  const toggle = (id) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggle = useCallback((id) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; }), []);
   const clearSel = () => { setSelected(new Set()); setSelectionMode(false); };
 
-  /* ── download selected ── */
+  /* ── download selected ──
+     Blob+<a download> never fires in the Android/iOS WebView, and routing
+     through the OS share sheet makes the user manually pick "Save image"
+     for each file. @capacitor-community/media's savePhoto() writes straight
+     into a device photo album (native MediaStore/Photos call — no share
+     sheet, no extra storage permissions needed since it only touches the
+     app's own album) and accepts the ImageKit URL directly, so there's no
+     manual fetch/base64 step either. */
+  const [downloading, setDownloading] = useState(false);
+  const [toast, setToast] = useState('');
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 2200); };
   const downloadSelected = async () => {
     const photos = folderPhotos.filter(p => selected.has(p.id));
-    for (const p of photos) {
-      try {
-        const res = await fetch(p.url);
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl; a.download = p.url.split('/').pop() || `photo-${p.id}.jpg`;
-        document.body.appendChild(a); a.click(); document.body.removeChild(a);
-        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-      } catch { window.open(p.url, '_blank'); }
+    if (!photos.length || downloading) return;
+    setDownloading(true);
+    try {
+      const { Capacitor } = await import('@capacitor/core');
+      if (Capacitor.isNativePlatform()) {
+        const { Media } = await import('@capacitor-community/media');
+        let albumId;
+        try {
+          const { albums } = await Media.getAlbums();
+          albumId = albums.find(a => a.name === 'TripBae')?.identifier;
+          if (!albumId) {
+            await Media.createAlbum({ name: 'TripBae' });
+            albumId = (await Media.getAlbums()).albums.find(a => a.name === 'TripBae')?.identifier;
+          }
+        } catch { /* fall through and let savePhoto use/create a default album */ }
+        let saved = 0;
+        for (const p of photos) {
+          try {
+            await Media.savePhoto({ path: p.url, albumIdentifier: albumId, fileName: `tripbae-${p.id}` });
+            saved++;
+          } catch { /* skip this one, keep going */ }
+        }
+        showToast(saved
+          ? `Saved ${saved > 1 ? `${saved} photos` : 'photo'} to Photos`
+          : 'Could not save photos');
+      } else {
+        for (const p of photos) {
+          try {
+            const res = await fetch(p.url);
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = blobUrl; a.download = p.url.split('/').pop() || `photo-${p.id}.jpg`;
+            document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+          } catch { window.open(p.url, '_blank'); }
+        }
+      }
+    } finally {
+      setDownloading(false);
     }
   };
 
-  const openLightbox = (idx) => setLightbox({ photos: folderPhotos, index: idx });
+  const openLightbox = useCallback((idx) => setLightbox({ photos: folderPhotos, index: idx }), [folderPhotos]);
   const lbPrev = () => setLightbox(l => ({ ...l, index: Math.max(0, l.index - 1) }));
   const lbNext = () => setLightbox(l => ({ ...l, index: Math.min(l.photos.length - 1, l.index + 1) }));
 
@@ -642,6 +781,17 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
     return `${url}${sep}tr=w-1200,h-1200,fo-auto,q-82`;
   };
 
+  // Prefetch the neighbouring full-res images so swiping/arrow-tapping in
+  // the lightbox feels instant instead of waiting on a fresh network fetch.
+  useEffect(() => {
+    if (!lightbox) return;
+    const { photos, index } = lightbox;
+    [index - 1, index + 1].forEach(i => {
+      const url = photos[i]?.url;
+      if (url) { const img = new Image(); img.src = lbUrl(url); }
+    });
+  }, [lightbox]);
+
   const heroBgUrl = useMemo(() => {
     if (!allPhotos.length) return null;
     const seed = Math.abs(Array.from(trip.id || 'x').reduce((a, c) => a + c.charCodeAt(0), 0));
@@ -654,6 +804,7 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
 
   return (
     <div className="ph-root">
+      <PullToRefreshSpinner active={isRefreshing} />
 
       {/* ── Welcome popup ── */}
       {showWelcome && (
@@ -760,13 +911,14 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
           const isActive = activeFolder === m;
           const isMe = m === me;
           const color = mcolor(m);
+          const avatarUrl = avatarFor(m);
           return (
             <div key={m} className={`ph-tab ${isActive ? 'active' : ''}`}
               onClick={() => { setActiveFolder(m); setSelected(new Set()); }}>
               <div className="ph-tab-ring">
-                <div className="ph-tab-av" style={{ background: isMe && myAvatar ? 'transparent' : color }}>
-                  {isMe && myAvatar
-                    ? <img src={myAvatar} alt={m} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                <div className="ph-tab-av" style={{ background: avatarUrl ? 'transparent' : color }}>
+                  {avatarUrl
+                    ? <img src={avatarUrl} alt={m} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
                     : initials(m)
                   }
                 </div>
@@ -833,8 +985,11 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
           </label>
         ) : (
           <div className="ph-viewer-banner">
-            <div className="ph-viewer-av" style={{ background: mcolor(activeFolder) }}>
-              {initials(activeFolder)}
+            <div className="ph-viewer-av" style={{ background: avatarFor(activeFolder) ? 'transparent' : mcolor(activeFolder) }}>
+              {avatarFor(activeFolder)
+                ? <img src={avatarFor(activeFolder)} alt={activeFolder} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                : initials(activeFolder)
+              }
             </div>
             <div className="ph-viewer-text">
               Viewing <strong>{activeFolder}'s</strong> photos — tap to select, then download.
@@ -859,53 +1014,48 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
         </div>
       ) : (
         <div className="ph-grid">
-          {folderPhotos.map((p, idx) => {
-            const thumbUrl = p.url && p.url.includes('ik.imagekit.io')
-              ? p.url.replace(/(\/[^/?]+)(\?.*)?$/, '/tr:w-300,h-300,q-75,fo-auto$1$2')
-              : p.url;
-            return (
-              <div key={p.id} className={`ph-cell ${selected.has(p.id) ? 'sel' : ''} ${selectionMode ? 'ph-cell-selmode' : ''}`} onClick={() => selectionMode ? toggle(p.id) : openLightbox(idx)}>
-                <img src={thumbUrl} alt="" loading="lazy"
-                  style={{ opacity: 0 }}
-                  onLoad={e => { e.target.style.opacity = 1; }}
-                  onError={e => { e.target.style.display = 'none'; }} />
-                <div className="ph-check">
-                  {selected.has(p.id) && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
-                </div>
-                <div className="ph-expand" onClick={(e) => { e.stopPropagation(); openLightbox(idx); }}>
-                  <div className="ph-expand-btn">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={D.secondary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
-                  </div>
-                </div>
-                {isMyFolder && (
-                  <button className="ph-del-btn" onClick={(e) => askDeleteSingle(p, e)} title="Delete">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke={D.coral} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
-                  </button>
-                )}
-              </div>
-            );
-          })}
+          {folderPhotos.map((p, idx) => (
+            <PhotoCell
+              key={p.id}
+              photo={p}
+              idx={idx}
+              isSelected={selected.has(p.id)}
+              selectionMode={selectionMode}
+              isMyFolder={isMyFolder}
+              onOpen={openLightbox}
+              onToggle={toggle}
+              onDelete={askDeleteSingle}
+            />
+          ))}
         </div>
       )}
 
-      {/* ── Selection action bar — floats above the bottom nav ── */}
-      {selected.size > 0 && (
-        <div className="ph-action-bar">
-          <div className="ph-action-label"><strong>{selected.size}</strong> selected</div>
-          <button className="ph-btn-ghost" onClick={clearSel}>Clear</button>
-          <button className="ph-btn-primary" onClick={downloadSelected}>
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Download
-            <span className="ph-count-badge">{selected.size}</span>
+      {/* ── Selection toolbar — floating pill, bottom-right, icon-only ── */}
+      {isActive && selected.size > 0 && createPortal(
+        <div className="ph-float-bar">
+          <span className="ph-float-count">{selected.size}</span>
+          <button className="ph-float-btn" onClick={clearSel} title="Clear selection">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#5C504A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+          <button className="ph-float-btn" onClick={downloadSelected} disabled={downloading} title="Download selected">
+            {downloading
+              ? <span className="ph-float-spinner" />
+              : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FF6A00" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            }
           </button>
           {isMyFolder && (
-            <button className="ph-btn-danger" onClick={askDeleteBulk}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M9 6V4h6v2"/></svg>
-              Delete
-              <span className="ph-del-badge">{selected.size}</span>
+            <button className="ph-float-btn ph-float-btn-danger" onClick={askDeleteBulk} title="Delete selected">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E8715A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
             </button>
           )}
-        </div>
+        </div>,
+        document.body
+      )}
+
+      {/* ── Toast (download result) ── */}
+      {isActive && toast && createPortal(
+        <div className="ph-toast">{toast}</div>,
+        document.body
       )}
 
       {/* ── Confirm Delete Dialog ── */}
@@ -934,8 +1084,10 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
         </div>
       )}
 
-      {/* ── Lightbox — viewport-locked, scroll-proof ── */}
-      {lightbox && (
+      {/* ── Lightbox — viewport-locked, scroll-proof — portaled to <body> so it
+             always positions against the true viewport, never a transformed/
+             scrolling ancestor ── */}
+      {isActive && lightbox && createPortal(
         <div
           className="ph-lbox"
           onClick={() => setLightbox(null)}
@@ -945,22 +1097,38 @@ function PhotosPage({ trip, myNickname, myAvatar }) {
           <button className="ph-lbox-close" onClick={() => setLightbox(null)}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
-          <img
-            className="ph-lbox-img"
-            src={lbUrl(lightbox.photos[lightbox.index]?.url)}
-            alt=""
-            onClick={(e) => e.stopPropagation()}
-          />
-          <div className="ph-lbox-nav" onClick={(e) => e.stopPropagation()}>
-            <button className="ph-lbox-btn" onClick={lbPrev} disabled={lightbox.index === 0}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-            </button>
-            <span className="ph-lbox-count">{lightbox.index + 1} / {lightbox.photos.length}</span>
-            <button className="ph-lbox-btn" onClick={lbNext} disabled={lightbox.index === lightbox.photos.length - 1}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-            </button>
+          <span className="ph-lbox-count">{lightbox.index + 1} / {lightbox.photos.length}</span>
+          <button
+            className="ph-lbox-arrow ph-lbox-arrow-left"
+            onClick={(e) => { e.stopPropagation(); lbPrev(); }}
+            disabled={lightbox.index === 0}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div className="ph-lbox-stage" onClick={(e) => e.stopPropagation()}>
+            <img
+              key={`ph-${lightbox.index}`}
+              className="ph-lbox-img-ph"
+              src={ikThumb(lightbox.photos[lightbox.index]?.url)}
+              alt=""
+            />
+            <img
+              key={`full-${lightbox.index}`}
+              className="ph-lbox-img"
+              src={lbUrl(lightbox.photos[lightbox.index]?.url)}
+              alt=""
+              onLoad={e => { e.target.style.opacity = 1; }}
+            />
           </div>
-        </div>
+          <button
+            className="ph-lbox-arrow ph-lbox-arrow-right"
+            onClick={(e) => { e.stopPropagation(); lbNext(); }}
+            disabled={lightbox.index === lightbox.photos.length - 1}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>,
+        document.body
       )}
     </div>
   );

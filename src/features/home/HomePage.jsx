@@ -7,6 +7,7 @@ import {
 } from '../shared/constants';
 import { S } from '../shared/styles';
 import { Avatar, SoloAvatar, ConfirmDialog } from '../shared/ui';
+import { usePullToRefresh, PullToRefreshSpinner } from '../shared/pullToRefresh';
 import { fetchPlacePhotos, getFxRatesFromBackend } from '../../api';
 import currencyData from '../../../currency.json';
 import CreateTripWizard from './CreateTripWizard';
@@ -17,6 +18,15 @@ import lumi5 from '../../assets/lumi5_bgless.png';
 
 const FX_API_KEY = 'cce33519f478fe73220306ed';
 const _fxMemCache = {};
+let _lastFxFetch = {}; // Track last fetch time per currency to prevent repeated calls
+
+export async function clearFxCache() {
+  for (const key in _fxMemCache) {
+    delete _fxMemCache[key];
+  }
+  try { localStorage.removeItem('fx_v2_cache'); } catch {}
+  _lastFxFetch = {};
+}
 
 const BUDGET_CURRENCIES = [
   'INR','USD','EUR','GBP','AED','AUD','CAD','CHF','CNY','JPY',
@@ -49,45 +59,79 @@ export async function getCurrencyForCountry(country) {
   } catch { return ''; }
 }
 
-export async function getFxRate(from, to) {
+export async function getFxRate(from, to, forceRefresh = false) {
   if (!from || !to || from === to) return 1;
   const today = new Date().toISOString().slice(0, 10);
   const cacheKey = `fx_v2_${from}`;
-  // 1. In-memory (instant, no I/O)
-  const mem = _fxMemCache[cacheKey];
-  if (mem && mem.date === today && mem.rates?.[to] != null) return mem.rates[to];
-  // 2. localStorage (instant, survives refresh)
-  try {
-    const raw = localStorage.getItem(cacheKey);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed.date === today && parsed.rates?.[to] != null) {
-        _fxMemCache[cacheKey] = parsed;
-        return parsed.rates[to];
-      }
+  const now = Date.now();
+
+  // Force refresh if requested or if last fetch was >1 hour ago
+  const shouldRefresh = forceRefresh || !_lastFxFetch[from] || (now - _lastFxFetch[from]) > 3600000;
+
+  // 1. In-memory (instant, no I/O) - but only if we shouldn't refresh
+  if (!forceRefresh) {
+    const mem = _fxMemCache[cacheKey];
+    if (mem && mem.date === today && mem.rates?.[to] != null) {
+      console.log(`[FX] Cache hit for ${from}→${to}: ${mem.rates[to]}`);
+      return mem.rates[to];
     }
-  } catch { /* ignore */ }
+  }
+
+  // 2. localStorage (survives refresh) - but only if we shouldn't refresh
+  if (!forceRefresh) {
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.date === today && parsed.rates?.[to] != null) {
+          _fxMemCache[cacheKey] = parsed;
+          console.log(`[FX] LocalStorage hit for ${from}→${to}: ${parsed.rates[to]}`);
+          return parsed.rates[to];
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
   // 3. Backend / Supabase DB (globally shared, once per day per currency)
   try {
+    console.log(`[FX] Fetching from backend for ${from}...`);
     const data = await getFxRatesFromBackend(from);
-    if (data.rates?.[to] != null) {
+    if (data.rates && Object.keys(data.rates).length > 0 && data.rates[to] != null) {
+      const rate = data.rates[to];
+      console.log(`[FX] Backend rate for ${from}→${to}: ${rate}`);
       const entry = { date: data.date || today, rates: data.rates };
       _fxMemCache[cacheKey] = entry;
+      _lastFxFetch[from] = now;
       try { localStorage.setItem(cacheKey, JSON.stringify(entry)); } catch { /* ignore */ }
-      return data.rates[to];
+      return rate;
     }
-  } catch { /* ignore */ }
+  } catch (err) {
+    console.warn(`[FX] Backend error for ${from}:`, err.message);
+  }
+
   // 4. Direct ExchangeRate API (last resort, no backend)
   try {
-    const res = await fetch(`https://v6.exchangerate-api.com/v6/${FX_API_KEY}/latest/${from}`);
+    console.log(`[FX] Fetching from ExchangeRate-API for ${from}...`);
+    const res = await fetch(`https://v6.exchangerate-api.com/v6/${FX_API_KEY}/latest/${from}`, {
+      signal: AbortSignal.timeout(5000)
+    });
     const data = await res.json();
     if (data.result === 'success' && data.conversion_rates) {
+      const rate = data.conversion_rates[to] ?? 1;
+      console.log(`[FX] ExchangeRate-API rate for ${from}→${to}: ${rate}`);
       const entry = { date: today, rates: data.conversion_rates };
       _fxMemCache[cacheKey] = entry;
+      _lastFxFetch[from] = now;
       try { localStorage.setItem(cacheKey, JSON.stringify(entry)); } catch { /* ignore */ }
-      return data.conversion_rates[to] ?? 1;
+      return rate;
+    } else {
+      console.warn(`[FX] ExchangeRate-API error: ${data.result}, ${data['error-type']}`);
     }
-  } catch { /* ignore */ }
+  } catch (err) {
+    console.warn(`[FX] ExchangeRate-API fetch error for ${from}:`, err.message);
+  }
+
+  console.warn(`[FX] No rate found for ${from}→${to}, returning 1`);
   return 1;
 }
 
@@ -188,7 +232,8 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
   const statusPillLabel = status.label === 'Ongoing'
     ? 'Ongoing'
     : (daysToStart != null && daysToStart > 0 ? `In ${daysToStart}d` : (isPast ? 'Past' : status.label));
-  const cardBg = 'linear-gradient(145deg,#0d1117 0%,#161d28 52%,#0d1117 100%)';
+  // Use white background when no photos loaded yet, dark navy once photos arrive
+  const cardBg = photos.length > 0 ? 'linear-gradient(145deg,#0d1117 0%,#161d28 52%,#0d1117 100%)' : 'linear-gradient(135deg,#ffffff 0%,#f8f8f8 100%)';
   const glowBg = 'radial-gradient(circle,rgba(255,106,0,0.38) 0%,transparent 72%)';
   let statusBadgeStyle;
   if (isPast) {
@@ -371,7 +416,7 @@ const TripCard = memo(function TripCard({ trip, idx, onOpen, copied, onCopy, men
   );
 });
 
-function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive, profileName, homeTab = 'trips', setHomeTab = () => {} }) {
+function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, onMarkComplete, onMarkActive, onRefreshTrips, profileName, homeTab = 'trips', setHomeTab = () => {} }) {
   const [showCreate, setShowCreate] = useState(false);
   const [createStep, setCreateStep] = useState(0);
   const [showJoin, setShowJoin] = useState(false);
@@ -396,6 +441,8 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
     const pool = HERO_GREETINGS[bucket];
     return pool[Math.floor(Math.random() * pool.length)];
   });
+
+  const isRefreshing = usePullToRefresh(onRefreshTrips, [onRefreshTrips]);
 
   const [showDestPicker, setShowDestPicker] = useState(false);
   const [destQuery, setDestQuery] = useState('');
@@ -679,6 +726,7 @@ function HomePage({ trips, onOpenTrip, onCreateTrip, onJoinTrip, onDeleteTrip, o
 
   return (
     <div style={{ margin: 0, fontFamily: "'Inter', 'DM Sans', sans-serif", minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+      <PullToRefreshSpinner active={isRefreshing} />
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
         @keyframes float { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-5px)} }

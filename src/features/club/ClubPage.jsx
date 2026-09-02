@@ -3,6 +3,7 @@ import { getClubHub, upsertClubProfile, updateClubStatus, sendClubRequest, respo
 import { supabase } from '../../supabase';
 import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
+import { usePullToRefresh, PullToRefreshSpinner } from '../shared/pullToRefresh';
 import clubBannerNarrow from '../../assets/club-banner-narrow.png';
 import clubHeaderImg from '../../assets/club-header.png';
 import clubHeader2Img from '../../assets/club-header-2.png';
@@ -873,6 +874,8 @@ function ClubPage({ trip, onTripRefresh, onLeaveClub }) {
 
   useEffect(() => { loadHub(); }, [loadHub]);
 
+  const isRefreshing = usePullToRefresh(loadHub, [loadHub]);
+
   const listed = (hub.myProfile?.status || 'snooze') === 'listed';
 
   const filteredDiscover = useMemo(() => {
@@ -1615,6 +1618,7 @@ function ClubPage({ trip, onTripRefresh, onLeaveClub }) {
 
   return (
     <div>
+      <PullToRefreshSpinner active={isRefreshing} />
       <style>{`
         @keyframes clubPop {
           from { opacity: 0; transform: translateY(6px) scale(.98); }

@@ -236,7 +236,7 @@ code {
 }
 
 .tb-section-flow {
-  animation: tbSectionFlow 240ms ease-out;
+  animation: tbSectionFlow 120ms ease-out;
 }
 
 .tb-view-enter {
