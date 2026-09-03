@@ -128,6 +128,15 @@ export const generateItinerary = (data) => {
   return dedupedFetch(key, () => apiFetch('/ai/itinerary', { method: 'POST', body: data }));
 };
 
+// Background itinerary build: kicks off generation server-side and returns
+// immediately — the traveller can leave the screen, the backend keeps working.
+// Poll getItineraryStatus(tripId) to find out when the result is ready.
+export const startItinerary = (data) =>
+  apiFetch('/ai/itinerary/start', { method: 'POST', body: data });
+
+export const getItineraryStatus = (tripId) =>
+  apiFetch(`/ai/itinerary/status/${encodeURIComponent(tripId)}`);
+
 export const fetchExperiences = (data) =>
   apiFetch('/ai/experiences', { method: 'POST', body: data });
 

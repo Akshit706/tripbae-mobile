@@ -4,7 +4,7 @@ import { S } from '../shared/styles';
 import { Spinner } from '../shared/ui';
 import { PlacePhoto, PlacePhotosStrip, PlacePhotoCarousel } from '../media/PlaceMedia';
 import RecommendationsPage from './RecommendationsPage';
-import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime, generateItinerary } from '../../api';
+import { fetchRecommendations, generateLocalTaste, fetchDestinationLocalTime, startItinerary, getItineraryStatus } from '../../api';
 import lumi15Img from '../../assets/lumi15.png';
 import lumi17Img from '../../assets/lumi17.png';
 import lumi4Img from '../../assets/Lumi4_bgless.png';
@@ -67,6 +67,14 @@ function _plannerStepKey(id) { return `tb_pstep_${id}`; }
 function loadPlannerStep(id) { try { return localStorage.getItem(_plannerStepKey(id)); } catch { return null; } }
 function savePlannerStep(id, s) { try { localStorage.setItem(_plannerStepKey(id), s); } catch {} }
 function clearPlannerStep(id)  { try { localStorage.removeItem(_plannerStepKey(id)); } catch {} }
+
+/* -- Background itinerary generation marker: survives navigation, tab switches -- */
+/* and app restarts, so the traveller can freely leave this screen while Lumi   */
+/* builds the itinerary server-side, and resume watching for it wherever they land. */
+function _itinGenKey(id) { return `tb_itin_gen_${id}`; }
+function isGeneratingItin(id)    { try { return !!localStorage.getItem(_itinGenKey(id)); } catch { return false; } }
+function markGeneratingItin(id)  { try { localStorage.setItem(_itinGenKey(id), String(Date.now())); } catch {} }
+function clearGeneratingItin(id) { try { localStorage.removeItem(_itinGenKey(id)); } catch {} }
 
 /* -- Premium design tokens ----------------------------------- */
 const D = {
@@ -900,7 +908,12 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     ? Math.max(1, Math.round((new Date(form.departure) - new Date(form.arrival)) / 86400000))
     : 1;
 
+  // A background build was already kicked off (e.g. before the user navigated away
+  // or the app was reopened) — resume watching for it instead of re-showing swipe UI.
+  const _wasGeneratingItin = !_hasSwipeItin && isGeneratingItin(trip.id);
+
   const [step, setStep] = useState(() => {
+    if (_wasGeneratingItin) return 'loading';
     const saved = loadPlannerStep(trip.id);
     // 'discover' is always safe: covers first-time discovery and modification mode
     if (saved === 'discover') return 'discover';
@@ -941,16 +954,21 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       let rejectedExps = [];
       let leftoverExps = [];
       try {
-        const raw = localStorage.getItem(`ed_swipe_${trip.id}`);
+        // Prefer the permanent snapshot (survives after the itinerary is built);
+        // fall back to the live swipe progress key for older/in-progress trips.
+        const raw = localStorage.getItem(`ed_snapshot_${trip.id}`) || localStorage.getItem(`ed_swipe_${trip.id}`);
         if (raw) {
           const prog = JSON.parse(raw);
           const swipedSet = new Set(prog.swipedIds || []);
-          const likedSet  = new Set(prog.likedIds  || []);
           const exps = prog.experiences || [];
           if (exps.length > 0) {
-            likedExps    = exps.filter(e => likedSet.has(e.id));
-            rejectedExps = exps.filter(e => swipedSet.has(e.id) && !likedSet.has(e.id));
-            leftoverExps = exps.filter(e => !swipedSet.has(e.id));
+            // lastSelectedExps is the authoritative current pick list (kept up to
+            // date by "Modify Experiences"); derive passed/leftover around it so a
+            // later modification never reverts the liked list to a stale snapshot.
+            const currentLikedIds = new Set((lastSelectedExps || []).map(e => e.id));
+            likedExps    = lastSelectedExps;
+            rejectedExps = exps.filter(e => swipedSet.has(e.id) && !currentLikedIds.has(e.id));
+            leftoverExps = exps.filter(e => !swipedSet.has(e.id) && !currentLikedIds.has(e.id));
           }
         }
       } catch { /* use fallback */ }
@@ -1054,6 +1072,55 @@ function ItineraryPage({ trip, onCacheUpdate }) {
     }
   }, [trip._cachedItin, trip._cachedTaste]);
 
+  const itinPollRef = useRef(null);
+  const itinPollAttemptsRef = useRef(0);
+  const stopItinPolling = () => {
+    if (itinPollRef.current) { clearInterval(itinPollRef.current); itinPollRef.current = null; }
+  };
+
+  // Watches the backend job for this trip until it's done. Runs independently of
+  // which tab/screen the traveller is on — Day Planner/Itinerary just reflects
+  // whatever the server has finished, so results are "already there" on return.
+  const startItinPolling = (selectedExperiencesForCache) => {
+    stopItinPolling();
+    itinPollAttemptsRef.current = 0;
+    const checkOnce = async () => {
+      itinPollAttemptsRef.current += 1;
+      try {
+        const job = await getItineraryStatus(trip.id);
+        if (job.status === 'done') {
+          stopItinPolling();
+          clearGeneratingItin(trip.id);
+          setItin(job.itinerary);
+          setSources(job.sources || []);
+          markItinDone(trip.id); // mark as user-triggered so Day Planner shows modify view on return
+          setStep('result');
+          setITab('itinerary'); // auto-switch to Itinerary tab
+          // -- Save back to parent trips state so it persists across tab switches --
+          onCacheUpdate?.({ _cachedItin: { itinerary: job.itinerary, sources: job.sources || [], selectedExps: selectedExperiencesForCache || [] } });
+        } else if (job.status === 'error' || (job.status === 'none' && itinPollAttemptsRef.current > 5)) {
+          stopItinPolling();
+          clearGeneratingItin(trip.id);
+          setStep('error');
+        }
+        // 'running' → keep polling silently
+      } catch {
+        // Transient network hiccup while polling — don't give up on a single miss
+        if (itinPollAttemptsRef.current > 120) { stopItinPolling(); clearGeneratingItin(trip.id); setStep('error'); }
+      }
+    };
+    checkOnce();
+    itinPollRef.current = setInterval(checkOnce, 3000);
+  };
+
+  useEffect(() => () => stopItinPolling(), []);
+
+  // Resume polling if a build was already in flight when this page mounted
+  useEffect(() => {
+    if (_wasGeneratingItin && !trip._cachedItin) startItinPolling(lastSelectedExps);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const runGenerateItinerary = async (selectedExperiences) => {
     if (selectedExperiences && selectedExperiences.length > 0) {
       setLastSelectedExps(selectedExperiences);
@@ -1061,12 +1128,14 @@ function ItineraryPage({ trip, onCacheUpdate }) {
       setSheetExps(selectedExperiences);
     }
     setStep('loading');
+    markGeneratingItin(trip.id);
     try {
       // Derive interests from selected categories so the AI knows what the user cares about
       const interests = (selectedExperiences && selectedExperiences.length > 0)
         ? [...new Set(selectedExperiences.map(e => e.category).filter(Boolean))]
         : [];
-      const result = await generateItinerary({
+      await startItinerary({
+        tripId: trip.id,
         destination: form.dest,
         days,
         budget: form.budget ? parseFloat(form.budget) : null,
@@ -1090,14 +1159,11 @@ function ItineraryPage({ trip, onCacheUpdate }) {
         })()),
         ...(selectedExperiences && selectedExperiences.length > 0 ? { selectedExperiences } : {}),
       });
-      setItin(result.itinerary);
-      setSources(result.sources || []);
-      markItinDone(trip.id); // mark as user-triggered so Day Planner shows modify view on return
-      setStep('result');
-      setITab('itinerary'); // auto-switch to Itinerary tab
-      // -- Save back to parent trips state so it persists across tab switches --
-      onCacheUpdate?.({ _cachedItin: { ...result, selectedExps: selectedExperiences || [] } });
+      // Generation now runs server-side — the traveller is free to browse anywhere
+      // else in the app; polling above picks up the result the moment it's ready.
+      startItinPolling(selectedExperiences);
     } catch {
+      clearGeneratingItin(trip.id);
       setStep('error');
     }
   };
@@ -1145,6 +1211,8 @@ function ItineraryPage({ trip, onCacheUpdate }) {
   // }, [plannerReviewExp?.name, form.dest]);
 
   const handleRedo = () => {
+    stopItinPolling();
+    clearGeneratingItin(trip.id);
     clearItinDone(trip.id);
     clearPlannerStep(trip.id);
     onCacheUpdate?.({ _cachedItin: null });
@@ -1516,7 +1584,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 </div>
               </div>
 
-              {/* -- Share for feedback -- */}
+              {/* -- Share for feedback (disabled: swipe-stage share link already covers this) --
               <div style={{ background: '#fff', borderRadius: 16, padding: '0.85rem 1.1rem', marginBottom: '1rem', border: '1.5px solid rgba(255,106,0,0.22)', boxShadow: '0 2px 12px rgba(255,106,0,0.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 9, background: '#FFF3EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -1550,6 +1618,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   )}
                 </button>
               </div>
+              */}
 
               {/* -- View selected experiences (mirrors ExperienceDiscovery confirm page) -- */}
               {lastSelectedExps.length > 0 && (() => {
@@ -1747,6 +1816,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                       </div>
                     ))}
                   </div>
+                  <div style={{ marginTop: 22, fontSize: 11.5, color: D.muted, maxWidth: 280, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.5 }}>
+                    Feel free to switch tabs or leave this screen — Lumi keeps building in the background and it'll be ready the moment you're back.
+                  </div>
                 </div>
               )}
               {step === 'error' && (
@@ -1834,6 +1906,9 @@ function ItineraryPage({ trip, onCacheUpdate }) {
               <div style={isSolo ? S.soloSpinner : S.spinner} />
               <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 16, fontWeight: 700, marginBottom: 8, color: D.espresso }}>Lumi is building your itinerary…</div>
               <div style={{ fontSize: 12.5, color: D.muted }}>Crafting your perfect {days}-day {form.dest} plan.</div>
+              <div style={{ marginTop: 14, fontSize: 11.5, color: D.muted, maxWidth: 280, marginLeft: 'auto', marginRight: 'auto', lineHeight: 1.5 }}>
+                Go ahead and explore — this keeps running in the background and will be ready when you check back.
+              </div>
             </div>
           )}
           {!itin && step !== 'loading' && (

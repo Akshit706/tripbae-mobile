@@ -96,7 +96,7 @@ export async function generateShareHtml({ destination, tripName, likedExps = [],
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>My TripBae Picks — ${escHtml(destination)}</title>
+<title>My Tripbae Picks — ${escHtml(destination)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -128,7 +128,7 @@ body{font-family:'DM Sans',sans-serif;background:#FAF8F4;color:#1C1410;min-heigh
 </head>
 <body>
 <div class="header">
-  <div style="font-family:Sora,sans-serif;font-size:22px;font-weight:800;color:#FF6A00;margin-bottom:12px">TripBae</div>
+  <div style="font-family:Sora,sans-serif;font-size:22px;font-weight:800;color:#FF6A00;margin-bottom:12px">Tripbae</div>
   <div class="trip-title">${escHtml(destination)}</div>
   <div class="trip-sub">${escHtml(tripName ? `${tripName} · ` : '')}Experience Plan</div>
   <div class="header-stats">
@@ -215,6 +215,20 @@ function saveProgress(tripId, swipedIds, likedIds, activeFilter, experiences, ph
 }
 function clearProgress(tripId) {
   try { localStorage.removeItem(_progKey(tripId)); } catch { /* ignore */ }
+}
+
+/* ── Permanent swipe snapshot (survives clearProgress) ──────
+   Used so "Share My Plan" at the itinerary stage can still show
+   passed/leftover experiences after the temp swipe progress is wiped. */
+function _snapKey(tripId) { return `ed_snapshot_${tripId}`; }
+function saveSnapshot(tripId, experiences, swipedIds, likedIds) {
+  try {
+    localStorage.setItem(_snapKey(tripId), JSON.stringify({
+      experiences: experiences || [],
+      swipedIds:  [...swipedIds],
+      likedIds:   [...likedIds],
+    }));
+  } catch { /* ignore quota errors */ }
 }
 
 /* ── CSS injection ───────────────────────────────────────── */
@@ -344,6 +358,8 @@ function ExperienceDetailModal({ exp, destination, onClose }) {
 ══════════════════════════════════════════ */
 function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex, onPointerDown, onCardEl, destination }) {
   const cardRef = useRef(null);
+  const likeRef = useRef(null);
+  const passRef = useRef(null);
   const cfg = catCfg(exp.category);
   // Stamps: visible during drag AND during the fly-out transition
   const likeOpacity = isTop && (isDragging || swipeOut === 'right') ? Math.max(0, Math.min(1, dragX / 65)) : 0;
@@ -355,8 +371,10 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
   // Cards beyond the 3 visible ones are invisible but keep loading their photo
   const hidden     = stackIndex >= 3;
 
-  // Expose the DOM element to parent so it can write transform directly during drag
-  useEffect(() => { if (isTop) onCardEl?.(cardRef.current); }, [isTop]);
+  // Expose the DOM elements to parent so it can write transform/opacity directly
+  // during drag (bypassing React) so the LIKE/PASS stamps track the finger live
+  // instead of popping in only once the gesture commits.
+  useEffect(() => { if (isTop) onCardEl?.({ card: cardRef.current, like: likeRef.current, pass: passRef.current }); }, [isTop]);
 
   // PURE DOM approach: when dragging the top card, transform is NOT set by React
   // (undefined → React skips it). The pointer handler writes el.style.transform directly.
@@ -385,7 +403,7 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
         // fly-out: fast ease-in only — snap-back and stack shifts are instant (no CSS transition)
         transition: isDragging || !swipeOut
           ? 'none'
-          : 'transform 0.30s cubic-bezier(0.4,0,1,1), box-shadow 0.20s ease',
+          : 'transform 0.22s cubic-bezier(0.4,0,1,1), box-shadow 0.18s ease',
         cursor: isTop ? (isDragging ? 'grabbing' : 'grab') : 'default',
         userSelect: 'none', WebkitUserSelect: 'none',
         touchAction: 'pan-y', willChange: 'transform',
@@ -416,12 +434,12 @@ function SwipeCard({ exp, dragX, dragY, isDragging, swipeOut, isTop, stackIndex,
         )}
 
         {/* LIKE stamp */}
-        <div style={{ position:'absolute', top:52, right:18, opacity:likeOpacity, transform:'rotate(-12deg)', border:'3px solid #22C55E', borderRadius:8, padding:'4px 12px', color:'#22C55E', fontSize:17, fontWeight:900, letterSpacing:1.5, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(4px)', pointerEvents:'none', fontFamily:"'Sora',sans-serif", animation: likeOpacity > 0.85 ? 'edStampL 0.22s both' : undefined }}>
+        <div ref={likeRef} style={{ position:'absolute', top:52, right:18, opacity:likeOpacity, transform:'rotate(-12deg)', border:'3px solid #22C55E', borderRadius:8, padding:'4px 12px', color:'#22C55E', fontSize:17, fontWeight:900, letterSpacing:1.5, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(4px)', pointerEvents:'none', fontFamily:"'Sora',sans-serif", animation: likeOpacity > 0.85 ? 'edStampL 0.22s both' : undefined }}>
           LIKE ♥
         </div>
 
         {/* PASS stamp */}
-        <div style={{ position:'absolute', top:52, left:18, opacity:passOpacity, transform:'rotate(12deg)', border:'3px solid #EF4444', borderRadius:8, padding:'4px 12px', color:'#EF4444', fontSize:17, fontWeight:900, letterSpacing:1.5, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(4px)', pointerEvents:'none', fontFamily:"'Sora',sans-serif", animation: passOpacity > 0.85 ? 'edStampR 0.22s both' : undefined }}>
+        <div ref={passRef} style={{ position:'absolute', top:52, left:18, opacity:passOpacity, transform:'rotate(12deg)', border:'3px solid #EF4444', borderRadius:8, padding:'4px 12px', color:'#EF4444', fontSize:17, fontWeight:900, letterSpacing:1.5, background:'rgba(255,255,255,0.9)', backdropFilter:'blur(4px)', pointerEvents:'none', fontFamily:"'Sora',sans-serif", animation: passOpacity > 0.85 ? 'edStampR 0.22s both' : undefined }}>
           PASS ✗
         </div>
 
@@ -607,8 +625,11 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
 
   const pointerStart = useRef(null);
   const lastDragXRef = useRef(0);
-  const cardElRef = useRef(null);
-  const onCardEl = useCallback(el => { cardElRef.current = el; }, []);
+  // { card, like, pass } DOM refs of the top card, written to directly during
+  // drag so the transform AND the LIKE/PASS stamp opacity track the finger
+  // live, instead of the stamps only popping in once the gesture commits.
+  const cardRefsRef = useRef({ card: null, like: null, pass: null });
+  const onCardEl = useCallback(refs => { cardRefsRef.current = refs; }, []);
   // Tracks whether a DOM-driven fly-out/snap-back is in progress.
   // When true, React state updates for dragX/dragY/isDragging are deferred
   // until the animation completes, preventing the React/DOM style conflict.
@@ -643,7 +664,7 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
           setDragY(0);
           lastDragXRef.current = 0;
         });
-      }, 330);
+      }, 230);
       return;
     }
 
@@ -651,13 +672,16 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
     // isDragging stays true in React so transform stays undefined (React doesn't touch it).
     // The DOM handler controls the entire fly-out animation.
     animatingRef.current = true;
-    const el = cardElRef.current;
+    const { card: el, like: likeEl, pass: passEl } = cardRefsRef.current;
     if (el) {
       const rot = Math.max(-34, Math.min(34, startX * 0.055));
-      el.style.transition = 'transform 0.30s cubic-bezier(0.4,0,1,1)';
+      el.style.transition = 'transform 0.22s cubic-bezier(0.4,0,1,1)';
       el.style.transform = `translateX(${flyX}px) translateY(0px) rotate(${rot}deg) translateZ(0)`;
       if (window.__tbSwipeLog) console.log('[Swipe] DOM fly-out set', Date.now() - t0, 'ms after start');
     }
+    // Keep the matching stamp fully visible through the fly-out.
+    if (dir === 'right' && likeEl) likeEl.style.opacity = 1;
+    if (dir === 'left' && passEl) passEl.style.opacity = 1;
     // Update React state AFTER the animation completes — no mid-animation re-render
     setTimeout(() => {
       animatingRef.current = false;
@@ -672,8 +696,10 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
         lastDragXRef.current = 0;
         // Clear the inline DOM transform so the next card starts clean
         if (el) { el.style.transition = ''; el.style.transform = ''; }
+        if (likeEl) likeEl.style.opacity = 0;
+        if (passEl) passEl.style.opacity = 0;
       });
-    }, 330);
+    }, 230);
   };
 
   const doSwipe = useCallback((dir, startX) => doSwipeRef.current(dir, startX), []);
@@ -690,8 +716,12 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
     const dy = e.clientY - pointerStart.current.y;
     if (!pointerStart.current.locked) {
       const absX = Math.abs(dx), absY = Math.abs(dy);
-      if (absX < 4 && absY < 4) return;
-      if (absY > absX) { pointerStart.current = null; setDrag(false); return; }
+      // Wait for a slightly bigger, more decisive signal before locking an axis —
+      // committing on tiny 4px jitter was mis-reading mostly-horizontal swipes as
+      // vertical scrolls, causing the drag to bail out immediately (felt "glitchy").
+      if (absX < 8 && absY < 8) return;
+      if (absY > absX * 1.15) { pointerStart.current = null; setDrag(false); return; }
+      if (absX < absY) return; // still ambiguous — keep sampling
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch {}
       pointerStart.current = { ...pointerStart.current, locked: true };
       setDrag(true);
@@ -701,13 +731,17 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
     const vx = dt > 0 ? (e.clientX - pointerStart.current.lastX) / dt : 0;
     pointerStart.current = { ...pointerStart.current, lastX: e.clientX, lastT: now, vx };
     lastDragXRef.current = dx;
-    // Direct DOM write — no React state update, no re-render.
-    // transform is undefined in the style prop (isDragging=true), so React won't override this.
-    const el = cardElRef.current;
+    // Direct DOM writes — no React state update, no re-render. transform is
+    // undefined in the style prop (isDragging=true), so React won't override this.
+    const { card: el, like: likeEl, pass: passEl } = cardRefsRef.current;
     if (el) {
       const rot = Math.max(-34, Math.min(34, dx * 0.055));
       el.style.transform = `translateX(${dx}px) translateY(${dy * 0.18}px) rotate(${rot}deg) translateZ(0)`;
     }
+    // Live LIKE/PASS stamp feedback that tracks the finger (was previously frozen
+    // at 0 until release, making the stamps pop in instead of fading in smoothly).
+    if (likeEl) likeEl.style.opacity = String(Math.max(0, Math.min(1, dx / 65)));
+    if (passEl) passEl.style.opacity = String(Math.max(0, Math.min(1, -dx / 65)));
   }, []);
 
   const handlePointerUp = useCallback(() => {
@@ -730,11 +764,13 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
       lastDragXRef.current = 0; doSwipe('left', dx);
     } else {
       animatingRef.current = true;
-      const el = cardElRef.current;
+      const { card: el, like: likeEl, pass: passEl } = cardRefsRef.current;
       if (el) {
-        el.style.transition = 'transform 0.30s cubic-bezier(0.2,0.8,0.2,1)';
+        el.style.transition = 'transform 0.24s cubic-bezier(0.2,0.8,0.2,1)';
         el.style.transform = '';
       }
+      if (likeEl) likeEl.style.opacity = 0;
+      if (passEl) passEl.style.opacity = 0;
       setTimeout(() => {
         animatingRef.current = false;
         setDrag(false);
@@ -742,19 +778,33 @@ const SwipeStack = memo(function SwipeStack({ experiences, filteredExp, swipedId
         setDragY(0);
         lastDragXRef.current = 0;
         if (el) { el.style.transition = ''; }
-      }, 300);
+      }, 240);
     }
   }, [doSwipe, filteredExp, onOpenDetail]);
 
   const handlePointerCancel = useCallback(() => {
+    // Mirror the snap-back path: animate smoothly back to rest instead of an
+    // instant teleport, so a mid-gesture pointercancel (e.g. the browser's
+    // native scroll taking over) doesn't look like a glitch.
     if (animatingRef.current) return;
-    setDrag(false);
     pointerStart.current = null;
+    if (!isDraggingRef.current) { lastDragXRef.current = 0; return; }
+    animatingRef.current = true;
+    const { card: el, like: likeEl, pass: passEl } = cardRefsRef.current;
+    if (el) {
+      el.style.transition = 'transform 0.24s cubic-bezier(0.2,0.8,0.2,1)';
+      el.style.transform = '';
+    }
+    if (likeEl) likeEl.style.opacity = 0;
+    if (passEl) passEl.style.opacity = 0;
     lastDragXRef.current = 0;
-    const el = cardElRef.current;
-    if (el) { el.style.transition = ''; el.style.transform = ''; }
-    setDragX(0);
-    setDragY(0);
+    setTimeout(() => {
+      animatingRef.current = false;
+      setDrag(false);
+      setDragX(0);
+      setDragY(0);
+      if (el) { el.style.transition = ''; }
+    }, 240);
   }, []);
 
   return (
@@ -871,8 +921,8 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
     console.log('[Explore] mount: experiences cached?', experiences.length);
     if (experiences.length > 0) return; // already restored from cache — skip API call
     let cancelled = false;
-    console.log('[Explore] fetching /ai/experiences →', { destination, days, budget: trip.budget });
-    fetchExperiences({ destination, days, budget: trip.budget })
+    console.log('[Explore] fetching /ai/experiences →', { destination, days, budget: trip.budget, travelNotes: trip.travelNotes });
+    fetchExperiences({ destination, days, budget: trip.budget, travelNotes: trip.travelNotes || undefined })
     .then(data => {
       if (cancelled) return;
       console.log('[Explore] /ai/experiences OK →', data.experiences?.length, 'experiences');
@@ -933,7 +983,14 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
   }, []);
 
   /* ── Wrapped handlers: clear storage on complete / skip ── */
-  const handleComplete = useCallback((selectedExps) => { clearProgress(trip.id); onComplete(selectedExps); }, [trip.id, onComplete]);
+  const handleComplete = useCallback((selectedExps) => {
+    // Only snapshot on a full fresh swipe — a "Modify Experiences" round only
+    // re-reviews the liked subset, so it must not clobber the original
+    // passed/leftover data with a partial one.
+    if (!modifyExps) saveSnapshot(trip.id, experiences, swipedIds, likedIds);
+    clearProgress(trip.id);
+    onComplete(selectedExps);
+  }, [trip.id, experiences, swipedIds, likedIds, modifyExps, onComplete]);
   const handleSkip     = useCallback(()              => { clearProgress(trip.id); onSkip(); }, [trip.id, onSkip]);
   const handleGoToConfirm = useCallback(() => setPhase('confirm'), []);
   const removeFromPicks = useCallback((expId) => {
@@ -1105,8 +1162,8 @@ const ExperienceDiscovery = memo(function ExperienceDiscovery({ trip, onComplete
             onClick={() => {
               console.log('[Explore] Try Again CLICKED');
               setSwipedIds(new Set()); setLikedIds(new Set()); setActiveFilter(null); setPhase('loading'); clearProgress(trip.id);
-              console.log('[Explore] Try Again → fetching /ai/experiences', { destination, days, budget: trip.budget });
-              fetchExperiences({ destination, days, budget: trip.budget }).then(data => {
+              console.log('[Explore] Try Again → fetching /ai/experiences', { destination, days, budget: trip.budget, travelNotes: trip.travelNotes });
+              fetchExperiences({ destination, days, budget: trip.budget, travelNotes: trip.travelNotes || undefined }).then(data => {
                 console.log('[Explore] Try Again OK →', data.experiences?.length, 'experiences');
                 setExperiences((data.experiences||[]).map((e,i)=>({...e,id:e.id||`exp-${i}`}))); setPhase('swipe');
               }).catch((err) => {

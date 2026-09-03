@@ -339,7 +339,7 @@ export default function CreateTripWizard({
     loadSetter(true);
     try {
       const res  = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=7&accept-language=en`,
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&addressdetails=1&limit=10&accept-language=en`,
         { headers: { 'User-Agent':'TravelBae/1.0', 'Accept-Language':'en' } }
       );
       const data = await res.json();
@@ -354,7 +354,10 @@ export default function CreateTripWizard({
         const main  = flat((a.city || a.town || a.village || a.state_district || a.county || a.state || p.display_name.split(',')[0]).toLowerCase());
         const qFlat = flat(qLow);
         const rel   = qLow.length <= 2 || main.includes(qFlat) || flat(p.display_name.toLowerCase()).includes(qFlat);
-        const key     = fmtPlace(p);
+        // Include addresstype/type in the dedup key — a city and its same-named
+        // district/state (e.g. "Alwar" city vs "Alwar" district) format identically
+        // via fmtPlace() and would otherwise collide, silently dropping the city entry.
+        const key = fmtPlace(p) + '|' + (p.addresstype || p.type || '');
         if (!ok || !rel || seen.has(key)) return false;
         seen.add(key); return true;
       }));

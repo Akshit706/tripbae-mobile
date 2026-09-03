@@ -9,6 +9,15 @@ import { createPortal } from 'react-dom';
 // a gentle scroll/bounce near the top never fires it mid-drag.
 const PULL_THRESHOLD = 110;
 
+// Rubber-band resistance applied to the raw finger delta before comparing
+// against PULL_THRESHOLD — without this, overscroll-behavior:none means the
+// page has zero elastic resistance, so a single ordinary "scroll to the top"
+// flick can rack up 110+ raw px and fire a refresh by accident. Real apps
+// (LinkedIn/IG/FB) make the pull feel "heavy" so only a deliberate, sustained
+// pull crosses the line. With RESISTANCE=0.42, ~260px of real finger travel
+// is needed to hit the threshold instead of ~110px.
+const PULL_RESISTANCE = 0.42;
+
 // Below the fixed app topbar (~60px content + safe-area-inset-top), so the
 // spinner always sits under the header instead of overlapping it.
 const SPINNER_TOP = 'calc(64px + env(safe-area-inset-top, 0px))';
@@ -42,7 +51,8 @@ export function usePullToRefresh(onRefresh, deps = []) {
       if (!pull.active || pull.triggered) return;
       // Scrolling took over (no longer pinned to the top) — abandon the pull.
       if (window.scrollY > 0) { pull.active = false; return; }
-      pull.lastDy = e.touches[0].clientY - pull.startY;
+      const rawDy = e.touches[0].clientY - pull.startY;
+      pull.lastDy = rawDy > 0 ? rawDy * PULL_RESISTANCE : rawDy;
     };
     const onTouchEnd = () => {
       if (pull.active && !pull.triggered && window.scrollY <= 0 && pull.lastDy > PULL_THRESHOLD) fire();
@@ -95,7 +105,8 @@ export function usePullToRefreshContainer(containerRef, onRefresh, deps = []) {
     const onTouchMove = (e) => {
       if (!pull.active || pull.triggered) return;
       if (el.scrollTop > 0) { pull.active = false; return; }
-      pull.lastDy = e.touches[0].clientY - pull.startY;
+      const rawDy = e.touches[0].clientY - pull.startY;
+      pull.lastDy = rawDy > 0 ? rawDy * PULL_RESISTANCE : rawDy;
     };
     const onTouchEnd = () => {
       if (pull.active && !pull.triggered && el.scrollTop <= 0 && pull.lastDy > PULL_THRESHOLD) fire();
