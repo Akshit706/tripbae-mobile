@@ -434,6 +434,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
     policy: 'Privacy Policy',
     terms: 'Terms of Service',
     about: 'About',
+    'ios-collab': 'Invite iOS Friends',
   };
 
   // Menu rendered in grouped sections
@@ -450,6 +451,7 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
       title: 'Settings',
       items: [
         { id: 'notifications', iconId: 'notifications', label: 'Notifications', sub: 'Trip reminders and updates', accent: '#FF7A1A', action: 'view' },
+        { id: 'ios-collab', iconId: 'globe', label: 'Invite iOS friends', sub: 'Help iOS users join your trip now', accent: '#CC5600', action: 'view' },
       ],
     },
     {
@@ -1756,7 +1758,123 @@ function ProfilePage({ profile, onSave, onClose, onLogout, onDeleteAccount, trip
           </div>
         </div>
       )}
+      {/* ════════ iOS COLLAB VIEW ════════ */}
+{view === 'ios-collab' && (
+  <div style={{ animation: 'pfSlideIn .2s ease-out', padding: '1.25rem', paddingBottom: '2rem' }}>
 
+    {/* Hero banner */}
+    <div style={{
+      background: 'linear-gradient(135deg, #FF6A00, #D85B00)',
+      borderRadius: 20, padding: '24px 20px', marginBottom: 16,
+      textAlign: 'center', position: 'relative', overflow: 'hidden',
+    }}>
+      <div style={{ position: 'absolute', top: -30, right: -30, width: 100, height: 100, borderRadius: '50%', background: 'rgba(255,255,255,0.08)', pointerEvents: 'none' }} />
+      <div style={{ position: 'absolute', bottom: -20, left: -20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+      <div style={{ fontSize: 36, marginBottom: 10 }}>🍎</div>
+      <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 18, fontWeight: 700, color: '#fff', marginBottom: 6, letterSpacing: '-0.3px' }}>
+        Got friends on iOS?
+      </div>
+      <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.82)', lineHeight: 1.6, maxWidth: 260, margin: '0 auto' }}>
+        They can join your trip right now.
+      </div>
+    </div>
+
+    {/* Web app CTA */}
+    <div style={{
+      background: '#fff', border: '0.5px solid rgba(255,106,0,0.22)',
+      borderRadius: 16, padding: '18px 18px', marginBottom: 12,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+        <div style={{ width: 42, height: 42, borderRadius: 12, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <DrawerIcon id="globe" size={20} color={AC} />
+        </div>
+        <div>
+          <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: '#1a1a18' }}>Share this link with them</div>
+          
+        </div>
+      </div>
+
+      {/* URL chip */}
+      <div style={{
+        background: '#FFF3EA', border: '1px solid rgba(255,106,0,0.25)',
+        borderRadius: 12, padding: '12px 16px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10,
+        marginBottom: 14,
+      }}>
+        <span style={{ fontFamily: "'Sora',sans-serif", fontSize: 14, fontWeight: 700, color: AC, letterSpacing: '-0.2px' }}>
+          app.tripbae.in
+        </span>
+        <button
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText('https://app.tripbae.in');
+              showToast('Link copied!');
+            } catch {
+              showToast('https://app.tripbae.in');
+            }
+          }}
+          style={{
+            padding: '6px 14px', borderRadius: 9, border: 'none',
+            background: AC, color: '#fff', fontSize: 12, fontWeight: 700,
+            cursor: 'pointer', fontFamily: "'DM Sans',sans-serif", flexShrink: 0,
+          }}
+        >
+          Copy
+        </button>
+      </div>
+
+      {/* Steps */}
+      {[
+        { n: '1', text: 'Send them the link — they open it on Safari or Chrome' },
+        { n: '2', text: 'They sign up or log in — takes under 30 seconds' },
+        { n: '3', text: 'They create a new trip or join yours using the share code' },
+      ].map(step => (
+        <div key={step.n} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', marginBottom: 10, lastChild: { marginBottom: 0 } }}>
+          <div style={{ width: 24, height: 24, borderRadius: '50%', background: AC, color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, flexShrink: 0, fontFamily: "'Sora',sans-serif" }}>{step.n}</div>
+          <div style={{ fontSize: 13, color: '#1a1a18', lineHeight: 1.5, paddingTop: 3 }}>{step.text}</div>
+        </div>
+      ))}
+    </div>
+
+    {/* Bookmark tip */}
+    <div style={{
+      background: 'linear-gradient(135deg, #FFF8F2, #FFF3EA)',
+      border: '0.5px solid rgba(255,106,0,0.2)',
+      borderRadius: 14, padding: '14px 16px', marginBottom: 12,
+      display: 'flex', gap: 12, alignItems: 'flex-start',
+    }}>
+      <div style={{ fontSize: 22, flexShrink: 0, lineHeight: 1.2 }}>💡</div>
+      <div>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#1a1a18', marginBottom: 4 }}>
+          Tell them to save it to their home screen
+        </div>
+        <div style={{ fontSize: 12.5, color: '#6b6b68', lineHeight: 1.6 }}>
+          In Safari → tap the Share icon → <strong style={{ color: '#1a1a18' }}>Add to Home Screen</strong>. It'll open like a native app — no browser bar, full screen.
+        </div>
+      </div>
+    </div>
+
+    {/* Coming soon note */}
+    <div style={{
+      background: '#FAFAF8', border: '0.5px dashed rgba(0,0,0,0.14)',
+      borderRadius: 14, padding: '14px 16px',
+      display: 'flex', gap: 12, alignItems: 'center',
+    }}>
+      <div style={{ width: 34, height: 34, borderRadius: 10, background: AC_SOFT, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <DrawerIcon id="plane" size={16} color={AC} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontFamily: "'Sora',sans-serif", fontSize: 13, fontWeight: 700, color: '#1a1a18' }}>
+          Native App Store version coming soon
+        </div>
+        <div style={{ fontSize: 12, color: '#6b6b68', marginTop: 2, lineHeight: 1.5 }}>
+          We know a browser isn't ideal. The real iOS app is on its way.
+        </div>
+      </div>
+    </div>
+
+  </div>
+)}
       <div style={{ height: '2rem' }} />
     </div>
   );

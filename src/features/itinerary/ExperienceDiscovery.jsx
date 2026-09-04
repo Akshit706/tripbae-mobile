@@ -96,7 +96,7 @@ export async function generateShareHtml({ destination, tripName, likedExps = [],
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>My Tripbae Picks — ${escHtml(destination)}</title>
+<title>My TripBae Picks — ${escHtml(destination)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@700;800&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -128,7 +128,7 @@ body{font-family:'DM Sans',sans-serif;background:#FAF8F4;color:#1C1410;min-heigh
 </head>
 <body>
 <div class="header">
-  <div style="font-family:Sora,sans-serif;font-size:22px;font-weight:800;color:#FF6A00;margin-bottom:12px">Tripbae</div>
+  <div style="font-family:Sora,sans-serif;font-size:22px;font-weight:800;color:#FF6A00;margin-bottom:12px">TripBae</div>
   <div class="trip-title">${escHtml(destination)}</div>
   <div class="trip-sub">${escHtml(tripName ? `${tripName} · ` : '')}Experience Plan</div>
   <div class="header-stats">

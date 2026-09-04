@@ -1584,7 +1584,7 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                 </div>
               </div>
 
-              {/* -- Share for feedback (disabled: swipe-stage share link already covers this) --
+              {/* -- Share for feedback -- */}
               <div style={{ background: '#fff', borderRadius: 16, padding: '0.85rem 1.1rem', marginBottom: '1rem', border: '1.5px solid rgba(255,106,0,0.22)', boxShadow: '0 2px 12px rgba(255,106,0,0.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                   <div style={{ width: 28, height: 28, borderRadius: 9, background: '#FFF3EB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -1618,7 +1618,6 @@ function ItineraryPage({ trip, onCacheUpdate }) {
                   )}
                 </button>
               </div>
-              */}
 
               {/* -- View selected experiences (mirrors ExperienceDiscovery confirm page) -- */}
               {lastSelectedExps.length > 0 && (() => {
